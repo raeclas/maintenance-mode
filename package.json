@@ -1,0 +1,9 @@
+{
+  "name": "maintenance-mode",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node internal/test.js",
+    "sim": "node internal/sim.js"
+  }
+}

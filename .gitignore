@@ -1,0 +1,3 @@
+node_modules/
+internal/art/.venv/
+internal/art/out/
