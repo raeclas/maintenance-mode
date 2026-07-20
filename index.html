@@ -4,18 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Maintenance Mode</title>
-<style>
-  body { background:#0d0d10; color:#c9a94b; font-family:Georgia,serif;
-         display:grid; place-items:center; min-height:100vh; margin:0; }
-  main { text-align:center; }
-  h1 { font-variant:small-caps; letter-spacing:.08em; }
-  p { color:#8a8a92; }
-</style>
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <main>
-  <h1>Maintenance Mode</h1>
-  <p>The server is still up. Nobody told it to stop.</p>
+  <header>
+    <h1>Maintenance Mode</h1>
+    <div class="serverline">SERVER STATUS: ONLINE · PLAYERS: 1 · LAST PATCH: 2,190 days ago</div>
+  </header>
+
+  <div class="bossPanel">
+    <div id="bossName"></div>
+    <div id="bossTitle"></div>
+    <div id="record"></div>
+  </div>
+
+  <canvas id="battle"></canvas>
+
+  <div class="controls">
+    <button id="pullBtn">Pull</button>
+    <span id="depth">—</span>
+    <span id="cooldown"></span>
+  </div>
+
+  <div id="monument" style="display:none">W1 — Broken · Vess, Warden of the First Door</div>
+
+  <div id="dialogue"></div>
+
+  <div id="log"></div>
+
+  <footer><button id="wipeBtn">wipe save (dev)</button></footer>
 </main>
+<script type="module" src="./main.js"></script>
 </body>
 </html>

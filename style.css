@@ -1,0 +1,104 @@
+/* dead-server theme */
+:root {
+  --gold: #c9a94b;
+  --dim: #8a8a92;
+  --bg: #0d0d10;
+  --panel: #14141a;
+  --line: #26262e;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--dim);
+  font-family: Georgia, serif;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+main { width: 600px; max-width: 96vw; padding: 18px 0 40px; }
+
+header { text-align: center; margin-bottom: 14px; }
+h1 {
+  color: var(--gold);
+  font-variant: small-caps;
+  letter-spacing: .08em;
+  margin: 0 0 2px;
+  font-size: 26px;
+}
+.serverline { font-size: 11px; font-family: monospace; color: var(--dim); }
+
+.bossPanel { text-align: center; margin: 10px 0 6px; }
+#bossName { color: var(--gold); font-size: 20px; font-variant: small-caps; }
+#bossTitle { font-size: 12px; font-style: italic; }
+#record { font-size: 11px; font-family: monospace; margin-top: 2px; }
+
+canvas {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #101014;
+  image-rendering: pixelated;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0;
+}
+#pullBtn {
+  background: var(--gold);
+  color: #0d0d10;
+  border: none;
+  font-family: Georgia, serif;
+  font-variant: small-caps;
+  letter-spacing: .1em;
+  font-size: 18px;
+  padding: 10px 34px;
+  cursor: pointer;
+}
+#pullBtn:disabled { background: #3a3a44; color: #77777f; cursor: default; }
+#depth { color: var(--gold); font-size: 26px; font-family: monospace; min-width: 90px; }
+#cooldown { font-size: 12px; font-family: monospace; }
+
+#dialogue {
+  border-left: 3px solid var(--gold);
+  background: var(--panel);
+  padding: 10px 12px;
+  font-style: italic;
+  color: #b9b2a0;
+  min-height: 40px;
+  margin: 12px 0;
+}
+
+#monument {
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  text-align: center;
+  font-variant: small-caps;
+  letter-spacing: .12em;
+  padding: 8px;
+  margin: 12px 0;
+}
+
+#log {
+  font-family: monospace;
+  font-size: 11px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+#log div { padding: 1px 0; }
+
+footer { text-align: center; margin-top: 18px; }
+#wipeBtn {
+  background: none;
+  border: none;
+  color: #55555e;
+  font-size: 10px;
+  font-family: monospace;
+  cursor: pointer;
+  text-decoration: underline;
+}

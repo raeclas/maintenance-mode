@@ -1,0 +1,14 @@
+[
+  {
+    "t": 0,
+    "desc": "W1 EV depth 96.0%/pull, break 24.0%/pull"
+  },
+  {
+    "t": 30,
+    "desc": "W1 first pull resolved"
+  },
+  {
+    "t": 316,
+    "desc": "W1 broken (EV, E[pulls] 4.2)"
+  }
+]
