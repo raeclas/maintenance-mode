@@ -119,6 +119,7 @@ canvas {
 #resbar {
   display: flex;
   gap: 18px;
+  flex-wrap: wrap;
   justify-content: center;
   font-family: monospace;
   font-size: 13px;
@@ -171,7 +172,6 @@ section.game button:hover:not(:disabled) { border-color: var(--gold); color: var
 section.game button:disabled { color: #55555e; cursor: default; }
 
 .rig { display: flex; gap: 8px; flex-wrap: wrap; }
-.rigline { font-family: monospace; font-size: 11px; margin: 6px 0 10px; }
 .bar { margin: 8px 0; }
 .barHead { display: flex; gap: 12px; align-items: center; font-size: 12px; font-family: monospace; flex-wrap: wrap; }
 .trackName { width: 90px; }

@@ -313,9 +313,9 @@ function render() {
   $("buySpeed").textContent = buyLabel("hardware +", bots.speedCost(b));
   const eff = bots.effAlloc(b);
   const idle = Math.max(0, b.pop - eff.atk - eff.spd - eff.farm);
-  const scaled = eff.scale < 0.995 ? ` · over-allocated, scaled ×${eff.scale.toFixed(2)}` : "";
-  $("rigLine").textContent =
-    `${b.pop.toFixed(1)} / ${bots.capacity(b)} bots · +${bots.createRate(b).toFixed(1)}/h · power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · idle ${idle.toFixed(1)} · banned ever: ${Math.floor(b.banned)}${scaled}`;
+  const scaled = eff.scale < 0.995 ? ` · over-allocated ×${eff.scale.toFixed(2)}` : "";
+  $("resRig").textContent =
+    `power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · idle ${idle.toFixed(1)} · banned ${Math.floor(b.banned)}${scaled}`;
   $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
   for (const [bar, track, el] of [["atk", "atk", "Atk"], ["speed", "spd", "Speed"]]) {
