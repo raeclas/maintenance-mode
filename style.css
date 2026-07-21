@@ -69,6 +69,8 @@ canvas {
 section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2px; }
 #gmSec .row { cursor: default; }
 .ztable button.active { color: var(--gold); border-color: var(--gold); }
+.zoneBar { height: 2px; background: #22222a; margin-top: 3px; }
+.zoneFill { height: 100%; background: var(--gold); width: 0; }
 #titles {
   border: 1px dashed var(--line);
   color: var(--gold);

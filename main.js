@@ -204,7 +204,7 @@ $("schedToggle").addEventListener("change", () => { state.gm.schedulerOn = $("sc
 $("zones").innerHTML = `<table class="ztable"><thead><tr>
   <th class="tl">zone</th><th>gate</th><th>c/s</th><th>drops/h</th><th>kills/s</th><th class="tl">bound</th><th>you</th><th>bots</th>
 </tr></thead><tbody>${farm.zones.map((z, i) => `<tr id="zrow${i}">
-  <td class="tl">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP · det ${z.detection}/h</div></td>
+  <td class="tl">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP · det ${z.detection}/h</div><div class="zoneBar"><div class="zoneFill" id="zf${i}"></div></div></td>
   <td>${fmt(z.gate)}</td><td id="zc${i}">—</td><td id="zd${i}">—</td><td id="zk${i}">—</td>
   <td class="tl" id="zb${i}">—</td><td><button id="zp${i}">park</button></td><td><button id="zq${i}">send</button></td>
 </tr>`).join("")}</tbody></table>`;
@@ -505,6 +505,9 @@ function render() {
     const bq = $(`zq${i}`);
     bq.textContent = state.bots.farmZone === i ? "✓" : "send";
     bq.classList.toggle("active", state.bots.farmZone === i);
+    // next-drop bar: fills as kills accumulate toward the next gear roll
+    $(`zf${i}`).style.width = state.farm.zone === i && !rc.locked
+      ? `${Math.min(100, state.farm.dropCarry * 100)}%` : "0";
   });
 
   // gear
