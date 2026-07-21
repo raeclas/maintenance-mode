@@ -262,7 +262,7 @@ function render() {
   $("atkEl").textContent = fmt(d.atk);
   $("hpsEl").textContent = d.hitsPerSec.toFixed(2);
   $("copperEl").textContent = fmt(state.copper);
-  $("playerCount").textContent = state.unlocked ? 1 + Math.round(state.bots.pop) : 1;
+  $("resBots").textContent = `${state.bots.pop.toFixed(1)}/${bots.capacity(state.bots)} (+${bots.createRate(state.bots).toFixed(1)}/h)`;
 
   // pull row
   const pb = $("pullBtn");

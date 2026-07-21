@@ -8,13 +8,9 @@
 </head>
 <body>
 <main>
-  <header>
-    <h1>Maintenance Mode</h1>
-    <div class="serverline">SERVER STATUS: ONLINE · PLAYERS: <span id="playerCount">1</span> · LAST PATCH: 2,190 days ago</div>
-  </header>
-
-  <div id="statsbar" class="game hidden">
-    DPS <b id="dpsEl">—</b> · ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · <span class="copper"><span id="copperEl">0</span>c</span>
+  <div id="resbar" class="game hidden">
+    <span class="res">bots <b id="resBots">—</b></span>
+    <span class="res copper"><b id="copperEl">0</b>c</span>
   </div>
 
   <nav id="tabs" class="game hidden">
@@ -103,6 +99,7 @@
 
   <section id="gearSec" class="game hidden tabpane" style="display:none">
     <h2>Player</h2>
+    <div id="playerStats">DPS <b id="dpsEl">—</b> · ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s</div>
     <div id="titles" style="display:none"></div>
     <h3>Gear <span id="stacksHud"></span></h3>
     <label class="autoSalv"><input type="checkbox" id="safeguard"> safeguard (3× cost, no drop on fail — works up to +15 only)</label>
