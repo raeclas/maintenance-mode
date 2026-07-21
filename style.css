@@ -93,6 +93,78 @@ canvas {
 }
 #log div { padding: 1px 0; }
 
+/* ---- game sections (revealed after the intro pull) ---- */
+.hidden { display: none !important; }
+#statsbar {
+  text-align: center;
+  font-family: monospace;
+  font-size: 13px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 6px;
+  margin-bottom: 10px;
+}
+#statsbar b { color: var(--gold); font-size: 15px; }
+.copper { color: #d08a3e; }
+
+section.game {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 10px 12px;
+  margin: 12px 0;
+}
+section.game h2 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-variant: small-caps;
+  letter-spacing: .1em;
+  color: var(--gold);
+}
+section.game button {
+  background: #22222a;
+  color: #b9b2a0;
+  border: 1px solid var(--line);
+  font-family: monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+section.game button:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+section.game button:disabled { color: #55555e; cursor: default; }
+
+.rig { display: flex; gap: 8px; flex-wrap: wrap; }
+.rigline { font-family: monospace; font-size: 11px; margin: 6px 0 10px; }
+.bar { margin: 8px 0; }
+.barHead { display: flex; gap: 12px; align-items: center; font-size: 12px; font-family: monospace; }
+.barHead .assign button { padding: 1px 7px; }
+.barHead .assign b { padding: 0 6px; color: var(--gold); }
+.barTrack { height: 8px; background: #22222a; margin-top: 4px; }
+.barFill { height: 100%; background: var(--gold); width: 0; }
+
+.zone {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "name btn" "mob btn" "rates btn";
+  border-top: 1px solid var(--line);
+  padding: 6px 0;
+  gap: 0 10px;
+}
+.zone:first-child { border-top: none; }
+.zone.active .zoneName { color: var(--gold); }
+.zoneName { grid-area: name; font-size: 14px; }
+.zoneMob { grid-area: mob; font-size: 11px; font-family: monospace; color: #6e6e78; }
+.zoneRates { grid-area: rates; font-size: 11px; font-family: monospace; }
+.zone button { grid-area: btn; align-self: center; }
+
+.slot { display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--line); padding: 6px 0; }
+.slot:first-child { border-top: none; }
+.slotName { width: 60px; font-variant: small-caps; color: #6e6e78; }
+.slotItem { flex: 1; font-size: 12px; font-family: monospace; }
+.enhInfo { font-size: 10px; font-family: monospace; color: #6e6e78; }
+#stashHead { margin-top: 8px; }
+#stashList { font-family: monospace; font-size: 11px; padding-top: 6px; }
+#stashList div { display: flex; justify-content: space-between; padding: 2px 0; }
+
 footer { text-align: center; margin-top: 18px; }
 #wipeBtn {
   background: none;

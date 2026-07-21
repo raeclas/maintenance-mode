@@ -10,8 +10,12 @@
 <main>
   <header>
     <h1>Maintenance Mode</h1>
-    <div class="serverline">SERVER STATUS: ONLINE · PLAYERS: 1 · LAST PATCH: 2,190 days ago</div>
+    <div class="serverline">SERVER STATUS: ONLINE · PLAYERS: <span id="playerCount">1</span> · LAST PATCH: 2,190 days ago</div>
   </header>
+
+  <div id="statsbar" class="game hidden">
+    DPS <b id="dpsEl">—</b> · ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · <span class="copper"><span id="copperEl">0</span>c</span>
+  </div>
 
   <div class="bossPanel">
     <div id="bossName"></div>
@@ -31,6 +35,44 @@
   <div id="monument" style="display:none">W1 — Broken · Vess, Warden of the First Door</div>
 
   <div id="dialogue"></div>
+
+  <section id="botSec" class="game hidden">
+    <h2>Bot Farm</h2>
+    <div class="rig">
+      <button id="buyBot"></button>
+      <button id="buyPower"></button>
+      <button id="buySpeed"></button>
+    </div>
+    <div class="rigline" id="rigLine"></div>
+    <div class="bar" id="barAtk">
+      <div class="barHead">
+        <span>Train ATK</span>
+        <span class="assign"><button data-bar="atk" data-d="-1">−</button><b id="assignAtk">0</b><button data-bar="atk" data-d="1">+</button> bots</span>
+        <span id="barAtkInfo"></span>
+      </div>
+      <div class="barTrack"><div class="barFill" id="barAtkFill"></div></div>
+    </div>
+    <div class="bar" id="barSpeed">
+      <div class="barHead">
+        <span>Train SPEED</span>
+        <span class="assign"><button data-bar="speed" data-d="-1">−</button><b id="assignSpeed">0</b><button data-bar="speed" data-d="1">+</button> bots</span>
+        <span id="barSpeedInfo"></span>
+      </div>
+      <div class="barTrack"><div class="barFill" id="barSpeedFill"></div></div>
+    </div>
+  </section>
+
+  <section id="farmSec" class="game hidden">
+    <h2>Farming</h2>
+    <div id="zones"></div>
+  </section>
+
+  <section id="gearSec" class="game hidden">
+    <h2>Gear</h2>
+    <div id="slots"></div>
+    <div id="stashHead"><button id="stashToggle"></button></div>
+    <div id="stashList" style="display:none"></div>
+  </section>
 
   <div id="log"></div>
 

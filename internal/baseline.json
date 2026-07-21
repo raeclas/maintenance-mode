@@ -1,14 +1,66 @@
 [
   {
-    "t": 0,
-    "desc": "W1 EV fresh 75.0%/pull, scars 10% rate / 27% cap, break at cap 66.7%"
-  },
-  {
     "t": 30,
-    "desc": "W1 first pull resolved"
+    "desc": "first pull 0.0040% (intro beat)"
   },
   {
-    "t": 390,
-    "desc": "W1 broken (EV, pull 5)"
+    "t": 35,
+    "desc": "systems unlock"
+  },
+  {
+    "t": 600,
+    "desc": "power ×10"
+  },
+  {
+    "t": 3600,
+    "desc": "z2 unlocked (Spider Hollows)"
+  },
+  {
+    "t": 3600,
+    "desc": "depth 0.1%"
+  },
+  {
+    "t": 13200,
+    "desc": "power ×100"
+  },
+  {
+    "t": 13200,
+    "desc": "z3 unlocked (Saltglass Flats)"
+  },
+  {
+    "t": 18000,
+    "desc": "depth 1%"
+  },
+  {
+    "t": 37800,
+    "desc": "z4 unlocked (The Ashen Steppe)"
+  },
+  {
+    "t": 40200,
+    "desc": "power ×1000"
+  },
+  {
+    "t": 79800,
+    "desc": "z5 unlocked (Throne Approach)"
+  },
+  {
+    "t": 85200,
+    "desc": "power ×10000"
+  },
+  {
+    "t": 86400,
+    "desc": "depth 10%"
+  },
+  {
+    "t": 93600,
+    "desc": "depth 50%"
+  },
+  {
+    "t": 104400,
+    "desc": "scars capped"
+  },
+  {
+    "t": 532800,
+    "desc": "W1 broken (EV)"
   }
 ]

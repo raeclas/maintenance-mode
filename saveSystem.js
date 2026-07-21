@@ -57,14 +57,27 @@ export function load(state) {
   if (!s) return null;
   try { localStorage.setItem(KEY + "_bak", raw); } catch {}
 
-  // normalize over factory defaults — one source of truth for the shape
+  // normalize over factory defaults — one source of truth for the shape.
+  // v1 saves (pre-bots) backfill cleanly: new fields come from newState().
   const d = newState();
   state.lastSeen = s.lastSeen ?? 0;
-  state.player = { ...d.player, ...(s.player || {}) };
+  state.unlocked = s.unlocked ?? (s.boss?.pulls > 0); // v1 save mid-siege: keep systems open
+  state.copper = s.copper ?? 0;
   state.wall = s.wall ?? d.wall;
   state.boss = { ...d.boss, ...(s.boss || {}) };
   state.cooldownUntil = s.cooldownUntil ?? 0;
   state.pull = null; // reload mid-pull drops the pull — nothing gained until resolve
+  state.bots = {
+    ...d.bots, ...(s.bots || {}),
+    assign: { ...d.bots.assign, ...(s.bots?.assign || {}) },
+    bars: {
+      atk: { ...d.bots.bars.atk, ...(s.bots?.bars?.atk || {}) },
+      speed: { ...d.bots.bars.speed, ...(s.bots?.bars?.speed || {}) },
+    },
+  };
+  state.gear = { ...d.gear, ...(s.gear || {}) };
+  if (!Array.isArray(state.gear.stash)) state.gear.stash = [];
+  state.farm = { ...d.farm, ...(s.farm || {}) };
   return s;
 }
 

@@ -25,9 +25,12 @@ player. Satire shell, sincere boss stories inside.
 5. No multiplier soup — per-boss math displayed, no hidden terms.
 6. Stat lanes keep identities; twists re-value lanes, never merge them.
 7. Depth = meaningful overlap of few systems. **Nine-system budget: adding a
-   tenth requires deleting one.**
+   tenth requires deleting one.** (2026-07-21: Levels deleted, Bot Farm in.)
 8. Attachment is the spine: never reset, demote, or destroy the character,
-   gear, or story canon.
+   gear, or story canon. (Narrow amendment 2026-07-21: the bot stratum is
+   born-disposable — Ban Wave rebirth resets bots/bars/copper ONLY.)
+9. Improvable-stat rule: every mechanic ships with ≥1 meaningful stat the
+   loop can improve, or it doesn't ship.
 
 **Discipline:**
 - Sim-first: deterministic EV bot + baseline.json drift tracker from the

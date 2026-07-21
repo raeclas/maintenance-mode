@@ -2,6 +2,7 @@
 // the game AND the sim. depth = scars + DPS×window/bossHP, break at 100%
 // (REMAKE-DESIGN §3).
 import { getBoss } from "./bosses.js";
+import { derive } from "./stats.js";
 
 // Starting values (Numbers Policy). Test plan: W1 should feel like a siege —
 // ~5-6 pulls, scars visibly chipping. If walls "fall over", lower SCAR_CAP;
@@ -64,7 +65,7 @@ export function startPull(state, now, rng = Math.random) {
   state.pull = {
     startedAt: now,
     endsAt: now + boss.windowS * 1000,
-    rolledFresh: rollDepth(state.player, boss, rng),
+    rolledFresh: rollDepth(derive(state), boss, rng),
   };
   return true;
 }

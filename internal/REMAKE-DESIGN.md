@@ -62,6 +62,31 @@ fixed enrage window. Result: **depth%** = damage dealt ÷ boss HP.
 
 `depth = DPS × window / bossHP` — break condition: reach 100%.
 
+**[AMENDED 2026-07-21 — the intro beat & the long wall]** W1 HP is sized so
+the very first pull deals **~0.004%** (starting value: HP 15,000,000 vs
+starting DPS 20). The humiliation IS the tutorial: resolving pull 1 unlocks
+the growth game (Bot Farm, Farming, Gear/Enhance — the reveal moment), and
+the boss's own dialogue points the player at botting (diegetic tutorial).
+Walls are multi-day mega-events; when a break is out of EV reach, projection
+shows "required power: ~×N current" instead of an ETA — the countable
+daydream at hopeless scale. Learn-the-pull moved from "W1 is easy" to
+"W1 pull 1 is free and pointless."
+
+### 3b. Power curve & pacing law [NEW 2026-07-21]
+
+One line, always displayed: `DPS = (10 + trainedATK + Σ gear IP×(1+0.10×plus)) × hits/s`.
+
+**Pacing law: every wall's EV time-to-break lands in a stated window,
+enforced as a hard sim gate (exit 1), not aspiration.** W1: **4–7 days**
+idle-friendly (16h/day waking, 12h offline cap). Current baseline: 6.2d.
+Additional gates: first-session power ≥ ×10 (≤1h), depth 1% by day 1.
+
+Lane budget at W1 break (~×18,250 DPS needed: fresh 73% + scars 27%):
+gear IP dominant (3 slots × z5 band × enhance ×2.0 at +10 EV plateau),
+trained ATK carries the early hours, trained Speed ×2.5 (hard cap),
+zone ladder ×3 IP steps with DPS gates near each zone's gear ceiling.
+Tuning levers, in order: z5 IP band, scar cap 27→30%, bar cost constant.
+
 - **Enrage window** (not player death, not regen stall): depth moves every
   time power moves. Honest thermometer. Starting values: 30s at W1 scaling to
   ~3min at W8 (duration = gravitas dial, Maple lesson). Test: does a W8 pull
@@ -175,26 +200,65 @@ players click instantly, raise the material ante, not fail severity.
 | Scars | pity | failed pulls persist damage, capped |
 | Forensics | skill loop | every fail explains itself |
 | Enhance | heartbeat | zones + checkpoints + failstacks |
-| Gear | power lane | boss drops its nature; ONE effect per item max |
+| Gear | power lane | item power is THE one scalar (contribution = IP×(1+0.10×plus)); ONE effect per item max; nothing destroyed — stash forever |
 | Feats | bonus pool | all achievements/collection feed one visible pool |
-| Levels | unlock arc | finite, kills-only XP, verbs not stats |
+| Bot Farm | prep arc [AMENDED: replaces Levels; XP deleted from the game] | bar progress/s = bots × power × speed; all three copper-improvable |
 | Farm/parking | idle half | chosen spot, visible rate cards, multi-track |
-| Lifecycle | endgame gravity | frontier → farm → autokill |
+| Lifecycle | endgame gravity | frontier → farm → autokill; dungeons/raids/minibosses = sub-rungs between walls (middle content, not a 10th system) |
+
+**[NEW design law 2026-07-21 — improvable-stat rule]: every mechanic ships
+with ≥1 meaningful stat the loop can improve; a mechanic with no growth
+lever doesn't ship.** (Scars' lever arrives with Siegebreaker-line skills;
+enhance's with failstacks — named debts, not omissions.)
 
 Currencies: **copper + boss materials. Hard cap two.** GS = derived display
 number (gear + enhance + feats), never a stored stat.
 
-## 7. Levels — the finite unlock arc
+## 7. Bot Farm — the prep arc [REWRITTEN 2026-07-21, replaces Levels]
 
-- Cap ~20–30 (starting value). XP from kills only, fixed total curve —
-  faucet finite by construction. Never a damage term.
-- Every level unlocks something concrete: tabs, skill slots, features, early
-  walls. Levels ARE progressive reveal.
-- At cap the game says it out loud: "Welcome to endgame. Nobody asks your
-  level now — what's your GS?" Then paragon levels accumulate (post-cap,
-  banked for future layer use; capped faucet, no current spend).
+Levels and XP are deleted from the game. The unlock arc hangs off the intro
+beat, bot milestones, and wall breaks instead. NGU-inspired, MMO-diegetic:
+the dead server doesn't check for bots anymore, so you run a farm.
+
+- **Trainings = bars** (ATK +8/lvl uncapped w/ 40×L² cost; Speed +0.03
+  hits/s per lvl, hard cap lvl 100 → 5.0 hits/s. More bars reserved for
+  Crit/Pierce). Bar progress/s = **bots assigned × bot power × bot speed**.
+- **The NGU triple is copper-improvable** (rig upgrades, exponential costs):
+  accounts (3rd = 500c, ×8 each), script quality (+0.25 power, 200c×2.2^r),
+  hardware (+0.20 speed, 300c×2.5^r). Assignment free + instant.
+- Offline = same tick fn, dt clamped 12h; test asserts batch ≡ 1s ticks.
+- Abuse note: copper→bots→stats is the only currency→pacing coupling —
+  allowed because stats are not XP/unlocks; whole chain sim-modeled;
+  exponential costs prevent runaway compounding.
+- "I am the main character": bots never pull, never appear in the battle
+  scene; they are infrastructure. PLAYERS counter on the shell counts them
+  (satire surface).
+
+### 7b. Rebirth — "Ban Wave" [DESIGNED 2026-07-21, build next slice]
+
+Player-triggered, never scheduled (no-obligation law). The anti-cheat
+script finally notices the farm.
+- **Resets:** accounts (→2), bar levels/progress, copper.
+- **Persists (attachment law):** character, gear + plusses, scars, story,
+  feats, unlocks, rig ranks (power/speed) — floor never zero, reset never
+  total; the character's things are never touched.
+- **Payout: Scripts** ∝ √(total bar levels earned this run) — permanent
+  bot-output multiplier ×(1+scripts%) and spends that AUTOMATE past chores
+  (auto-enhance to target, auto-equip rules, +bot slots, offline cap
+  +2h/rank). Rebirth grants automation (layer-principle 3).
+- Abuse gates at design time: √ payout starves rebirth-spam; sim gate when
+  built: optimal cadence ≥ 12h. Amends Pillar 6 narrowly: the bot stratum
+  is born-disposable (Keystone precedent); everything loved stays.
 
 ## 8. Idle layer
+
+**[CONCRETIZED 2026-07-21]** 5 zones hang off W1 (Meadow → Spider Hollows →
+Saltglass Flats → Ashen Steppe → Throne Approach), DPS-gated (0/500/2k/7.5k/
+32k starting values), gates displayed on the card. Kills/s = min(2.0 cap,
+DPS/mobHP); copper/kill ≈ zone mid-IP/4; gear roll 1 per 200 kills EV
+(capped faucet), IP uniform in the zone band (×3 steps, z1 10–30 … z5
+4.5k–13.5k), deterministic fractional drop carry. Mob gear = Diablo-style:
+the roll IS the chase; bosses later drop higher-IP gear + sets.
 
 - **Parking verb:** choose farm spot; explicit AFK rate cards (copper vs
   materials vs collection chase). Decision density lives in the parking.
@@ -315,7 +379,7 @@ The old build died by a skipped abuse test; the remake doesn't skip them.
 
 - Name: "Maintenance Mode" working title; alternatives (Last Server, Gear
   Check) parked.
-- Gear slot count: 3 assumed (weapon + 2) — validate in Slice 1.
+- ~~Gear slot count~~ CLOSED 2026-07-21: weapon + armor + charm.
 - Burst-button auto-timing quality when unattended (starting value: fires at
   80% optimal; test vs active advantage target ±10%).
 - Scar decay on Expansion? (Probably never — scars are canon.)

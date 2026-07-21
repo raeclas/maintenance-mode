@@ -2,6 +2,8 @@
 // ceremony: the 30s window IS the ritual, the break is one loud frame.
 import { currentDepth, pullFrac } from "./pull.js";
 import { getBoss } from "./bosses.js";
+import { derive } from "./stats.js";
+import { fmt } from "./format.js";
 
 const W = 560, H = 260;
 const GATE = { x: 420, y: 175 };  // boss stands here
@@ -153,13 +155,14 @@ export function renderBattle(state, wallNow) {
 
   // damage fountain: spawn at hit cadence; final 5s escalates (rate + size)
   if (pulling) {
+    const d = derive(state);
     const msLeft = state.pull.endsAt - wallNow;
     const finale = msLeft < 5000;
-    const interval = 1000 / state.player.hitsPerSec / (finale ? 2 : 1);
+    const interval = Math.max(120, 1000 / d.hitsPerSec) / (finale ? 2 : 1);
     if (now - lastHitAt > interval) {
       lastHitAt = now;
-      const dmg = Math.round(state.player.atk * (0.85 + Math.random() * 0.3));
-      spawnFloater(String(dmg), finale ? "#ffd700" : "#e8dcc0", finale ? 21 : 15);
+      const dmg = d.atk * (0.85 + Math.random() * 0.3);
+      spawnFloater(fmt(dmg), finale ? "#ffd700" : "#e8dcc0", finale ? 21 : 15);
       bossFlashUntil = now + 70;
     }
   }
