@@ -180,6 +180,27 @@ section.game button:disabled { color: #55555e; cursor: default; }
 #stashList { font-family: monospace; font-size: 11px; padding-top: 6px; }
 #stashList div { display: flex; justify-content: space-between; padding: 2px 0; }
 
+#devPanel {
+  border: 1px dashed #6e3a32;
+  color: #b06a5a;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 6px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#devPanel button {
+  background: #22222a;
+  color: #b06a5a;
+  border: 1px solid #6e3a32;
+  font-family: monospace;
+  font-size: 11px;
+  cursor: pointer;
+}
+
 footer { text-align: center; margin-top: 18px; }
 #wipeBtn {
   background: none;

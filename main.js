@@ -17,6 +17,10 @@ const loaded = load(state);
 const boss = getBoss(state.wall);
 window.__mm = { state, save: () => save(state) }; // dev hook
 
+// ---- dev mode: ?dev in the URL. Time scale + shortcuts. Never saved. ----
+const DEV = new URLSearchParams(location.search).has("dev");
+let devScale = 1;
+
 const $ = id => document.getElementById(id);
 
 function say(event, idx = state.boss.pulls) {
@@ -180,7 +184,7 @@ let lastSave = 0;
 let lastTick = Date.now();
 function tick() {
   const now = Date.now();
-  const dt = Math.min((now - lastTick) / 1000, farm.OFFLINE_CAP_S); // same clamp as offline
+  const dt = Math.min((now - lastTick) / 1000, farm.OFFLINE_CAP_S) * devScale; // same clamp as offline
   lastTick = now;
   if (state.unlocked) {
     bots.tick(state, dt);
@@ -317,6 +321,27 @@ function render() {
       : "";
   }
   if (stashDirty) renderStash();
+}
+
+if (DEV) {
+  const panel = document.createElement("div");
+  panel.id = "devPanel";
+  panel.innerHTML = `<b>DEV</b> speed:
+    <button data-s="1">×1</button><button data-s="10">×10</button><button data-s="60">×60</button><button data-s="600">×600</button>
+    <button id="devCopper">+10k copper</button>
+    <button id="devFinish">finish pull</button>
+    <button id="devCd">clear cooldown</button>
+    <span id="devScaleLbl">×1</span>`;
+  document.querySelector("main").prepend(panel);
+  for (const btn of panel.querySelectorAll("button[data-s]")) {
+    btn.addEventListener("click", () => {
+      devScale = Number(btn.dataset.s);
+      document.getElementById("devScaleLbl").textContent = "×" + devScale;
+    });
+  }
+  panel.querySelector("#devCopper").addEventListener("click", () => { state.copper += 10_000; });
+  panel.querySelector("#devFinish").addEventListener("click", () => { if (state.pull) state.pull.endsAt = Date.now(); });
+  panel.querySelector("#devCd").addEventListener("click", () => { state.cooldownUntil = 0; });
 }
 
 $("bossName").textContent = boss.name;
