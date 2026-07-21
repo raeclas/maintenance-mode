@@ -33,6 +33,11 @@ player. Satire shell, sincere boss stories inside.
    loop can improve, or it doesn't ship.
 
 **Discipline:**
+- BEFORE any change: restate what the user asked for and confirm the
+  intended scope with them — especially when the request is ambiguous.
+  Never expand scope on interpretation (2026-07-22: "battle bars" meant
+  the Grind bars; an unrequested boss-bar redesign shipped from the
+  misread). Clarify first, build second.
 - Two-channel workflow (user playtests on mobile via GitHub Pages):
   push every change to `staging` (Pages serves this branch — the playtest
   channel). NEVER advance `main` until the user approves that change;
