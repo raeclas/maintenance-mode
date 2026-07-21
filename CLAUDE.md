@@ -33,6 +33,9 @@ player. Satire shell, sincere boss stories inside.
    loop can improve, or it doesn't ship.
 
 **Discipline:**
+- Commit locally per change, but NEVER `git push` until the user has
+  playtested/approved that change ("finalise before push"). Push only on
+  their explicit go-ahead.
 - Sim-first: deterministic EV bot + baseline.json drift tracker from the
   first gameplay commit. `npm test` + `npm run sim` must stay green;
   intended balance shifts restamp baseline in the same commit.
