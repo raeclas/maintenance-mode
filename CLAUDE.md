@@ -46,6 +46,11 @@ player. Satire shell, sincere boss stories inside.
   non-deployed work in `internal/`.
 - Design process uses `~/.claude/skills/game-design` (5-Component Filter,
   Numbers Policy: starting value + test plan, Abuse Tests at design time).
+- **Every player-facing feature runs `.claude/skills/feature-pass` BEFORE
+  code**: meaning gate (what decision changes), placement gate (domain +
+  attachment point declared), naming gate (one register per system, from
+  the lexicon), feedback gate (how it's felt). Post the FEATURE PASS block
+  in chat first.
 
 ## Dev
 
