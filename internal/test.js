@@ -439,7 +439,7 @@ const enh = await import("../enhance.js");
 
   // flags: uncapped, era-priced, multipliers displayed in derive
   assert.ok(gm.buyFlag(s, "dmg") && s.gm.dmg === 1);
-  assert.equal(gm.flagCost("dmg", 10), Math.round(60 * Math.pow(2, 10)));
+  assert.equal(gm.flagCost("dmg", 10), Math.round(gm.FLAGS.dmg.base * Math.pow(gm.FLAGS.dmg.mult, 10)));
   s.gm.dmg = 5; s.gm.haste = 5;
   assert.ok(Math.abs(gm.gmDmgMult(s) - 1.2) < 1e-12);
   assert.ok(Math.abs(gm.gmHasteMult(s) - 1.1) < 1e-12);

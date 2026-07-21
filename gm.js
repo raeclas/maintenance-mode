@@ -4,9 +4,12 @@
 // exponential costs). Everything here is sim-modeled.
 
 // Account flags: uncapped permanent stat lane, era-priced.
+// mult softened 2026-07-22 (flatter ticket scaling) — still EXPONENTIAL so
+// the uncapped flag lane stays era-priced (law 1 guard on the tickets→flags→
+// depth loop); just a gentler climb. Starting values, tune by feel.
 export const FLAGS = {
-  dmg: { label: "damage override", gain: "+4% ATK", base: 60, mult: 2.0 },
-  haste: { label: "haste override", gain: "+2% speed", base: 90, mult: 2.2 },
+  dmg: { label: "damage override", gain: "+4% ATK", base: 60, mult: 1.6 },
+  haste: { label: "haste override", gain: "+2% speed", base: 90, mult: 1.7 },
 };
 
 // Admin tools: one-time feature unlocks (verbs, not dials).
@@ -15,12 +18,14 @@ export const UNLOCKS = {
   idleProc: { label: "idle encounter processing", desc: "attempts resolve while away (offline-clamped)", cost: 400 },
 };
 
-// Utility ranks: support cast, hard rank caps.
+// Utility ranks: support cast, hard rank caps. mults softened 2026-07-22
+// (flatter ticket scaling) — safe to flatten harder than flags because the
+// rank cap, not the price, is the law-1 guard here. Starting values.
 export const UTILITY = {
-  cap: { label: "session cap +2", base: 20, mult: 2, max: 10 },
-  offline: { label: "idle timeout +1h", base: 50, mult: 3, max: 6 },
-  cooldown: { label: "encounter lockout −5s", base: 40, mult: 2.5, max: 6 },
-  scar: { label: "repair scripts off +1% scar cap", base: 200, mult: 4, max: 3 },
+  cap: { label: "session cap +2", base: 20, mult: 1.6, max: 10 },
+  offline: { label: "idle timeout +1h", base: 50, mult: 2.0, max: 6 },
+  cooldown: { label: "encounter lockout −5s", base: 40, mult: 1.8, max: 6 },
+  scar: { label: "repair scripts off +1% scar cap", base: 200, mult: 2.5, max: 3 },
 };
 
 export function flagCost(type, rank) {

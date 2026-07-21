@@ -62,11 +62,13 @@ export function botDps(b, player) {
   return strength * speed;
 }
 
-// Copper costs (exponential — copper can't runaway-compound the chain)
-export function capCost(b) { return Math.round(800 * Math.pow(3.5, b.capRank)); }
-export function createCost(b) { return Math.round(500 * Math.pow(3, b.createRank)); }
-export function powerCost(b) { return Math.round(200 * Math.pow(2.2, b.powerRank)); }
-export function speedCost(b) { return Math.round(300 * Math.pow(2.5, b.speedRank)); }
+// Copper costs (exponential — copper can't runaway-compound the chain).
+// Bases softened 2026-07-22 (flatter scaling) so rig upgrades stay buyable
+// deep instead of walling out; still exponential. Playtest-tuned (bot lane).
+export function capCost(b) { return Math.round(800 * Math.pow(1.9, b.capRank)); }
+export function createCost(b) { return Math.round(500 * Math.pow(1.7, b.createRank)); }
+export function powerCost(b) { return Math.round(200 * Math.pow(1.6, b.powerRank)); }
+export function speedCost(b) { return Math.round(300 * Math.pow(1.7, b.speedRank)); }
 
 const COSTS = { cap: capCost, create: createCost, power: powerCost, speed: speedCost };
 
