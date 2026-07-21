@@ -2,10 +2,12 @@
 // saveSystem normalizes over these defaults; the sim imports it too.
 export function newState() {
   return {
-    v: 4,
+    v: 5,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     copper: 0,
+    tickets: 0,    // meta currency: damaging Content files support tickets nobody handles
+    gm: { cap: 0, offline: 0, cooldown: 0, scar: 0 }, // GM panel ranks (rank-capped, law 1)
     failstacks: 0, // Luck's mechanical body — every fail banks +1%, success spends the bank
     titles: [],    // earned forever (attachment law): "+18" etc.
     wall: 1,
@@ -25,7 +27,13 @@ export function newState() {
       farmZone: 0,
       enhTarget: { slot: "weapon", plus: 10 }, // bots enhance this item toward this plus
       enhCarry: 0, // fractional attempt progress
-      bars: { atk: { lvl: 0, prog: 0 }, speed: { lvl: 0, prog: 0 } },
+      // ITRTG-style trainings: constant cost per fill within a tier, rate
+      // caps at 1 fill/s, next tier unlocks at 50 fills of the current one.
+      trained: { atk: 0, hits: 0 }, // permanent stat gains from fills
+      bars: {
+        atk: { tier: 0, fills: [0, 0, 0, 0], prog: 0, unlocked: 1 },
+        speed: { tier: 0, fills: [0, 0, 0], prog: 0, unlocked: 1 },
+      },
     },
     gear: {
       weapon: null, armor: null, charm: null,

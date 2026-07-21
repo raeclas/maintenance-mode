@@ -6,6 +6,8 @@ import { rollItem } from "./gear.js";
 
 export const DROP_PER_KILLS = 200;  // 1 gear roll per 200 kills EV
 export const OFFLINE_CAP_S = 12 * 3600;
+// GM offline perk extends the clamp (rank-capped at +6h in gm.js)
+export function offlineCapS(state) { return OFFLINE_CAP_S + (state.gm?.offline || 0) * 3600; }
 
 // Starting values; gates displayed on the cards. Each zone ≈ one day of the arc.
 // detection: anti-cheat bans per farming BOT per hour in this zone (player

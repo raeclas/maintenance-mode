@@ -15,11 +15,32 @@ export const POWER_PER_RANK = 0.25;   // script quality
 export const SPEED_PER_RANK = 0.20;   // hardware
 export const CREATE_PER_RANK = 0.5;   // generator: ×(1 + 0.5×rank)
 export const BOT_BASE_DPS = 4;        // a naked account running a script
-export const BAR_COST_C = 180;        // bar level L costs 180×L² progress units (tuned for pop-scale training)
+
+// ITRTG-style trainings: constant cost per fill, every fill pays the gain,
+// rate hard-caps at 1 fill/s (tier max rate = gain/s). Next tier unlocks
+// after UNLOCK_FILLS fills of the previous. Which tier to RUN is the
+// player's call — a maxed low tier can out-rate a young high tier.
+// Starting values, sim-gated.
+export const UNLOCK_FILLS = 50;
+export const MAX_FILLS_PER_S = 0.02; // 50s/fill floor — tiers CAN max out (the ITRTG feel)
+export const SPEED_TRAIN_CAP = 3.0;  // trained hits/s: lane tops out at 2.0 + 3.0 = 5.0
+export const TRAININGS = {
+  atk: [
+    { name: "macro loop", cost: 3000, gain: 2 },
+    { name: "combo script", cost: 30_000, gain: 12 },
+    { name: "kernel hook", cost: 240_000, gain: 70 },
+    { name: "frame-perfect bot", cost: 1_800_000, gain: 400 },
+  ],
+  speed: [
+    { name: "click daemon", cost: 6000, gain: 0.01 },
+    { name: "packet burst", cost: 60_000, gain: 0.06 },
+    { name: "zero-delay loop", cost: 480_000, gain: 0.3 },
+  ],
+};
 
 export function botPower(b) { return 1 + POWER_PER_RANK * b.powerRank; }
 export function botSpeed(b) { return 1 + SPEED_PER_RANK * b.speedRank; }
-export function capacity(b) { return CAP_BASE + CAP_PER_RANK * b.capRank; }
+export function capacity(b, gmCap = 0) { return CAP_BASE + CAP_PER_RANK * b.capRank + 2 * gmCap; }
 export function createRate(b) { return CREATE_PER_H * (1 + CREATE_PER_RANK * b.createRank); } // per hour
 export function botDps(b) { return BOT_BASE_DPS * botPower(b) * botSpeed(b); }
 
@@ -70,7 +91,13 @@ export function botFarmRates(b, zi) {
   };
 }
 
-export function levelCost(lvl) { return BAR_COST_C * (lvl + 1) * (lvl + 1); }
+export function setTier(state, bar, tier) {
+  const B = state.bots.bars[bar];
+  if (tier >= 0 && tier < B.unlocked && tier < TRAININGS[bar].length) {
+    B.tier = tier;
+    B.prog = 0; // progress doesn't transfer between tiers; fill counts do
+  }
+}
 
 // Bot enhancing: time per attempt grows exponentially with the plus being
 // pushed; squad quality shrinks it. Same copper cost, same RNG as manual —
@@ -99,18 +126,27 @@ function tickChunk(state, dtS, onEnh, rng) {
   const dtH = dtS / 3600;
 
   // creation toward capacity
-  b.pop = Math.min(capacity(b), b.pop + createRate(b) * dtH);
+  b.pop = Math.min(capacity(b, state.gm?.cap || 0), b.pop + createRate(b) * dtH);
 
-  // training (private lobbies — safe)
+  // training (private lobbies — safe): constant cost per fill, 1 fill/s cap
   const quality = botPower(b) * botSpeed(b);
   const eff = effAlloc(b);
   for (const bar of ["atk", "speed"]) {
     const trainPop = eff[bar === "atk" ? "atk" : "spd"];
+    if (trainPop <= 0) continue;
+    if (bar === "speed" && b.trained.hits >= SPEED_TRAIN_CAP) continue; // lane capped
     const B = b.bars[bar];
-    B.prog += trainPop * quality * dtS;
-    while (B.prog >= levelCost(B.lvl)) {
-      B.prog -= levelCost(B.lvl);
-      B.lvl++;
+    const t = TRAININGS[bar][B.tier];
+    const units = Math.min(trainPop * quality * dtS, t.cost * MAX_FILLS_PER_S * dtS);
+    B.prog += units;
+    while (B.prog >= t.cost) {
+      B.prog -= t.cost;
+      B.fills[B.tier] = (B.fills[B.tier] || 0) + 1;
+      if (bar === "atk") b.trained.atk += t.gain;
+      else b.trained.hits = Math.min(SPEED_TRAIN_CAP, b.trained.hits + t.gain);
+      if (B.tier === B.unlocked - 1 && B.unlocked < TRAININGS[bar].length && B.fills[B.tier] >= UNLOCK_FILLS) {
+        B.unlocked++;
+      }
     }
   }
 

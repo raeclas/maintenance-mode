@@ -63,6 +63,8 @@ export function load(state) {
   state.lastSeen = s.lastSeen ?? 0;
   state.unlocked = s.unlocked ?? (s.boss?.pulls > 0); // v1 save mid-siege: keep systems open
   state.copper = s.copper ?? 0;
+  state.tickets = s.tickets ?? 0;
+  state.gm = { ...d.gm, ...(s.gm || {}) };
   state.failstacks = s.failstacks ?? 0;
   state.titles = Array.isArray(s.titles) ? s.titles : [];
   state.wall = s.wall ?? d.wall;
@@ -70,14 +72,21 @@ export function load(state) {
   state.cooldownUntil = s.cooldownUntil ?? 0;
   state.pull = null; // reload mid-pull drops the pull — nothing gained until resolve
   const { assign, count, ...sBots } = s.bots || {}; // v2 fields dropped below
+  const oldBars = s.bots?.bars; // v≤4 bars were {lvl, prog}
+  const v4Bars = oldBars?.atk?.lvl !== undefined;
   state.bots = {
     ...d.bots, ...sBots,
     alloc: { ...d.bots.alloc, ...(s.bots?.alloc || {}) },
-    bars: {
-      atk: { ...d.bots.bars.atk, ...(s.bots?.bars?.atk || {}) },
-      speed: { ...d.bots.bars.speed, ...(s.bots?.bars?.speed || {}) },
+    trained: { ...d.bots.trained, ...(s.bots?.trained || {}) },
+    bars: v4Bars ? d.bots.bars : {
+      atk: { ...d.bots.bars.atk, ...(oldBars?.atk || {}) },
+      speed: { ...d.bots.bars.speed, ...(oldBars?.speed || {}) },
     },
   };
+  if (v4Bars) { // v4 → v5: quadratic bar levels become trained stats, tiers reset
+    state.bots.trained.atk = 8 * (oldBars.atk.lvl || 0);
+    state.bots.trained.hits = Math.min(3.0, 0.03 * Math.min(oldBars.speed?.lvl || 0, 100));
+  }
   if (count !== undefined && s.bots?.pop === undefined) state.bots.pop = count; // v2 → v3
   if ((s.v ?? 0) <= 3 && s.bots?.alloc) { // v3 alloc was % of pop → convert to counts
     for (const k of ["atk", "spd", "farm"]) {

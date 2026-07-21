@@ -13,6 +13,10 @@ export const COOLDOWN_MS = 60_000;
 export const SCAR_CAP = 0.27;  // §3: pity capped at 25–30% of boss HP
 export const SCAR_RATE = 0.10; // fraction of a failed pull's damage that persists
 
+// GM-panel perks (rank-capped in gm.js) modify these per state:
+export function cooldownMs(state) { return COOLDOWN_MS - (state.gm?.cooldown || 0) * 5_000; }
+export function scarCap(state) { return SCAR_CAP + (state.gm?.scar || 0) * 0.01; }
+
 export function dps(player) {
   return player.atk * player.hitsPerSec;
 }
@@ -38,12 +42,12 @@ export function breakChance(player, boss, scars = 0) {
 
 // EV forecast: pulls until the wall breaks, assuming every pull rolls EV.
 // The countable daydream (§3 projection). Infinity = power can't break it.
-export function pullsToBreakEV(player, boss, scars) {
+export function pullsToBreakEV(player, boss, scars, cap = SCAR_CAP) {
   const ev = expectedDepth(player, boss);
   let s = scars;
   for (let n = 1; n <= 1000; n++) {
     if (s + ev >= 1) return n;
-    const grown = Math.min(SCAR_CAP, s + ev * SCAR_RATE);
+    const grown = Math.min(cap, s + ev * SCAR_RATE);
     if (grown === s) return Infinity; // scars capped, EV still short
     s = grown;
   }
@@ -100,8 +104,8 @@ export function resolvePull(state, now) {
   if (depth >= 1) {
     state.boss.broken = true;
   } else {
-    state.boss.scars = Math.min(SCAR_CAP, state.boss.scars + fresh * SCAR_RATE);
-    state.cooldownUntil = now + COOLDOWN_MS;
+    state.boss.scars = Math.min(scarCap(state), state.boss.scars + fresh * SCAR_RATE);
+    state.cooldownUntil = now + cooldownMs(state);
   }
   return depth;
 }

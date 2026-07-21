@@ -3,7 +3,8 @@ import { newState } from "./state.js";
 import { load, save, wipe } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { getBoss } from "./bosses.js";
-import { startPull, resolvePull, pullDone, currentDepth, canPull, band, pullsToBreakEV, SCAR_CAP } from "./pull.js";
+import { startPull, resolvePull, pullDone, currentDepth, canPull, band, pullsToBreakEV, scarCap } from "./pull.js";
+import { GM, gmCost, buyGm, ticketYield, BREAK_TICKETS } from "./gm.js";
 import { initBattle, renderBattle, notifyResult, notifyEnhance } from "./battle.js";
 import { derive } from "./stats.js";
 import * as bots from "./bots.js";
@@ -70,7 +71,7 @@ function enhMilestones(item, r) {
 
 // ---- offline batch: same tick functions, dt clamped exactly like live ----
 if (loaded && state.unlocked && state.lastSeen) {
-  const dt = Math.min((Date.now() - state.lastSeen) / 1000, farm.OFFLINE_CAP_S);
+  const dt = Math.min((Date.now() - state.lastSeen) / 1000, farm.offlineCapS(state));
   if (dt > 60) {
     const c0 = state.copper;
     let drops = 0;
@@ -155,6 +156,17 @@ for (const [i, z] of farm.zones.entries()) {
   $("botZone").appendChild(opt);
 }
 $("botZone").addEventListener("change", () => { state.bots.farmZone = Number($("botZone").value); });
+$("tierAtk").addEventListener("change", () => bots.setTier(state, "atk", Number($("tierAtk").value)));
+$("tierSpeed").addEventListener("change", () => bots.setTier(state, "speed", Number($("tierSpeed").value)));
+
+// ---- GM panel: build rows once ----
+for (const type of Object.keys(GM)) {
+  const row = document.createElement("div");
+  row.className = "gmRow";
+  row.innerHTML = `<span class="tl">${GM[type].label}</span><span id="gmr_${type}"></span><button id="gmb_${type}"></button>`;
+  $("gmRows").appendChild(row);
+  row.querySelector("button").addEventListener("click", () => buyGm(state, type));
+}
 
 // ---- farming: dense zone table, built once, cells updated in render ----
 $("zones").innerHTML = `<table class="ztable"><thead><tr>
@@ -236,7 +248,7 @@ let lastSave = 0;
 let lastTick = Date.now();
 function tick() {
   const now = Date.now();
-  const dt = Math.min((now - lastTick) / 1000, farm.OFFLINE_CAP_S) * devScale; // same clamp as offline
+  const dt = Math.min((now - lastTick) / 1000, farm.offlineCapS(state)) * devScale; // same clamp as offline
   lastTick = now;
   if (state.unlocked) {
     bots.tick(state, dt, (r, item) => enhMilestones(item, r));
@@ -245,14 +257,16 @@ function tick() {
   if (state.pull && pullDone(state, now)) {
     const depth = resolvePull(state, now);
     notifyResult(depth, state.boss.broken);
+    const yieldT = ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0);
+    state.tickets += yieldT;
     if (state.boss.broken) {
       say("break");
-      log(`★ W1 BROKEN — attempt ${state.boss.pulls}`);
+      log(`★ W1 BROKEN — attempt ${state.boss.pulls} · +${fmt(yieldT)} tickets`);
     } else {
       // milestone-only dialogue: intro fail, first near-miss. Silence otherwise.
       if (state.boss.pulls === 1) say("fail_hopeless");
       else if (depth >= 0.95 && !state.boss.nearSaid) { state.boss.nearSaid = true; say("fail_near"); }
-      log(`attempt ${state.boss.pulls}: ${fmtDepth(depth)} · scars ${fmtDepth(state.boss.scars)}`);
+      log(`attempt ${state.boss.pulls}: ${fmtDepth(depth)} · scars ${fmtDepth(state.boss.scars)} · +${yieldT} tickets`);
       if (!state.unlocked) {
         state.unlocked = true;
         reveal();
@@ -278,10 +292,11 @@ function render() {
     $("projMini").textContent = state.boss.broken ? "100%" : `${fmtDepth(w.lo)}–${fmtDepth(w.hi)}`;
   }
   $("copperEl").textContent = fmt(state.copper);
+  $("ticketsEl").textContent = fmt(state.tickets);
   { // NGU-style ticker: FREE bots (unallocated) vs capacity — allocation drains it
     const a = state.bots.alloc;
     const free = Math.max(0, state.bots.pop - a.atk - a.spd - a.farm - a.enh);
-    $("resBots").textContent = `${free.toFixed(1)} / ${bots.capacity(state.bots)}`;
+    $("resBots").textContent = `${free.toFixed(1)} / ${bots.capacity(state.bots, state.gm.cap)}`;
     $("resRate").textContent = `+${bots.createRate(state.bots).toFixed(1)}`;
   }
 
@@ -314,14 +329,25 @@ function render() {
   if (state.boss.broken || state.pull) {
     $("projection").textContent = "";
   } else {
+    const cap = scarCap(state);
     const { lo, hi } = band(d, boss, state.boss.scars);
-    const n = pullsToBreakEV(d, boss, state.boss.scars);
+    const n = pullsToBreakEV(d, boss, state.boss.scars, cap);
     if (n === Infinity) {
-      const reqDps = ((1 - Math.max(state.boss.scars, SCAR_CAP)) * boss.hp) / boss.windowS;
+      const reqDps = ((1 - Math.max(state.boss.scars, cap)) * boss.hp) / boss.windowS;
       $("projection").textContent = `projection: ${fmtDepth(lo)}–${fmtDepth(hi)} · required power: ~×${fmt(reqDps / dps)} current`;
     } else {
       $("projection").textContent = `projection: ${fmtDepth(lo)}–${fmtDepth(hi)} · breaks in ~${n} attempt${n > 1 ? "s" : ""}`;
     }
+  }
+
+  // GM panel
+  for (const type of Object.keys(GM)) {
+    const rank = state.gm[type];
+    const maxed = rank >= GM[type].max;
+    $(`gmr_${type}`).textContent = `${rank}/${GM[type].max}`;
+    const btn = $(`gmb_${type}`);
+    btn.textContent = maxed ? "MAX" : `${fmt(gmCost(type, rank))} tickets`;
+    btn.disabled = maxed || state.tickets < gmCost(type, rank);
   }
 
   if (!state.unlocked) return;
@@ -336,16 +362,34 @@ function render() {
   const scaled = eff.scale < 0.995 ? ` · short ${((1 - eff.scale) * 100).toFixed(0)}% (bans)` : "";
   $("rigStats").textContent =
     `power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · banned ${Math.floor(b.banned)}${scaled}`;
-  $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b)) * 100)}%`;
+  $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b, state.gm.cap)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
   for (const [bar, track, el] of [["atk", "atk", "Atk"], ["speed", "spd", "Speed"]]) {
     const B = b.bars[bar];
     const input = $(`alloc${track === "atk" ? "Atk" : "Spd"}`);
     if (document.activeElement !== input) input.value = b.alloc[track];
-    const gain = bar === "atk" ? "+8 ATK/lvl" : "+0.03 hits/lvl";
-    const capped = bar === "speed" && B.lvl >= 100 ? " (CAP)" : "";
-    $(`bar${el}Info`).textContent = `lvl ${B.lvl}${capped} · ${(eff[track] * quality).toFixed(1)}/s · ${gain}`;
-    $(`bar${el}Fill`).style.width = `${Math.min(100, (B.prog / bots.levelCost(B.lvl)) * 100)}%`;
+    const tiers = bots.TRAININGS[bar];
+    const sel = $(`tier${el}`);
+    if (sel.children.length !== B.unlocked) { // rebuild options when a tier unlocks
+      sel.innerHTML = "";
+      for (let i = 0; i < B.unlocked; i++) {
+        const o = document.createElement("option");
+        o.value = i;
+        o.textContent = `${tiers[i].name} (+${tiers[i].gain})`;
+        sel.appendChild(o);
+      }
+    }
+    if (document.activeElement !== sel) sel.value = B.tier;
+    const t = tiers[B.tier];
+    const rate = Math.min(eff[track] * quality, t.cost * bots.MAX_FILLS_PER_S); // units/s
+    const maxed = eff[track] * quality >= t.cost * bots.MAX_FILLS_PER_S;
+    const laneCapped = bar === "speed" && b.trained.hits >= bots.SPEED_TRAIN_CAP;
+    const trained = bar === "atk" ? `+${fmt(b.trained.atk)} ATK` : `+${b.trained.hits.toFixed(2)} hits/s`;
+    const next = B.unlocked < tiers.length && B.tier === B.unlocked - 1
+      ? ` · next tier ${B.fills[B.tier] || 0}/${bots.UNLOCK_FILLS}` : "";
+    $(`bar${el}Info`).textContent = laneCapped ? `${trained} · LANE MAX`
+      : `${trained} · ${maxed ? "RATE MAX" : (rate / t.cost).toFixed(2) + " fills/s"}${next}`;
+    $(`bar${el}Fill`).style.width = `${Math.min(100, (B.prog / t.cost) * 100)}%`;
   }
   if (document.activeElement !== $("allocFarm")) $("allocFarm").value = b.alloc.farm;
   $("autoSalvage").checked = state.gear.autoSalvage;

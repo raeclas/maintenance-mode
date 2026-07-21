@@ -27,14 +27,14 @@ const enh = await import("../enhance.js");
   assert.equal(d.atk, 10);
   assert.equal(d.hitsPerSec, 2.0);
   const b = getBoss(1);
-  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 30_000_000); // 0.002% exactly
+  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 60_000_000); // 0.001% exactly
 }
 
 // Stats: gear + bars feed the one-line formula; speed hard cap
 {
   const s = newState();
-  s.bots.bars.atk.lvl = 10;                       // +80
-  s.bots.bars.speed.lvl = 250;                    // capped at 100 → +3.0
+  s.bots.trained.atk = 80;
+  s.bots.trained.hits = 99; // over lane cap → clamped to 5.0 total
   s.gear.weapon = { slot: "weapon", ip: 100, plus: 10, zone: 1, name: "t" }; // 100×1.12^10
   const d = derive(s);
   assert.ok(Math.abs(d.atk - (10 + 80 + 100 * Math.pow(1.12, 10))) < 1e-9);
@@ -75,7 +75,7 @@ const enh = await import("../enhance.js");
 // Resolve: overwhelming stats → break, no cooldown
 {
   const s = newState();
-  s.gear.weapon = { slot: "weapon", ip: 1_000_000, plus: 0, zone: 5, name: "t" };
+  s.gear.weapon = { slot: "weapon", ip: 2_000_000, plus: 0, zone: 5, name: "t" };
   pull.startPull(s, 1_000_000, () => 0.5);
   assert.ok(!pull.pullDone(s, s.pull.startedAt + 5_000)); // rolled 2.0× → 100% mid-window
   assert.ok(pull.pullDone(s, s.pull.endsAt - 14_000));    // breaks early at 100%
@@ -95,16 +95,48 @@ const enh = await import("../enhance.js");
   assert.equal(s.bots.pop, 8); // capped
 }
 
-// Bots: training scales with pop × power × speed via alloc counts
+// Bots: training — constant cost per fill, gains applied, fill-rate cap
 {
   const s = newState();
   s.bots.pop = 8; // at cap → no creation drift
-  s.bots.alloc = { atk: 8, spd: 0, farm: 0 };
-  bots.tick(s, 100); // 8 × 1.0 × 1.0 × 100 = 800 units
-  let units = 800, lvl = 0;
-  while (units >= bots.levelCost(lvl)) units -= bots.levelCost(lvl++);
-  assert.equal(s.bots.bars.atk.lvl, lvl);
-  assert.ok(Math.abs(s.bots.bars.atk.prog - units) < 1e-6);
+  s.bots.alloc = { atk: 8, spd: 0, farm: 0, enh: 0 };
+  const t1 = bots.TRAININGS.atk[0];
+  bots.tick(s, 1000); // 8 units/s × 1000s = 8000 units, under the 0.02 fills/s cap
+  const fills = Math.floor(8000 / t1.cost);
+  assert.equal(s.bots.bars.atk.fills[0], fills);
+  assert.equal(s.bots.trained.atk, fills * t1.gain);
+  assert.ok(Math.abs(s.bots.bars.atk.prog - (8000 - fills * t1.cost)) < 1e-6);
+
+  // rate cap: a monster squad can't exceed MAX_FILLS_PER_S
+  const s2 = newState();
+  s2.bots.pop = 8;
+  s2.bots.powerRank = 1000; // absurd quality
+  s2.bots.alloc = { atk: 8, spd: 0, farm: 0, enh: 0 };
+  bots.tick(s2, 100);
+  const maxFills = Math.floor(100 * bots.MAX_FILLS_PER_S * t1.cost / t1.cost);
+  assert.ok(s2.bots.bars.atk.fills[0] <= maxFills + 1);
+
+  // tier unlock at UNLOCK_FILLS, tier switch keeps fill counts
+  const s3 = newState();
+  s3.bots.pop = 8;
+  s3.bots.alloc = { atk: 8, spd: 0, farm: 0, enh: 0 };
+  s3.bots.bars.atk.fills[0] = bots.UNLOCK_FILLS - 1;
+  bots.tick(s3, t1.cost / 8 + 1); // one more fill
+  assert.equal(s3.bots.bars.atk.unlocked, 2);
+  bots.setTier(s3, "atk", 1);
+  assert.equal(s3.bots.bars.atk.tier, 1);
+  assert.equal(s3.bots.bars.atk.fills[0], bots.UNLOCK_FILLS); // history kept
+  bots.setTier(s3, "atk", 3); // locked → rejected
+  assert.equal(s3.bots.bars.atk.tier, 1);
+
+  // speed lane cap: gains stop at SPEED_TRAIN_CAP
+  const s4 = newState();
+  s4.bots.pop = 8;
+  s4.bots.alloc = { atk: 0, spd: 8, farm: 0, enh: 0 };
+  s4.bots.trained.hits = bots.SPEED_TRAIN_CAP;
+  bots.tick(s4, 10_000);
+  assert.equal(s4.bots.trained.hits, bots.SPEED_TRAIN_CAP);
+  assert.equal(s4.bots.bars.speed.fills[0], 0); // capped lane doesn't churn fills
 }
 
 // Bots: farming mails copper, bans at zone detection, creation refills
@@ -127,12 +159,12 @@ const enh = await import("../enhance.js");
   const a = newState(), b2 = newState();
   for (const s of [a, b2]) {
     s.bots.pop = 8;
-    s.bots.alloc = { atk: 4, spd: 4, farm: 0 };
+    s.bots.alloc = { atk: 4, spd: 4, farm: 0, enh: 0 };
     s.bots.powerRank = 2;
   }
   bots.tick(a, 43_200);                              // one 12h batch
   for (let i = 0; i < 720; i++) bots.tick(b2, 60);   // 12h of 60s ticks
-  assert.equal(a.bots.bars.atk.lvl, b2.bots.bars.atk.lvl);
+  assert.equal(a.bots.trained.atk, b2.bots.trained.atk);
   assert.ok(Math.abs(a.bots.bars.atk.prog - b2.bots.bars.atk.prog) < 1e-6);
 }
 
@@ -166,13 +198,13 @@ const enh = await import("../enhance.js");
   s.gear.weapon = { slot: "weapon", ip: 1e6, plus: 0, zone: 5, name: "t" };
   const z = farm.zones[0];
   assert.equal(farm.killsPerSec(s, z), 2.0); // one-shotting → speed-bound at hits/s
-  s.bots.bars.speed.lvl = 100;
+  s.bots.trained.hits = 3.0;
   assert.equal(farm.killsPerSec(s, z), 5.0); // trained speed raises the farm cap
   assert.ok(farm.rateCard(s, z).speedBound);
   const weak = newState(); // ATK 10 vs 50 HP → damage-bound
   assert.equal(farm.killsPerSec(weak, z), (10 * 2) / 50);
   assert.ok(!farm.rateCard(weak, z).speedBound);
-  s.bots.bars.speed.lvl = 0;
+  s.bots.trained.hits = 0;
   s.farm.zone = 0;
   const drops = [];
   farm.tick(s, 100, () => 0.5, it => drops.push(it));
@@ -289,7 +321,10 @@ const enh = await import("../enhance.js");
   s.copper = 1234;
   s.bots.pop = 4.5;
   s.bots.capRank = 1;
-  s.bots.bars.atk = { lvl: 7, prog: 11 };
+  s.bots.trained.atk = 56;
+  s.bots.bars.atk = { tier: 1, fills: [50, 3, 0, 0], prog: 11, unlocked: 2 };
+  s.tickets = 77;
+  s.gm.scar = 2;
   s.gear.weapon = { slot: "weapon", ip: 55, plus: 3, zone: 1, name: "t" };
   s.gear.stash = [{ slot: "charm", ip: 5, plus: 0, zone: 1, name: "u" }];
   s.farm.zone = 1;
@@ -298,7 +333,10 @@ const enh = await import("../enhance.js");
   assert.equal(JSON.parse(localStorage.getItem("mm_save")).pull, undefined);
   const s2 = newState();
   saves.load(s2);
-  assert.deepEqual(s2.bots.bars.atk, { lvl: 7, prog: 11 });
+  assert.deepEqual(s2.bots.bars.atk, { tier: 1, fills: [50, 3, 0, 0], prog: 11, unlocked: 2 });
+  assert.equal(s2.bots.trained.atk, 56);
+  assert.equal(s2.tickets, 77);
+  assert.equal(s2.gm.scar, 2);
   assert.equal(s2.bots.pop, 4.5);
   assert.equal(s2.bots.capRank, 1);
   assert.equal(s2.copper, 1234);
@@ -324,6 +362,14 @@ const enh = await import("../enhance.js");
   assert.equal(s5.bots.assign, undefined); // v2 field dropped
   assert.deepEqual(s5.bots.alloc, { atk: 1, spd: 1, farm: 0, enh: 0 }); // defaults
 
+  // v4 save (quadratic bars): lvl converts to trained stats, tiers reset
+  localStorage.setItem("mm_save", JSON.stringify({ v: 4, bots: { pop: 6, bars: { atk: { lvl: 20, prog: 5 }, speed: { lvl: 150, prog: 5 } } } }));
+  const s7 = newState();
+  saves.load(s7);
+  assert.equal(s7.bots.trained.atk, 160);       // 8 × 20
+  assert.equal(s7.bots.trained.hits, 3.0);      // 0.03 × min(150,100), capped
+  assert.equal(s7.bots.bars.atk.tier, 0);       // fresh tier state
+
   // v3 save (alloc was % of pop) → counts
   localStorage.setItem("mm_save", JSON.stringify({ v: 3, bots: { pop: 10, alloc: { atk: 50, spd: 30, farm: 20 } } }));
   const s6 = newState();
@@ -344,6 +390,27 @@ const enh = await import("../enhance.js");
   assert.equal(localStorage.getItem("mm_save_corrupt"), null);
   assert.equal(saves.validSave(null), false);
   assert.equal(saves.importSave("not json"), false);
+}
+
+// GM panel: rank caps, ticket costs, effects
+{
+  const gm = await import("../gm.js");
+  const s = newState();
+  s.tickets = 1e9;
+  assert.ok(gm.buyGm(s, "scar") && s.gm.scar === 1);
+  while (gm.buyGm(s, "scar"));
+  assert.equal(s.gm.scar, gm.GM.scar.max); // hard rank cap (law 1)
+  assert.ok(Math.abs(pull.scarCap(s) - (pull.SCAR_CAP + 0.03)) < 1e-12);
+  while (gm.buyGm(s, "cooldown"));
+  assert.equal(pull.cooldownMs(s), 30_000); // 60s − 6×5s
+  while (gm.buyGm(s, "offline"));
+  assert.equal(farm.offlineCapS(s), (12 + 6) * 3600);
+  while (gm.buyGm(s, "cap"));
+  assert.equal(bots.capacity(s.bots, s.gm.cap), 8 + 20); // +2 × 10 ranks
+  const poor = newState();
+  assert.equal(gm.buyGm(poor, "scar"), false); // no tickets
+  assert.equal(gm.ticketYield(0.00001), 1);    // hopeless attempts still pay 1
+  assert.equal(gm.ticketYield(0.5), 500);
 }
 
 // Dialogue completeness: every event key the UI emits has ≥1 non-empty line

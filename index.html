@@ -17,6 +17,10 @@
       <div class="chipVal copper"><b id="copperEl">0</b>c</div>
       <div class="chipLbl">copper</div>
     </div>
+    <div class="chip">
+      <div class="chipVal tickets"><b id="ticketsEl">0</b></div>
+      <div class="chipLbl">tickets</div>
+    </div>
   </div>
 
   <nav id="tabs" class="game hidden">
@@ -45,6 +49,11 @@
     <div id="monument" style="display:none">W1 — Broken · Vess, Warden of the First Door</div>
 
     <div id="dialogue"></div>
+
+    <div id="gmPanel" class="game hidden">
+      <h3>GM panel <span class="sub">— tickets buy permanent perks</span></h3>
+      <div id="gmRows"></div>
+    </div>
   </section>
 
   <section id="botSec" class="game hidden tabpane" style="display:none">
@@ -66,6 +75,7 @@
           <button data-d="1">+1</button><button data-d="10">+10</button>
           <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
         </span>
+        <select id="tierAtk"></select>
         <span id="barAtkInfo"></span>
       </div>
       <div class="barTrack"><div class="barFill" id="barAtkFill"></div></div>
@@ -79,6 +89,7 @@
           <button data-d="1">+1</button><button data-d="10">+10</button>
           <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
         </span>
+        <select id="tierSpeed"></select>
         <span id="barSpeedInfo"></span>
       </div>
       <div class="barTrack"><div class="barFill" id="barSpeedFill"></div></div>

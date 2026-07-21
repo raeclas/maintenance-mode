@@ -219,7 +219,15 @@ with ≥1 meaningful stat the loop can improve; a mechanic with no growth
 lever doesn't ship.** (Scars' lever arrives with Siegebreaker-line skills;
 enhance's with failstacks — named debts, not omissions.)
 
-Currencies: **copper + boss materials. Hard cap two.** GS = derived display
+Currencies: **copper + tickets. Hard cap two.** [AMENDED 2026-07-21:
+tickets take the reserved materials slot.] **Tickets** = meta currency:
+every attempt files support tickets nobody handles (max(1, depth×1000);
+break +500 — faucet bounded by the attempt cooldown, sim-modeled). Spent
+in the **GM panel** on permanent, RANK-CAPPED perks (law 1): session
+slots +2 (×10), offline cap +1h (×6), attempt cooldown −5s (×6), scar cap
++1% (×3). Attempts are never dead time: every resolve is a paycheck.
+W1 HP rebased 30M→60M in the same commit (ticket perks + tier training
+shifted the curve; break EV 6.4d, gates green). GS = derived display
 number (gear + enhance + feats), never a stored stat.
 
 ## 7. Bot Farm — the prep arc [REWRITTEN 2026-07-21, replaces Levels]
@@ -234,10 +242,14 @@ server's leftover session capacity; farming bots get banned at the zone's
 detection rate; the swarm finds equilibrium. Nothing loved ever dies —
 anonymity is the attachment law by construction.
 
-- **Trainings = bars** (ATK +8/lvl uncapped; Speed +0.03 hits/s per lvl,
-  hard cap lvl 100 → 5.0 hits/s; cost 180×L² units; more bars reserved).
-  Bar progress/s = trainPop × bot power × bot speed. Allocation = % of pop
-  (Train ATK / Train SPD / Farm), free + instant, remainder idles.
+- **Trainings = tiered fills [AMENDED 2026-07-21, ITRTG model]:** constant
+  cost per fill within a tier, every fill pays the gain, fill rate caps at
+  0.02/s (50s floor) so a tier CAN visibly max out ("RATE MAX"). Next tier
+  unlocks at 50 fills; which tier to RUN is the player's call (a maxed low
+  tier can out-rate a young high tier). ATK tiers 3k/+2 → 30k/+12 →
+  240k/+70 → 1.8M/+400; SPEED 6k/+0.01 → 60k/+0.06 → 480k/+0.3, trained
+  hits lane-capped at +3.0 (5.0 total). Playtest verdict: rising per-level
+  costs read as a treadmill; acceleration toward a visible max is the fun.
 - **Rig (all copper, exponential):** session slots (cap 8 + 4/rank,
   800c×3.5^r), generator (2/h × (1+0.5r), 500c×3^r), script quality
   (power +0.25/r, 200c×2.2^r), hardware (speed +0.20/r, 300c×2.5^r).

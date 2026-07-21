@@ -138,6 +138,20 @@ canvas {
 .chipVal b { color: var(--gold); font-weight: normal; }
 .chipLbl { font-size: 9px; font-family: monospace; letter-spacing: .1em; color: #6e6e78; text-transform: uppercase; margin-top: 1px; }
 .copper, .copper b { color: #d08a3e !important; }
+.tickets, .tickets b { color: #7aa4d4 !important; }
+#gmPanel .gmRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 3px 0;
+  border-top: 1px solid #1b1b22;
+}
+#gmPanel .gmRow .tl { flex: 1; }
+#gmPanel button { min-width: 90px; }
+#gmPanel h3 { border-top: none; padding-top: 0; margin-top: 4px; }
+#tierAtk, #tierSpeed { background: #22222a; color: #b9b2a0; border: 1px solid var(--line); font-family: monospace; font-size: 11px; }
 #playerStats {
   font-family: monospace;
   font-size: 13px;

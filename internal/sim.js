@@ -15,7 +15,8 @@
 import fs from "node:fs";
 import { newState } from "../state.js";
 import { getBoss } from "../bosses.js";
-import { expectedDepth, SCAR_CAP, SCAR_RATE } from "../pull.js";
+import { expectedDepth, scarCap, SCAR_RATE } from "../pull.js";
+import { ticketYield, buyGm } from "../gm.js";
 import { derive } from "../stats.js";
 import * as bots from "../bots.js";
 import * as farm from "../farm.js";
@@ -59,11 +60,23 @@ while (t < MAX_S && !broken) {
   t += STEP;
   totalSteps++;
 
-  // --- swarm: 20% speed until cap, 40% atk, 40% farm best per-bot zone ---
-  const speedDone = S.bots.bars.speed.lvl >= 100;
+  // --- swarm: 20% speed until lane cap, 40% atk, 40% farm best zone ---
+  const speedDone = S.bots.trained.hits >= bots.SPEED_TRAIN_CAP;
   S.bots.alloc.spd = speedDone ? 0 : 0.2 * S.bots.pop;
   S.bots.alloc.atk = (speedDone ? 0.6 : 0.4) * S.bots.pop;
   S.bots.alloc.farm = 0.4 * S.bots.pop;
+  // run the highest-yield unlocked tier per lane (gain × achievable fill rate)
+  for (const bar of ["atk", "speed"]) {
+    const B = S.bots.bars[bar];
+    const squad = (bar === "atk" ? S.bots.alloc.atk : S.bots.alloc.spd) * bots.botPower(S.bots) * bots.botSpeed(S.bots);
+    let best = B.tier, bestRate = 0;
+    for (let i = 0; i < B.unlocked; i++) {
+      const t = bots.TRAININGS[bar][i];
+      const rate = Math.min(squad / t.cost, bots.MAX_FILLS_PER_S) * t.gain;
+      if (rate > bestRate) { bestRate = rate; best = i; }
+    }
+    if (best !== B.tier) bots.setTier(S, bar, best);
+  }
   let bz = 0;
   farm.zones.forEach((zz, i) => {
     if (bots.botFarmRates(S.bots, i).perBotCopperSec > bots.botFarmRates(S.bots, bz).perBotCopperSec) bz = i;
@@ -125,24 +138,27 @@ while (t < MAX_S && !broken) {
     best.it.plus++;
   }
 
-  // --- one EV pull per waking hour (16h/day) ---
+  // --- one EV pull per waking hour (16h/day); attempts file tickets ---
   const waking = t % 86400 < 16 * 3600;
   if (waking && t % 3600 < STEP) {
     const fresh = expectedDepth(derive(S), boss);
     const total = S.boss.scars + fresh;
     S.boss.bestDepth = Math.max(S.boss.bestDepth, Math.min(total, 1));
+    S.tickets += ticketYield(Math.min(total, 1));
     if (total >= 1) {
       broken = true;
       mark(t, "W1 broken (EV)");
     } else {
-      S.boss.scars = Math.min(SCAR_CAP, S.boss.scars + fresh * SCAR_RATE);
-      if (S.boss.scars >= SCAR_CAP) mark(t, "scars capped");
+      S.boss.scars = Math.min(scarCap(S), S.boss.scars + fresh * SCAR_RATE);
+      if (S.boss.scars >= scarCap(S)) mark(t, "scars capped");
     }
+    // GM spends: scar cap first (break math), then session slots
+    for (;;) { if (!buyGm(S, "scar") && !buyGm(S, "cap")) break; }
   }
 
   if (process.env.SIMDBG && t % 21600 < STEP) {
     const d = derive(S);
-    console.error(`t=${(t / 3600).toFixed(0)}h dps=${Math.round(dps())} atk=${Math.round(d.atk)} hits=${d.hitsPerSec.toFixed(2)} pop=${S.bots.pop.toFixed(1)} atkLvl=${S.bots.bars.atk.lvl} spdLvl=${S.bots.bars.speed.lvl} gearIp=${SLOTS.map(sl => S.gear[sl] ? `${S.gear[sl].ip}+${S.gear[sl].plus}` : "-").join(",")} cu=${Math.round(S.copper)} scars=${S.boss.scars.toFixed(2)}`);
+    console.error(`t=${(t / 3600).toFixed(0)}h dps=${Math.round(dps())} atk=${Math.round(d.atk)} hits=${d.hitsPerSec.toFixed(2)} pop=${S.bots.pop.toFixed(1)} trainedAtk=${Math.round(S.bots.trained.atk)} gearIp=${SLOTS.map(sl => S.gear[sl] ? `${S.gear[sl].ip}+${S.gear[sl].plus}` : "-").join(",")} cu=${Math.round(S.copper)} tix=${Math.round(S.tickets)} scars=${S.boss.scars.toFixed(2)}`);
   }
 
   // --- observation milestones ---
