@@ -158,8 +158,16 @@ Design rules the matrix produced (binding):
 
 ## 5. Enhance — the heartbeat
 
-Per-item pluses +0→+20. Each plus = +10% item ATK, additive per plus, shown
-on the item. Instant resolution — no ceremony, ever (hard veto).
+Per-item pluses +0→+20. **[AMENDED 2026-07-21]** Contribution compounds:
+item ATK = IP × **1.12^plus** (starting value; +12 ≈ ×3.9, +20 ≈ ×9.6) — every
+plus is felt, high plusses are events (playtest verdict: linear +10% read as
+a vending machine). W1 HP rebased 15M→30M in the same commit so the break
+lands in nightmare pushes (+13/+14). Instant resolution — no ceremony, ever
+(hard veto). All of §5 below is BUILT as of Slice 1.5 (nightmare, checkpoints,
+failstacks, safeguard); noted quirk that emerged from checkpoint math: pushing
++15→+16 risks only copper (falls land back on +15), so the true EV cliffs are
++16→+18 — checkpoint camping is the intended rhythm, not an exploit (bounded
+by copper costs 0.5×ip×1.6^plus).
 
 | Zone | Range | Success (starting) | Fail consequence |
 |---|---|---|---|

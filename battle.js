@@ -33,6 +33,16 @@ function spawnFloater(text, color, size = 15) {
   });
 }
 
+// Enhance feel: shake/flash scaled to the band (+18 lands like a boss kill).
+export function notifyEnhance(plus, success) {
+  const now = performance.now();
+  if (!success) return;
+  const nightmare = plus >= 13, risk = plus >= 6;
+  if (risk) shakeUntil = now + (nightmare ? 500 : 220);
+  if (nightmare) flashUntil = now + 120;
+  spawnFloater(`+${plus}`, nightmare ? "#ffd700" : "#e8dcc0", nightmare ? 26 : 18);
+}
+
 // Called by main.js when a pull resolves.
 export function notifyResult(depth, broken) {
   const now = performance.now();

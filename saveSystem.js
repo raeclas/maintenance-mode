@@ -63,6 +63,8 @@ export function load(state) {
   state.lastSeen = s.lastSeen ?? 0;
   state.unlocked = s.unlocked ?? (s.boss?.pulls > 0); // v1 save mid-siege: keep systems open
   state.copper = s.copper ?? 0;
+  state.failstacks = s.failstacks ?? 0;
+  state.titles = Array.isArray(s.titles) ? s.titles : [];
   state.wall = s.wall ?? d.wall;
   state.boss = { ...d.boss, ...(s.boss || {}) };
   state.cooldownUntil = s.cooldownUntil ?? 0;

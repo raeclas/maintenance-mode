@@ -1,7 +1,7 @@
 [
   {
     "t": 30,
-    "desc": "first pull 0.0040% (intro beat)"
+    "desc": "first pull 0.0020% (intro beat)"
   },
   {
     "t": 35,
@@ -12,7 +12,7 @@
     "desc": "power ×10"
   },
   {
-    "t": 6600,
+    "t": 4200,
     "desc": "z2 unlocked (Spider Hollows)"
   },
   {
@@ -20,47 +20,47 @@
     "desc": "depth 0.1%"
   },
   {
-    "t": 19200,
+    "t": 11400,
     "desc": "power ×100"
   },
   {
-    "t": 19200,
+    "t": 11400,
     "desc": "z3 unlocked (Saltglass Flats)"
+  },
+  {
+    "t": 19200,
+    "desc": "z4 unlocked (The Ashen Steppe)"
+  },
+  {
+    "t": 21000,
+    "desc": "power ×1000"
   },
   {
     "t": 21600,
     "desc": "depth 1%"
   },
   {
-    "t": 42000,
-    "desc": "z4 unlocked (The Ashen Steppe)"
-  },
-  {
-    "t": 43800,
-    "desc": "power ×1000"
-  },
-  {
-    "t": 85200,
+    "t": 29400,
     "desc": "z5 unlocked (Throne Approach)"
   },
   {
-    "t": 86400,
-    "desc": "depth 10%"
-  },
-  {
-    "t": 88800,
+    "t": 31800,
     "desc": "power ×10000"
   },
   {
-    "t": 93600,
+    "t": 32400,
+    "desc": "depth 10%"
+  },
+  {
+    "t": 90000,
     "desc": "depth 50%"
   },
   {
-    "t": 104400,
+    "t": 93600,
     "desc": "scars capped"
   },
   {
-    "t": 345600,
+    "t": 388800,
     "desc": "W1 broken (EV)"
   }
 ]

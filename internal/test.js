@@ -27,7 +27,7 @@ const enh = await import("../enhance.js");
   assert.equal(d.atk, 10);
   assert.equal(d.hitsPerSec, 2.0);
   const b = getBoss(1);
-  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 15_000_000); // 0.004% exactly
+  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 30_000_000); // 0.002% exactly
 }
 
 // Stats: gear + bars feed the one-line formula; speed hard cap
@@ -35,9 +35,9 @@ const enh = await import("../enhance.js");
   const s = newState();
   s.bots.bars.atk.lvl = 10;                       // +80
   s.bots.bars.speed.lvl = 250;                    // capped at 100 → +3.0
-  s.gear.weapon = { slot: "weapon", ip: 100, plus: 10, zone: 1, name: "t" }; // 200
+  s.gear.weapon = { slot: "weapon", ip: 100, plus: 10, zone: 1, name: "t" }; // 100×1.12^10
   const d = derive(s);
-  assert.equal(d.atk, 10 + 80 + 200);
+  assert.ok(Math.abs(d.atk - (10 + 80 + 100 * Math.pow(1.12, 10))) < 1e-9);
   assert.equal(d.hitsPerSec, 5.0);
 }
 
@@ -75,7 +75,7 @@ const enh = await import("../enhance.js");
 // Resolve: overwhelming stats → break, no cooldown
 {
   const s = newState();
-  s.gear.weapon = { slot: "weapon", ip: 500_000, plus: 0, zone: 5, name: "t" };
+  s.gear.weapon = { slot: "weapon", ip: 1_000_000, plus: 0, zone: 5, name: "t" };
   pull.startPull(s, 1_000_000, () => 0.5);
   assert.ok(!pull.pullDone(s, s.pull.startedAt + 5_000)); // rolled 2.0× → 100% mid-window
   assert.ok(pull.pullDone(s, s.pull.endsAt - 14_000));    // breaks early at 100%
@@ -190,7 +190,7 @@ const enh = await import("../enhance.js");
   assert.equal(s.gear.stash.length, 2); // old weapon stashed, never deleted below cap
   assert.ok(gear.equipFromStash(s, 0));
   assert.equal(s.gear.stash.length, 2); // swap, total conserved
-  assert.ok(Math.abs(gear.contribution({ ip: 100, plus: 12 }) - 220) < 1e-9);
+  assert.ok(Math.abs(gear.contribution({ ip: 100, plus: 12 }) - 100 * Math.pow(1.12, 12)) < 1e-9);
 
   // autoSalvage: non-upgrade decomposes straight to copper
   s.gear.autoSalvage = true;
@@ -217,29 +217,63 @@ const enh = await import("../enhance.js");
   assert.ok(s.gear.stash.some(it => it.name === "worst")); // locked ip-1 item survives
 }
 
-// Enhance: safe fail holds, risk fail −1, cost gating, max ceiling
+// Enhance: zones, checkpoint falls, failstacks, safeguard, cost gating
 {
   const s = newState();
   const it = { slot: "weapon", ip: 100, plus: 0, zone: 1, name: "t" };
   s.copper = 1e9;
   assert.equal(enh.attempt(s, it, () => 0.99), "success"); // +0 is 100%
   assert.equal(it.plus, 1);
+  assert.equal(s.failstacks, 0);
 }
 {
   const s = newState();
   const it = { slot: "weapon", ip: 100, plus: 2, zone: 1, name: "t" };
   s.copper = 1e9;
   enh.attempt(s, it, () => 0.999); // safe fail (80% at +2)
-  assert.equal(it.plus, 2);        // safe zone: holds
+  assert.equal(it.plus, 2);        // safe zone: plus holds…
+  assert.equal(s.failstacks, 1);   // …but the stack banks
   it.plus = 6;
-  enh.attempt(s, it, () => 0.999); // risk fail (40% at +6)
+  enh.attempt(s, it, () => 0.999); // risk fail
   assert.equal(it.plus, 5);        // −1
+  assert.equal(s.failstacks, 2);
+
+  // nightmare falls land on the checkpoint
+  it.plus = 14;
+  enh.attempt(s, it, () => 0.999);
+  assert.equal(it.plus, 10);       // +14 fail → +10
+  it.plus = 17;
+  enh.attempt(s, it, () => 0.999);
+  assert.equal(it.plus, 15);       // +17 fail → +15
+  assert.equal(s.failstacks, 4);
+
+  // stacks boost chance (capped) and success consumes the whole bank
+  s.failstacks = 40;
+  assert.ok(Math.abs(enh.chance(12, 40) - (0.15 + enh.STACK_CAP_PTS / 100)) < 1e-12); // capped at +15pts
+  it.plus = 12;
+  assert.equal(enh.attempt(s, it, () => 0.29), "success"); // 30% with capped stacks
+  assert.equal(it.plus, 13);
+  assert.equal(s.failstacks, 0); // bank spent
+
+  // safeguard: 3× cost, fail keeps the plus; locked above +15
+  it.plus = 8;
+  const c8 = enh.cost(it), before = s.copper;
+  enh.attempt(s, it, () => 0.999, true);
+  assert.equal(it.plus, 8);                    // no drop
+  assert.equal(before - s.copper, c8 * 3);     // 3× price
+  assert.ok(enh.canSafeguard(14) && !enh.canSafeguard(15)); // +16 target = nightmare proper
+  it.plus = 16;
+  enh.attempt(s, it, () => 0.999, true);       // safeguard ignored above the lock
+  assert.equal(it.plus, 15);                   // fell to checkpoint anyway
+
   it.plus = enh.MAX_PLUS;
   assert.equal(enh.attempt(s, it), "max");
   const poor = newState();
   assert.equal(enh.attempt(poor, { ip: 1e6, plus: 11 }, () => 0), "poor");
   assert.ok(enh.cost({ ip: 100, plus: 0 }) === 50); // 0.5 × ip
-  assert.ok(enh.evCostPerIpFrom(9) > enh.evCostPerIpFrom(5)); // hitting cost climbs
+  assert.ok(enh.evCostPerIpFrom(9) > enh.evCostPerIpFrom(5));   // hitting cost climbs
+  assert.ok(enh.evCostPerIpFrom(17) > enh.evCostPerIpFrom(12)); // deep nightmare explodes (falls re-climb from +15)
+  // note: evCost(15) is CHEAP — +15 is a checkpoint, pushing +16 risks only copper
 }
 
 // Save v2 round-trip + v1 backfill + durability

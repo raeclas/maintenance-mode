@@ -4,7 +4,7 @@ import { load, save, wipe } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { getBoss } from "./bosses.js";
 import { startPull, resolvePull, pullDone, currentDepth, canPull, band, pullsToBreakEV, SCAR_CAP } from "./pull.js";
-import { initBattle, renderBattle, notifyResult } from "./battle.js";
+import { initBattle, renderBattle, notifyResult, notifyEnhance } from "./battle.js";
 import { derive } from "./stats.js";
 import * as bots from "./bots.js";
 import * as farm from "./farm.js";
@@ -122,15 +122,26 @@ for (const slot of SLOTS) {
   div.querySelector("button").addEventListener("click", () => {
     const item = state.gear[slot];
     if (!item) return;
+    const plusBefore = item.plus;
     const before = band(derive(state), boss, state.boss.scars);
-    const r = enh.attempt(state, item);
+    const r = enh.attempt(state, item, Math.random, $("safeguard").checked);
     if (r === "poor") { log("Not enough copper."); return; }
-    if (r === "max") { log(`${item.name} is at +${enh.MAX_PLUS} — the risk zone ends here (for now).`); return; }
+    if (r === "max") { log(`${item.name} is at +${enh.MAX_PLUS}. The ceiling. For now.`); return; }
     const after = band(derive(state), boss, state.boss.scars);
+    notifyEnhance(item.plus, r === "success");
     if (r === "success") {
-      log(`ENHANCE ✦ ${item.name} +${item.plus} — projection ${fmtDepth(before.lo)}–${fmtDepth(before.hi)} → ${fmtDepth(after.lo)}–${fmtDepth(after.hi)}`);
+      log(`ENHANCE ✦ ${item.name} +${item.plus} — projection ${fmtDepth(before.lo)}–${fmtDepth(before.hi)} → ${fmtDepth(after.lo)}–${fmtDepth(after.hi)}${plusBefore >= 5 ? " · stacks spent" : ""}`);
+      if (item.plus >= 16) log(`[Server] Announcement: a player has reached +${item.plus}. Players online: 1.`);
+      const title = `+${item.plus}`;
+      if (item.plus >= 18 && !state.titles.includes(title)) {
+        state.titles.push(title);
+        log(`★ Title earned: “${title}”. It displays to no one. It's yours forever.`);
+      }
+    } else if (item.plus < plusBefore) {
+      const drop = plusBefore >= 12 ? `falls to checkpoint +${item.plus}` : `slips to +${item.plus}`;
+      log(`enhance fail — ${item.name} ${drop} · stacks ${state.failstacks} (+${Math.min(state.failstacks, enh.STACK_CAP_PTS)}%)`);
     } else {
-      log(`enhance fail — ${item.name} ${enh.isRisk(item.plus) || item.plus >= 5 ? `slips to +${item.plus}` : `holds at +${item.plus}`}`);
+      log(`enhance fail — ${item.name} holds at +${item.plus} · stacks ${state.failstacks} (+${Math.min(state.failstacks, enh.STACK_CAP_PTS)}%)`);
     }
     stashDirty = true;
   });
@@ -309,17 +320,32 @@ function render() {
   });
 
   // gear
+  const sg = $("safeguard").checked;
+  $("stacksHud").textContent = state.failstacks
+    ? `· failstacks ${state.failstacks} (+${Math.min(state.failstacks, enh.STACK_CAP_PTS)}% next success)`
+    : "";
   for (const slot of SLOTS) {
     const item = state.gear[slot];
-    $(`si_${slot}`).textContent = item
+    const si = $(`si_${slot}`);
+    si.textContent = item
       ? `${item.name} · IP ${fmt(item.ip)} ${item.plus ? `+${item.plus}` : ""} → ${fmt(contribution(item))} ATK`
       : "—";
+    si.className = "slotItem" + (item ? ` tier-${enh.zone(item.plus)}` : "");
     const btn = $(`se_${slot}`);
     btn.disabled = !item || item.plus >= enh.MAX_PLUS;
-    $(`sei_${slot}`).textContent = item && item.plus < enh.MAX_PLUS
-      ? `+${item.plus}→+${item.plus + 1} · ${fmt(enh.cost(item))}c · ${Math.round(enh.chance(item.plus) * 100)}%${enh.isRisk(item.plus) ? " · fail −1" : ""}`
-      : "";
+    if (item && item.plus < enh.MAX_PLUS) {
+      const useSg = sg && enh.canSafeguard(item.plus);
+      const fall = useSg ? "no drop (safeguard)"
+        : enh.isNightmare(item.plus) ? `fail → +${enh.checkpointOf(item.plus)}`
+        : enh.isRisk(item.plus) ? "fail −1" : "fail safe";
+      $(`sei_${slot}`).textContent =
+        `+${item.plus}→+${item.plus + 1} · ${fmt(enh.cost(item, useSg))}c · ${(enh.chance(item.plus, state.failstacks) * 100).toFixed(1)}% · ${fall}`;
+    } else {
+      $(`sei_${slot}`).textContent = "";
+    }
   }
+  $("titles").style.display = state.titles.length ? "" : "none";
+  $("titles").textContent = state.titles.length ? `Titles: ${state.titles.join(" · ")}` : "";
   if (stashDirty) renderStash();
 }
 

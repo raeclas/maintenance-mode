@@ -33,6 +33,7 @@
   <div id="projection"></div>
 
   <div id="monument" style="display:none">W1 — Broken · Vess, Warden of the First Door</div>
+  <div id="titles" style="display:none"></div>
 
   <div id="dialogue"></div>
 
@@ -78,7 +79,8 @@
   </section>
 
   <section id="gearSec" class="game hidden">
-    <h2>Gear</h2>
+    <h2>Gear <span id="stacksHud"></span></h2>
+    <label class="autoSalv"><input type="checkbox" id="safeguard"> safeguard (3× cost, no drop on fail — works up to +15 only)</label>
     <div id="slots"></div>
     <div id="stashHead">
       <button id="stashToggle"></button>

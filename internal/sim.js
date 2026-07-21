@@ -26,7 +26,7 @@ const S = newState();
 const boss = getBoss(S.wall);
 const STEP = 600; // 10-min chunks
 const MAX_S = 10 * 86400;
-const ENH_TARGET = 10; // EV plateau: +11/+12 hitting costs explode without failstacks
+const ENH_TARGET = 16; // nightmare pushes; the copper-buffer rule self-limits where EV explodes
 
 const dps = () => { const d = derive(S); return d.atk * d.hitsPerSec; };
 const startDps = dps();

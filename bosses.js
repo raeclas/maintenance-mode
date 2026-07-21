@@ -8,7 +8,7 @@ export const bosses = [
     wall: 1,
     name: "Vess",
     title: "Warden of the First Door",
-    hp: 15_000_000, // starting value: first pull = 0.004% — W1 is the long wall (§3b)
+    hp: 30_000_000, // starting value: first pull ≈ 0.002% — W1 is the long wall; break needs nightmare pushes (§3b, §5)
     windowS: 30,    // starting value: W1 enrage window (duration = gravitas dial)
     dialogue: {
       greet: [

@@ -6,6 +6,8 @@ export function newState() {
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     copper: 0,
+    failstacks: 0, // Luck's mechanical body — every fail banks +1%, success spends the bank
+    titles: [],    // earned forever (attachment law): "+18" etc.
     wall: 1,
     boss: { pulls: 0, bestDepth: 0, scars: 0, broken: false }, // per-current-wall record
     cooldownUntil: 0, // epoch ms — survives reload

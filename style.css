@@ -73,6 +73,18 @@ canvas {
   margin: 12px 0;
 }
 
+.tier-risk { color: #7aa4d4; }
+.tier-nightmare { color: var(--gold); text-shadow: 0 0 6px rgba(201, 169, 75, .35); }
+#stacksHud { font-size: 11px; color: #b06a5a; letter-spacing: 0; font-variant: normal; }
+#titles {
+  border: 1px dashed var(--line);
+  color: var(--gold);
+  text-align: center;
+  font-size: 12px;
+  padding: 5px;
+  margin: 8px 0;
+}
+
 #monument {
   border: 1px solid var(--gold);
   color: var(--gold);

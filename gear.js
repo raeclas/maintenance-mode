@@ -10,8 +10,10 @@ const NAMES = {
   charm: ["Cracked Bead", "Spider-Eye Charm", "Salt Talisman", "Ember Sigil", "Sigil of the First Door"],
 };
 
+// Compounding, not linear: every plus is felt, high plusses are events
+// (starting value 1.12 — +12 ≈ ×3.9, +20 ≈ ×9.6; sim-gated).
 export function contribution(item) {
-  return item.ip * (1 + 0.10 * item.plus);
+  return item.ip * Math.pow(1.12, item.plus);
 }
 
 // zoneIdx 0-based; band comes from farm.js zone table
