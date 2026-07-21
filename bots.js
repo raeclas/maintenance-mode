@@ -8,6 +8,7 @@
 import { zones, DROP_CHANCE } from "./farm.js";
 import { rollItem } from "./gear.js";
 import { attempt as enhAttempt } from "./enhance.js";
+import { derive } from "./stats.js";
 
 export const CREATE_PER_H = 4;        // base bots/hour from the generator
 export const CAP_BASE = 8;            // dead server's leftover session slots
@@ -15,7 +16,12 @@ export const CAP_PER_RANK = 4;        // each rank clears more dead sessions
 export const POWER_PER_RANK = 0.25;   // script quality
 export const SPEED_PER_RANK = 0.20;   // hardware
 export const CREATE_PER_RANK = 0.5;   // generator: ×(1 + 0.5×rank)
-export const BOT_BASE_DPS = 12;       // a naked account running a script
+// A bot borrows the PLAYER's power: strength = 10% of player atk, speed =
+// 10% of player hits/s (copper power/speed ranks multiply on top). So the
+// swarm rewards the character loop — train, battle, gear, enhance all lift
+// every bot. Playtest-tuned (bot lane is not sim-gated).
+export const BOT_ATK_FRAC = 0.10;
+export const BOT_SPD_FRAC = 0.10;
 
 // ITRTG-style trainings: constant cost per fill, every fill pays the gain,
 // rate hard-caps at 1 fill/s (tier max rate = gain/s). Next tier unlocks
@@ -48,7 +54,13 @@ export function botPower(b) { return 1 + POWER_PER_RANK * b.powerRank; }
 export function botSpeed(b) { return 1 + SPEED_PER_RANK * b.speedRank; }
 export function capacity(b, gmCap = 0) { return CAP_BASE + CAP_PER_RANK * b.capRank + 2 * gmCap; }
 export function createRate(b) { return CREATE_PER_H * (1 + CREATE_PER_RANK * b.createRank); } // per hour
-export function botDps(b) { return BOT_BASE_DPS * botPower(b) * botSpeed(b); }
+// One bot's zone DPS. player = derived stats {atk, hitsPerSec}. Squad DPS is
+// n × this — each bot ≈ 1% of player DPS (0.1 atk × 0.1 speed) before ranks.
+export function botDps(b, player) {
+  const strength = BOT_ATK_FRAC * player.atk * botPower(b);
+  const speed = BOT_SPD_FRAC * player.hitsPerSec * botSpeed(b);
+  return strength * speed;
+}
 
 // Copper costs (exponential — copper can't runaway-compound the chain)
 export function capCost(b) { return Math.round(800 * Math.pow(3.5, b.capRank)); }
@@ -101,12 +113,12 @@ export function effScale(b) {
 }
 
 // Bots needed to hit a bar's rate ceiling (the NGU "cap" button).
-export function capNeeded(b, key) {
+export function capNeeded(b, key, player) {
   const q = botPower(b) * botSpeed(b);
   const [group, idx] = key.split(".");
   if (group === "zones") {
     const z = zones[Number(idx)];
-    return Math.ceil((MAX_FILLS_PER_S * z.mobHp) / botDps(b)); // 50 kills/s
+    return Math.ceil((MAX_FILLS_PER_S * z.mobHp) / botDps(b, player)); // 50 kills/s
   }
   const t = TRAININGS[group][Number(idx)];
   return Math.ceil((t.cost * MAX_FILLS_PER_S) / q);
@@ -114,9 +126,9 @@ export function capNeeded(b, key) {
 
 // One zone's bot farm rates for n allocated bots (kills capped at 50/s).
 // A squad below the zone's gate DPS can't hold the zone — no yield, no bans.
-export function botZoneRates(b, zi, n) {
+export function botZoneRates(b, zi, n, player) {
   const z = zones[zi];
-  const squadDps = n * botDps(b);
+  const squadDps = n * botDps(b, player);
   const held = squadDps >= z.gate;
   const kps = held ? Math.min(MAX_FILLS_PER_S, squadDps / z.mobHp) : 0;
   return {
@@ -129,8 +141,8 @@ export function botZoneRates(b, zi, n) {
 }
 
 // Bots needed for the squad to hold a zone (its gate DPS).
-export function gateNeeded(b, zi) {
-  return Math.ceil(zones[zi].gate / botDps(b));
+export function gateNeeded(b, zi, player) {
+  return Math.ceil(zones[zi].gate / botDps(b, player));
 }
 
 // Bot enhancing: time per attempt grows exponentially with the plus being
@@ -159,6 +171,7 @@ export function tick(state, dtS, onEvent = () => {}, rng = Math.random) {
 function tickChunk(state, dtS, onEvent, rng) {
   const b = state.bots;
   const dtH = dtS / 3600;
+  const player = derive(state); // zone squad DPS borrows player power
 
   // creation toward capacity
   b.pop = Math.min(capacity(b, state.gm?.cap || 0), b.pop + createRate(b) * dtH);
@@ -195,7 +208,7 @@ function tickChunk(state, dtS, onEvent, rng) {
   for (let zi = 0; zi < zones.length; zi++) {
     const n = (b.alloc.zones[zi] || 0) * scale;
     if (n <= 0) continue;
-    const r = botZoneRates(b, zi, n);
+    const r = botZoneRates(b, zi, n, player);
     if (!r.held) continue;
     state.copper += r.copperPerSec * dtS;
     const np = r.kps * dtS * DROP_CHANCE;

@@ -8,20 +8,16 @@
     "desc": "systems unlock"
   },
   {
-    "t": 1200,
+    "t": 9600,
     "desc": "power ×10"
   },
   {
-    "t": 7200,
-    "desc": "z2 held (Webbed Ravine)"
-  },
-  {
-    "t": 7800,
+    "t": 16200,
     "desc": "power ×100"
   },
   {
-    "t": 10800,
-    "desc": "depth 0.1%"
+    "t": 16200,
+    "desc": "z2 held (Webbed Ravine)"
   },
   {
     "t": 17400,
@@ -33,30 +29,38 @@
   },
   {
     "t": 18000,
-    "desc": "depth 1%"
-  },
-  {
-    "t": 101400,
-    "desc": "depth 10%"
-  },
-  {
-    "t": 105000,
-    "desc": "scars capped"
-  },
-  {
-    "t": 132600,
     "desc": "power ×10000"
   },
   {
-    "t": 152400,
+    "t": 18000,
     "desc": "z5 held (The Doorstep)"
   },
   {
-    "t": 152400,
+    "t": 18000,
+    "desc": "depth 0.1%"
+  },
+  {
+    "t": 18000,
+    "desc": "depth 1%"
+  },
+  {
+    "t": 18000,
+    "desc": "depth 10%"
+  },
+  {
+    "t": 18600,
+    "desc": "z3 held (Salt Flats)"
+  },
+  {
+    "t": 33000,
     "desc": "depth 50%"
   },
   {
-    "t": 557400,
+    "t": 33600,
+    "desc": "scars capped"
+  },
+  {
+    "t": 124200,
     "desc": "W1 broken (EV)"
   }
 ]

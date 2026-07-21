@@ -126,7 +126,7 @@ const enh = await import("../enhance.js");
   assert.ok(s2.bots.bars.atk.fills[0] <= 100 * bots.MAX_FILLS_PER_S + 1);
 
   // capNeeded: exactly enough bots for the bar's ceiling
-  const need = bots.capNeeded(s2.bots, "atk.0");
+  const need = bots.capNeeded(s2.bots, "atk.0", derive(s2));
   assert.equal(need, Math.ceil(t1.cost * bots.MAX_FILLS_PER_S / (bots.botPower(s2.bots) * bots.botSpeed(s2.bots))));
 
   // tier unlock at UNLOCK_FILLS
@@ -157,11 +157,14 @@ const enh = await import("../enhance.js");
   s.bots.alloc.speed = [0, 0, 0];
   s.bots.alloc.zones = [5, 3, 0, 0, 0];
   const z1 = farm.zones[0];
-  // z2 gate: 3 bots × 12 DPS = 36 < 120 → squad can't hold it
-  const r2 = bots.botZoneRates(s.bots, 1, 3);
+  const p = derive(s); // squad DPS = n × botDps(b, player)
+  const perBot = bots.botDps(s.bots, p);
+  // z2 gate 120: 3 bots can't clear it (per-bot DPS ≪ gate) → squad can't hold
+  const r2 = bots.botZoneRates(s.bots, 1, 3, p);
+  assert.ok(3 * perBot < farm.zones[1].gate);
   assert.ok(!r2.held && r2.kps === 0 && r2.bansPerHour === 0);
-  assert.equal(bots.gateNeeded(s.bots, 1), Math.ceil(120 / 12));
-  const r1 = bots.botZoneRates(s.bots, 0, 5); // held: gate 0
+  assert.equal(bots.gateNeeded(s.bots, 1, p), Math.ceil(farm.zones[1].gate / perBot));
+  const r1 = bots.botZoneRates(s.bots, 0, 5, p); // held: gate 0
   assert.ok(r1.held);
   const expBans = 5 * z1.detection; // only the held zone burns
   const drops = [];
@@ -180,7 +183,7 @@ const enh = await import("../enhance.js");
   assert.equal(drops2.length, 60); // rng 0 → remainder always lands: 1 per 60s chunk
   assert.ok(drops2[0].ip >= z1.ipLo && drops2[0].ip <= z1.ipHi);
   // zone kill rate caps at 50/s no matter the squad
-  assert.ok(bots.botZoneRates(s.bots, 0, 1e6).kps === 50);
+  assert.ok(bots.botZoneRates(s.bots, 0, 1e6, p).kps === 50);
 }
 
 // Bots: offline batch ≡ live ticks (pure training, pop at cap → exact)

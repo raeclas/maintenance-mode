@@ -144,7 +144,7 @@ function allocMini(key, withCap = true) {
     if (!btn) return;
     e.stopPropagation();
     if (btn.dataset.d) bots.setAlloc(state, key, getAlloc(key) + Number(btn.dataset.d));
-    else if (btn.dataset.c !== undefined) bots.setAlloc(state, key, bots.capNeeded(state.bots, key));
+    else if (btn.dataset.c !== undefined) bots.setAlloc(state, key, bots.capNeeded(state.bots, key, derive(state)));
     else if (btn.dataset.m !== undefined) bots.setAlloc(state, key, getAlloc(key) + Math.floor(bots.freeBots(state.bots)));
     else bots.setAlloc(state, key, 0);
   });
@@ -344,7 +344,7 @@ function render() {
     const sc = bots.effScale(state.bots);
     farm.zones.forEach((z, i) => {
       const n = (state.bots.alloc.zones[i] || 0) * sc;
-      if (n > 0) cps += bots.botZoneRates(state.bots, i, n).copperPerSec;
+      if (n > 0) cps += bots.botZoneRates(state.bots, i, n, d).copperPerSec;
     });
     $("copperRate").textContent = cps > 0 ? `+${fmt(cps)}/s` : "—";
   }
@@ -494,12 +494,12 @@ function render() {
   // zones — bot squads only; stat shows the squad's ACTUAL kill rate
   farm.zones.forEach((z, i) => {
     const n = (state.bots.alloc.zones[i] || 0) * scale;
-    const zr = bots.botZoneRates(state.bots, i, n);
+    const zr = bots.botZoneRates(state.bots, i, n, d);
     zoneRows[i].classList.toggle("active", n > 0 && zr.held);
     zoneRows[i].classList.toggle("locked", n > 0 && !zr.held);
     const stat = $(`zs${i}`);
     if (n <= 0) {
-      stat.textContent = z.gate > 0 ? `needs squad DPS ${fmt(z.gate)} (${bots.gateNeeded(state.bots, i)} bots)` : "unmanned";
+      stat.textContent = z.gate > 0 ? `needs squad DPS ${fmt(z.gate)} (${bots.gateNeeded(state.bots, i, d)} bots)` : "unmanned";
     } else if (!zr.held) {
       stat.textContent = `squad DPS ${fmt(zr.squadDps)} / ${fmt(z.gate)} — can't hold`;
     } else {
