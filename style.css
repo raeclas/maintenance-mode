@@ -151,6 +151,15 @@ section.game h2 {
   letter-spacing: .1em;
   color: var(--gold);
 }
+section.game h3 {
+  margin: 10px 0 6px;
+  font-size: 12px;
+  font-variant: small-caps;
+  letter-spacing: .1em;
+  color: #9a8a5a;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
 section.game button {
   background: #22222a;
   color: #b9b2a0;

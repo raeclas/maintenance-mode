@@ -18,10 +18,10 @@
   </div>
 
   <nav id="tabs" class="game hidden">
-    <button data-tab="battleSec" class="active">Battle</button>
-    <button data-tab="botSec">Bot Farm</button>
-    <button data-tab="farmSec">Farming</button>
-    <button data-tab="gearSec">Gear</button>
+    <button data-tab="battleSec" class="active">Boss</button>
+    <button data-tab="botSec">Training</button>
+    <button data-tab="farmSec">Grind</button>
+    <button data-tab="gearSec">Player</button>
   </nav>
 
   <section id="battleSec" class="tabpane">
@@ -41,13 +41,12 @@
     <div id="projection"></div>
 
     <div id="monument" style="display:none">W1 — Broken · Vess, Warden of the First Door</div>
-    <div id="titles" style="display:none"></div>
 
     <div id="dialogue"></div>
   </section>
 
   <section id="botSec" class="game hidden tabpane" style="display:none">
-    <h2>Bot Farm</h2>
+    <h2>Training — the bot farm</h2>
     <div class="rig">
       <button id="buyCap"></button>
       <button id="buyCreate"></button>
@@ -82,9 +81,13 @@
       </div>
       <div class="barTrack"><div class="barFill" id="barSpeedFill"></div></div>
     </div>
+  </section>
+
+  <section id="farmSec" class="game hidden tabpane" style="display:none">
+    <h2>Grind</h2>
     <div class="bar">
       <div class="barHead">
-        <span class="trackName">Farm</span>
+        <span class="trackName">Bot squad</span>
         <span class="assign" data-track="farm">
           <button data-d="-10">−10</button><button data-d="-1">−1</button>
           <input type="number" id="allocFarm" min="0" step="1">
@@ -95,15 +98,13 @@
         <span id="botFarmInfo"></span>
       </div>
     </div>
-  </section>
-
-  <section id="farmSec" class="game hidden tabpane" style="display:none">
-    <h2>Farming</h2>
     <div id="zones"></div>
   </section>
 
   <section id="gearSec" class="game hidden tabpane" style="display:none">
-    <h2>Gear <span id="stacksHud"></span></h2>
+    <h2>Player</h2>
+    <div id="titles" style="display:none"></div>
+    <h3>Gear <span id="stacksHud"></span></h3>
     <label class="autoSalv"><input type="checkbox" id="safeguard"> safeguard (3× cost, no drop on fail — works up to +15 only)</label>
     <div id="slots"></div>
     <div id="stashHead">
