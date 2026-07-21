@@ -2,7 +2,7 @@
 // saveSystem normalizes over these defaults; the sim imports it too.
 export function newState() {
   return {
-    v: 3,
+    v: 4,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     copper: 0,
@@ -19,11 +19,15 @@ export function newState() {
       createRank: 0,  // generator: 2/h × (1 + 0.5×rank)
       powerRank: 0,   // script quality: power = 1 + 0.25×rank
       speedRank: 0,   // hardware: speed = 1 + 0.20×rank
-      alloc: { atk: 50, spd: 50, farm: 0 }, // % of pop; rest idle
+      alloc: { atk: 1, spd: 1, farm: 0 }, // absolute bot counts; rest idle
       farmZone: 0,
       bars: { atk: { lvl: 0, prog: 0 }, speed: { lvl: 0, prog: 0 } },
     },
-    gear: { weapon: null, armor: null, charm: null, stash: [] }, // item = {slot, ip, plus, zone, name}
+    gear: {
+      weapon: null, armor: null, charm: null,
+      stash: [],          // item = {slot, ip, plus, zone, name, lock?}
+      autoSalvage: false, // salvage non-upgrades on drop instead of stashing
+    },
     farm: { zone: null, dropCarry: 0 },
   };
 }

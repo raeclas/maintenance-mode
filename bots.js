@@ -39,12 +39,17 @@ export function buy(state, what) {
   return true;
 }
 
-// Allocation is percentages of the live population; the rest idles.
-export function setAlloc(state, track, pct) {
-  const a = state.bots.alloc;
-  pct = Math.max(0, Math.min(100, Math.round(pct / 10) * 10));
-  const others = Object.keys(a).filter(k => k !== track).reduce((s, k) => s + a[k], 0);
-  a[track] = Math.min(pct, 100 - others);
+// Allocation is absolute bot counts per track (player types numbers).
+// May exceed the live pop after bans — effAlloc scales down proportionally.
+export function setAlloc(state, track, n) {
+  state.bots.alloc[track] = Math.max(0, Math.floor(n) || 0);
+}
+
+export function effAlloc(b) {
+  const a = b.alloc;
+  const want = a.atk + a.spd + a.farm;
+  const scale = want > b.pop ? b.pop / want : 1;
+  return { atk: a.atk * scale, spd: a.spd * scale, farm: a.farm * scale, scale };
 }
 
 // Bots farm with their OWN stats through the player's kill math — copper
@@ -52,7 +57,7 @@ export function setAlloc(state, track, pct) {
 export function botFarmRates(b, zi) {
   const z = zones[zi];
   const kps = Math.min(2.0, botDps(b) / z.mobHp);
-  const farmPop = b.pop * b.alloc.farm / 100;
+  const farmPop = effAlloc(b).farm;
   return {
     copperPerSec: farmPop * kps * z.copper,
     bansPerHour: farmPop * z.detection,
@@ -80,8 +85,9 @@ function tickChunk(state, dtS) {
 
   // training (private lobbies — safe)
   const quality = botPower(b) * botSpeed(b);
+  const eff = effAlloc(b);
   for (const bar of ["atk", "speed"]) {
-    const trainPop = b.pop * b.alloc[bar === "atk" ? "atk" : "spd"] / 100;
+    const trainPop = eff[bar === "atk" ? "atk" : "spd"];
     const B = b.bars[bar];
     B.prog += trainPop * quality * dtS;
     while (B.prog >= levelCost(B.lvl)) {
@@ -91,7 +97,7 @@ function tickChunk(state, dtS) {
   }
 
   // farming (public zones — detection bans at a rate; copper mailed in)
-  if (b.alloc.farm > 0 && b.farmZone !== null) {
+  if (eff.farm > 0 && b.farmZone !== null) {
     const r = botFarmRates(b, b.farmZone);
     state.copper += r.copperPerSec * dtS;
     const deaths = r.bansPerHour * dtH;

@@ -45,10 +45,11 @@
       <button id="buySpeed"></button>
     </div>
     <div class="rigline" id="rigLine"></div>
+    <div class="barTrack popTrack"><div class="barFill" id="popFill"></div></div>
     <div class="bar" id="barAtk">
       <div class="barHead">
         <span class="trackName">Train ATK</span>
-        <span class="assign"><button data-track="atk" data-d="-10">−</button><b id="allocAtk">0%</b><button data-track="atk" data-d="10">+</button></span>
+        <span class="assign"><input type="number" id="allocAtk" min="0" step="1"> bots</span>
         <span id="barAtkInfo"></span>
       </div>
       <div class="barTrack"><div class="barFill" id="barAtkFill"></div></div>
@@ -56,7 +57,7 @@
     <div class="bar" id="barSpeed">
       <div class="barHead">
         <span class="trackName">Train SPEED</span>
-        <span class="assign"><button data-track="spd" data-d="-10">−</button><b id="allocSpd">0%</b><button data-track="spd" data-d="10">+</button></span>
+        <span class="assign"><input type="number" id="allocSpd" min="0" step="1"> bots</span>
         <span id="barSpeedInfo"></span>
       </div>
       <div class="barTrack"><div class="barFill" id="barSpeedFill"></div></div>
@@ -64,7 +65,7 @@
     <div class="bar">
       <div class="barHead">
         <span class="trackName">Farm</span>
-        <span class="assign"><button data-track="farm" data-d="-10">−</button><b id="allocFarm">0%</b><button data-track="farm" data-d="10">+</button></span>
+        <span class="assign"><input type="number" id="allocFarm" min="0" step="1"> bots</span>
         <select id="botZone"></select>
         <span id="botFarmInfo"></span>
       </div>
@@ -79,7 +80,11 @@
   <section id="gearSec" class="game hidden">
     <h2>Gear</h2>
     <div id="slots"></div>
-    <div id="stashHead"><button id="stashToggle"></button></div>
+    <div id="stashHead">
+      <button id="stashToggle"></button>
+      <button id="salvageAll">salvage all unlocked</button>
+      <label class="autoSalv"><input type="checkbox" id="autoSalvage"> auto-salvage non-upgrades</label>
+    </div>
     <div id="stashList" style="display:none"></div>
   </section>
 

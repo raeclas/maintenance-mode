@@ -20,11 +20,11 @@
     "desc": "depth 0.1%"
   },
   {
-    "t": 18600,
+    "t": 19200,
     "desc": "power ×100"
   },
   {
-    "t": 18600,
+    "t": 19200,
     "desc": "z3 unlocked (Saltglass Flats)"
   },
   {
@@ -32,15 +32,15 @@
     "desc": "depth 1%"
   },
   {
-    "t": 40800,
+    "t": 42000,
     "desc": "z4 unlocked (The Ashen Steppe)"
   },
   {
-    "t": 42000,
+    "t": 43800,
     "desc": "power ×1000"
   },
   {
-    "t": 84600,
+    "t": 85200,
     "desc": "z5 unlocked (Throne Approach)"
   },
   {
@@ -48,7 +48,7 @@
     "desc": "depth 10%"
   },
   {
-    "t": 88200,
+    "t": 88800,
     "desc": "power ×10000"
   },
   {
@@ -60,7 +60,7 @@
     "desc": "scars capped"
   },
   {
-    "t": 349200,
+    "t": 345600,
     "desc": "W1 broken (EV)"
   }
 ]

@@ -95,11 +95,11 @@ const enh = await import("../enhance.js");
   assert.equal(s.bots.pop, 8); // capped
 }
 
-// Bots: training scales with pop × power × speed via alloc %
+// Bots: training scales with pop × power × speed via alloc counts
 {
   const s = newState();
   s.bots.pop = 8; // at cap → no creation drift
-  s.bots.alloc = { atk: 100, spd: 0, farm: 0 };
+  s.bots.alloc = { atk: 8, spd: 0, farm: 0 };
   bots.tick(s, 100); // 8 × 1.0 × 1.0 × 100 = 800 units
   let units = 800, lvl = 0;
   while (units >= bots.levelCost(lvl)) units -= bots.levelCost(lvl++);
@@ -111,7 +111,7 @@ const enh = await import("../enhance.js");
 {
   const s = newState();
   s.bots.pop = 8;
-  s.bots.alloc = { atk: 0, spd: 0, farm: 100 };
+  s.bots.alloc = { atk: 0, spd: 0, farm: 99 }; // over-allocated → effAlloc clamps to pop
   s.bots.farmZone = 0;
   const z1 = farm.zones[0];
   const perBot = Math.min(2, bots.botDps(s.bots) / z1.mobHp) * z1.copper; // c/s
@@ -127,7 +127,7 @@ const enh = await import("../enhance.js");
   const a = newState(), b2 = newState();
   for (const s of [a, b2]) {
     s.bots.pop = 8;
-    s.bots.alloc = { atk: 50, spd: 50, farm: 0 };
+    s.bots.alloc = { atk: 4, spd: 4, farm: 0 };
     s.bots.powerRank = 2;
   }
   bots.tick(a, 43_200);                              // one 12h batch
@@ -146,17 +146,27 @@ const enh = await import("../enhance.js");
   assert.ok(bots.buy(s, "speed") && bots.botSpeed(s.bots) === 1.2);
   s.copper = 0;
   assert.equal(bots.buy(s, "cap"), false);
-  bots.setAlloc(s, "farm", 990); // clamped so total ≤ 100
-  const a = s.bots.alloc;
-  assert.ok(a.atk + a.spd + a.farm <= 100);
+  bots.setAlloc(s, "farm", 990); // any number allowed; effAlloc scales to pop
+  const eff = bots.effAlloc(s.bots);
+  assert.ok(eff.atk + eff.spd + eff.farm <= s.bots.pop + 1e-9);
+  assert.ok(eff.scale < 1);
+  bots.setAlloc(s, "farm", -5); // clamped to 0, NaN-safe
+  assert.equal(s.bots.alloc.farm, 0);
 }
 
-// Farm: kill cap, gate re-check, deterministic drop carry
+// Farm: kills/s = min(hits/s, DPS/mobHP) — SPD caps throughput, ATK one-shots
 {
   const s = newState();
   s.gear.weapon = { slot: "weapon", ip: 1e6, plus: 0, zone: 5, name: "t" };
   const z = farm.zones[0];
-  assert.equal(farm.killsPerSec(s, z), farm.KILL_CAP); // capped no matter the DPS
+  assert.equal(farm.killsPerSec(s, z), 2.0); // one-shotting → speed-bound at hits/s
+  s.bots.bars.speed.lvl = 100;
+  assert.equal(farm.killsPerSec(s, z), 5.0); // trained speed raises the farm cap
+  assert.ok(farm.rateCard(s, z).speedBound);
+  const weak = newState(); // ATK 10 vs 50 HP → damage-bound
+  assert.equal(farm.killsPerSec(weak, z), (10 * 2) / 50);
+  assert.ok(!farm.rateCard(weak, z).speedBound);
+  s.bots.bars.speed.lvl = 0;
   s.farm.zone = 0;
   const drops = [];
   farm.tick(s, 100, () => 0.5, it => drops.push(it));
@@ -168,19 +178,43 @@ const enh = await import("../enhance.js");
   assert.equal(s2.copper, 0);
 }
 
-// Gear: roll bands, auto-equip stashes loser, nothing destroyed
+// Gear: roll bands, auto-equip stashes loser, lock/salvage discipline
 {
   const s = newState();
   const item = gear.rollItem(farm.zones[0], 0, () => 0.999);
   assert.ok(item.ip <= 30 && item.ip >= 10);
-  assert.ok(gear.autoEquip(s, { slot: "weapon", ip: 20, plus: 0, zone: 1, name: "a" }));
-  assert.ok(!gear.autoEquip(s, { slot: "weapon", ip: 10, plus: 0, zone: 1, name: "b" })); // worse → stash
+  assert.ok(gear.autoEquip(s, { slot: "weapon", ip: 20, plus: 0, zone: 1, name: "a" }).equipped);
+  assert.ok(!gear.autoEquip(s, { slot: "weapon", ip: 10, plus: 0, zone: 1, name: "b" }).equipped); // worse → stash
   assert.equal(s.gear.stash.length, 1);
-  assert.ok(gear.autoEquip(s, { slot: "weapon", ip: 50, plus: 0, zone: 1, name: "c" }));
-  assert.equal(s.gear.stash.length, 2); // old weapon stashed, never deleted
+  assert.ok(gear.autoEquip(s, { slot: "weapon", ip: 50, plus: 0, zone: 1, name: "c" }).equipped);
+  assert.equal(s.gear.stash.length, 2); // old weapon stashed, never deleted below cap
   assert.ok(gear.equipFromStash(s, 0));
   assert.equal(s.gear.stash.length, 2); // swap, total conserved
   assert.ok(Math.abs(gear.contribution({ ip: 100, plus: 12 }) - 220) < 1e-9);
+
+  // autoSalvage: non-upgrade decomposes straight to copper
+  s.gear.autoSalvage = true;
+  const c0 = s.copper;
+  const r = gear.autoEquip(s, { slot: "weapon", ip: 4, plus: 0, zone: 1, name: "d" });
+  assert.ok(r.salvaged && !r.equipped);
+  assert.equal(s.copper, c0 + gear.salvageValue({ ip: 4 }));
+  assert.equal(s.gear.stash.length, 2); // never reached the stash
+  s.gear.autoSalvage = false;
+
+  // stash cap: overflow decomposes the WORST unlocked item; locked immune
+  s.gear.stash = [];
+  s.gear.stash.push({ slot: "charm", ip: 1, plus: 0, zone: 1, name: "worst", lock: true });
+  for (let i = 0; i < gear.STASH_CAP - 1; i++) {
+    s.gear.stash.push({ slot: "charm", ip: 100 + i, plus: 0, zone: 1, name: `f${i}` });
+  }
+  assert.equal(s.gear.stash.length, gear.STASH_CAP);
+  const r2 = gear.autoEquip(s, { slot: "charm", ip: 2, plus: 0, zone: 1, name: "junk" }); // worse than equipped? no charm equipped → equips!
+  assert.ok(r2.equipped); // first charm equips
+  const r3 = gear.autoEquip(s, { slot: "charm", ip: 1.5, plus: 0, zone: 1, name: "junk2" }); // worse → stash → overflow
+  assert.ok(!r3.equipped && r3.overflow);
+  assert.equal(s.gear.stash.length, gear.STASH_CAP);
+  assert.equal(r3.overflow.name, "junk2"); // junk2 itself is the worst unlocked
+  assert.ok(s.gear.stash.some(it => it.name === "worst")); // locked ip-1 item survives
 }
 
 // Enhance: safe fail holds, risk fail −1, cost gating, max ceiling
@@ -241,14 +275,20 @@ const enh = await import("../enhance.js");
   assert.equal(s3.boss.scars, 0.2);
   assert.equal(s3.unlocked, true); // mid-siege v1 save keeps systems open
 
-  // v2 save (discrete accounts): count → pop
+  // v2 save (discrete accounts): count → pop; alloc falls back to defaults
   localStorage.setItem("mm_save", JSON.stringify({ v: 2, bots: { count: 5, assign: { atk: 3, speed: 2 }, powerRank: 1 } }));
   const s5 = newState();
   saves.load(s5);
   assert.equal(s5.bots.pop, 5);
   assert.equal(s5.bots.powerRank, 1);
   assert.equal(s5.bots.assign, undefined); // v2 field dropped
-  assert.deepEqual(s5.bots.alloc, { atk: 50, spd: 50, farm: 0 }); // defaults
+  assert.deepEqual(s5.bots.alloc, { atk: 1, spd: 1, farm: 0 }); // defaults
+
+  // v3 save (alloc was % of pop) → counts
+  localStorage.setItem("mm_save", JSON.stringify({ v: 3, bots: { pop: 10, alloc: { atk: 50, spd: 30, farm: 20 } } }));
+  const s6 = newState();
+  saves.load(s6);
+  assert.deepEqual(s6.bots.alloc, { atk: 5, spd: 3, farm: 2 });
 
   // durability: corrupt primary → quarantined, _bak restores
   saves.save(s);

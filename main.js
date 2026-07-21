@@ -8,7 +8,7 @@ import { initBattle, renderBattle, notifyResult } from "./battle.js";
 import { derive } from "./stats.js";
 import * as bots from "./bots.js";
 import * as farm from "./farm.js";
-import { autoEquip, equipFromStash, contribution, SLOTS } from "./gear.js";
+import { autoEquip, equipFromStash, contribution, salvage, salvageValue, SLOTS, STASH_CAP } from "./gear.js";
 import * as enh from "./enhance.js";
 import { fmt, fmtDepth } from "./format.js";
 
@@ -35,9 +35,11 @@ function log(msg) {
 let stashDirty = true;
 
 function onDrop(item) {
-  const equipped = autoEquip(state, item);
+  const r = autoEquip(state, item);
   stashDirty = true;
-  log(`drop: ${item.name} (IP ${fmt(item.ip)}) — ${equipped ? "equipped" : "stashed"}`);
+  const fate = r.equipped ? "equipped" : r.salvaged ? `salvaged (+${fmt(salvageValue(item))}c)` : "stashed";
+  log(`drop: ${item.name} (IP ${fmt(item.ip)}) — ${fate}`);
+  if (r.overflow) log(`stash full — ${r.overflow.name} decomposed (+${fmt(salvageValue(r.overflow))}c)`);
 }
 
 // ---- offline batch: same tick functions, dt clamped exactly like live ----
@@ -78,11 +80,8 @@ $("buyCap").addEventListener("click", () => { if (bots.buy(state, "cap")) log("C
 $("buyCreate").addEventListener("click", () => { if (bots.buy(state, "create")) log("Generator tuned. The email server that verified accounts died in 2019."); });
 $("buyPower").addEventListener("click", () => { if (bots.buy(state, "power")) log("Script quality up. The forum post had 4 replies, all bots."); });
 $("buySpeed").addEventListener("click", () => { if (bots.buy(state, "speed")) log("New hardware. The fans sound like a raid boss."); });
-for (const btn of document.querySelectorAll(".assign button")) {
-  btn.addEventListener("click", () => {
-    const track = btn.dataset.track;
-    bots.setAlloc(state, track, state.bots.alloc[track] + Number(btn.dataset.d));
-  });
+for (const [track, id] of [["atk", "allocAtk"], ["spd", "allocSpd"], ["farm", "allocFarm"]]) {
+  $(id).addEventListener("change", () => bots.setAlloc(state, track, Number($(id).value)));
 }
 for (const [i, z] of farm.zones.entries()) {
   const opt = document.createElement("option");
@@ -137,23 +136,41 @@ $("stashToggle").addEventListener("click", () => {
   const l = $("stashList");
   l.style.display = l.style.display === "none" ? "" : "none";
 });
+$("autoSalvage").addEventListener("change", () => { state.gear.autoSalvage = $("autoSalvage").checked; });
+$("salvageAll").addEventListener("click", () => {
+  const keep = [], goners = [];
+  for (const it of state.gear.stash) (it.lock ? keep : goners).push(it);
+  if (!goners.length) return;
+  let total = 0;
+  for (const it of goners) total += salvage(state, it);
+  state.gear.stash = keep;
+  stashDirty = true;
+  log(`salvaged ${goners.length} items (+${fmt(total)}c). Locked items untouched.`);
+});
 
 function renderStash() {
   stashDirty = false;
-  const list = [...state.gear.stash].sort((a, b) => contribution(b) - contribution(a)).slice(0, 10);
-  $("stashToggle").textContent = `stash (${state.gear.stash.length})`;
+  const sorted = [...state.gear.stash].sort((a, b) => contribution(b) - contribution(a)).slice(0, 15);
+  $("stashToggle").textContent = `stash (${state.gear.stash.length}/${STASH_CAP})`;
   const el = $("stashList");
   el.innerHTML = "";
-  list.forEach(item => {
+  sorted.forEach(item => {
     const idx = state.gear.stash.indexOf(item);
     const row = document.createElement("div");
-    row.innerHTML = `<span>${item.name} · ${item.slot} · IP ${fmt(item.ip)}${item.plus ? " +" + item.plus : ""}</span> <button>equip</button>`;
-    row.querySelector("button").addEventListener("click", () => { equipFromStash(state, idx); stashDirty = true; });
+    row.innerHTML = `<span>${item.lock ? "🔒 " : ""}${item.name} · ${item.slot} · IP ${fmt(item.ip)}${item.plus ? " +" + item.plus : ""}</span>` +
+      `<span><button class="eq">equip</button><button class="lk">${item.lock ? "unlock" : "lock"}</button><button class="sv" ${item.lock ? "disabled" : ""}>salvage +${fmt(salvageValue(item))}c</button></span>`;
+    row.querySelector(".eq").addEventListener("click", () => { equipFromStash(state, idx); stashDirty = true; });
+    row.querySelector(".lk").addEventListener("click", () => { item.lock = !item.lock; stashDirty = true; });
+    row.querySelector(".sv").addEventListener("click", () => {
+      state.gear.stash.splice(idx, 1);
+      log(`salvaged ${item.name} (+${fmt(salvage(state, item))}c)`);
+      stashDirty = true;
+    });
     el.appendChild(row);
   });
-  if (state.gear.stash.length > 10) {
+  if (state.gear.stash.length > 15) {
     const more = document.createElement("div");
-    more.textContent = `…and ${state.gear.stash.length - 10} more (nothing is ever deleted)`;
+    more.textContent = `…and ${state.gear.stash.length - 15} more`;
     el.appendChild(more);
   }
 }
@@ -249,30 +266,38 @@ function render() {
   $("buyCreate").textContent = buyLabel("generator +", bots.createCost(b));
   $("buyPower").textContent = buyLabel("script quality +", bots.powerCost(b));
   $("buySpeed").textContent = buyLabel("hardware +", bots.speedCost(b));
-  const idle = 100 - b.alloc.atk - b.alloc.spd - b.alloc.farm;
+  const eff = bots.effAlloc(b);
+  const idle = Math.max(0, b.pop - eff.atk - eff.spd - eff.farm);
+  const scaled = eff.scale < 0.995 ? ` · over-allocated, scaled ×${eff.scale.toFixed(2)}` : "";
   $("rigLine").textContent =
-    `${b.pop.toFixed(1)} / ${bots.capacity(b)} bots · +${bots.createRate(b).toFixed(1)}/h · power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · idle ${idle}% · banned ever: ${Math.floor(b.banned)}`;
+    `${b.pop.toFixed(1)} / ${bots.capacity(b)} bots · +${bots.createRate(b).toFixed(1)}/h · power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · idle ${idle.toFixed(1)} · banned ever: ${Math.floor(b.banned)}${scaled}`;
+  $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
   for (const [bar, track, el] of [["atk", "atk", "Atk"], ["speed", "spd", "Speed"]]) {
     const B = b.bars[bar];
-    $(`alloc${el === "Atk" ? "Atk" : "Spd"}`).textContent = b.alloc[track] + "%";
+    const input = $(`alloc${track === "atk" ? "Atk" : "Spd"}`);
+    if (document.activeElement !== input) input.value = b.alloc[track];
     const gain = bar === "atk" ? "+8 ATK/lvl" : "+0.03 hits/lvl";
     const capped = bar === "speed" && B.lvl >= 100 ? " (CAP)" : "";
-    $(`bar${el}Info`).textContent = `lvl ${B.lvl}${capped} · ${(b.pop * b.alloc[track] / 100 * quality).toFixed(1)}/s · ${gain}`;
+    $(`bar${el}Info`).textContent = `lvl ${B.lvl}${capped} · ${(eff[track] * quality).toFixed(1)}/s · ${gain}`;
     $(`bar${el}Fill`).style.width = `${Math.min(100, (B.prog / bots.levelCost(B.lvl)) * 100)}%`;
   }
-  $("allocFarm").textContent = b.alloc.farm + "%";
+  if (document.activeElement !== $("allocFarm")) $("allocFarm").value = b.alloc.farm;
+  $("autoSalvage").checked = state.gear.autoSalvage;
   const bf = bots.botFarmRates(b, b.farmZone);
-  $("botFarmInfo").textContent = b.alloc.farm > 0
+  $("botFarmInfo").textContent = eff.farm > 0
     ? `${fmt(bf.copperPerSec)}c/s mailed · ${bf.bansPerHour.toFixed(2)} bans/h (bot DPS ${fmt(bots.botDps(b))})`
     : `bot DPS ${fmt(bots.botDps(b))} · safe in lobbies`;
 
-  // farming
+  // farming — show the arithmetic AND which stat binds (ATK vs SPD)
   farm.zones.forEach((z, i) => {
     const rc = farm.rateCard(state, z);
+    const bound = rc.speedBound
+      ? `one-shotting — speed-bound (${rc.kps.toFixed(2)} kills/s = your hits/s)`
+      : `damage-bound: ${fmt(d.atk)} ATK × ${d.hitsPerSec.toFixed(2)} ÷ ${fmt(z.mobHp)} HP = ${rc.kps.toFixed(2)} kills/s · one-shot at ${fmt(rc.oneShotAtk)} ATK`;
     $(`zr${i}`).textContent = rc.locked
       ? `locked — need ${fmt(z.gate)} DPS`
-      : `${rc.copperPerSec >= 0.1 ? fmt(rc.copperPerSec) : rc.copperPerSec.toFixed(2)}c/s · ${rc.kps.toFixed(2)} kills/s · ${rc.dropsPerHour.toFixed(1)} drops/h`;
+      : `${rc.copperPerSec >= 0.1 ? fmt(rc.copperPerSec) : rc.copperPerSec.toFixed(2)}c/s · ${rc.dropsPerHour.toFixed(1)} drops/h · ${bound}`;
     const btn = $(`zp${i}`);
     btn.disabled = rc.locked;
     btn.textContent = state.farm.zone === i ? "parked ✓" : "park";

@@ -19,7 +19,7 @@ import { expectedDepth, SCAR_CAP, SCAR_RATE } from "../pull.js";
 import { derive } from "../stats.js";
 import * as bots from "../bots.js";
 import * as farm from "../farm.js";
-import { autoEquip, contribution, SLOTS } from "../gear.js";
+import { contribution, SLOTS, SALVAGE_RATE } from "../gear.js";
 import { cost as enhCost, evCostPerIpFrom, chance } from "../enhance.js";
 
 const S = newState();
@@ -61,9 +61,9 @@ while (t < MAX_S && !broken) {
 
   // --- swarm: 20% speed until cap, 40% atk, 40% farm best per-bot zone ---
   const speedDone = S.bots.bars.speed.lvl >= 100;
-  S.bots.alloc.spd = speedDone ? 0 : 20;
-  S.bots.alloc.atk = speedDone ? 60 : 40;
-  S.bots.alloc.farm = 40;
+  S.bots.alloc.spd = speedDone ? 0 : 0.2 * S.bots.pop;
+  S.bots.alloc.atk = (speedDone ? 0.6 : 0.4) * S.bots.pop;
+  S.bots.alloc.farm = 0.4 * S.bots.pop;
   let bz = 0;
   farm.zones.forEach((zz, i) => {
     if (bots.botFarmRates(S.bots, i).perBotCopperSec > bots.botFarmRates(S.bots, bz).perBotCopperSec) bz = i;
@@ -78,7 +78,10 @@ while (t < MAX_S && !broken) {
   const z = farm.zones[zi];
   const rc = farm.rateCard(S, z);
   S.copper += rc.copperPerSec * STEP;
-  rolls[zi] += (rc.dropsPerHour * STEP) / 3600;
+  const dropsNow = (rc.dropsPerHour * STEP) / 3600;
+  rolls[zi] += dropsNow;
+  // salvage faucet: non-upgrade drops decompose (autoSalvage assumed on)
+  S.copper += dropsNow * SALVAGE_RATE * (z.ipLo + z.ipHi) / 2;
 
   // main-character gate: the swarm must not out-earn your own parking
   if (botRates.copperPerSec > rc.copperPerSec) botOutEarnSteps++;

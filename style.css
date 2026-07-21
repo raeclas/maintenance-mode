@@ -142,6 +142,19 @@ section.game button:disabled { color: #55555e; cursor: default; }
 .barHead .assign b { padding: 0 6px; color: var(--gold); }
 .barTrack { height: 8px; background: #22222a; margin-top: 4px; }
 .barFill { height: 100%; background: var(--gold); width: 0; }
+.popTrack { margin: 6px 0 10px; }
+.popTrack .barFill { background: #5a7a5a; }
+.assign input[type="number"] {
+  width: 52px;
+  background: #22222a;
+  color: var(--gold);
+  border: 1px solid var(--line);
+  font-family: monospace;
+  padding: 2px 4px;
+}
+.autoSalv { font-size: 11px; font-family: monospace; margin-left: 10px; }
+#stashHead { display: flex; align-items: center; gap: 8px; }
+#stashList button { padding: 1px 6px; margin-left: 4px; }
 
 .zone {
   display: grid;

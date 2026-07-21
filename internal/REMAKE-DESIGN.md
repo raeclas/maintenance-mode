@@ -200,7 +200,7 @@ players click instantly, raise the material ante, not fail severity.
 | Scars | pity | failed pulls persist damage, capped |
 | Forensics | skill loop | every fail explains itself |
 | Enhance | heartbeat | zones + checkpoints + failstacks |
-| Gear | power lane | item power is THE one scalar (contribution = IP×(1+0.10×plus)); ONE effect per item max; nothing destroyed — stash forever |
+| Gear | power lane | item power is THE one scalar (contribution = IP×(1+0.10×plus)); ONE effect per item max; stash cap 50 — trash decomposes VISIBLY to copper (0.5c/ip), locked + equipped items untouchable [attachment law narrowed 2026-07-21: nothing you've KEPT is ever destroyed] |
 | Feats | bonus pool | all achievements/collection feed one visible pool |
 | Bot Farm | prep arc [AMENDED: replaces Levels; XP deleted from the game] | bar progress/s = bots × power × speed; all three copper-improvable |
 | Farm/parking | idle half | chosen spot, visible rate cards, multi-track |
@@ -271,8 +271,11 @@ script finally notices the farm.
 
 **[CONCRETIZED 2026-07-21]** 5 zones hang off W1 (Meadow → Spider Hollows →
 Saltglass Flats → Ashen Steppe → Throne Approach), DPS-gated (0/500/2k/7.5k/
-32k starting values), gates displayed on the card. Kills/s = min(2.0 cap,
-DPS/mobHP); copper/kill ≈ zone mid-IP/4; gear roll 1 per 200 kills EV
+32k starting values), gates displayed on the card. **Kills/s = min(hits/s,
+DPS/mobHP)** — one hit kills at most one mob: ATK decides the one-shot
+threshold, SPD caps throughput (the farm cap is a TRAINED stat, not a
+constant; improvable-stat rule). Cards display the live arithmetic and name
+the binding stat. Copper/kill ≈ zone mid-IP/4; gear roll 1 per 200 kills EV
 (capped faucet), IP uniform in the zone band (×3 steps, z1 10–30 … z5
 4.5k–13.5k), deterministic fractional drop carry. Mob gear = Diablo-style:
 the roll IS the chase; bosses later drop higher-IP gear + sets.

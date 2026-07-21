@@ -77,6 +77,11 @@ export function load(state) {
     },
   };
   if (count !== undefined && s.bots?.pop === undefined) state.bots.pop = count; // v2 → v3
+  if ((s.v ?? 0) <= 3 && s.bots?.alloc) { // v3 alloc was % of pop → convert to counts
+    for (const k of ["atk", "spd", "farm"]) {
+      state.bots.alloc[k] = Math.round((s.bots.alloc[k] ?? 0) / 100 * state.bots.pop);
+    }
+  }
   state.gear = { ...d.gear, ...(s.gear || {}) };
   if (!Array.isArray(state.gear.stash)) state.gear.stash = [];
   state.farm = { ...d.farm, ...(s.farm || {}) };
