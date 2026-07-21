@@ -278,7 +278,12 @@ function render() {
     $("projMini").textContent = state.boss.broken ? "100%" : `${fmtDepth(w.lo)}–${fmtDepth(w.hi)}`;
   }
   $("copperEl").textContent = fmt(state.copper);
-  $("resBots").textContent = `${state.bots.pop.toFixed(1)}/${bots.capacity(state.bots)} (+${bots.createRate(state.bots).toFixed(1)}/h)`;
+  { // NGU-style ticker: FREE bots (unallocated) vs capacity — allocation drains it
+    const a = state.bots.alloc;
+    const free = Math.max(0, state.bots.pop - a.atk - a.spd - a.farm - a.enh);
+    $("resBots").textContent = `${free.toFixed(1)} / ${bots.capacity(state.bots)}`;
+    $("resRate").textContent = `+${bots.createRate(state.bots).toFixed(1)}`;
+  }
 
   // pull row
   const pb = $("pullBtn");
@@ -328,10 +333,9 @@ function render() {
   $("buyPower").textContent = buyLabel("script quality +", bots.powerCost(b));
   $("buySpeed").textContent = buyLabel("hardware +", bots.speedCost(b));
   const eff = bots.effAlloc(b);
-  const idle = Math.max(0, b.pop - eff.atk - eff.spd - eff.farm - eff.enh);
-  const scaled = eff.scale < 0.995 ? ` · over-allocated ×${eff.scale.toFixed(2)}` : "";
-  $("resRig").textContent =
-    `power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · idle ${idle.toFixed(1)} · banned ${Math.floor(b.banned)}${scaled}`;
+  const scaled = eff.scale < 0.995 ? ` · short ${((1 - eff.scale) * 100).toFixed(0)}% (bans)` : "";
+  $("rigStats").textContent =
+    `power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · banned ${Math.floor(b.banned)}${scaled}`;
   $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
   for (const [bar, track, el] of [["atk", "atk", "Atk"], ["speed", "spd", "Speed"]]) {
