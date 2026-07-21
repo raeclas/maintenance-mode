@@ -315,6 +315,24 @@ section.game button:disabled { color: #55555e; cursor: default; }
   cursor: pointer;
 }
 
+/* mobile: the desktop 4-column row grid (130px 100px auto 1fr) can't fit a
+   phone viewport — the alloc controls never shrink and force a horizontal
+   scroll that clips the left edge. Drop to 2 columns and give the alloc
+   controls + stat readout their own full-width lines. */
+@media (max-width: 560px) {
+  .rowlist .row {
+    grid-template-columns: 1fr auto;
+    column-gap: 8px;
+    row-gap: 4px;
+  }
+  .rowlist .row > .rowAlloc,
+  .rowlist .row > .rowStat {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .rowlist .row > .rowStat { text-align: left; overflow-wrap: anywhere; }
+}
+
 footer { text-align: center; margin-top: 18px; }
 #wipeBtn {
   background: none;
