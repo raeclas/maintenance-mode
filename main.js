@@ -23,10 +23,9 @@ let devScale = 1;
 
 const $ = id => document.getElementById(id);
 
-function say(event, idx = state.boss.pulls) {
-  const lines = boss.dialogue[event];
-  const line = lines[Math.max(0, Math.min(idx, lines.length - 1))];
-  $("dialogue").textContent = `${boss.name}: “${line}”`;
+function say(event) {
+  const line = boss.dialogue[event]?.[0];
+  if (line) $("dialogue").textContent = `${boss.name}: “${line}”`;
 }
 
 function log(msg) {
@@ -41,9 +40,32 @@ let stashDirty = true;
 function onDrop(item) {
   const r = autoEquip(state, item);
   stashDirty = true;
-  const fate = r.equipped ? "equipped" : r.salvaged ? `salvaged (+${fmt(salvageValue(item))}c)` : "stashed";
-  log(`drop: ${item.name} (IP ${fmt(item.ip)}) — ${fate}`);
-  if (r.overflow) log(`stash full — ${r.overflow.name} decomposed (+${fmt(salvageValue(r.overflow))}c)`);
+  const fate = r.equipped ? "equipped" : r.salvaged ? `salvaged +${fmt(salvageValue(item))}c` : "stashed";
+  log(`drop: ${item.name} ${fmt(item.ip)}IP · ${fate}`);
+  if (r.overflow) log(`stash full: salvaged ${r.overflow.name} +${fmt(salvageValue(r.overflow))}c`);
+}
+
+// enhance feedback is visual: the slot row glows on success, flickers on fail
+function flashSlot(slot, ok) {
+  const el = slotEls[slot];
+  if (!el) return;
+  el.classList.remove("flash-ok", "flash-fail");
+  void el.offsetWidth; // restart the animation
+  el.classList.add(ok ? "flash-ok" : "flash-fail");
+}
+
+// shared milestone handling for manual clicks and bot attempts
+function enhMilestones(item, r) {
+  flashSlot(item.slot, r === "success");
+  stashDirty = true;
+  if (r !== "success") return;
+  notifyEnhance(item.plus, true);
+  if (item.plus >= 16) log(`[Server] a player has reached +${item.plus}. Players online: 1.`);
+  const title = `+${item.plus}`;
+  if (item.plus >= 18 && !state.titles.includes(title)) {
+    state.titles.push(title);
+    log(`★ title: ${title}`);
+  }
 }
 
 // ---- offline batch: same tick functions, dt clamped exactly like live ----
@@ -54,7 +76,7 @@ if (loaded && state.unlocked && state.lastSeen) {
     let drops = 0;
     bots.tick(state, dt);
     farm.tick(state, dt, Math.random, item => { drops++; onDrop(item); });
-    log(`— While you were gone (${fmt(dt / 3600)}h): +${fmt(state.copper - c0)}c, ${drops} drops.`);
+    log(`offline ${fmt(dt / 3600)}h: +${fmt(state.copper - c0)}c · ${drops} drops`);
     save(state);
   }
 }
@@ -81,8 +103,7 @@ if (state.unlocked) reveal();
 // ---- pull ----
 $("pullBtn").addEventListener("click", () => {
   if (!startPull(state, Date.now())) return;
-  say("pullStart");
-  log(`— Attempt ${state.boss.pulls + 1} begins. Enrage in ${boss.windowS}s.`);
+  log(`attempt ${state.boss.pulls + 1} — enrage ${boss.windowS}s`);
 });
 
 $("wipeBtn").addEventListener("click", () => {
@@ -93,13 +114,23 @@ $("wipeBtn").addEventListener("click", () => {
 function buyLabel(what, cost) {
   return `${what} (${fmt(cost)}c)`;
 }
-$("buyCap").addEventListener("click", () => { if (bots.buy(state, "cap")) log("Cleared dead sessions. The server never noticed the extra logins."); });
-$("buyCreate").addEventListener("click", () => { if (bots.buy(state, "create")) log("Generator tuned. The email server that verified accounts died in 2019."); });
-$("buyPower").addEventListener("click", () => { if (bots.buy(state, "power")) log("Script quality up. The forum post had 4 replies, all bots."); });
-$("buySpeed").addEventListener("click", () => { if (bots.buy(state, "speed")) log("New hardware. The fans sound like a raid boss."); });
-for (const [track, id] of [["atk", "allocAtk"], ["spd", "allocSpd"], ["farm", "allocFarm"]]) {
+$("buyCap").addEventListener("click", () => bots.buy(state, "cap"));
+$("buyCreate").addEventListener("click", () => bots.buy(state, "create"));
+$("buyPower").addEventListener("click", () => bots.buy(state, "power"));
+$("buySpeed").addEventListener("click", () => bots.buy(state, "speed"));
+for (const [track, id] of [["atk", "allocAtk"], ["spd", "allocSpd"], ["farm", "allocFarm"], ["enh", "allocEnh"]]) {
   $(id).addEventListener("change", () => bots.setAlloc(state, track, Number($(id).value)));
 }
+for (const slot of SLOTS) {
+  const opt = document.createElement("option");
+  opt.value = slot;
+  opt.textContent = slot;
+  $("enhSlot").appendChild(opt);
+}
+$("enhSlot").addEventListener("change", () => { state.bots.enhTarget.slot = $("enhSlot").value; });
+$("enhPlus").addEventListener("change", () => {
+  state.bots.enhTarget.plus = Math.max(0, Math.min(enh.MAX_PLUS, Math.floor(Number($("enhPlus").value)) || 0));
+});
 // ITRTG-style allocation: ± steps and % presets per track
 for (const row of document.querySelectorAll(".assign[data-track]")) {
   row.addEventListener("click", e => {
@@ -125,19 +156,18 @@ for (const [i, z] of farm.zones.entries()) {
 }
 $("botZone").addEventListener("change", () => { state.bots.farmZone = Number($("botZone").value); });
 
-// ---- farming: build zone cards once ----
-const zoneEls = farm.zones.map((z, i) => {
-  const div = document.createElement("div");
-  div.className = "zone";
-  div.innerHTML = `<div class="zoneName">${z.name}</div>
-    <div class="zoneMob">${z.mob} · HP ${fmt(z.mobHp)} · gate ${fmt(z.gate)} DPS</div>
-    <div class="zoneRates" id="zr${i}"></div>
-    <button id="zp${i}">park</button>`;
-  $("zones").appendChild(div);
-  div.querySelector("button").addEventListener("click", () => {
+// ---- farming: dense zone table, built once, cells updated in render ----
+$("zones").innerHTML = `<table class="ztable"><thead><tr>
+  <th class="tl">zone</th><th>gate</th><th>c/s</th><th>drops/h</th><th>kills/s</th><th class="tl">bound</th><th></th>
+</tr></thead><tbody>${farm.zones.map((z, i) => `<tr id="zrow${i}">
+  <td class="tl">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP</div></td>
+  <td>${fmt(z.gate)}</td><td id="zc${i}">—</td><td id="zd${i}">—</td><td id="zk${i}">—</td>
+  <td class="tl" id="zb${i}">—</td><td><button id="zp${i}">park</button></td>
+</tr>`).join("")}</tbody></table>`;
+farm.zones.forEach((z, i) => {
+  $(`zp${i}`).addEventListener("click", () => {
     state.farm.zone = state.farm.zone === i ? null : i;
   });
-  return div;
 });
 
 // ---- gear: build slot rows once ----
@@ -152,28 +182,9 @@ for (const slot of SLOTS) {
   div.querySelector("button").addEventListener("click", () => {
     const item = state.gear[slot];
     if (!item) return;
-    const plusBefore = item.plus;
-    const before = band(derive(state), boss, state.boss.scars);
     const r = enh.attempt(state, item, Math.random, $("safeguard").checked);
-    if (r === "poor") { log("Not enough copper."); return; }
-    if (r === "max") { log(`${item.name} is at +${enh.MAX_PLUS}. The ceiling. For now.`); return; }
-    const after = band(derive(state), boss, state.boss.scars);
-    notifyEnhance(item.plus, r === "success");
-    if (r === "success") {
-      log(`ENHANCE ✦ ${item.name} +${item.plus} — projection ${fmtDepth(before.lo)}–${fmtDepth(before.hi)} → ${fmtDepth(after.lo)}–${fmtDepth(after.hi)}${plusBefore >= 5 ? " · stacks spent" : ""}`);
-      if (item.plus >= 16) log(`[Server] Announcement: a player has reached +${item.plus}. Players online: 1.`);
-      const title = `+${item.plus}`;
-      if (item.plus >= 18 && !state.titles.includes(title)) {
-        state.titles.push(title);
-        log(`★ Title earned: “${title}”. It displays to no one. It's yours forever.`);
-      }
-    } else if (item.plus < plusBefore) {
-      const drop = plusBefore >= 12 ? `falls to checkpoint +${item.plus}` : `slips to +${item.plus}`;
-      log(`enhance fail — ${item.name} ${drop} · stacks ${state.failstacks} (+${Math.min(state.failstacks, enh.STACK_CAP_PTS)}%)`);
-    } else {
-      log(`enhance fail — ${item.name} holds at +${item.plus} · stacks ${state.failstacks} (+${Math.min(state.failstacks, enh.STACK_CAP_PTS)}%)`);
-    }
-    stashDirty = true;
+    if (r === "poor" || r === "max") return; // button state explains itself
+    enhMilestones(item, r); // feedback is the row flash, not log spam
   });
 }
 
@@ -190,7 +201,7 @@ $("salvageAll").addEventListener("click", () => {
   for (const it of goners) total += salvage(state, it);
   state.gear.stash = keep;
   stashDirty = true;
-  log(`salvaged ${goners.length} items (+${fmt(total)}c). Locked items untouched.`);
+  log(`salvaged ${goners.length} items +${fmt(total)}c`);
 });
 
 function renderStash() {
@@ -228,7 +239,7 @@ function tick() {
   const dt = Math.min((now - lastTick) / 1000, farm.OFFLINE_CAP_S) * devScale; // same clamp as offline
   lastTick = now;
   if (state.unlocked) {
-    bots.tick(state, dt);
+    bots.tick(state, dt, (r, item) => enhMilestones(item, r));
     farm.tick(state, dt, Math.random, onDrop);
   }
   if (state.pull && pullDone(state, now)) {
@@ -236,15 +247,16 @@ function tick() {
     notifyResult(depth, state.boss.broken);
     if (state.boss.broken) {
       say("break");
-      log(`★ W1 BROKEN — ${boss.name} steps aside. Attempt ${state.boss.pulls}.`);
+      log(`★ W1 BROKEN — attempt ${state.boss.pulls}`);
     } else {
-      const tier = depth < 0.01 ? "fail_hopeless" : depth >= 0.95 ? "fail_near" : "fail_low";
-      say(tier, state.boss.pulls - 1);
-      log(`Attempt ${state.boss.pulls}: ${fmtDepth(depth)} — enrage. Scars ${fmtDepth(state.boss.scars)}.`);
+      // milestone-only dialogue: intro fail, first near-miss. Silence otherwise.
+      if (state.boss.pulls === 1) say("fail_hopeless");
+      else if (depth >= 0.95 && !state.boss.nearSaid) { state.boss.nearSaid = true; say("fail_near"); }
+      log(`attempt ${state.boss.pulls}: ${fmtDepth(depth)} · scars ${fmtDepth(state.boss.scars)}`);
       if (!state.unlocked) {
         state.unlocked = true;
         reveal();
-        log("— New panels flicker on: BOT FARM · FARMING · GEAR. The forum tools still work.");
+        log("— new panels: TRAINING · GRIND · PLAYER");
       }
     }
     save(state);
@@ -261,6 +273,10 @@ function render() {
   $("dpsEl").textContent = fmt(dps);
   $("atkEl").textContent = fmt(d.atk);
   $("hpsEl").textContent = d.hitsPerSec.toFixed(2);
+  { // odometer weld: projection visible next to the stats that move it
+    const w = band(d, boss, state.boss.scars);
+    $("projMini").textContent = state.boss.broken ? "100%" : `${fmtDepth(w.lo)}–${fmtDepth(w.hi)}`;
+  }
   $("copperEl").textContent = fmt(state.copper);
   $("resBots").textContent = `${state.bots.pop.toFixed(1)}/${bots.capacity(state.bots)} (+${bots.createRate(state.bots).toFixed(1)}/h)`;
 
@@ -312,7 +328,7 @@ function render() {
   $("buyPower").textContent = buyLabel("script quality +", bots.powerCost(b));
   $("buySpeed").textContent = buyLabel("hardware +", bots.speedCost(b));
   const eff = bots.effAlloc(b);
-  const idle = Math.max(0, b.pop - eff.atk - eff.spd - eff.farm);
+  const idle = Math.max(0, b.pop - eff.atk - eff.spd - eff.farm - eff.enh);
   const scaled = eff.scale < 0.995 ? ` · over-allocated ×${eff.scale.toFixed(2)}` : "";
   $("resRig").textContent =
     `power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · idle ${idle.toFixed(1)} · banned ${Math.floor(b.banned)}${scaled}`;
@@ -331,22 +347,38 @@ function render() {
   $("autoSalvage").checked = state.gear.autoSalvage;
   const bf = bots.botFarmRates(b, b.farmZone);
   $("botFarmInfo").textContent = eff.farm > 0
-    ? `${fmt(bf.copperPerSec)}c/s mailed · ${bf.bansPerHour.toFixed(2)} bans/h (bot DPS ${fmt(bots.botDps(b))})`
-    : `bot DPS ${fmt(bots.botDps(b))} · safe in lobbies`;
+    ? `${fmt(bf.copperPerSec)}c/s · ${bf.bansPerHour.toFixed(2)} bans/h · bot DPS ${fmt(bots.botDps(b))}`
+    : `bot DPS ${fmt(bots.botDps(b))} · idle`;
 
-  // farming — show the arithmetic AND which stat binds (ATK vs SPD)
+  // bot enhance squad
+  if (document.activeElement !== $("allocEnh")) $("allocEnh").value = b.alloc.enh;
+  if (document.activeElement !== $("enhSlot")) $("enhSlot").value = b.enhTarget.slot;
+  if (document.activeElement !== $("enhPlus")) $("enhPlus").value = b.enhTarget.plus;
+  const tItem = state.gear[b.enhTarget.slot];
+  const iv = tItem ? bots.enhInterval(b, tItem.plus) : Infinity;
+  $("botEnhInfo").textContent = eff.enh <= 0 ? "idle"
+    : !tItem ? "no item in slot"
+    : tItem.plus >= b.enhTarget.plus ? `done: +${tItem.plus}`
+    : `try every ${iv === Infinity ? "—" : fmt(iv)}s · ${fmt(enh.cost(tItem))}c/try`;
+
+  // farming table — numbers in columns, binding stat named
   farm.zones.forEach((z, i) => {
     const rc = farm.rateCard(state, z);
-    const bound = rc.speedBound
-      ? `one-shotting — speed-bound (${rc.kps.toFixed(2)} kills/s = your hits/s)`
-      : `damage-bound: ${fmt(d.atk)} ATK × ${d.hitsPerSec.toFixed(2)} ÷ ${fmt(z.mobHp)} HP = ${rc.kps.toFixed(2)} kills/s · one-shot at ${fmt(rc.oneShotAtk)} ATK`;
-    $(`zr${i}`).textContent = rc.locked
-      ? `locked — need ${fmt(z.gate)} DPS`
-      : `${rc.copperPerSec >= 0.1 ? fmt(rc.copperPerSec) : rc.copperPerSec.toFixed(2)}c/s · ${rc.dropsPerHour.toFixed(1)} drops/h · ${bound}`;
+    const row = $(`zrow${i}`);
+    row.classList.toggle("locked", rc.locked);
+    row.classList.toggle("active", state.farm.zone === i);
+    if (rc.locked) {
+      $(`zc${i}`).textContent = $(`zd${i}`).textContent = $(`zk${i}`).textContent = "—";
+      $(`zb${i}`).textContent = "locked";
+    } else {
+      $(`zc${i}`).textContent = rc.copperPerSec >= 0.1 ? fmt(rc.copperPerSec) : rc.copperPerSec.toFixed(2);
+      $(`zd${i}`).textContent = rc.dropsPerHour.toFixed(1);
+      $(`zk${i}`).textContent = rc.kps.toFixed(2);
+      $(`zb${i}`).textContent = rc.speedBound ? "SPD (one-shot)" : `ATK · 1-shot @${fmt(rc.oneShotAtk)}`;
+    }
     const btn = $(`zp${i}`);
     btn.disabled = rc.locked;
-    btn.textContent = state.farm.zone === i ? "parked ✓" : "park";
-    zoneEls[i].classList.toggle("active", state.farm.zone === i);
+    btn.textContent = state.farm.zone === i ? "✓" : "park";
   });
 
   // gear

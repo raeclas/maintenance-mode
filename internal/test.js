@@ -293,7 +293,7 @@ const enh = await import("../enhance.js");
   s.gear.weapon = { slot: "weapon", ip: 55, plus: 3, zone: 1, name: "t" };
   s.gear.stash = [{ slot: "charm", ip: 5, plus: 0, zone: 1, name: "u" }];
   s.farm.zone = 1;
-  s.boss = { pulls: 3, bestDepth: 0.01, scars: 0.005, broken: false };
+  s.boss = { pulls: 3, bestDepth: 0.01, scars: 0.005, broken: false, nearSaid: false };
   saves.save(s);
   assert.equal(JSON.parse(localStorage.getItem("mm_save")).pull, undefined);
   const s2 = newState();
@@ -322,13 +322,13 @@ const enh = await import("../enhance.js");
   assert.equal(s5.bots.pop, 5);
   assert.equal(s5.bots.powerRank, 1);
   assert.equal(s5.bots.assign, undefined); // v2 field dropped
-  assert.deepEqual(s5.bots.alloc, { atk: 1, spd: 1, farm: 0 }); // defaults
+  assert.deepEqual(s5.bots.alloc, { atk: 1, spd: 1, farm: 0, enh: 0 }); // defaults
 
   // v3 save (alloc was % of pop) → counts
   localStorage.setItem("mm_save", JSON.stringify({ v: 3, bots: { pop: 10, alloc: { atk: 50, spd: 30, farm: 20 } } }));
   const s6 = newState();
   saves.load(s6);
-  assert.deepEqual(s6.bots.alloc, { atk: 5, spd: 3, farm: 2 });
+  assert.deepEqual(s6.bots.alloc, { atk: 5, spd: 3, farm: 2, enh: 0 });
 
   // durability: corrupt primary → quarantined, _bak restores
   saves.save(s);
@@ -349,11 +349,33 @@ const enh = await import("../enhance.js");
 // Dialogue completeness: every event key the UI emits has ≥1 non-empty line
 {
   for (const b of bosses) {
-    for (const key of ["greet", "pullStart", "fail_hopeless", "fail_low", "fail_near", "break"]) {
+    for (const key of ["greet", "fail_hopeless", "fail_near", "break"]) {
       assert.ok(Array.isArray(b.dialogue[key]) && b.dialogue[key].length >= 1, `${b.id} ${key}`);
       for (const line of b.dialogue[key]) assert.ok(line.trim().length > 0, `${b.id} ${key} empty line`);
     }
   }
+}
+
+// Bot enhance: real odds/copper, exponential time per plus, stops at target
+{
+  const s = newState();
+  s.bots.pop = 8;
+  s.bots.alloc = { atk: 0, spd: 0, farm: 0, enh: 8 };
+  s.bots.enhTarget = { slot: "weapon", plus: 5 };
+  s.gear.weapon = { slot: "weapon", ip: 100, plus: 0, zone: 1, name: "t" };
+  s.copper = 1e9;
+  // interval at +0: 30 × 1.3^0 / 8 = 3.75s; Σ to +5 ≈ 33.9s with always-success rng
+  bots.tick(s, 40, () => {}, () => 0);
+  assert.equal(s.gear.weapon.plus, 5);
+  const c = s.copper;
+  bots.tick(s, 600, () => {}, () => 0); // at target → no further attempts, no spend
+  assert.equal(s.gear.weapon.plus, 5);
+  assert.equal(s.copper, c);
+  // broke: attempts stop cleanly instead of looping
+  s.bots.enhTarget.plus = 12;
+  s.copper = 0;
+  bots.tick(s, 600, () => {}, () => 0);
+  assert.equal(s.gear.weapon.plus, 5);
 }
 
 console.log("all checks passed");

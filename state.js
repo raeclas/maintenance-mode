@@ -9,7 +9,7 @@ export function newState() {
     failstacks: 0, // Luck's mechanical body — every fail banks +1%, success spends the bank
     titles: [],    // earned forever (attachment law): "+18" etc.
     wall: 1,
-    boss: { pulls: 0, bestDepth: 0, scars: 0, broken: false }, // per-current-wall record
+    boss: { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false }, // per-current-wall record
     cooldownUntil: 0, // epoch ms — survives reload
     pull: null,       // transient {startedAt, endsAt, rolledFresh} — never serialized
     // Bot Farm: population FLOW. Generator fills toward server capacity;
@@ -21,8 +21,10 @@ export function newState() {
       createRank: 0,  // generator: 2/h × (1 + 0.5×rank)
       powerRank: 0,   // script quality: power = 1 + 0.25×rank
       speedRank: 0,   // hardware: speed = 1 + 0.20×rank
-      alloc: { atk: 1, spd: 1, farm: 0 }, // absolute bot counts; rest idle
+      alloc: { atk: 1, spd: 1, farm: 0, enh: 0 }, // absolute bot counts; rest idle
       farmZone: 0,
+      enhTarget: { slot: "weapon", plus: 10 }, // bots enhance this item toward this plus
+      enhCarry: 0, // fractional attempt progress
       bars: { atk: { lvl: 0, prog: 0 }, speed: { lvl: 0, prog: 0 } },
     },
     gear: {

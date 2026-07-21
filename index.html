@@ -77,6 +77,20 @@
       </div>
       <div class="barTrack"><div class="barFill" id="barSpeedFill"></div></div>
     </div>
+    <div class="bar">
+      <div class="barHead">
+        <span class="trackName">Enhance</span>
+        <span class="assign" data-track="enh">
+          <button data-d="-10">−10</button><button data-d="-1">−1</button>
+          <input type="number" id="allocEnh" min="0" step="1">
+          <button data-d="1">+1</button><button data-d="10">+10</button>
+          <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
+        </span>
+        <select id="enhSlot"></select>
+        <span class="sub">to +</span><input type="number" id="enhPlus" min="0" max="20" step="1">
+        <span id="botEnhInfo"></span>
+      </div>
+    </div>
   </section>
 
   <section id="farmSec" class="game hidden tabpane" style="display:none">
@@ -99,7 +113,7 @@
 
   <section id="gearSec" class="game hidden tabpane" style="display:none">
     <h2>Player</h2>
-    <div id="playerStats">DPS <b id="dpsEl">—</b> · ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s</div>
+    <div id="playerStats">DPS <b id="dpsEl">—</b> · ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · proj <span id="projMini">—</span></div>
     <div id="titles" style="display:none"></div>
     <h3>Gear <span id="stacksHud"></span></h3>
     <label class="autoSalv"><input type="checkbox" id="safeguard"> safeguard (3× cost, no drop on fail — works up to +15 only)</label>

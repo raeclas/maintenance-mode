@@ -6,6 +6,7 @@
 // Live tick and offline batch are the SAME function (clamp law).
 // Starting values throughout — sim-gated; test plans in REMAKE-DESIGN §7.
 import { zones } from "./farm.js";
+import { attempt as enhAttempt } from "./enhance.js";
 
 export const CREATE_PER_H = 2;        // base bots/hour from the generator
 export const CAP_BASE = 8;            // dead server's leftover session slots
@@ -51,9 +52,9 @@ export function setAlloc(state, track, n) {
 
 export function effAlloc(b) {
   const a = b.alloc;
-  const want = a.atk + a.spd + a.farm;
+  const want = a.atk + a.spd + a.farm + (a.enh || 0);
   const scale = want > b.pop ? b.pop / want : 1;
-  return { atk: a.atk * scale, spd: a.spd * scale, farm: a.farm * scale, scale };
+  return { atk: a.atk * scale, spd: a.spd * scale, farm: a.farm * scale, enh: (a.enh || 0) * scale, scale };
 }
 
 // Bots farm with their OWN stats through the player's kill math — copper
@@ -71,16 +72,29 @@ export function botFarmRates(b, zi) {
 
 export function levelCost(lvl) { return BAR_COST_C * (lvl + 1) * (lvl + 1); }
 
-// Advance the swarm by dtS seconds: creation, training, farming, bans.
-// Same path live and offline (caller clamps dt). Long dts are sub-stepped
-// internally so a 12h batch integrates the shrinking population the same
-// way live play does (clamp law: batch ≡ live within chunk error).
-export function tick(state, dtS) {
-  while (dtS > 60) { tickChunk(state, 60); dtS -= 60; }
-  tickChunk(state, dtS);
+// Bot enhancing: time per attempt grows exponentially with the plus being
+// pushed; squad quality shrinks it. Same copper cost, same RNG as manual —
+// bots automate the ladder, they never beat the odds.
+export const ENH_T0 = 30;      // seconds per attempt at +0, one bot, quality 1
+export const ENH_GROWTH = 1.3; // per plus level
+
+export function enhInterval(b, plus) {
+  const squad = effAlloc(b).enh * botPower(b) * botSpeed(b);
+  if (squad <= 0) return Infinity;
+  return (ENH_T0 * Math.pow(ENH_GROWTH, plus)) / squad;
 }
 
-function tickChunk(state, dtS) {
+// Advance the swarm by dtS seconds: creation, training, farming, bans,
+// enhancing. Same path live and offline (caller clamps dt). Long dts are
+// sub-stepped internally so a 12h batch integrates the shrinking population
+// the same way live play does (clamp law: batch ≡ live within chunk error).
+// onEnh(result, item) fires per bot enhance attempt (UI feedback hook).
+export function tick(state, dtS, onEnh = () => {}, rng = Math.random) {
+  while (dtS > 60) { tickChunk(state, 60, onEnh, rng); dtS -= 60; }
+  tickChunk(state, dtS, onEnh, rng);
+}
+
+function tickChunk(state, dtS, onEnh, rng) {
   const b = state.bots;
   const dtH = dtS / 3600;
 
@@ -107,5 +121,22 @@ function tickChunk(state, dtS) {
     const deaths = r.bansPerHour * dtH;
     b.pop = Math.max(0, b.pop - deaths);
     b.banned = (b.banned || 0) + deaths; // lifetime counter (log flavor)
+  }
+
+  // enhancing (real odds, real copper — stops at the target plus)
+  if (eff.enh > 0 && b.enhTarget) {
+    const item = state.gear[b.enhTarget.slot];
+    if (item && item.plus < b.enhTarget.plus) {
+      b.enhCarry += dtS;
+      let interval = enhInterval(b, item.plus);
+      let guard = 200; // ponytail: bound attempts per chunk; interval recomputes as plus moves
+      while (b.enhCarry >= interval && guard-- > 0) {
+        b.enhCarry -= interval;
+        const res = enhAttempt(state, item, rng);
+        onEnh(res, item);
+        if (res === "poor" || item.plus >= b.enhTarget.plus) { b.enhCarry = 0; break; }
+        interval = enhInterval(b, item.plus);
+      }
+    }
   }
 }

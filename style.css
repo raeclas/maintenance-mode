@@ -194,20 +194,34 @@ section.game button:disabled { color: #55555e; cursor: default; }
 #stashHead { display: flex; align-items: center; gap: 8px; }
 #stashList button { padding: 1px 6px; margin-left: 4px; }
 
-.zone {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas: "name btn" "mob btn" "rates btn";
-  border-top: 1px solid var(--line);
-  padding: 6px 0;
-  gap: 0 10px;
+/* dense zone table (ITRTG-style: numbers in columns) */
+.ztable { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 11px; }
+.ztable th {
+  color: #6e6e78;
+  font-weight: normal;
+  text-align: right;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--line);
 }
-.zone:first-child { border-top: none; }
-.zone.active .zoneName { color: var(--gold); }
-.zoneName { grid-area: name; font-size: 14px; }
-.zoneMob { grid-area: mob; font-size: 11px; font-family: monospace; color: #6e6e78; }
-.zoneRates { grid-area: rates; font-size: 11px; font-family: monospace; }
-.zone button { grid-area: btn; align-self: center; }
+.ztable td { text-align: right; padding: 4px 6px; border-bottom: 1px solid #1b1b22; color: #b9b2a0; }
+.ztable .tl { text-align: left; }
+.ztable .sub, .sub { color: #6e6e78; font-size: 10px; }
+.ztable tr.locked td { color: #4a4a52; }
+.ztable tr.active td:first-child { color: var(--gold); }
+.ztable button { padding: 1px 8px; }
+
+/* enhance feedback: glow on success, flicker on fail — no text spam */
+@keyframes flashOk {
+  0% { background: rgba(201, 169, 75, .45); box-shadow: 0 0 14px rgba(201, 169, 75, .6); }
+  100% { background: transparent; box-shadow: none; }
+}
+@keyframes flashFail {
+  0%, 40% { background: rgba(160, 60, 50, .3); }
+  20%, 60% { background: transparent; }
+  100% { background: transparent; }
+}
+.flash-ok { animation: flashOk .7s ease-out; }
+.flash-fail { animation: flashFail .45s linear; }
 
 .slot { display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--line); padding: 6px 0; }
 .slot:first-child { border-top: none; }

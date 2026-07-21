@@ -255,9 +255,19 @@ anonymity is the attachment law by construction.
   allowed because stats are not XP/unlocks; whole chain sim-modeled;
   exponential costs prevent runaway compounding; deaths are chosen rates,
   never neglect penalties (absence never accelerates loss).
+- **Enhance track [ADDED 2026-07-21]:** bots can be assigned to enhance a
+  target item toward a target plus. Same copper costs, same RNG, honest
+  odds — bots automate the ladder, never beat it. Time per attempt =
+  30s × 1.3^plus ÷ (squad × power × speed) — exponential per plus, so
+  deep pushes stay events even automated. Manual clicking is always
+  faster for a focused push.
 - "I am the main character": bots never pull, never appear in the battle
   scene; they are infrastructure. PLAYERS counter counts them (satire
   surface); lifetime ban counter feeds log melancholy.
+- **Flavor budget [2026-07-21 playtest law]:** dialogue is milestone-only
+  (greet, intro-fail hint, first near-miss, break — one line each); UI
+  copy is functional; the activity log is a terse ticker. Enhance feedback
+  is VISUAL (row glow/flicker, shake by band), never text spam.
 
 ### 7b. Rebirth — "Ban Wave" [DESIGNED 2026-07-21, build next slice]
 
