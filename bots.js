@@ -39,10 +39,14 @@ export function buy(state, what) {
   return true;
 }
 
-// Allocation is absolute bot counts per track (player types numbers).
-// May exceed the live pop after bans — effAlloc scales down proportionally.
+// Allocation is absolute bot counts per track (player types numbers),
+// hard-clamped to the bots actually available. Bans can still drag pop
+// below committed numbers afterwards — effAlloc scales that case down.
 export function setAlloc(state, track, n) {
-  state.bots.alloc[track] = Math.max(0, Math.floor(n) || 0);
+  const b = state.bots;
+  n = Math.max(0, Math.floor(n) || 0);
+  const others = Object.keys(b.alloc).filter(k => k !== track).reduce((s, k) => s + b.alloc[k], 0);
+  b.alloc[track] = Math.min(n, Math.max(0, Math.floor(b.pop) - others));
 }
 
 export function effAlloc(b) {

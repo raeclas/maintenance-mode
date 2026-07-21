@@ -146,12 +146,18 @@ const enh = await import("../enhance.js");
   assert.ok(bots.buy(s, "speed") && bots.botSpeed(s.bots) === 1.2);
   s.copper = 0;
   assert.equal(bots.buy(s, "cap"), false);
-  bots.setAlloc(s, "farm", 990); // any number allowed; effAlloc scales to pop
+  s.bots.pop = 10;
+  s.bots.alloc = { atk: 3, spd: 0, farm: 0 };
+  bots.setAlloc(s, "farm", 990); // hard-clamped to available bots
+  assert.equal(s.bots.alloc.farm, 7);
+  bots.setAlloc(s, "farm", -5); // clamped to 0, NaN-safe
+  assert.equal(s.bots.alloc.farm, 0);
+  // bans dragging pop below committed numbers: effAlloc scales proportionally
+  s.bots.alloc = { atk: 6, spd: 0, farm: 4 };
+  s.bots.pop = 5;
   const eff = bots.effAlloc(s.bots);
   assert.ok(eff.atk + eff.spd + eff.farm <= s.bots.pop + 1e-9);
   assert.ok(eff.scale < 1);
-  bots.setAlloc(s, "farm", -5); // clamped to 0, NaN-safe
-  assert.equal(s.bots.alloc.farm, 0);
 }
 
 // Farm: kills/s = min(hits/s, DPS/mobHP) — SPD caps throughput, ATK one-shots
