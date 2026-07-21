@@ -8,7 +8,7 @@ export const bosses = [
     wall: 1,
     name: "Vess",
     title: "Warden of the First Door",
-    hp: 625,      // starting value: EV depth 96% at starting player stats
+    hp: 800,      // starting value: EV fresh depth 75% — W1 is a siege, scars close the gap
     windowS: 30,  // starting value: W1 enrage window (duration = gravitas dial)
     dialogue: {
       greet: [
@@ -29,7 +29,9 @@ export const bosses = [
         "You're learning where I'm thick. I can tell.",
         "Six years of standing still. You'll need more than that.",
         "The wall holds. Rest. It isn't going anywhere. Neither am I.",
-        "Again the enrage bell, again the door stands. And yet you'll be back — I've started relying on it.",
+        "These cracks you keep leaving — the repair script was supposed to close them. It hasn't run in years.",
+        "I don't heal anymore. Did you know that? Every mark you make, I keep. Come look at your work.",
+        "Again the enrage bell, again the door stands. But it stands wounded, and we both know it.",
       ],
       fail_near: [
         "…That one reached the hinges. Do not do that again.",

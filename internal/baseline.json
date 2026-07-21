@@ -1,14 +1,14 @@
 [
   {
     "t": 0,
-    "desc": "W1 EV depth 96.0%/pull, break 24.0%/pull"
+    "desc": "W1 EV fresh 75.0%/pull, scars 10% rate / 27% cap, break at cap 66.7%"
   },
   {
     "t": 30,
     "desc": "W1 first pull resolved"
   },
   {
-    "t": 316,
-    "desc": "W1 broken (EV, E[pulls] 4.2)"
+    "t": 390,
+    "desc": "W1 broken (EV, pull 5)"
   }
 ]

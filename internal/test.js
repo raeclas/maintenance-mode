@@ -20,7 +20,7 @@ const saves = await import("../saveSystem.js");
   const s = newState();
   const b = getBoss(1);
   assert.equal(pull.dps(s.player), 20);
-  assert.equal(pull.expectedDepth(s.player, b), 0.96); // 20 × 30 / 625
+  assert.equal(pull.expectedDepth(s.player, b), 0.75); // 20 × 30 / 800
 }
 
 // Pull math: band endpoints via injected rng
@@ -32,40 +32,59 @@ const saves = await import("../saveSystem.js");
   assert.ok(Math.abs(pull.rollDepth(s.player, b, () => 1) - ev * (1 + pull.VARIANCE)) < 1e-12);
 }
 
-// Pull math: analytic break chance matches the band, incl. 0/1 edges
+// Break chance: 0 without scars, analytic with scars, 1 when overwhelming
 {
   const b = getBoss(1);
-  const ev = pull.expectedDepth(newState().player, b);
-  const lo = ev * (1 - pull.VARIANCE), hi = ev * (1 + pull.VARIANCE);
-  assert.ok(Math.abs(pull.breakChance(newState().player, b) - (hi - 1) / (hi - lo)) < 1e-12);
-  assert.equal(pull.breakChance({ atk: 1, hitsPerSec: 1 }, b), 0);   // hopeless
-  assert.equal(pull.breakChance({ atk: 1000, hitsPerSec: 2 }, b), 1); // overwhelming
+  const P = newState().player;
+  assert.equal(pull.breakChance(P, b, 0), 0); // hi = 81% — a fresh W1 pull can never break
+  const { lo, hi } = pull.band(P, b, pull.SCAR_CAP); // 96%–108% at full scars
+  assert.ok(Math.abs(pull.breakChance(P, b, pull.SCAR_CAP) - (hi - 1) / (hi - lo)) < 1e-12);
+  assert.ok(Math.abs(pull.breakChance(P, b, pull.SCAR_CAP) - 2 / 3) < 1e-12);
+  assert.equal(pull.breakChance({ atk: 1000, hitsPerSec: 2 }, b, 0), 1);
 }
 
-// Resolve: forced low roll → fail, pulls++, cooldown; forced high roll → break
+// EV forecast: W1 breaks on pull 5 at starting values; Infinity when hopeless
+{
+  const b = getBoss(1);
+  assert.equal(pull.pullsToBreakEV(newState().player, b, 0), 5);
+  assert.equal(pull.pullsToBreakEV(newState().player, b, pull.SCAR_CAP), 1);
+  assert.equal(pull.pullsToBreakEV({ atk: 1, hitsPerSec: 1 }, b, 0), Infinity);
+}
+
+// Resolve: fail → scars grow by SCAR_RATE × fresh, capped; cooldown starts
 {
   const s = newState();
   const t0 = 1_000_000;
-  assert.ok(pull.startPull(s, t0, () => 0));
+  assert.ok(pull.startPull(s, t0, () => 0)); // fresh = 69%
   assert.ok(!pull.pullDone(s, t0 + 1000));
   const end = s.pull.endsAt;
   assert.equal(end, t0 + 30_000);
   assert.ok(pull.pullDone(s, end));
+  const fresh = s.pull.rolledFresh;
   const d = pull.resolvePull(s, end);
   assert.ok(d < 1 && !s.boss.broken);
   assert.equal(s.boss.pulls, 1);
   assert.equal(s.boss.bestDepth, d);
+  assert.ok(Math.abs(s.boss.scars - fresh * pull.SCAR_RATE) < 1e-12);
   assert.equal(s.cooldownUntil, end + pull.COOLDOWN_MS);
+  // scars never exceed the cap
+  s.boss.scars = pull.SCAR_CAP - 0.001;
+  s.cooldownUntil = 0;
+  pull.startPull(s, end + 100_000, () => 0);
+  pull.resolvePull(s, s.pull.endsAt);
+  assert.equal(s.boss.scars, pull.SCAR_CAP);
 }
+
+// Resolve: scars + high roll → break, no cooldown, ends before window
 {
   const s = newState();
-  const t0 = 1_000_000;
-  pull.startPull(s, t0, () => 1); // rolledTotal ≈ 1.0368 → breaks early at 100%
-  assert.ok(pull.pullDone(s, s.pull.endsAt - 100)); // done before window ends
+  s.boss.scars = pull.SCAR_CAP;
+  pull.startPull(s, 1_000_000, () => 1); // total ≈ 27% + 81% = 108% → breaks early
+  assert.ok(pull.pullDone(s, s.pull.endsAt - 100));
   const d = pull.resolvePull(s, s.pull.endsAt - 100);
   assert.equal(d, 1);
   assert.ok(s.boss.broken);
-  assert.equal(s.cooldownUntil, 0); // break starts no cooldown
+  assert.equal(s.cooldownUntil, 0);
 }
 
 // Gating: canPull false mid-pull / under cooldown / when broken
@@ -81,17 +100,17 @@ const saves = await import("../saveSystem.js");
   assert.ok(!pull.canPull(s, 10_000_000)); // broken
 }
 
-// Save round-trip: fields preserved, transient pull excluded
+// Save round-trip: fields preserved (scars included), transient pull excluded
 {
   const s = newState();
-  s.boss = { pulls: 3, bestDepth: 0.97, broken: false };
+  s.boss = { pulls: 3, bestDepth: 0.97, scars: 0.21, broken: false };
   s.cooldownUntil = 123456;
-  s.pull = { startedAt: 1, endsAt: 2, rolledTotal: 0.9 };
+  s.pull = { startedAt: 1, endsAt: 2, rolledFresh: 0.7 };
   saves.save(s);
   assert.equal(JSON.parse(localStorage.getItem("mm_save")).pull, undefined);
   const s2 = newState();
   saves.load(s2);
-  assert.deepEqual(s2.boss, { pulls: 3, bestDepth: 0.97, broken: false });
+  assert.deepEqual(s2.boss, { pulls: 3, bestDepth: 0.97, scars: 0.21, broken: false });
   assert.equal(s2.cooldownUntil, 123456);
   assert.equal(s2.pull, null);
 }
@@ -118,7 +137,8 @@ const saves = await import("../saveSystem.js");
   saves.load(s);
   assert.equal(s.player.hitsPerSec, 2.0); // backfilled
   assert.equal(s.boss.pulls, 5);
-  assert.equal(s.boss.broken, false);     // backfilled
+  assert.equal(s.boss.scars, 0);          // backfilled (pre-scars save)
+  assert.equal(s.boss.broken, false);
   saves.wipe();
   assert.equal(saves.validSave(null), false);
   assert.equal(saves.validSave({ v: 0 }), false);

@@ -3,7 +3,7 @@ import { newState } from "./state.js";
 import { load, save, wipe } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { getBoss } from "./bosses.js";
-import { startPull, resolvePull, pullDone, currentDepth, canPull, COOLDOWN_MS } from "./pull.js";
+import { startPull, resolvePull, pullDone, currentDepth, canPull, band, pullsToBreakEV, COOLDOWN_MS } from "./pull.js";
 import { initBattle, renderBattle, notifyResult } from "./battle.js";
 
 const state = newState();
@@ -14,7 +14,7 @@ const $ = id => document.getElementById(id);
 const el = {
   battle: $("battle"), pullBtn: $("pullBtn"), cooldown: $("cooldown"),
   depth: $("depth"), bossName: $("bossName"), bossTitle: $("bossTitle"),
-  record: $("record"), dialogue: $("dialogue"), log: $("log"),
+  record: $("record"), dialogue: $("dialogue"), log: $("log"), projection: $("projection"),
   monument: $("monument"), wipeBtn: $("wipeBtn"),
 };
 
@@ -52,7 +52,7 @@ function tick() {
       log(`★ W1 BROKEN — ${boss.name} steps aside. Pull ${state.boss.pulls}.`);
     } else {
       say(depth >= 0.95 ? "fail_near" : "fail_low", state.boss.pulls - 1); // pulls already incremented
-      log(`Pull ${state.boss.pulls}: ${(depth * 100).toFixed(1)}% — enrage. Best ${(state.boss.bestDepth * 100).toFixed(1)}%.`);
+      log(`Pull ${state.boss.pulls}: ${(depth * 100).toFixed(1)}% — enrage. Scars ${(state.boss.scars * 100).toFixed(1)}%.`);
     }
     save(state);
   }
@@ -83,9 +83,18 @@ function render() {
   }
 
   el.record.textContent = state.boss.pulls
-    ? `pulls ${state.boss.pulls} · best depth ${(state.boss.bestDepth * 100).toFixed(1)}%`
+    ? `pulls ${state.boss.pulls} · best ${(state.boss.bestDepth * 100).toFixed(1)}% · scars ${(state.boss.scars * 100).toFixed(1)}%`
     : "no attempts recorded";
   el.monument.style.display = state.boss.broken ? "" : "none";
+
+  if (state.boss.broken || state.pull) {
+    el.projection.textContent = "";
+  } else {
+    const { lo, hi } = band(state.player, boss, state.boss.scars);
+    const n = pullsToBreakEV(state.player, boss, state.boss.scars);
+    const eta = n === Infinity ? "" : ` · breaks in ~${n} pull${n > 1 ? "s" : ""}`;
+    el.projection.textContent = `projection: ${(lo * 100).toFixed(0)}–${(hi * 100).toFixed(0)}%${eta}`;
+  }
 }
 
 el.bossName.textContent = boss.name;

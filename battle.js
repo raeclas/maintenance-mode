@@ -66,7 +66,7 @@ function drawGate(open) {
   }
 }
 
-function drawBoss(now, broken) {
+function drawBoss(now, broken, scars) {
   // Vess: tall blocky warden. Broken = stepped aside, stands by the pillar.
   const x = broken ? GATE.x - 96 : GATE.x;
   const lit = now < bossFlashUntil;
@@ -79,6 +79,14 @@ function drawBoss(now, broken) {
   ctx.fillRect(x - 7, GATE.y - 110, 5, 3);                // eyes
   ctx.fillRect(x + 2, GATE.y - 110, 5, 3);
   if (!broken) { ctx.fillStyle = "#3a3a44"; ctx.fillRect(x + 20, GATE.y - 126, 8, 126); } // halberd
+  // scars: permanent cracks, one per ~7% (maintenance scripts never repair them)
+  ctx.fillStyle = "#31201e";
+  const cracks = Math.floor(scars / 0.07);
+  const spots = [[-14, -80, 3, 26], [6, -60, 3, 34], [-4, -40, 3, 22], [12, -92, 3, 20]];
+  for (let i = 0; i < Math.min(cracks, spots.length); i++) {
+    const [dx, dy, w, h] = spots[i];
+    ctx.fillRect(x + dx, GATE.y + dy, w, h);
+  }
 }
 
 function drawHero(now, pulling) {
@@ -94,24 +102,32 @@ function drawHero(now, pulling) {
 
 function drawBars(state, now) {
   const p = state.pull;
-  if (!p) return;
-  const frac = pullFrac(state, now);
+  const scars = state.boss.scars;
+  if (!p && scars <= 0) return;
   const depth = Math.min(1, currentDepth(state, now));
-  // window timer (top bar) drains; depth (bottom bar) races it
-  ctx.fillStyle = "#22222a";
-  ctx.fillRect(20, H - 44, W - 40, 8);
-  ctx.fillStyle = "#6e5a5a";
-  ctx.fillRect(20, H - 44, (W - 40) * (1 - frac), 8);
+  if (p) { // window timer (top bar) drains; depth (bottom bar) races it
+    const frac = pullFrac(state, now);
+    ctx.fillStyle = "#22222a";
+    ctx.fillRect(20, H - 44, W - 40, 8);
+    ctx.fillStyle = "#6e5a5a";
+    ctx.fillRect(20, H - 44, (W - 40) * (1 - frac), 8);
+    ctx.fillStyle = "#8a8a92";
+    ctx.font = "bold 10px monospace";
+    ctx.textAlign = "left";
+    ctx.fillText("ENRAGE", 24, H - 47);
+  }
   ctx.fillStyle = "#22222a";
   ctx.fillRect(20, H - 30, W - 40, 14);
-  ctx.fillStyle = depth >= 0.95 ? "#ffd700" : "#c9a94b";
-  ctx.fillRect(20, H - 30, (W - 40) * depth, 14);
+  ctx.fillStyle = "#6e3a32"; // scars: permanent segment, dark old blood
+  ctx.fillRect(20, H - 30, (W - 40) * Math.min(scars, depth), 14);
+  if (p) {
+    ctx.fillStyle = depth >= 0.95 ? "#ffd700" : "#c9a94b";
+    ctx.fillRect(20 + (W - 40) * scars, H - 30, (W - 40) * (depth - scars), 14);
+  }
   ctx.fillStyle = "#0d0d10";
   ctx.font = "bold 10px monospace";
   ctx.textAlign = "left";
-  ctx.fillText("DEPTH", 24, H - 19);
-  ctx.fillStyle = "#8a8a92";
-  ctx.fillText("ENRAGE", 24, H - 47);
+  ctx.fillText(p ? "DEPTH" : "SCARS", 24, H - 19);
 }
 
 export function renderBattle(state, wallNow) {
@@ -132,7 +148,7 @@ export function renderBattle(state, wallNow) {
   ctx.fillRect(-20, GATE.y, W + 40, H - GATE.y + 20);
 
   drawGate(state.boss.broken);
-  drawBoss(now, state.boss.broken);
+  drawBoss(now, state.boss.broken, state.boss.scars);
   drawHero(now, pulling);
 
   // damage fountain: spawn at hit cadence; final 5s escalates (rate + size)

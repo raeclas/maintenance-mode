@@ -61,6 +61,7 @@ canvas {
 #pullBtn:disabled { background: #3a3a44; color: #77777f; cursor: default; }
 #depth { color: var(--gold); font-size: 26px; font-family: monospace; min-width: 90px; }
 #cooldown { font-size: 12px; font-family: monospace; }
+#projection { font-size: 12px; font-family: monospace; color: var(--gold); min-height: 16px; margin: -4px 0 4px; }
 
 #dialogue {
   border-left: 3px solid var(--gold);

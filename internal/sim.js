@@ -11,21 +11,21 @@
 import fs from "node:fs";
 import { newState } from "../state.js";
 import { getBoss } from "../bosses.js";
-import { expectedDepth, breakChance, COOLDOWN_MS } from "../pull.js";
+import { expectedDepth, breakChance, pullsToBreakEV, SCAR_CAP, SCAR_RATE, COOLDOWN_MS } from "../pull.js";
 
 const S = newState();
 const boss = getBoss(S.wall);
 const ev = expectedDepth(S.player, boss);
-const p = breakChance(S.player, boss);
-const ePulls = p > 0 ? 1 / p : Infinity;
+const n = pullsToBreakEV(S.player, boss, 0);
+const pAtCap = breakChance(S.player, boss, SCAR_CAP);
 
 const milestones = [];
 // numbers live in desc: a balance edit shows as MISSING+NEW (counts as drift)
-milestones.push({ t: 0, desc: `W1 EV depth ${(ev * 100).toFixed(1)}%/pull, break ${(p * 100).toFixed(1)}%/pull` });
+milestones.push({ t: 0, desc: `W1 EV fresh ${(ev * 100).toFixed(1)}%/pull, scars ${SCAR_RATE * 100}% rate / ${SCAR_CAP * 100}% cap, break at cap ${(pAtCap * 100).toFixed(1)}%` });
 milestones.push({ t: Math.round(boss.windowS), desc: "W1 first pull resolved" });
 milestones.push({
-  t: Math.round(ePulls * boss.windowS + (ePulls - 1) * COOLDOWN_MS / 1000),
-  desc: `W1 broken (EV, E[pulls] ${ePulls.toFixed(1)})`,
+  t: Math.round(n * boss.windowS + (n - 1) * COOLDOWN_MS / 1000),
+  desc: `W1 broken (EV, pull ${n})`,
 });
 
 function fmtT(t) {
