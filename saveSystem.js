@@ -67,14 +67,16 @@ export function load(state) {
   state.boss = { ...d.boss, ...(s.boss || {}) };
   state.cooldownUntil = s.cooldownUntil ?? 0;
   state.pull = null; // reload mid-pull drops the pull — nothing gained until resolve
+  const { assign, count, ...sBots } = s.bots || {}; // v2 fields dropped below
   state.bots = {
-    ...d.bots, ...(s.bots || {}),
-    assign: { ...d.bots.assign, ...(s.bots?.assign || {}) },
+    ...d.bots, ...sBots,
+    alloc: { ...d.bots.alloc, ...(s.bots?.alloc || {}) },
     bars: {
       atk: { ...d.bots.bars.atk, ...(s.bots?.bars?.atk || {}) },
       speed: { ...d.bots.bars.speed, ...(s.bots?.bars?.speed || {}) },
     },
   };
+  if (count !== undefined && s.bots?.pop === undefined) state.bots.pop = count; // v2 → v3
   state.gear = { ...d.gear, ...(s.gear || {}) };
   if (!Array.isArray(state.gear.stash)) state.gear.stash = [];
   state.farm = { ...d.farm, ...(s.farm || {}) };

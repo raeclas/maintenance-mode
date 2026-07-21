@@ -54,22 +54,34 @@ mark(30, `first pull ${(expectedDepth(derive(S), boss) * 100).toFixed(4)}% (intr
 mark(35, "systems unlock");
 S.unlocked = true;
 
+let botOutEarnSteps = 0, totalSteps = 0;
 while (t < MAX_S && !broken) {
   t += STEP;
+  totalSteps++;
 
-  // --- assignment: 1 bot trains speed until cap, rest train ATK ---
+  // --- swarm: 20% speed until cap, 40% atk, 40% farm best per-bot zone ---
   const speedDone = S.bots.bars.speed.lvl >= 100;
-  S.bots.assign.speed = speedDone ? 0 : Math.min(1, S.bots.count - 1);
-  S.bots.assign.atk = S.bots.count - S.bots.assign.speed;
-  bots.tick(S, STEP);
+  S.bots.alloc.spd = speedDone ? 0 : 20;
+  S.bots.alloc.atk = speedDone ? 60 : 40;
+  S.bots.alloc.farm = 40;
+  let bz = 0;
+  farm.zones.forEach((zz, i) => {
+    if (bots.botFarmRates(S.bots, i).perBotCopperSec > bots.botFarmRates(S.bots, bz).perBotCopperSec) bz = i;
+  });
+  S.bots.farmZone = bz;
+  const botRates = bots.botFarmRates(S.bots, bz);
+  bots.tick(S, STEP); // creation, training, farm mail, bans
 
-  // --- farm best gated zone (real rate card) ---
+  // --- player farms best gated zone (real rate card) ---
   const zi = bestZone();
   S.farm.zone = zi;
   const z = farm.zones[zi];
   const rc = farm.rateCard(S, z);
   S.copper += rc.copperPerSec * STEP;
   rolls[zi] += (rc.dropsPerHour * STEP) / 3600;
+
+  // main-character gate: the swarm must not out-earn your own parking
+  if (botRates.copperPerSec > rc.copperPerSec) botOutEarnSteps++;
 
   // --- gear adoption: EV best roll so far in this zone. Adopt on RAW ip gain
   // (optimal play re-enhances; copper income covers the re-climb) ---
@@ -85,14 +97,16 @@ while (t < MAX_S && !broken) {
   }
 
   // --- spend copper: rig upgrades with ≤30min payback, then enhance to +10 ---
+  const income = rc.copperPerSec + botRates.copperPerSec;
   for (;;) {
     const options = [
-      ["bot", bots.botCost(S.bots)],
+      ["cap", bots.capCost(S.bots)],
+      ["create", bots.createCost(S.bots)],
       ["power", bots.powerCost(S.bots)],
       ["speed", bots.speedCost(S.bots)],
     ].sort((a, b) => a[1] - b[1]);
     const [what, price] = options[0];
-    if (price <= S.copper && price <= rc.copperPerSec * 1800) bots.buy(S, what);
+    if (price <= S.copper && price <= income * 1800) bots.buy(S, what);
     else break;
   }
   for (;;) {
@@ -123,6 +137,11 @@ while (t < MAX_S && !broken) {
     }
   }
 
+  if (process.env.SIMDBG && t % 21600 < STEP) {
+    const d = derive(S);
+    console.error(`t=${(t / 3600).toFixed(0)}h dps=${Math.round(dps())} atk=${Math.round(d.atk)} hits=${d.hitsPerSec.toFixed(2)} pop=${S.bots.pop.toFixed(1)} atkLvl=${S.bots.bars.atk.lvl} spdLvl=${S.bots.bars.speed.lvl} gearIp=${SLOTS.map(sl => S.gear[sl] ? `${S.gear[sl].ip}+${S.gear[sl].plus}` : "-").join(",")} cu=${Math.round(S.copper)} scars=${S.boss.scars.toFixed(2)}`);
+  }
+
   // --- observation milestones ---
   const mult = dps() / startDps;
   for (const m of [10, 100, 1000, 10000]) if (mult >= m) mark(t, `power ×${m}`);
@@ -150,6 +169,7 @@ const x10 = milestones.find(m => m.desc === "power ×10");
 if (!x10 || x10.t > 3600) gates.push(`GATE FAIL: power ×10 at ${x10 ? fmtT(x10.t) : "never"} (want ≤1h)`);
 const d1 = milestones.find(m => m.desc === "depth 1%");
 if (!d1 || d1.t > 86400) gates.push(`GATE FAIL: depth 1% at ${d1 ? fmtT(d1.t) : "never"} (want ≤1d)`);
+if (botOutEarnSteps / totalSteps > 0.1) gates.push(`GATE FAIL: bot swarm out-earns the player in ${(botOutEarnSteps / totalSteps * 100).toFixed(0)}% of steps (main-character law, want ≤10%)`);
 
 const compare = process.argv.includes("--compare");
 const baseUrl = new URL("./baseline.json", import.meta.url);

@@ -135,7 +135,9 @@ section.game button:disabled { color: #55555e; cursor: default; }
 .rig { display: flex; gap: 8px; flex-wrap: wrap; }
 .rigline { font-family: monospace; font-size: 11px; margin: 6px 0 10px; }
 .bar { margin: 8px 0; }
-.barHead { display: flex; gap: 12px; align-items: center; font-size: 12px; font-family: monospace; }
+.barHead { display: flex; gap: 12px; align-items: center; font-size: 12px; font-family: monospace; flex-wrap: wrap; }
+.trackName { width: 90px; }
+#botZone { background: #22222a; color: #b9b2a0; border: 1px solid var(--line); font-family: monospace; font-size: 11px; }
 .barHead .assign button { padding: 1px 7px; }
 .barHead .assign b { padding: 0 6px; color: var(--gold); }
 .barTrack { height: 8px; background: #22222a; margin-top: 4px; }

@@ -9,12 +9,14 @@ export const DROP_PER_KILLS = 200;  // 1 gear roll per 200 kills EV
 export const OFFLINE_CAP_S = 12 * 3600;
 
 // Starting values; gates displayed on the cards. Each zone ≈ one day of the arc.
+// detection: anti-cheat bans per farming BOT per hour in this zone (player
+// is never banned — you're a real login). Starting values, sim-gated.
 export const zones = [
-  { id: "z1", name: "Meadow of Beginnings", gate: 0, mobHp: 50, copper: 5, ipLo: 10, ipHi: 30, mob: "Training Slime" },
-  { id: "z2", name: "Spider Hollows", gate: 500, mobHp: 1000, copper: 20, ipLo: 40, ipHi: 120, mob: "Web Matron" },
-  { id: "z3", name: "Saltglass Flats", gate: 2000, mobHp: 4000, copper: 75, ipLo: 150, ipHi: 450, mob: "Glass Strider" },
-  { id: "z4", name: "The Ashen Steppe", gate: 7500, mobHp: 15000, copper: 300, ipLo: 600, ipHi: 1800, mob: "Cinder Yak" },
-  { id: "z5", name: "Throne Approach", gate: 32000, mobHp: 64000, copper: 2250, ipLo: 4500, ipHi: 13500, mob: "Doorward Echo" },
+  { id: "z1", name: "Meadow of Beginnings", gate: 0, mobHp: 50, copper: 5, ipLo: 10, ipHi: 30, mob: "Training Slime", detection: 0.1 },
+  { id: "z2", name: "Spider Hollows", gate: 500, mobHp: 1000, copper: 20, ipLo: 40, ipHi: 120, mob: "Web Matron", detection: 0.25 },
+  { id: "z3", name: "Saltglass Flats", gate: 2000, mobHp: 4000, copper: 75, ipLo: 150, ipHi: 450, mob: "Glass Strider", detection: 0.5 },
+  { id: "z4", name: "The Ashen Steppe", gate: 7500, mobHp: 15000, copper: 300, ipLo: 600, ipHi: 1800, mob: "Cinder Yak", detection: 0.9 },
+  { id: "z5", name: "Throne Approach", gate: 32000, mobHp: 64000, copper: 2250, ipLo: 4500, ipHi: 13500, mob: "Doorward Echo", detection: 1.6 },
 ];
 
 export function dpsOf(state) {

@@ -8,48 +8,48 @@
     "desc": "systems unlock"
   },
   {
-    "t": 600,
+    "t": 1200,
     "desc": "power ×10"
   },
   {
-    "t": 3600,
+    "t": 6600,
     "desc": "z2 unlocked (Spider Hollows)"
   },
   {
-    "t": 3600,
+    "t": 7200,
     "desc": "depth 0.1%"
   },
   {
-    "t": 13200,
+    "t": 18600,
     "desc": "power ×100"
   },
   {
-    "t": 13200,
+    "t": 18600,
     "desc": "z3 unlocked (Saltglass Flats)"
   },
   {
-    "t": 18000,
+    "t": 21600,
     "desc": "depth 1%"
   },
   {
-    "t": 37800,
+    "t": 40800,
     "desc": "z4 unlocked (The Ashen Steppe)"
   },
   {
-    "t": 40200,
+    "t": 42000,
     "desc": "power ×1000"
   },
   {
-    "t": 79800,
+    "t": 84600,
     "desc": "z5 unlocked (Throne Approach)"
-  },
-  {
-    "t": 85200,
-    "desc": "power ×10000"
   },
   {
     "t": 86400,
     "desc": "depth 10%"
+  },
+  {
+    "t": 88200,
+    "desc": "power ×10000"
   },
   {
     "t": 93600,
@@ -60,7 +60,7 @@
     "desc": "scars capped"
   },
   {
-    "t": 532800,
+    "t": 349200,
     "desc": "W1 broken (EV)"
   }
 ]

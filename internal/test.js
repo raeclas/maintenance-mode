@@ -85,35 +85,70 @@ const enh = await import("../enhance.js");
   assert.equal(s.cooldownUntil, 0);
 }
 
-// Bots: NGU triple scaling + offline≡live batching
+// Bots: population flow — creation toward server capacity
 {
   const s = newState();
-  s.bots.assign = { atk: 2, speed: 0 };
-  bots.tick(s, 100); // 2 bots × 1.0 × 1.0 × 100s = 200 units
-  assert.equal(s.bots.bars.atk.lvl, 2); // lvl0 40, lvl1 160 → 200 exactly
-  assert.equal(s.bots.bars.atk.prog, 0);
+  assert.equal(bots.capacity(s.bots), 8);
+  bots.tick(s, 3600); // +2/h
+  assert.ok(Math.abs(s.bots.pop - 4) < 0.01);
+  bots.tick(s, 100 * 3600);
+  assert.equal(s.bots.pop, 8); // capped
+}
 
+// Bots: training scales with pop × power × speed via alloc %
+{
+  const s = newState();
+  s.bots.pop = 8; // at cap → no creation drift
+  s.bots.alloc = { atk: 100, spd: 0, farm: 0 };
+  bots.tick(s, 100); // 8 × 1.0 × 1.0 × 100 = 800 units
+  let units = 800, lvl = 0;
+  while (units >= bots.levelCost(lvl)) units -= bots.levelCost(lvl++);
+  assert.equal(s.bots.bars.atk.lvl, lvl);
+  assert.ok(Math.abs(s.bots.bars.atk.prog - units) < 1e-6);
+}
+
+// Bots: farming mails copper, bans at zone detection, creation refills
+{
+  const s = newState();
+  s.bots.pop = 8;
+  s.bots.alloc = { atk: 0, spd: 0, farm: 100 };
+  s.bots.farmZone = 0;
+  const z1 = farm.zones[0];
+  const perBot = Math.min(2, bots.botDps(s.bots) / z1.mobHp) * z1.copper; // c/s
+  const expBans = 8 * z1.detection; // per hour
+  bots.tick(s, 3600);
+  assert.ok(Math.abs(s.copper - 8 * perBot * 3600) < 8 * perBot * 3600 * 0.01);
+  assert.ok(Math.abs(s.bots.banned - expBans) < expBans * 0.2);
+  assert.ok(s.bots.pop > 7.5 && s.bots.pop <= 8); // generator refills most of it
+}
+
+// Bots: offline batch ≡ live ticks (pure training, pop at cap → exact)
+{
   const a = newState(), b2 = newState();
-  a.bots.assign = { atk: 1, speed: 1 };
-  b2.bots.assign = { atk: 1, speed: 1 };
-  a.bots.powerRank = b2.bots.powerRank = 2;
-  bots.tick(a, 43_200);                                  // one 12h batch
-  for (let i = 0; i < 43_200; i++) bots.tick(b2, 1);     // 12h of 1s ticks
+  for (const s of [a, b2]) {
+    s.bots.pop = 8;
+    s.bots.alloc = { atk: 50, spd: 50, farm: 0 };
+    s.bots.powerRank = 2;
+  }
+  bots.tick(a, 43_200);                              // one 12h batch
+  for (let i = 0; i < 720; i++) bots.tick(b2, 60);   // 12h of 60s ticks
   assert.equal(a.bots.bars.atk.lvl, b2.bots.bars.atk.lvl);
   assert.ok(Math.abs(a.bots.bars.atk.prog - b2.bots.bars.atk.prog) < 1e-6);
 }
 
-// Bots: buying the triple costs copper and scales rates
+// Bots: rig purchases + alloc clamping
 {
   const s = newState();
   s.copper = 10_000;
-  assert.ok(bots.buy(s, "bot") && s.bots.count === 3);
+  assert.ok(bots.buy(s, "cap") && bots.capacity(s.bots) === 12);
+  assert.ok(bots.buy(s, "create") && bots.createRate(s.bots) === 3);
   assert.ok(bots.buy(s, "power") && bots.botPower(s.bots) === 1.25);
   assert.ok(bots.buy(s, "speed") && bots.botSpeed(s.bots) === 1.2);
   s.copper = 0;
-  assert.equal(bots.buy(s, "bot"), false);
-  bots.setAssign(s, "atk", 99); // clamped to count − other
-  assert.ok(s.bots.assign.atk + s.bots.assign.speed <= s.bots.count);
+  assert.equal(bots.buy(s, "cap"), false);
+  bots.setAlloc(s, "farm", 990); // clamped so total ≤ 100
+  const a = s.bots.alloc;
+  assert.ok(a.atk + a.spd + a.farm <= 100);
 }
 
 // Farm: kill cap, gate re-check, deterministic drop carry
@@ -178,7 +213,8 @@ const enh = await import("../enhance.js");
   const s = newState();
   s.unlocked = true;
   s.copper = 1234;
-  s.bots.count = 4;
+  s.bots.pop = 4.5;
+  s.bots.capRank = 1;
   s.bots.bars.atk = { lvl: 7, prog: 11 };
   s.gear.weapon = { slot: "weapon", ip: 55, plus: 3, zone: 1, name: "t" };
   s.gear.stash = [{ slot: "charm", ip: 5, plus: 0, zone: 1, name: "u" }];
@@ -189,6 +225,8 @@ const enh = await import("../enhance.js");
   const s2 = newState();
   saves.load(s2);
   assert.deepEqual(s2.bots.bars.atk, { lvl: 7, prog: 11 });
+  assert.equal(s2.bots.pop, 4.5);
+  assert.equal(s2.bots.capRank, 1);
   assert.equal(s2.copper, 1234);
   assert.equal(s2.gear.weapon.ip, 55);
   assert.equal(s2.gear.stash.length, 1);
@@ -199,9 +237,18 @@ const enh = await import("../enhance.js");
   localStorage.setItem("mm_save", JSON.stringify({ v: 1, player: { atk: 10 }, boss: { pulls: 5, scars: 0.2 } }));
   const s3 = newState();
   saves.load(s3);
-  assert.equal(s3.bots.count, 2);
+  assert.equal(s3.bots.pop, 2);
   assert.equal(s3.boss.scars, 0.2);
   assert.equal(s3.unlocked, true); // mid-siege v1 save keeps systems open
+
+  // v2 save (discrete accounts): count → pop
+  localStorage.setItem("mm_save", JSON.stringify({ v: 2, bots: { count: 5, assign: { atk: 3, speed: 2 }, powerRank: 1 } }));
+  const s5 = newState();
+  saves.load(s5);
+  assert.equal(s5.bots.pop, 5);
+  assert.equal(s5.bots.powerRank, 1);
+  assert.equal(s5.bots.assign, undefined); // v2 field dropped
+  assert.deepEqual(s5.bots.alloc, { atk: 50, spd: 50, farm: 0 }); // defaults
 
   // durability: corrupt primary → quarantined, _bak restores
   saves.save(s);

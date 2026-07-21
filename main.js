@@ -74,15 +74,23 @@ $("wipeBtn").addEventListener("click", () => {
 function buyLabel(what, cost) {
   return `${what} (${fmt(cost)}c)`;
 }
-$("buyBot").addEventListener("click", () => { if (bots.buy(state, "bot")) log("Bought another botted account. It has a name. You don't read it."); });
+$("buyCap").addEventListener("click", () => { if (bots.buy(state, "cap")) log("Cleared dead sessions. The server never noticed the extra logins."); });
+$("buyCreate").addEventListener("click", () => { if (bots.buy(state, "create")) log("Generator tuned. The email server that verified accounts died in 2019."); });
 $("buyPower").addEventListener("click", () => { if (bots.buy(state, "power")) log("Script quality up. The forum post had 4 replies, all bots."); });
 $("buySpeed").addEventListener("click", () => { if (bots.buy(state, "speed")) log("New hardware. The fans sound like a raid boss."); });
 for (const btn of document.querySelectorAll(".assign button")) {
   btn.addEventListener("click", () => {
-    const bar = btn.dataset.bar;
-    bots.setAssign(state, bar, state.bots.assign[bar] + Number(btn.dataset.d));
+    const track = btn.dataset.track;
+    bots.setAlloc(state, track, state.bots.alloc[track] + Number(btn.dataset.d));
   });
 }
+for (const [i, z] of farm.zones.entries()) {
+  const opt = document.createElement("option");
+  opt.value = i;
+  opt.textContent = z.name;
+  $("botZone").appendChild(opt);
+}
+$("botZone").addEventListener("change", () => { state.bots.farmZone = Number($("botZone").value); });
 
 // ---- farming: build zone cards once ----
 const zoneEls = farm.zones.map((z, i) => {
@@ -192,7 +200,7 @@ function render() {
   $("atkEl").textContent = fmt(d.atk);
   $("hpsEl").textContent = d.hitsPerSec.toFixed(2);
   $("copperEl").textContent = fmt(state.copper);
-  $("playerCount").textContent = state.unlocked ? 1 + state.bots.count : 1;
+  $("playerCount").textContent = state.unlocked ? 1 + Math.round(state.bots.pop) : 1;
 
   // pull row
   const pb = $("pullBtn");
@@ -237,20 +245,27 @@ function render() {
 
   // bot farm
   const b = state.bots;
-  $("buyBot").textContent = buyLabel("+ account", bots.botCost(b));
+  $("buyCap").textContent = buyLabel(`session slots +${4}`, bots.capCost(b));
+  $("buyCreate").textContent = buyLabel("generator +", bots.createCost(b));
   $("buyPower").textContent = buyLabel("script quality +", bots.powerCost(b));
   $("buySpeed").textContent = buyLabel("hardware +", bots.speedCost(b));
-  $("rigLine").textContent = `${b.count} bots · power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · idle ${b.count - bots.assigned(b)}`;
-  const rate = bots.botPower(b) * bots.botSpeed(b);
-  for (const bar of ["atk", "speed"]) {
+  const idle = 100 - b.alloc.atk - b.alloc.spd - b.alloc.farm;
+  $("rigLine").textContent =
+    `${b.pop.toFixed(1)} / ${bots.capacity(b)} bots · +${bots.createRate(b).toFixed(1)}/h · power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · idle ${idle}% · banned ever: ${Math.floor(b.banned)}`;
+  const quality = bots.botPower(b) * bots.botSpeed(b);
+  for (const [bar, track, el] of [["atk", "atk", "Atk"], ["speed", "spd", "Speed"]]) {
     const B = b.bars[bar];
-    const el = bar === "atk" ? "Atk" : "Speed";
-    $(`assign${el}`).textContent = b.assign[bar];
+    $(`alloc${el === "Atk" ? "Atk" : "Spd"}`).textContent = b.alloc[track] + "%";
     const gain = bar === "atk" ? "+8 ATK/lvl" : "+0.03 hits/lvl";
     const capped = bar === "speed" && B.lvl >= 100 ? " (CAP)" : "";
-    $(`bar${el}Info`).textContent = `lvl ${B.lvl}${capped} · ${(b.assign[bar] * rate).toFixed(1)}/s · ${gain}`;
+    $(`bar${el}Info`).textContent = `lvl ${B.lvl}${capped} · ${(b.pop * b.alloc[track] / 100 * quality).toFixed(1)}/s · ${gain}`;
     $(`bar${el}Fill`).style.width = `${Math.min(100, (B.prog / bots.levelCost(B.lvl)) * 100)}%`;
   }
+  $("allocFarm").textContent = b.alloc.farm + "%";
+  const bf = bots.botFarmRates(b, b.farmZone);
+  $("botFarmInfo").textContent = b.alloc.farm > 0
+    ? `${fmt(bf.copperPerSec)}c/s mailed · ${bf.bansPerHour.toFixed(2)} bans/h (bot DPS ${fmt(bots.botDps(b))})`
+    : `bot DPS ${fmt(bots.botDps(b))} · safe in lobbies`;
 
   // farming
   farm.zones.forEach((z, i) => {

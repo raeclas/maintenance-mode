@@ -220,19 +220,36 @@ Levels and XP are deleted from the game. The unlock arc hangs off the intro
 beat, bot milestones, and wall breaks instead. NGU-inspired, MMO-diegetic:
 the dead server doesn't check for bots anymore, so you run a farm.
 
-- **Trainings = bars** (ATK +8/lvl uncapped w/ 40×L² cost; Speed +0.03
-  hits/s per lvl, hard cap lvl 100 → 5.0 hits/s. More bars reserved for
-  Crit/Pierce). Bar progress/s = **bots assigned × bot power × bot speed**.
-- **The NGU triple is copper-improvable** (rig upgrades, exponential costs):
-  accounts (3rd = 500c, ×8 each), script quality (+0.25 power, 200c×2.2^r),
-  hardware (+0.20 speed, 300c×2.5^r). Assignment free + instant.
-- Offline = same tick fn, dt clamped 12h; test asserts batch ≡ 1s ticks.
-- Abuse note: copper→bots→stats is the only currency→pacing coupling —
+**[AMENDED 2026-07-21 — population flow, ITRTG-clone model]** Bots are a
+STREAM, not pets: the trial-account generator spawns toward the dead
+server's leftover session capacity; farming bots get banned at the zone's
+detection rate; the swarm finds equilibrium. Nothing loved ever dies —
+anonymity is the attachment law by construction.
+
+- **Trainings = bars** (ATK +8/lvl uncapped; Speed +0.03 hits/s per lvl,
+  hard cap lvl 100 → 5.0 hits/s; cost 180×L² units; more bars reserved).
+  Bar progress/s = trainPop × bot power × bot speed. Allocation = % of pop
+  (Train ATK / Train SPD / Farm), free + instant, remainder idles.
+- **Rig (all copper, exponential):** session slots (cap 8 + 4/rank,
+  800c×3.5^r), generator (2/h × (1+0.5r), 500c×3^r), script quality
+  (power +0.25/r, 200c×2.2^r), hardware (speed +0.20/r, 300c×2.5^r).
+- **Bot farming:** bots fight with their OWN stats (botDPS = 4 × power ×
+  speed) through the player's kill formula; they mail **copper only** —
+  gear drops stay player-exclusive (parking stays meaningful; drop faucet
+  single-sourced). Zone detection (0.1→1.6 bans/bot/h, z1→z5) is the
+  risk-reward dial: richer zones burn population faster. Training lobbies
+  are private — detection zero.
+- Player is never banned (a real login). Sim gate: swarm must not out-earn
+  the player's own parking in >10% of steps (main-character law).
+- Offline = same tick fn (internally sub-stepped 60s so a 12h batch
+  integrates the shrinking population like live), dt clamped 12h.
+- Abuse notes: copper→rig→stats is the only currency→pacing coupling —
   allowed because stats are not XP/unlocks; whole chain sim-modeled;
-  exponential costs prevent runaway compounding.
+  exponential costs prevent runaway compounding; deaths are chosen rates,
+  never neglect penalties (absence never accelerates loss).
 - "I am the main character": bots never pull, never appear in the battle
-  scene; they are infrastructure. PLAYERS counter on the shell counts them
-  (satire surface).
+  scene; they are infrastructure. PLAYERS counter counts them (satire
+  surface); lifetime ban counter feeds log melancholy.
 
 ### 7b. Rebirth — "Ban Wave" [DESIGNED 2026-07-21, build next slice]
 

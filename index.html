@@ -39,26 +39,35 @@
   <section id="botSec" class="game hidden">
     <h2>Bot Farm</h2>
     <div class="rig">
-      <button id="buyBot"></button>
+      <button id="buyCap"></button>
+      <button id="buyCreate"></button>
       <button id="buyPower"></button>
       <button id="buySpeed"></button>
     </div>
     <div class="rigline" id="rigLine"></div>
     <div class="bar" id="barAtk">
       <div class="barHead">
-        <span>Train ATK</span>
-        <span class="assign"><button data-bar="atk" data-d="-1">−</button><b id="assignAtk">0</b><button data-bar="atk" data-d="1">+</button> bots</span>
+        <span class="trackName">Train ATK</span>
+        <span class="assign"><button data-track="atk" data-d="-10">−</button><b id="allocAtk">0%</b><button data-track="atk" data-d="10">+</button></span>
         <span id="barAtkInfo"></span>
       </div>
       <div class="barTrack"><div class="barFill" id="barAtkFill"></div></div>
     </div>
     <div class="bar" id="barSpeed">
       <div class="barHead">
-        <span>Train SPEED</span>
-        <span class="assign"><button data-bar="speed" data-d="-1">−</button><b id="assignSpeed">0</b><button data-bar="speed" data-d="1">+</button> bots</span>
+        <span class="trackName">Train SPEED</span>
+        <span class="assign"><button data-track="spd" data-d="-10">−</button><b id="allocSpd">0%</b><button data-track="spd" data-d="10">+</button></span>
         <span id="barSpeedInfo"></span>
       </div>
       <div class="barTrack"><div class="barFill" id="barSpeedFill"></div></div>
+    </div>
+    <div class="bar">
+      <div class="barHead">
+        <span class="trackName">Farm</span>
+        <span class="assign"><button data-track="farm" data-d="-10">−</button><b id="allocFarm">0%</b><button data-track="farm" data-d="10">+</button></span>
+        <select id="botZone"></select>
+        <span id="botFarmInfo"></span>
+      </div>
     </div>
   </section>
 
