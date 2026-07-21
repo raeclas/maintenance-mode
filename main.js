@@ -480,19 +480,14 @@ function render() {
       : `trained +${b.trained.hits.toFixed(4)} hits/s (+${laneRate.toFixed(5)}/s)`;
     $(`bar${el}Info`).textContent = laneCapped ? `${trained} · LANE MAX` : trained;
   }
-  if (document.activeElement !== $("allocFarm")) $("allocFarm").value = b.alloc.farm;
   $("autoSalvage").checked = state.gear.autoSalvage;
-  const bf = bots.botFarmRates(b, b.farmZone);
-  $("botFarmInfo").textContent = eff.farm > 0
-    ? `${fmt(bf.copperPerSec)}c/s · ${bf.bansPerHour.toFixed(2)} bans/h · bot DPS ${fmt(bots.botDps(b))}`
-    : `bot DPS ${fmt(bots.botDps(b))} · idle`;
 
   // bot enhance squad
   for (const btn of $("enhSeg").children) btn.classList.toggle("active", btn.dataset.slot === b.enhTarget.slot);
   if (document.activeElement !== $("enhPlus")) $("enhPlus").value = b.enhTarget.plus;
   const tItem = state.gear[b.enhTarget.slot];
   const iv = tItem ? bots.enhInterval(b, tItem.plus) : Infinity;
-  $("botEnhInfo").textContent = eff.enh <= 0 ? "idle"
+  $("botEnhInfo").textContent = b.alloc.enh <= 0 ? "idle"
     : !tItem ? "no item in slot"
     : tItem.plus >= b.enhTarget.plus ? `done: +${tItem.plus}`
     : `try every ${iv === Infinity ? "—" : fmt(iv)}s · ${fmt(enh.cost(tItem))}c/try`;
@@ -523,9 +518,18 @@ function render() {
     $(`zbi${i}`).textContent = n > 0
       ? `${fmt(zr.copperPerSec)}c/s · ${zr.bansPerHour.toFixed(2)} bans/h${zr.kps >= farm.KILL_CAP ? " · CAP" : ""}`
       : "";
-    // next-drop bar: fills as kills accumulate toward the next gear roll
-    $(`zf${i}`).style.width = state.farm.zone === i && !rc.locked
-      ? `${Math.min(100, state.farm.dropCarry * 100)}%` : "0";
+    // zone bar: parked = fills toward your next gear roll; bot squad =
+    // cycles at the squad's real kill rate (100 kills per sweep)
+    const zfEl = $(`zf${i}`);
+    if (state.farm.zone === i && !rc.locked) {
+      zfEl.style.width = `${Math.min(100, state.farm.dropCarry * 100)}%`;
+      zfEl.style.background = "";
+    } else if (n > 0 && zr.kps > 0) {
+      zfEl.style.width = `${((now / 1000) * zr.kps % 100)}%`;
+      zfEl.style.background = "#5a7a5a"; // bot work reads green, not gold
+    } else {
+      zfEl.style.width = "0";
+    }
   });
 
   // gear
