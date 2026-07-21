@@ -4,10 +4,11 @@
 
 export const SLOTS = ["weapon", "armor", "charm"];
 
+// Dead-game register; names follow the zone that drops them.
 const NAMES = {
-  weapon: ["Rusty Shortsword", "Militia Spear", "Saltglass Saber", "Steppe Warblade", "Throne Guard Halberd"],
-  armor: ["Padded Vest", "Webspun Jerkin", "Saltglass Cuirass", "Ashen Scale Coat", "Throne Guard Plate"],
-  charm: ["Cracked Bead", "Spider-Eye Charm", "Salt Talisman", "Ember Sigil", "Sigil of the First Door"],
+  weapon: ["Rusty Shortsword", "Ravine Pike", "Salt-Etched Saber", "Cinder Warblade", "Sentry Halberd"],
+  armor: ["Padded Vest", "Weaver-Silk Jerkin", "Salt-Crusted Cuirass", "Cinder Scale Coat", "Sentry Plate"],
+  charm: ["Cracked Bead", "Weaver-Eye Charm", "Salt Talisman", "Ember Sigil", "Door Sentry Sigil"],
 };
 
 // Compounding, not linear: every plus is felt, high plusses are events

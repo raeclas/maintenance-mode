@@ -24,17 +24,19 @@ export const BOT_BASE_DPS = 4;        // a naked account running a script
 export const UNLOCK_FILLS = 50;
 export const MAX_FILLS_PER_S = 0.02; // 50s/fill floor — tiers CAN max out (the ITRTG feel)
 export const SPEED_TRAIN_CAP = 3.0;  // trained hits/s: lane tops out at 2.0 + 3.0 = 5.0
+// Training names speak the BOTTER register (feature-pass gate 3): script
+// names a 2006 botting forum would trade.
 export const TRAININGS = {
   atk: [
-    { name: "macro loop", cost: 3000, gain: 2 },
-    { name: "combo script", cost: 30_000, gain: 12 },
-    { name: "kernel hook", cost: 240_000, gain: 70 },
-    { name: "frame-perfect bot", cost: 1_800_000, gain: 400 },
+    { name: "swing macro", cost: 3000, gain: 2 },
+    { name: "combo macro", cost: 30_000, gain: 12 },
+    { name: "cancel-weave script", cost: 240_000, gain: 70 },
+    { name: "frame-perfect script", cost: 1_800_000, gain: 400 },
   ],
   speed: [
-    { name: "click daemon", cost: 6000, gain: 0.01 },
-    { name: "packet burst", cost: 60_000, gain: 0.06 },
-    { name: "zero-delay loop", cost: 480_000, gain: 0.3 },
+    { name: "autoclicker", cost: 6000, gain: 0.01 },
+    { name: "turbo clicker", cost: 60_000, gain: 0.06 },
+    { name: "no-delay hack", cost: 480_000, gain: 0.3 },
   ],
 };
 

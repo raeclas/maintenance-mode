@@ -354,14 +354,15 @@ function render() {
 
   // bot farm
   const b = state.bots;
-  $("buyCap").textContent = buyLabel(`session slots +${4}`, bots.capCost(b));
-  $("buyCreate").textContent = buyLabel("generator +", bots.createCost(b));
-  $("buyPower").textContent = buyLabel("script quality +", bots.powerCost(b));
-  $("buySpeed").textContent = buyLabel("hardware +", bots.speedCost(b));
+  // rig labels speak the BOTTER register; "session" stays the GM panel's word
+  $("buyCap").textContent = buyLabel(`multiclient +${4}`, bots.capCost(b));
+  $("buyCreate").textContent = buyLabel("account creator +", bots.createCost(b));
+  $("buyPower").textContent = buyLabel("script version +", bots.powerCost(b));
+  $("buySpeed").textContent = buyLabel("overclock +", bots.speedCost(b));
   const eff = bots.effAlloc(b);
   const scaled = eff.scale < 0.995 ? ` · short ${((1 - eff.scale) * 100).toFixed(0)}% (bans)` : "";
   $("rigStats").textContent =
-    `power ×${bots.botPower(b).toFixed(2)} · speed ×${bots.botSpeed(b).toFixed(2)} · banned ${Math.floor(b.banned)}${scaled}`;
+    `script ×${bots.botPower(b).toFixed(2)} · clock ×${bots.botSpeed(b).toFixed(2)} · banned ${Math.floor(b.banned)}${scaled}`;
   $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b, state.gm.cap)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
   for (const [bar, track, el] of [["atk", "atk", "Atk"], ["speed", "spd", "Speed"]]) {

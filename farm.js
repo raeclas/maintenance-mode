@@ -12,12 +12,14 @@ export function offlineCapS(state) { return OFFLINE_CAP_S + (state.gm?.offline |
 // Starting values; gates displayed on the cards. Each zone ≈ one day of the arc.
 // detection: anti-cheat bans per farming BOT per hour in this zone (player
 // is never banned — you're a real login). Starting values, sim-gated.
+// Zone names speak the DEAD GAME register (feature-pass gate 3): the old
+// world's leveling path, ending at the raid gate Vess guards.
 export const zones = [
-  { id: "z1", name: "Meadow of Beginnings", gate: 0, mobHp: 50, copper: 5, ipLo: 10, ipHi: 30, mob: "Training Slime", detection: 0.1 },
-  { id: "z2", name: "Spider Hollows", gate: 500, mobHp: 1000, copper: 20, ipLo: 40, ipHi: 120, mob: "Web Matron", detection: 0.25 },
-  { id: "z3", name: "Saltglass Flats", gate: 2000, mobHp: 4000, copper: 75, ipLo: 150, ipHi: 450, mob: "Glass Strider", detection: 0.5 },
-  { id: "z4", name: "The Ashen Steppe", gate: 7500, mobHp: 15000, copper: 300, ipLo: 600, ipHi: 1800, mob: "Cinder Yak", detection: 0.9 },
-  { id: "z5", name: "Throne Approach", gate: 32000, mobHp: 64000, copper: 2250, ipLo: 4500, ipHi: 13500, mob: "Doorward Echo", detection: 1.6 },
+  { id: "z1", name: "Novice Meadow", gate: 0, mobHp: 50, copper: 5, ipLo: 10, ipHi: 30, mob: "Training Slime", detection: 0.1 },
+  { id: "z2", name: "Webbed Ravine", gate: 500, mobHp: 1000, copper: 20, ipLo: 40, ipHi: 120, mob: "Ravine Weaver", detection: 0.25 },
+  { id: "z3", name: "Salt Flats", gate: 2000, mobHp: 4000, copper: 75, ipLo: 150, ipHi: 450, mob: "Salt Strider", detection: 0.5 },
+  { id: "z4", name: "Cinder Steppe", gate: 7500, mobHp: 15000, copper: 300, ipLo: 600, ipHi: 1800, mob: "Steppe Charger", detection: 0.9 },
+  { id: "z5", name: "The Doorstep", gate: 32000, mobHp: 64000, copper: 2250, ipLo: 4500, ipHi: 13500, mob: "Door Sentry", detection: 1.6 },
 ];
 
 export function dpsOf(state) {

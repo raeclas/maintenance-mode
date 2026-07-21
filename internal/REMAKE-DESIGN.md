@@ -454,6 +454,46 @@ The old build died by a skipped abuse test; the remake doesn't skip them.
 
 ---
 
+## 16. Lexicon — canonical names [NEW 2026-07-21, enforced by .claude/skills/feature-pass]
+
+Three registers, one per system. New names check in here in the same
+commit. Read every candidate aloud as a player sentence; if it sounds
+generated, it is.
+
+**The dead game** (what the 2000s MMO itself printed) — owns: zones,
+mobs, gear, boss fight, enhance verbs, titles.
+| Thing | Name |
+|---|---|
+| zones (leveling path → raid gate) | Novice Meadow · Webbed Ravine · Salt Flats · Cinder Steppe · The Doorstep |
+| mobs | Training Slime · Ravine Weaver · Salt Strider · Steppe Charger · Door Sentry |
+| weapons by zone | Rusty Shortsword · Ravine Pike · Salt-Etched Saber · Cinder Warblade · Sentry Halberd |
+| armor by zone | Padded Vest · Weaver-Silk Jerkin · Salt-Crusted Cuirass · Cinder Scale Coat · Sentry Plate |
+| charms by zone | Cracked Bead · Weaver-Eye Charm · Salt Talisman · Ember Sigil · Door Sentry Sigil |
+| boss verbs/nouns | Attempt · enrage · depth · scars · break · title · safeguard |
+| W1 | Vess, Warden of the First Door |
+
+**The botter's toolkit** (2006 botting-forum speak) — owns: bots, rig,
+training, automation.
+| Thing | Name |
+|---|---|
+| swarm resource | bots (free / capacity) |
+| rig upgrades | multiclient (capacity) · account creator (generation) · script version (power) · overclock (speed) |
+| rig stats line | script × · clock × · banned |
+| ATK trainings | swing macro → combo macro → cancel-weave script → frame-perfect script |
+| SPEED trainings | autoclicker → turbo clicker → no-delay hack |
+| verbs | park · farm · mail(ed) · spoofing (reserved) |
+
+**The dying server** (admin/ops decay) — owns: meta currency, GM perks,
+shell chrome.
+| Thing | Name |
+|---|---|
+| meta currency | tickets (support tickets nobody handles) |
+| spend surface | GM panel |
+| perk voice | session cap · idle timeout · lockout · repair scripts (finalized in GM rework) |
+| shell lines | PLAYERS counter · "[content not yet installed on this realm]" |
+
+---
+
 ### Definition of Done (game-design skill) — status
 
 - [x] 5-Component Filter evaluated (Pull §3, Enhance §5)
