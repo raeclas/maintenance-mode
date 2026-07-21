@@ -355,10 +355,19 @@ function render() {
 
   // pull row
   const pb = $("pullBtn");
+  $("ticketGain").textContent = "";
   if (state.pull) {
-    $("depth").textContent = fmtDepth(Math.min(1, currentDepth(state, now)));
+    const dCur = Math.min(1, currentDepth(state, now));
+    $("depth").textContent = fmtDepth(dCur);
     pb.disabled = true;
     $("cooldown").textContent = `enrage in ${Math.max(0, (state.pull.endsAt - now) / 1000).toFixed(0)}s`;
+    // live incident payout: base = tickets at current depth, (+bonus) = the
+    // rest filling as depth climbs to this attempt's pre-rolled final depth
+    const dEnd = Math.min(1, state.boss.scars + state.pull.rolledFresh);
+    const base = ticketYield(dCur);
+    const total = ticketYield(dEnd) + (dEnd >= 1 ? BREAK_TICKETS : 0);
+    const bonus = Math.max(0, total - base);
+    $("ticketGain").textContent = `tickets ${fmt(base)}${bonus > 0 ? ` (+${fmt(bonus)})` : ""}`;
   } else if (state.boss.broken) {
     $("depth").textContent = "100%";
     pb.disabled = true;

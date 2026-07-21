@@ -34,7 +34,8 @@ canvas {
 .controls {
   display: flex;
   align-items: center;
-  gap: 14px;
+  flex-wrap: wrap;
+  gap: 6px 14px;
   margin: 10px 0;
 }
 #pullBtn {
@@ -51,6 +52,7 @@ canvas {
 #pullBtn:disabled { background: #3a3a44; color: #77777f; cursor: default; }
 #depth { color: var(--gold); font-size: 26px; font-family: monospace; min-width: 90px; }
 #cooldown { font-size: 12px; font-family: monospace; }
+#ticketGain { font-size: 12px; font-family: monospace; color: #7aa4d4; margin-left: 8px; }
 #projection { font-size: 12px; font-family: monospace; color: var(--gold); min-height: 16px; margin: -4px 0 4px; }
 
 #dialogue {
