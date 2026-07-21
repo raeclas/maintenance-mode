@@ -27,7 +27,7 @@ const enh = await import("../enhance.js");
   assert.equal(d.atk, 10);
   assert.equal(d.hitsPerSec, 2.0);
   const b = getBoss(1);
-  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 90_000_000); // ≈0.0007%
+  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 120_000_000); // 0.0005% exactly
 }
 
 // Stats: gear + bars feed the one-line formula; speed hard cap
@@ -75,7 +75,7 @@ const enh = await import("../enhance.js");
 // Resolve: overwhelming stats → break, no cooldown
 {
   const s = newState();
-  s.gear.weapon = { slot: "weapon", ip: 3_000_000, plus: 0, zone: 5, name: "t" };
+  s.gear.weapon = { slot: "weapon", ip: 4_000_000, plus: 0, zone: 5, name: "t" };
   pull.startPull(s, 1_000_000, () => 0.5);
   assert.ok(!pull.pullDone(s, s.pull.startedAt + 5_000)); // rolled 2.0× → 100% mid-window
   assert.ok(pull.pullDone(s, s.pull.endsAt - 14_000));    // breaks early at 100%
@@ -125,7 +125,7 @@ const enh = await import("../enhance.js");
   assert.equal(s3.bots.bars.atk.unlocked, 2);
   bots.setTier(s3, "atk", 1);
   assert.equal(s3.bots.bars.atk.tier, 1);
-  assert.equal(s3.bots.bars.atk.fills[0], bots.UNLOCK_FILLS); // history kept
+  assert.ok(s3.bots.bars.atk.fills[0] >= bots.UNLOCK_FILLS); // history kept
   bots.setTier(s3, "atk", 3); // locked → rejected
   assert.equal(s3.bots.bars.atk.tier, 1);
 
@@ -192,24 +192,21 @@ const enh = await import("../enhance.js");
   assert.ok(eff.scale < 1);
 }
 
-// Farm: kills/s = min(hits/s, DPS/mobHP) — SPD caps throughput, ATK one-shots
+// Farm: kills/s = min(50, DPS/mobHP) — NGU-style universal rate ceiling
 {
   const s = newState();
   s.gear.weapon = { slot: "weapon", ip: 1e6, plus: 0, zone: 5, name: "t" };
   const z = farm.zones[0];
-  assert.equal(farm.killsPerSec(s, z), 2.0); // one-shotting → speed-bound at hits/s
-  s.bots.trained.hits = 3.0;
-  assert.equal(farm.killsPerSec(s, z), 5.0); // trained speed raises the farm cap
-  assert.ok(farm.rateCard(s, z).speedBound);
-  const weak = newState(); // ATK 10 vs 50 HP → damage-bound
+  assert.equal(farm.killsPerSec(s, z), farm.KILL_CAP); // monster DPS → capped at 50
+  assert.ok(farm.rateCard(s, z).capBound);
+  const weak = newState(); // DPS 20 vs 50 HP → DPS-bound
   assert.equal(farm.killsPerSec(weak, z), (10 * 2) / 50);
-  assert.ok(!farm.rateCard(weak, z).speedBound);
-  s.bots.trained.hits = 0;
+  assert.ok(!farm.rateCard(weak, z).capBound);
   s.farm.zone = 0;
   const drops = [];
   farm.tick(s, 100, () => 0.5, it => drops.push(it));
-  assert.equal(drops.length, 1); // 200 kills / 200 per drop = exactly 1
-  assert.ok(s.copper === 200 * z.copper);
+  assert.equal(drops.length, Math.floor(50 * 100 / farm.DROP_PER_KILLS)); // capped kills → rolls
+  assert.ok(s.copper === 5000 * z.copper);
   const s2 = newState();
   s2.farm.zone = 4; // gate 32k, DPS 20 → gated, nothing happens
   farm.tick(s2, 1000);

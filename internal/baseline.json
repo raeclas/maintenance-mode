@@ -1,26 +1,26 @@
 [
   {
     "t": 30,
-    "desc": "first attempt 0.0007% (intro beat)"
+    "desc": "first attempt 0.0005% (intro beat)"
   },
   {
     "t": 35,
     "desc": "systems unlock"
   },
   {
-    "t": 1800,
+    "t": 3000,
     "desc": "power ×10"
   },
   {
-    "t": 7200,
+    "t": 6000,
     "desc": "z2 unlocked (Webbed Ravine)"
   },
   {
-    "t": 13800,
+    "t": 11400,
     "desc": "power ×100"
   },
   {
-    "t": 13800,
+    "t": 11400,
     "desc": "z3 unlocked (Salt Flats)"
   },
   {
@@ -28,39 +28,39 @@
     "desc": "depth 0.1%"
   },
   {
-    "t": 18000,
+    "t": 15600,
     "desc": "z4 unlocked (Cinder Steppe)"
   },
   {
-    "t": 20400,
+    "t": 17400,
     "desc": "power ×1000"
   },
   {
-    "t": 24000,
+    "t": 18600,
     "desc": "z5 unlocked (The Doorstep)"
   },
   {
-    "t": 25200,
+    "t": 21600,
     "desc": "power ×10000"
   },
   {
-    "t": 25200,
+    "t": 21600,
     "desc": "depth 1%"
   },
   {
-    "t": 28800,
+    "t": 25200,
     "desc": "depth 10%"
   },
   {
-    "t": 40800,
+    "t": 44400,
     "desc": "scars capped"
   },
   {
-    "t": 43800,
+    "t": 55200,
     "desc": "depth 50%"
   },
   {
-    "t": 470400,
+    "t": 519600,
     "desc": "W1 broken (EV)"
   }
 ]

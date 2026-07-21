@@ -21,24 +21,25 @@ export const BOT_BASE_DPS = 4;        // a naked account running a script
 // after UNLOCK_FILLS fills of the previous. Which tier to RUN is the
 // player's call — a maxed low tier can out-rate a young high tier.
 // Starting values, sim-gated.
-// Granularity is psychology (playtest verdict): same stat/s as before at
-// 1/50 the cost and gain — bars fill in SECONDS, counters visibly tick.
-export const UNLOCK_FILLS = 2500;
-export const MAX_FILLS_PER_S = 1.0; // 1s/fill floor — tiers still max out visibly
-export const SPEED_TRAIN_CAP = 3.0; // trained hits/s: lane tops out at 2.0 + 3.0 = 5.0
+// NGU-style engine ceiling: any bar grants at most 50 fills/s. Low tiers
+// have small costs so the cap is REACHABLE (RATE MAX = the visible goal);
+// higher tiers raise the ceiling with bigger cost AND bigger gain.
+export const UNLOCK_FILLS = 10_000;
+export const MAX_FILLS_PER_S = 50;
+export const SPEED_TRAIN_CAP = 3.0; // trained hits/s: lane tops out at 2.0 + 5.0 total
 // Training names speak the BOTTER register (feature-pass gate 3): script
 // names a 2006 botting forum would trade.
 export const TRAININGS = {
   atk: [
-    { name: "swing macro", cost: 60, gain: 0.04 },
-    { name: "combo macro", cost: 600, gain: 0.24 },
-    { name: "cancel-weave script", cost: 4800, gain: 1.4 },
-    { name: "frame-perfect script", cost: 36_000, gain: 8 },
+    { name: "swing macro", cost: 1, gain: 0.0005 },      // caps at squad output 50
+    { name: "combo macro", cost: 12, gain: 0.005 },      // caps at 600
+    { name: "cancel-weave script", cost: 120, gain: 0.045 },
+    { name: "frame-perfect script", cost: 1000, gain: 0.35 },
   ],
   speed: [
-    { name: "autoclicker", cost: 120, gain: 0.0002 },
-    { name: "turbo clicker", cost: 1200, gain: 0.0012 },
-    { name: "no-delay hack", cost: 9600, gain: 0.006 },
+    { name: "autoclicker", cost: 2, gain: 0.00001 },
+    { name: "turbo clicker", cost: 24, gain: 0.0001 },
+    { name: "no-delay hack", cost: 240, gain: 0.0009 },
   ],
 };
 

@@ -4,7 +4,7 @@
 import { derive } from "./stats.js";
 import { rollItem } from "./gear.js";
 
-export const DROP_PER_KILLS = 200;  // 1 gear roll per 200 kills EV
+export const DROP_PER_KILLS = 400;  // 1 gear roll per 400 kills EV
 export const OFFLINE_CAP_S = 12 * 3600;
 // GM offline perk extends the clamp (rank-capped at +6h in gm.js)
 export function offlineCapS(state) { return OFFLINE_CAP_S + (state.gm?.offline || 0) * 3600; }
@@ -27,23 +27,22 @@ export function dpsOf(state) {
   return atk * hitsPerSec;
 }
 
-// One hit kills at most one mob: ATK decides whether you one-shot,
-// SPD caps throughput. The cap is now a trained stat, not a constant.
+// NGU-style universal rate ceiling: the engine grants at most 50 kills/s.
+// Below the cap you're DPS-bound (kills/s = DPS ÷ mobHP).
+export const KILL_CAP = 50;
+
 export function killsPerSec(state, zone) {
-  const { atk, hitsPerSec } = derive(state);
-  return Math.min(hitsPerSec, (atk * hitsPerSec) / zone.mobHp);
+  return Math.min(KILL_CAP, dpsOf(state) / zone.mobHp);
 }
 
 export function rateCard(state, zone) {
-  const { atk, hitsPerSec } = derive(state);
   const kps = killsPerSec(state, zone);
   return {
     kps,
     copperPerSec: kps * zone.copper,
     dropsPerHour: (kps * 3600) / DROP_PER_KILLS,
     locked: dpsOf(state) < zone.gate,
-    speedBound: atk >= zone.mobHp, // one-shotting: only faster hits help
-    oneShotAtk: zone.mobHp,        // ATK needed to one-shot (shown on card)
+    capBound: dpsOf(state) / zone.mobHp >= KILL_CAP,
   };
 }
 

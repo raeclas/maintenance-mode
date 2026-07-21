@@ -497,7 +497,9 @@ function render() {
       $(`zc${i}`).textContent = rc.copperPerSec >= 0.1 ? fmt(rc.copperPerSec) : rc.copperPerSec.toFixed(2);
       $(`zd${i}`).textContent = rc.dropsPerHour.toFixed(1);
       $(`zk${i}`).textContent = rc.kps.toFixed(2);
-      $(`zb${i}`).textContent = rc.speedBound ? "SPD (one-shot)" : `ATK · 1-shot @${fmt(rc.oneShotAtk)}`;
+      $(`zb${i}`).textContent = rc.capBound
+        ? `CAP ${farm.KILL_CAP}/s`
+        : `DPS ${fmt(dps)} ÷ ${fmt(z.mobHp)} HP`;
     }
     const btn = $(`zp${i}`);
     btn.disabled = rc.locked;
