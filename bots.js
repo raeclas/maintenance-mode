@@ -66,42 +66,60 @@ export function buy(state, what) {
   return true;
 }
 
-// Allocation is absolute bot counts per track (player types numbers),
-// hard-clamped to the bots actually available. Bans can still drag pop
-// below committed numbers afterwards — effAlloc scales that case down.
-export function setAlloc(state, track, n) {
-  const b = state.bots;
-  n = Math.max(0, Math.floor(n) || 0);
-  const others = Object.keys(b.alloc).filter(k => k !== track).reduce((s, k) => s + b.alloc[k], 0);
-  b.alloc[track] = Math.min(n, Math.max(0, Math.floor(b.pop) - others));
+// NGU model: alloc is a VECTOR — every bar (training tier, zone, enhance
+// squad) takes its own bot count and all bars run in parallel. Bars are
+// addressed as "atk.0", "speed.2", "zones.3", "enh".
+function allocRef(b, key) {
+  const [group, idx] = key.split(".");
+  return idx === undefined ? { arr: b.alloc, k: group } : { arr: b.alloc[group], k: Number(idx) };
 }
 
-export function effAlloc(b) {
+export function allocTotal(b) {
   const a = b.alloc;
-  const want = a.atk + a.spd + a.farm + (a.enh || 0);
-  const scale = want > b.pop ? b.pop / want : 1;
-  return { atk: a.atk * scale, spd: a.spd * scale, farm: a.farm * scale, enh: (a.enh || 0) * scale, scale };
+  return a.atk.reduce((s, n) => s + n, 0) + a.speed.reduce((s, n) => s + n, 0)
+    + a.zones.reduce((s, n) => s + n, 0) + a.enh;
 }
 
-// Bots farm with their OWN stats through the player's kill math — copper
-// only, mailed to the buyer (you). Gear drops stay player-exclusive.
-export function botFarmRates(b, zi) {
-  const z = zones[zi];
-  const kps = Math.min(2.0, botDps(b) / z.mobHp);
-  const farmPop = effAlloc(b).farm;
-  return {
-    copperPerSec: farmPop * kps * z.copper,
-    bansPerHour: farmPop * z.detection,
-    perBotCopperSec: kps * z.copper,
-  };
+export function freeBots(b) {
+  return Math.max(0, b.pop - allocTotal(b));
 }
 
-export function setTier(state, bar, tier) {
-  const B = state.bots.bars[bar];
-  if (tier >= 0 && tier < B.unlocked && tier < TRAININGS[bar].length) {
-    B.tier = tier;
-    B.prog = 0; // progress doesn't transfer between tiers; fill counts do
+// Hard-clamped to the bots actually available. Bans can still drag pop
+// below committed numbers afterwards — effScale covers that case.
+export function setAlloc(state, key, n) {
+  const b = state.bots;
+  const { arr, k } = allocRef(b, key);
+  n = Math.max(0, Math.floor(n) || 0);
+  const others = allocTotal(b) - arr[k];
+  arr[k] = Math.min(n, Math.max(0, Math.floor(b.pop) - others));
+}
+
+export function effScale(b) {
+  const want = allocTotal(b);
+  return want > b.pop ? b.pop / want : 1;
+}
+
+// Bots needed to hit a bar's rate ceiling (the NGU "cap" button).
+export function capNeeded(b, key) {
+  const q = botPower(b) * botSpeed(b);
+  const [group, idx] = key.split(".");
+  if (group === "zones") {
+    const z = zones[Number(idx)];
+    return Math.ceil((MAX_FILLS_PER_S * z.mobHp) / botDps(b)); // 50 kills/s
   }
+  const t = TRAININGS[group][Number(idx)];
+  return Math.ceil((t.cost * MAX_FILLS_PER_S) / q);
+}
+
+// One zone's bot farm rates for n allocated bots (kills capped at 50/s).
+export function botZoneRates(b, zi, n) {
+  const z = zones[zi];
+  const kps = Math.min(MAX_FILLS_PER_S, (n * botDps(b)) / z.mobHp);
+  return {
+    kps,
+    copperPerSec: kps * z.copper,
+    bansPerHour: n * z.detection,
+  };
 }
 
 // Bot enhancing: time per attempt grows exponentially with the plus being
@@ -111,7 +129,7 @@ export const ENH_T0 = 30;      // seconds per attempt at +0, one bot, quality 1
 export const ENH_GROWTH = 1.3; // per plus level
 
 export function enhInterval(b, plus) {
-  const squad = effAlloc(b).enh * botPower(b) * botSpeed(b);
+  const squad = b.alloc.enh * effScale(b) * botPower(b) * botSpeed(b);
   if (squad <= 0) return Infinity;
   return (ENH_T0 * Math.pow(ENH_GROWTH, plus)) / squad;
 }
@@ -133,31 +151,37 @@ function tickChunk(state, dtS, onEnh, rng) {
   // creation toward capacity
   b.pop = Math.min(capacity(b, state.gm?.cap || 0), b.pop + createRate(b) * dtH);
 
-  // training (private lobbies — safe): constant cost per fill, 1 fill/s cap
+  // training (private lobbies — safe): every unlocked tier runs in
+  // parallel with its own squad; each bar caps at 50 fills/s
   const quality = botPower(b) * botSpeed(b);
-  const eff = effAlloc(b);
+  const scale = effScale(b);
   for (const bar of ["atk", "speed"]) {
-    const trainPop = eff[bar === "atk" ? "atk" : "spd"];
-    if (trainPop <= 0) continue;
     if (bar === "speed" && b.trained.hits >= SPEED_TRAIN_CAP) continue; // lane capped
     const B = b.bars[bar];
-    const t = TRAININGS[bar][B.tier];
-    const units = Math.min(trainPop * quality * dtS, t.cost * MAX_FILLS_PER_S * dtS);
-    B.prog += units;
-    while (B.prog >= t.cost) {
-      B.prog -= t.cost;
-      B.fills[B.tier] = (B.fills[B.tier] || 0) + 1;
-      if (bar === "atk") b.trained.atk += t.gain;
-      else b.trained.hits = Math.min(SPEED_TRAIN_CAP, b.trained.hits + t.gain);
-      if (B.tier === B.unlocked - 1 && B.unlocked < TRAININGS[bar].length && B.fills[B.tier] >= UNLOCK_FILLS) {
-        B.unlocked++;
+    for (let i = 0; i < B.unlocked; i++) {
+      const squad = (b.alloc[bar][i] || 0) * scale;
+      if (squad <= 0) continue;
+      const t = TRAININGS[bar][i];
+      const units = Math.min(squad * quality * dtS, t.cost * MAX_FILLS_PER_S * dtS);
+      B.prog[i] = (B.prog[i] || 0) + units;
+      while (B.prog[i] >= t.cost) {
+        B.prog[i] -= t.cost;
+        B.fills[i] = (B.fills[i] || 0) + 1;
+        if (bar === "atk") b.trained.atk += t.gain;
+        else b.trained.hits = Math.min(SPEED_TRAIN_CAP, b.trained.hits + t.gain);
+        if (i === B.unlocked - 1 && B.unlocked < TRAININGS[bar].length && B.fills[i] >= UNLOCK_FILLS) {
+          B.unlocked++;
+        }
       }
     }
   }
 
-  // farming (public zones — detection bans at a rate; copper mailed in)
-  if (eff.farm > 0 && b.farmZone !== null) {
-    const r = botFarmRates(b, b.farmZone);
+  // farming: every zone with an allocated squad runs in parallel; each
+  // zone's detection bans its own squad at a rate; copper mailed in
+  for (let zi = 0; zi < zones.length; zi++) {
+    const n = (b.alloc.zones[zi] || 0) * scale;
+    if (n <= 0) continue;
+    const r = botZoneRates(b, zi, n);
     state.copper += r.copperPerSec * dtS;
     const deaths = r.bansPerHour * dtH;
     b.pop = Math.max(0, b.pop - deaths);
@@ -165,7 +189,7 @@ function tickChunk(state, dtS, onEnh, rng) {
   }
 
   // enhancing (real odds, real copper — stops at the target plus)
-  if (eff.enh > 0 && b.enhTarget) {
+  if (b.alloc.enh * scale > 0 && b.enhTarget) {
     const item = state.gear[b.enhTarget.slot];
     if (item && item.plus < b.enhTarget.plus) {
       b.enhCarry += dtS;

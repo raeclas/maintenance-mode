@@ -124,30 +124,37 @@ $("buyCap").addEventListener("click", () => bots.buy(state, "cap"));
 $("buyCreate").addEventListener("click", () => bots.buy(state, "create"));
 $("buyPower").addEventListener("click", () => bots.buy(state, "power"));
 $("buySpeed").addEventListener("click", () => bots.buy(state, "speed"));
-for (const [track, id] of [["atk", "allocAtk"], ["spd", "allocSpd"], ["farm", "allocFarm"], ["enh", "allocEnh"]]) {
-  $(id).addEventListener("change", () => bots.setAlloc(state, track, Number($(id).value)));
-}
 $("enhPlus").addEventListener("change", () => {
   state.bots.enhTarget.plus = Math.max(0, Math.min(enh.MAX_PLUS, Math.floor(Number($("enhPlus").value)) || 0));
 });
-// ITRTG-style allocation: ± steps and % presets per track
-for (const row of document.querySelectorAll(".assign[data-track]")) {
-  row.addEventListener("click", e => {
+
+// ---- allocMini: THE allocation control. −/input/+ · cap (exact bots to
+// hit the bar's 50/s ceiling) · max (all free) · 0. One component, every bar.
+const allocInputs = {}; // key → input element, synced in render
+function getAlloc(key) {
+  const [g, i] = key.split(".");
+  return i === undefined ? state.bots.alloc[g] : state.bots.alloc[g][Number(i)];
+}
+function allocMini(key, withCap = true) {
+  const span = document.createElement("span");
+  span.className = "allocMini";
+  span.innerHTML = `<button data-d="-1">−</button><input type="number" min="0" step="1"><button data-d="1">+</button>${withCap ? `<button data-c>cap</button>` : ""}<button data-m>max</button><button data-z>0</button>`;
+  span.addEventListener("click", e => {
     const btn = e.target.closest("button");
     if (!btn) return;
-    const track = row.dataset.track;
-    const b = state.bots;
-    if (btn.dataset.d !== undefined) {
-      bots.setAlloc(state, track, b.alloc[track] + Number(btn.dataset.d));
-    } else if (btn.dataset.p === "max") {
-      const others = Object.keys(b.alloc).filter(k => k !== track).reduce((s, k) => s + b.alloc[k], 0);
-      bots.setAlloc(state, track, Math.max(0, Math.floor(b.pop) - others));
-    } else {
-      bots.setAlloc(state, track, Math.round(b.pop * Number(btn.dataset.p) / 100));
-    }
+    e.stopPropagation();
+    if (btn.dataset.d) bots.setAlloc(state, key, getAlloc(key) + Number(btn.dataset.d));
+    else if (btn.dataset.c !== undefined) bots.setAlloc(state, key, bots.capNeeded(state.bots, key));
+    else if (btn.dataset.m !== undefined) bots.setAlloc(state, key, getAlloc(key) + Math.floor(bots.freeBots(state.bots)));
+    else bots.setAlloc(state, key, 0);
   });
+  const input = span.querySelector("input");
+  input.addEventListener("change", () => bots.setAlloc(state, key, Number(input.value)));
+  allocInputs[key] = input;
+  return span;
 }
-// ---- training: tier rows (click a row to run it — no dropdowns) ----
+$("enhLine").prepend(allocMini("enh", false));
+// ---- training: every tier is its own bar with its own squad (NGU) ----
 const tierRows = { atk: [], speed: [] };
 for (const lane of ["atk", "speed"]) {
   const wrap = $(lane === "atk" ? "atkTiers" : "speedTiers");
@@ -157,9 +164,10 @@ for (const lane of ["atk", "speed"]) {
     row.innerHTML =
       `<span class="rowName">${t.name}</span>` +
       `<span class="rowGain">+${t.gain}${lane === "speed" ? " hits/s" : " ATK"}/fill</span>` +
+      `<span class="rowAlloc"></span>` +
       `<span class="rowStat" id="ts_${lane}${i}"></span>` +
       `<div class="rowBar"><div class="rowFill" id="tf_${lane}${i}"></div></div>`;
-    row.addEventListener("click", () => bots.setTier(state, lane, i));
+    row.querySelector(".rowAlloc").appendChild(allocMini(`${lane}.${i}`));
     wrap.appendChild(row);
     tierRows[lane].push(row);
   });
@@ -202,19 +210,18 @@ $("schedToggle").addEventListener("change", () => { state.gm.schedulerOn = $("sc
 
 // ---- farming: dense zone table, built once, cells updated in render ----
 $("zones").innerHTML = `<table class="ztable"><thead><tr>
-  <th class="tl">zone</th><th>gate</th><th>c/s</th><th>drops/h</th><th>kills/s</th><th class="tl">bound</th><th>you</th><th>bots</th>
+  <th class="tl">zone</th><th>gate</th><th>c/s</th><th>drops/h</th><th>kills/s</th><th class="tl">bound</th><th>you</th><th class="tl">bot squad</th>
 </tr></thead><tbody>${farm.zones.map((z, i) => `<tr id="zrow${i}">
   <td class="tl">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP · det ${z.detection}/h</div><div class="zoneBar"><div class="zoneFill" id="zf${i}"></div></div></td>
   <td>${fmt(z.gate)}</td><td id="zc${i}">—</td><td id="zd${i}">—</td><td id="zk${i}">—</td>
-  <td class="tl" id="zb${i}">—</td><td><button id="zp${i}">park</button></td><td><button id="zq${i}">send</button></td>
+  <td class="tl" id="zb${i}">—</td><td><button id="zp${i}">park</button></td>
+  <td class="tl"><span id="za${i}"></span><div class="sub" id="zbi${i}"></div></td>
 </tr>`).join("")}</tbody></table>`;
 farm.zones.forEach((z, i) => {
   $(`zp${i}`).addEventListener("click", () => {
     state.farm.zone = state.farm.zone === i ? null : i;
   });
-  $(`zq${i}`).addEventListener("click", () => {
-    state.bots.farmZone = i;
-  });
+  $(`za${i}`).appendChild(allocMini(`zones.${i}`));
 });
 
 // ---- gear: build slot rows once ----
@@ -339,14 +346,15 @@ function render() {
       const rc = farm.rateCard(state, farm.zones[state.farm.zone]);
       if (!rc.locked) cps += rc.copperPerSec;
     }
-    const ea = bots.effAlloc(state.bots);
-    if (ea.farm > 0) cps += bots.botFarmRates(state.bots, state.bots.farmZone).copperPerSec;
+    const sc = bots.effScale(state.bots);
+    farm.zones.forEach((z, i) => {
+      const n = (state.bots.alloc.zones[i] || 0) * sc;
+      if (n > 0) cps += bots.botZoneRates(state.bots, i, n).copperPerSec;
+    });
     $("copperRate").textContent = cps > 0 ? `+${fmt(cps)}/s` : "—";
   }
   { // NGU-style ticker: FREE bots (unallocated) vs capacity — allocation drains it
-    const a = state.bots.alloc;
-    const free = Math.max(0, state.bots.pop - a.atk - a.spd - a.farm - a.enh);
-    $("resBots").textContent = `${free.toFixed(1)} / ${bots.capacity(state.bots, state.gm.cap)}`;
+    $("resBots").textContent = `${bots.freeBots(state.bots).toFixed(1)} / ${bots.capacity(state.bots, state.gm.cap)}`;
     $("resRate").textContent = `+${bots.createRate(state.bots).toFixed(1)}`;
   }
 
@@ -430,41 +438,47 @@ function render() {
   $("buyCreate").textContent = buyLabel("account creator +", bots.createCost(b));
   $("buyPower").textContent = buyLabel("script version +", bots.powerCost(b));
   $("buySpeed").textContent = buyLabel("overclock +", bots.speedCost(b));
-  const eff = bots.effAlloc(b);
-  const scaled = eff.scale < 0.995 ? ` · short ${((1 - eff.scale) * 100).toFixed(0)}% (bans)` : "";
+  const scale = bots.effScale(b);
+  const scaled = scale < 0.995 ? ` · short ${((1 - scale) * 100).toFixed(0)}% (bans)` : "";
   $("rigStats").textContent =
     `script ×${bots.botPower(b).toFixed(2)} · clock ×${bots.botSpeed(b).toFixed(2)} · banned ${Math.floor(b.banned)}${scaled}`;
   $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b, state.gm.cap)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
-  for (const [bar, track, el] of [["atk", "atk", "Atk"], ["speed", "spd", "Speed"]]) {
+
+  // allocation inputs: sync every bar's number unless being edited
+  for (const [key, input] of Object.entries(allocInputs)) {
+    if (document.activeElement !== input) input.value = getAlloc(key);
+  }
+
+  for (const bar of ["atk", "speed"]) {
     const B = b.bars[bar];
-    const input = $(`alloc${track === "atk" ? "Atk" : "Spd"}`);
-    if (document.activeElement !== input) input.value = b.alloc[track];
     const tiers = bots.TRAININGS[bar];
     const laneCapped = bar === "speed" && b.trained.hits >= bots.SPEED_TRAIN_CAP;
-    const T = tiers[b.bars[bar].tier];
-    const statRate = laneCapped ? 0 : Math.min(eff[track] * quality, T.cost * bots.MAX_FILLS_PER_S) / T.cost * T.gain;
-    const trained = bar === "atk"
-      ? `trained +${b.trained.atk < 1000 ? b.trained.atk.toFixed(2) : fmt(b.trained.atk)} ATK (+${statRate.toFixed(3)}/s)`
-      : `trained +${b.trained.hits.toFixed(4)} hits/s (+${statRate.toFixed(5)}/s)`;
-    $(`bar${el}Info`).textContent = laneCapped ? `${trained} · LANE MAX` : trained;
+    let laneRate = 0;
     tiers.forEach((t, i) => {
       const row = tierRows[bar][i];
       const locked = i >= B.unlocked;
-      const active = i === B.tier && !locked;
+      const squad = (b.alloc[bar][i] || 0) * scale;
+      const rate = locked || laneCapped ? 0 : Math.min(squad * quality, t.cost * bots.MAX_FILLS_PER_S) / t.cost;
+      laneRate += rate * t.gain;
       row.classList.toggle("locked", locked);
-      row.classList.toggle("active", active);
+      row.classList.toggle("active", !locked && squad > 0);
       const stat = $(`ts_${bar}${i}`);
       if (locked) {
         stat.textContent = `locked · ${fmt(B.fills[i - 1] || 0)}/${fmt(bots.UNLOCK_FILLS)} fills of ${tiers[i - 1].name}`;
-      } else if (active) {
-        const maxed = eff[track] * quality >= t.cost * bots.MAX_FILLS_PER_S;
-        stat.textContent = `${fmt(B.fills[i] || 0)} fills · ${maxed ? "RATE MAX" : ((Math.min(eff[track] * quality, t.cost * bots.MAX_FILLS_PER_S) / t.cost)).toFixed(2) + " fills/s"}`;
+      } else if (squad > 0) {
+        const maxed = squad * quality >= t.cost * bots.MAX_FILLS_PER_S;
+        stat.textContent = `${fmt(B.fills[i] || 0)} fills · ${maxed ? "RATE MAX" : rate.toFixed(2) + " fills/s"}`;
       } else {
         stat.textContent = `${fmt(B.fills[i] || 0)} fills`;
       }
-      $(`tf_${bar}${i}`).style.width = active ? `${Math.min(100, (B.prog / t.cost) * 100)}%` : "0";
+      $(`tf_${bar}${i}`).style.width = !locked && squad > 0 ? `${Math.min(100, ((B.prog[i] || 0) / t.cost) * 100)}%` : "0";
     });
+    const el = bar === "atk" ? "Atk" : "Speed";
+    const trained = bar === "atk"
+      ? `trained +${b.trained.atk < 1000 ? b.trained.atk.toFixed(2) : fmt(b.trained.atk)} ATK (+${laneRate.toFixed(3)}/s)`
+      : `trained +${b.trained.hits.toFixed(4)} hits/s (+${laneRate.toFixed(5)}/s)`;
+    $(`bar${el}Info`).textContent = laneCapped ? `${trained} · LANE MAX` : trained;
   }
   if (document.activeElement !== $("allocFarm")) $("allocFarm").value = b.alloc.farm;
   $("autoSalvage").checked = state.gear.autoSalvage;
@@ -474,7 +488,6 @@ function render() {
     : `bot DPS ${fmt(bots.botDps(b))} · idle`;
 
   // bot enhance squad
-  if (document.activeElement !== $("allocEnh")) $("allocEnh").value = b.alloc.enh;
   for (const btn of $("enhSeg").children) btn.classList.toggle("active", btn.dataset.slot === b.enhTarget.slot);
   if (document.activeElement !== $("enhPlus")) $("enhPlus").value = b.enhTarget.plus;
   const tItem = state.gear[b.enhTarget.slot];
@@ -504,9 +517,12 @@ function render() {
     const btn = $(`zp${i}`);
     btn.disabled = rc.locked;
     btn.textContent = state.farm.zone === i ? "✓" : "park";
-    const bq = $(`zq${i}`);
-    bq.textContent = state.bots.farmZone === i ? "✓" : "send";
-    bq.classList.toggle("active", state.bots.farmZone === i);
+    // bot squad readout: this zone's mail rate + burn rate
+    const n = (state.bots.alloc.zones[i] || 0) * scale;
+    const zr = bots.botZoneRates(state.bots, i, n);
+    $(`zbi${i}`).textContent = n > 0
+      ? `${fmt(zr.copperPerSec)}c/s · ${zr.bansPerHour.toFixed(2)} bans/h${zr.kps >= farm.KILL_CAP ? " · CAP" : ""}`
+      : "";
     // next-drop bar: fills as kills accumulate toward the next gear roll
     $(`zf${i}`).style.width = state.farm.zone === i && !rc.locked
       ? `${Math.min(100, state.farm.dropCarry * 100)}%` : "0";

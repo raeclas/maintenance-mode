@@ -71,14 +71,21 @@ export function load(state) {
   state.boss = { ...d.boss, ...(s.boss || {}) };
   state.cooldownUntil = s.cooldownUntil ?? 0;
   state.pull = null; // reload mid-pull drops the pull — nothing gained until resolve
-  const { assign, count, ...sBots } = s.bots || {}; // v2 fields dropped below
+  const { assign, count, farmZone, ...sBots } = s.bots || {}; // pre-v7 fields handled below
   const oldBars = s.bots?.bars; // v≤4 bars were {lvl, prog}
   const v4Bars = oldBars?.atk?.lvl !== undefined;
+  const v6Bars = !v4Bars && oldBars?.atk?.tier !== undefined; // v5/v6 single-active-tier bars
+  const v6Alloc = s.bots?.alloc && !Array.isArray(s.bots.alloc.atk); // pre-v7 scalar alloc
   state.bots = {
     ...d.bots, ...sBots,
-    alloc: { ...d.bots.alloc, ...(s.bots?.alloc || {}) },
+    alloc: v6Alloc || !s.bots?.alloc ? d.bots.alloc : {
+      atk: [...d.bots.alloc.atk].map((_, i) => s.bots.alloc.atk[i] ?? 0),
+      speed: [...d.bots.alloc.speed].map((_, i) => s.bots.alloc.speed?.[i] ?? 0),
+      zones: [...d.bots.alloc.zones].map((_, i) => s.bots.alloc.zones?.[i] ?? 0),
+      enh: s.bots.alloc.enh ?? 0,
+    },
     trained: { ...d.bots.trained, ...(s.bots?.trained || {}) },
-    bars: v4Bars ? d.bots.bars : {
+    bars: (v4Bars || v6Bars) ? structuredClone(d.bots.bars) : {
       atk: { ...d.bots.bars.atk, ...(oldBars?.atk || {}) },
       speed: { ...d.bots.bars.speed, ...(oldBars?.speed || {}) },
     },
@@ -87,11 +94,24 @@ export function load(state) {
     state.bots.trained.atk = 8 * (oldBars.atk.lvl || 0);
     state.bots.trained.hits = Math.min(3.0, 0.03 * Math.min(oldBars.speed?.lvl || 0, 100));
   }
+  if (v6Bars) { // v5/v6 → v7: keep fill history + unlocks; prog becomes per-tier
+    state.bots.bars.atk.fills = [...d.bots.bars.atk.fills].map((_, i) => oldBars.atk.fills?.[i] ?? 0);
+    state.bots.bars.speed.fills = [...d.bots.bars.speed.fills].map((_, i) => oldBars.speed.fills?.[i] ?? 0);
+    state.bots.bars.atk.unlocked = oldBars.atk.unlocked ?? 1;
+    state.bots.bars.speed.unlocked = oldBars.speed.unlocked ?? 1;
+  }
+  if (v6Alloc && s.bots?.alloc) { // pre-v7 scalar alloc → vectors
+    state.bots.alloc.atk[0] = s.bots.alloc.atk ?? 0;
+    state.bots.alloc.speed[0] = s.bots.alloc.spd ?? 0;
+    const fz = Math.min(farmZone ?? 0, state.bots.alloc.zones.length - 1);
+    state.bots.alloc.zones[fz] = s.bots.alloc.farm ?? 0;
+    state.bots.alloc.enh = s.bots.alloc.enh ?? 0;
+  }
   if (count !== undefined && s.bots?.pop === undefined) state.bots.pop = count; // v2 → v3
-  if ((s.v ?? 0) <= 3 && s.bots?.alloc) { // v3 alloc was % of pop → convert to counts
-    for (const k of ["atk", "spd", "farm"]) {
-      state.bots.alloc[k] = Math.round((s.bots.alloc[k] ?? 0) / 100 * state.bots.pop);
-    }
+  if ((s.v ?? 0) <= 3 && s.bots?.alloc && v6Alloc) { // v3 alloc was % of pop → counts
+    state.bots.alloc.atk[0] = Math.round((s.bots.alloc.atk ?? 0) / 100 * state.bots.pop);
+    state.bots.alloc.speed[0] = Math.round((s.bots.alloc.spd ?? 0) / 100 * state.bots.pop);
+    state.bots.alloc.zones[0] = Math.round((s.bots.alloc.farm ?? 0) / 100 * state.bots.pop);
   }
   state.gear = { ...d.gear, ...(s.gear || {}) };
   if (!Array.isArray(state.gear.stash)) state.gear.stash = [];

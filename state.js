@@ -2,7 +2,7 @@
 // saveSystem normalizes over these defaults; the sim imports it too.
 export function newState() {
   return {
-    v: 6,
+    v: 7,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     copper: 0,
@@ -24,16 +24,20 @@ export function newState() {
       createRank: 0,  // generator: 2/h × (1 + 0.5×rank)
       powerRank: 0,   // script quality: power = 1 + 0.25×rank
       speedRank: 0,   // hardware: speed = 1 + 0.20×rank
-      alloc: { atk: 1, spd: 1, farm: 0, enh: 0 }, // absolute bot counts; rest idle
-      farmZone: 0,
+      // NGU model: every bar takes its OWN allocation and all bars run in
+      // parallel. Max a bar's rate → surplus belongs on the next bar.
+      alloc: {
+        atk: [1, 0, 0, 0],   // per ATK training tier
+        speed: [1, 0, 0],    // per SPEED training tier
+        zones: [0, 0, 0, 0, 0], // bots farming each zone
+        enh: 0,
+      },
       enhTarget: { slot: "weapon", plus: 10 }, // bots enhance this item toward this plus
       enhCarry: 0, // fractional attempt progress
-      // ITRTG-style trainings: constant cost per fill within a tier, rate
-      // caps at 1 fill/s, next tier unlocks at 50 fills of the current one.
       trained: { atk: 0, hits: 0 }, // permanent stat gains from fills
       bars: {
-        atk: { tier: 0, fills: [0, 0, 0, 0], prog: 0, unlocked: 1 },
-        speed: { tier: 0, fills: [0, 0, 0], prog: 0, unlocked: 1 },
+        atk: { fills: [0, 0, 0, 0], prog: [0, 0, 0, 0], unlocked: 1 },
+        speed: { fills: [0, 0, 0], prog: [0, 0, 0], unlocked: 1 },
       },
     },
     gear: {

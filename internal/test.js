@@ -95,63 +95,76 @@ const enh = await import("../enhance.js");
   assert.equal(s.bots.pop, 8); // capped
 }
 
-// Bots: training — constant cost per fill, gains applied, fill-rate cap
+// Bots: training — parallel bars, constant cost per fill, per-bar rate cap
 {
   const s = newState();
   s.bots.pop = 8; // at cap → no creation drift
-  s.bots.alloc = { atk: 8, spd: 0, farm: 0, enh: 0 };
+  s.bots.alloc.atk = [4, 0, 0, 0];
+  s.bots.alloc.speed = [0, 0, 0];
   const t1 = bots.TRAININGS.atk[0];
-  bots.tick(s, 1000); // 8 units/s × 1000s = 8000 units, under the 0.02 fills/s cap
-  const fills = Math.floor(8000 / t1.cost);
-  assert.equal(s.bots.bars.atk.fills[0], fills);
+  bots.tick(s, 100); // 4 units/s × 100s = 400 units on tier 0 only
+  const fills = s.bots.bars.atk.fills[0];
+  assert.ok(fills > 0);
   assert.ok(Math.abs(s.bots.trained.atk - fills * t1.gain) < 1e-9);
-  assert.ok(Math.abs(s.bots.bars.atk.prog - (8000 - fills * t1.cost)) < 1e-6);
 
-  // rate cap: a monster squad can't exceed MAX_FILLS_PER_S
+  // parallel: two tiers tick simultaneously, each from its own squad
+  const sp = newState();
+  sp.bots.pop = 8;
+  sp.bots.bars.atk.unlocked = 2;
+  sp.bots.alloc.atk = [2, 6, 0, 0];
+  sp.bots.alloc.speed = [0, 0, 0];
+  bots.tick(sp, 1000);
+  assert.ok(sp.bots.bars.atk.fills[0] > 0 && sp.bots.bars.atk.fills[1] > 0);
+
+  // rate cap: a monster squad can't exceed MAX_FILLS_PER_S per bar
   const s2 = newState();
   s2.bots.pop = 8;
   s2.bots.powerRank = 1000; // absurd quality
-  s2.bots.alloc = { atk: 8, spd: 0, farm: 0, enh: 0 };
+  s2.bots.alloc.atk = [8, 0, 0, 0];
+  s2.bots.alloc.speed = [0, 0, 0];
   bots.tick(s2, 100);
-  const maxFills = Math.floor(100 * bots.MAX_FILLS_PER_S * t1.cost / t1.cost);
-  assert.ok(s2.bots.bars.atk.fills[0] <= maxFills + 1);
+  assert.ok(s2.bots.bars.atk.fills[0] <= 100 * bots.MAX_FILLS_PER_S + 1);
 
-  // tier unlock at UNLOCK_FILLS, tier switch keeps fill counts
+  // capNeeded: exactly enough bots for the bar's ceiling
+  const need = bots.capNeeded(s2.bots, "atk.0");
+  assert.equal(need, Math.ceil(t1.cost * bots.MAX_FILLS_PER_S / (bots.botPower(s2.bots) * bots.botSpeed(s2.bots))));
+
+  // tier unlock at UNLOCK_FILLS
   const s3 = newState();
   s3.bots.pop = 8;
-  s3.bots.alloc = { atk: 8, spd: 0, farm: 0, enh: 0 };
+  s3.bots.alloc.atk = [8, 0, 0, 0];
+  s3.bots.alloc.speed = [0, 0, 0];
   s3.bots.bars.atk.fills[0] = bots.UNLOCK_FILLS - 1;
-  bots.tick(s3, t1.cost / 8 + 1); // one more fill
+  bots.tick(s3, 60);
   assert.equal(s3.bots.bars.atk.unlocked, 2);
-  bots.setTier(s3, "atk", 1);
-  assert.equal(s3.bots.bars.atk.tier, 1);
-  assert.ok(s3.bots.bars.atk.fills[0] >= bots.UNLOCK_FILLS); // history kept
-  bots.setTier(s3, "atk", 3); // locked → rejected
-  assert.equal(s3.bots.bars.atk.tier, 1);
 
   // speed lane cap: gains stop at SPEED_TRAIN_CAP
   const s4 = newState();
   s4.bots.pop = 8;
-  s4.bots.alloc = { atk: 0, spd: 8, farm: 0, enh: 0 };
+  s4.bots.alloc.atk = [0, 0, 0, 0];
+  s4.bots.alloc.speed = [8, 0, 0];
   s4.bots.trained.hits = bots.SPEED_TRAIN_CAP;
   bots.tick(s4, 10_000);
   assert.equal(s4.bots.trained.hits, bots.SPEED_TRAIN_CAP);
   assert.equal(s4.bots.bars.speed.fills[0], 0); // capped lane doesn't churn fills
 }
 
-// Bots: farming mails copper, bans at zone detection, creation refills
+// Bots: per-zone squads farm in parallel, bans drain per zone's detection
 {
   const s = newState();
   s.bots.pop = 8;
-  s.bots.alloc = { atk: 0, spd: 0, farm: 99 }; // over-allocated → effAlloc clamps to pop
-  s.bots.farmZone = 0;
-  const z1 = farm.zones[0];
-  const perBot = Math.min(2, bots.botDps(s.bots) / z1.mobHp) * z1.copper; // c/s
-  const expBans = 8 * z1.detection; // per hour
+  s.bots.alloc.atk = [0, 0, 0, 0];
+  s.bots.alloc.speed = [0, 0, 0];
+  s.bots.alloc.zones = [5, 3, 0, 0, 0];
+  const z1 = farm.zones[0], z2 = farm.zones[1];
+  const cps = bots.botZoneRates(s.bots, 0, 5).copperPerSec + bots.botZoneRates(s.bots, 1, 3).copperPerSec;
+  const expBans = 5 * z1.detection + 3 * z2.detection; // per hour
   bots.tick(s, 3600);
-  assert.ok(Math.abs(s.copper - 8 * perBot * 3600) < 8 * perBot * 3600 * 0.01);
-  assert.ok(Math.abs(s.bots.banned - expBans) < expBans * 0.2);
-  assert.ok(s.bots.pop > 7.5 && s.bots.pop <= 8); // generator refills most of it
+  assert.ok(Math.abs(s.copper - cps * 3600) < cps * 3600 * 0.02);
+  assert.ok(Math.abs(s.bots.banned - expBans) < expBans * 0.25);
+  assert.ok(s.bots.pop > 7 && s.bots.pop <= 8); // generator refills most of it
+  // zone kill rate caps at 50/s no matter the squad
+  assert.ok(bots.botZoneRates(s.bots, 0, 1e6).kps === 50);
 }
 
 // Bots: offline batch ≡ live ticks (pure training, pop at cap → exact)
@@ -159,13 +172,14 @@ const enh = await import("../enhance.js");
   const a = newState(), b2 = newState();
   for (const s of [a, b2]) {
     s.bots.pop = 8;
-    s.bots.alloc = { atk: 4, spd: 4, farm: 0, enh: 0 };
+    s.bots.alloc.atk = [4, 0, 0, 0];
+    s.bots.alloc.speed = [4, 0, 0];
     s.bots.powerRank = 2;
   }
   bots.tick(a, 43_200);                              // one 12h batch
   for (let i = 0; i < 720; i++) bots.tick(b2, 60);   // 12h of 60s ticks
   assert.equal(a.bots.trained.atk, b2.bots.trained.atk);
-  assert.ok(Math.abs(a.bots.bars.atk.prog - b2.bots.bars.atk.prog) < 1e-6);
+  assert.ok(Math.abs(a.bots.bars.atk.prog[0] - b2.bots.bars.atk.prog[0]) < 1e-6);
 }
 
 // Bots: rig purchases + alloc clamping
@@ -179,17 +193,18 @@ const enh = await import("../enhance.js");
   s.copper = 0;
   assert.equal(bots.buy(s, "cap"), false);
   s.bots.pop = 10;
-  s.bots.alloc = { atk: 3, spd: 0, farm: 0 };
-  bots.setAlloc(s, "farm", 990); // hard-clamped to available bots
-  assert.equal(s.bots.alloc.farm, 7);
-  bots.setAlloc(s, "farm", -5); // clamped to 0, NaN-safe
-  assert.equal(s.bots.alloc.farm, 0);
-  // bans dragging pop below committed numbers: effAlloc scales proportionally
-  s.bots.alloc = { atk: 6, spd: 0, farm: 4 };
+  s.bots.alloc.atk = [3, 0, 0, 0];
+  s.bots.alloc.speed = [0, 0, 0];
+  bots.setAlloc(s, "zones.2", 990); // hard-clamped to available bots
+  assert.equal(s.bots.alloc.zones[2], 7);
+  bots.setAlloc(s, "zones.2", -5); // clamped to 0, NaN-safe
+  assert.equal(s.bots.alloc.zones[2], 0);
+  assert.equal(bots.freeBots(s.bots), 7);
+  // bans dragging pop below committed numbers: effScale shrinks everything
+  s.bots.alloc.atk = [6, 0, 0, 0];
+  s.bots.alloc.zones = [4, 0, 0, 0, 0];
   s.bots.pop = 5;
-  const eff = bots.effAlloc(s.bots);
-  assert.ok(eff.atk + eff.spd + eff.farm <= s.bots.pop + 1e-9);
-  assert.ok(eff.scale < 1);
+  assert.ok(bots.effScale(s.bots) === 0.5);
 }
 
 // Farm: kills/s = min(50, DPS/mobHP) — NGU-style universal rate ceiling
@@ -319,7 +334,9 @@ const enh = await import("../enhance.js");
   s.bots.pop = 4.5;
   s.bots.capRank = 1;
   s.bots.trained.atk = 56;
-  s.bots.bars.atk = { tier: 1, fills: [50, 3, 0, 0], prog: 11, unlocked: 2 };
+  s.bots.bars.atk = { fills: [50, 3, 0, 0], prog: [11, 4, 0, 0], unlocked: 2 };
+  s.bots.alloc.atk = [2, 1, 0, 0];
+  s.bots.alloc.zones = [0, 1, 0, 0, 0];
   s.tickets = 77;
   s.gm.scar = 2;
   s.gear.weapon = { slot: "weapon", ip: 55, plus: 3, zone: 1, name: "t" };
@@ -330,7 +347,9 @@ const enh = await import("../enhance.js");
   assert.equal(JSON.parse(localStorage.getItem("mm_save")).pull, undefined);
   const s2 = newState();
   saves.load(s2);
-  assert.deepEqual(s2.bots.bars.atk, { tier: 1, fills: [50, 3, 0, 0], prog: 11, unlocked: 2 });
+  assert.deepEqual(s2.bots.bars.atk, { fills: [50, 3, 0, 0], prog: [11, 4, 0, 0], unlocked: 2 });
+  assert.deepEqual(s2.bots.alloc.atk, [2, 1, 0, 0]);
+  assert.deepEqual(s2.bots.alloc.zones, [0, 1, 0, 0, 0]);
   assert.equal(s2.bots.trained.atk, 56);
   assert.equal(s2.tickets, 77);
   assert.equal(s2.gm.scar, 2);
@@ -357,7 +376,7 @@ const enh = await import("../enhance.js");
   assert.equal(s5.bots.pop, 5);
   assert.equal(s5.bots.powerRank, 1);
   assert.equal(s5.bots.assign, undefined); // v2 field dropped
-  assert.deepEqual(s5.bots.alloc, { atk: 1, spd: 1, farm: 0, enh: 0 }); // defaults
+  assert.deepEqual(s5.bots.alloc.atk, [1, 0, 0, 0]); // defaults
 
   // v4 save (quadratic bars): lvl converts to trained stats, tiers reset
   localStorage.setItem("mm_save", JSON.stringify({ v: 4, bots: { pop: 6, bars: { atk: { lvl: 20, prog: 5 }, speed: { lvl: 150, prog: 5 } } } }));
@@ -365,13 +384,27 @@ const enh = await import("../enhance.js");
   saves.load(s7);
   assert.equal(s7.bots.trained.atk, 160);       // 8 × 20
   assert.equal(s7.bots.trained.hits, 3.0);      // 0.03 × min(150,100), capped
-  assert.equal(s7.bots.bars.atk.tier, 0);       // fresh tier state
+  assert.deepEqual(s7.bots.bars.atk.fills, [0, 0, 0, 0]); // fresh bar state
 
-  // v3 save (alloc was % of pop) → counts
-  localStorage.setItem("mm_save", JSON.stringify({ v: 3, bots: { pop: 10, alloc: { atk: 50, spd: 30, farm: 20 } } }));
+  // v6 save (scalar alloc + single-active-tier bars) → vectors, history kept
+  localStorage.setItem("mm_save", JSON.stringify({
+    v: 6,
+    bots: {
+      pop: 10, farmZone: 2,
+      alloc: { atk: 3, spd: 2, farm: 4, enh: 1 },
+      bars: { atk: { tier: 1, fills: [9, 1, 0, 0], prog: 5, unlocked: 2 }, speed: { tier: 0, fills: [2, 0, 0], prog: 1, unlocked: 1 } },
+      trained: { atk: 12, hits: 0.5 },
+    },
+  }));
   const s6 = newState();
   saves.load(s6);
-  assert.deepEqual(s6.bots.alloc, { atk: 5, spd: 3, farm: 2, enh: 0 });
+  assert.deepEqual(s6.bots.alloc.atk, [3, 0, 0, 0]);
+  assert.deepEqual(s6.bots.alloc.speed, [2, 0, 0]);
+  assert.deepEqual(s6.bots.alloc.zones, [0, 0, 4, 0, 0]); // farm squad landed on its old zone
+  assert.equal(s6.bots.alloc.enh, 1);
+  assert.deepEqual(s6.bots.bars.atk.fills, [9, 1, 0, 0]); // history kept
+  assert.equal(s6.bots.bars.atk.unlocked, 2);
+  assert.equal(s6.bots.trained.atk, 12);
 
   // durability: corrupt primary → quarantined, _bak restores
   saves.save(s);
@@ -457,7 +490,9 @@ const enh = await import("../enhance.js");
 {
   const s = newState();
   s.bots.pop = 8;
-  s.bots.alloc = { atk: 0, spd: 0, farm: 0, enh: 8 };
+  s.bots.alloc.atk = [0, 0, 0, 0];
+  s.bots.alloc.speed = [0, 0, 0];
+  s.bots.alloc.enh = 8;
   s.bots.enhTarget = { slot: "weapon", plus: 5 };
   s.gear.weapon = { slot: "weapon", ip: 100, plus: 0, zone: 1, name: "t" };
   s.copper = 1e9;

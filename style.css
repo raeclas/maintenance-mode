@@ -207,15 +207,25 @@ section.game button:disabled { color: #55555e; cursor: default; }
 .rowlist { border-top: 1px solid var(--line); }
 .rowlist .row {
   display: grid;
-  grid-template-columns: 150px 110px 1fr auto;
-  gap: 10px;
+  grid-template-columns: 130px 100px auto 1fr;
+  gap: 8px;
   align-items: center;
   padding: 6px 4px;
   border-bottom: 1px solid #1b1b22;
   font-family: monospace;
   font-size: 11px;
-  cursor: pointer;
   position: relative;
+}
+.allocMini { display: inline-flex; align-items: center; gap: 2px; }
+.allocMini button { padding: 1px 5px; font-size: 10px; }
+.allocMini input {
+  width: 42px;
+  background: #22222a;
+  color: var(--gold);
+  border: 1px solid var(--line);
+  font-family: monospace;
+  padding: 1px 3px;
+  font-size: 11px;
 }
 .rowlist .row .rowName { color: #b9b2a0; }
 .rowlist .row .rowGain { color: #6e6e78; }

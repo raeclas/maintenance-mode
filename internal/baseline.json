@@ -28,7 +28,7 @@
     "desc": "depth 0.1%"
   },
   {
-    "t": 15600,
+    "t": 15000,
     "desc": "z4 unlocked (Cinder Steppe)"
   },
   {
@@ -40,7 +40,7 @@
     "desc": "z5 unlocked (The Doorstep)"
   },
   {
-    "t": 21600,
+    "t": 20400,
     "desc": "power ×10000"
   },
   {
@@ -52,15 +52,15 @@
     "desc": "depth 10%"
   },
   {
-    "t": 44400,
+    "t": 37800,
     "desc": "scars capped"
   },
   {
-    "t": 55200,
+    "t": 51600,
     "desc": "depth 50%"
   },
   {
-    "t": 519600,
+    "t": 509400,
     "desc": "W1 broken (EV)"
   }
 ]

@@ -61,29 +61,50 @@ while (t < MAX_S && !broken) {
   t += STEP;
   totalSteps++;
 
-  // --- swarm: 20% speed until lane cap, 40% atk, 40% farm best zone ---
-  const speedDone = S.bots.trained.hits >= bots.SPEED_TRAIN_CAP;
-  S.bots.alloc.spd = speedDone ? 0 : 0.2 * S.bots.pop;
-  S.bots.alloc.atk = (speedDone ? 0.6 : 0.4) * S.bots.pop;
-  S.bots.alloc.farm = 0.4 * S.bots.pop;
-  // run the highest-yield unlocked tier per lane (gain × achievable fill rate)
-  for (const bar of ["atk", "speed"]) {
-    const B = S.bots.bars[bar];
-    const squad = (bar === "atk" ? S.bots.alloc.atk : S.bots.alloc.spd) * bots.botPower(S.bots) * bots.botSpeed(S.bots);
-    let best = B.tier, bestRate = 0;
-    for (let i = 0; i < B.unlocked; i++) {
-      const t = bots.TRAININGS[bar][i];
-      const rate = Math.min(squad / t.cost, bots.MAX_FILLS_PER_S) * t.gain;
-      if (rate > bestRate) { bestRate = rate; best = i; }
+  // --- NGU waterfall: cap each bar in order, spill surplus to the next.
+  // 40% of pop to zones (best per-bot copper first), rest to training
+  // (2:1 atk:speed until the speed lane caps).
+  {
+    const B = S.bots;
+    const total = Math.floor(B.pop);
+    const speedDone = B.trained.hits >= bots.SPEED_TRAIN_CAP;
+    let farmBudget = Math.floor(total * 0.4);
+    let trainBudget = total - farmBudget;
+
+    B.alloc.zones.fill(0);
+    const zOrder = farm.zones
+      .map((z, i) => ({ i, per: (bots.botDps(B) / z.mobHp) * z.copper }))
+      .sort((x, y) => y.per - x.per);
+    for (const o of zOrder) {
+      if (farmBudget <= 0) break;
+      const n = Math.min(farmBudget, bots.capNeeded(B, `zones.${o.i}`));
+      B.alloc.zones[o.i] = n;
+      farmBudget -= n;
     }
-    if (best !== B.tier) bots.setTier(S, bar, best);
+    trainBudget += farmBudget; // zone caps all hit → surplus trains
+
+    let atkBudget = speedDone ? trainBudget : Math.floor(trainBudget * 0.67);
+    let spdBudget = trainBudget - (speedDone ? trainBudget : atkBudget);
+    B.alloc.atk.fill(0);
+    for (let i = 0; i < B.bars.atk.unlocked; i++) {
+      const n = Math.min(atkBudget, bots.capNeeded(B, `atk.${i}`));
+      B.alloc.atk[i] = n;
+      atkBudget -= n;
+    }
+    if (atkBudget > 0) B.alloc.atk[B.bars.atk.unlocked - 1] += atkBudget; // dump surplus
+    B.alloc.speed.fill(0);
+    if (!speedDone) {
+      for (let i = 0; i < B.bars.speed.unlocked; i++) {
+        const n = Math.min(spdBudget, bots.capNeeded(B, `speed.${i}`));
+        B.alloc.speed[i] = n;
+        spdBudget -= n;
+      }
+      if (spdBudget > 0) B.alloc.speed[B.bars.speed.unlocked - 1] += spdBudget;
+    }
+    B.alloc.enh = 0;
   }
-  let bz = 0;
-  farm.zones.forEach((zz, i) => {
-    if (bots.botFarmRates(S.bots, i).perBotCopperSec > bots.botFarmRates(S.bots, bz).perBotCopperSec) bz = i;
-  });
-  S.bots.farmZone = bz;
-  const botRates = bots.botFarmRates(S.bots, bz);
+  const botRates = { copperPerSec: farm.zones.reduce((s, z, i) =>
+    s + (S.bots.alloc.zones[i] > 0 ? bots.botZoneRates(S.bots, i, S.bots.alloc.zones[i]).copperPerSec : 0), 0) };
   bots.tick(S, STEP); // creation, training, farm mail, bans
 
   // --- player farms best gated zone (real rate card) ---
