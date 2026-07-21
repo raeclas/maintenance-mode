@@ -5,16 +5,17 @@
 // loved ever dies (attachment law holds by construction).
 // Live tick and offline batch are the SAME function (clamp law).
 // Starting values throughout — sim-gated; test plans in REMAKE-DESIGN §7.
-import { zones } from "./farm.js";
+import { zones, DROP_CHANCE } from "./farm.js";
+import { rollItem } from "./gear.js";
 import { attempt as enhAttempt } from "./enhance.js";
 
-export const CREATE_PER_H = 2;        // base bots/hour from the generator
+export const CREATE_PER_H = 4;        // base bots/hour from the generator
 export const CAP_BASE = 8;            // dead server's leftover session slots
 export const CAP_PER_RANK = 4;        // each rank clears more dead sessions
 export const POWER_PER_RANK = 0.25;   // script quality
 export const SPEED_PER_RANK = 0.20;   // hardware
 export const CREATE_PER_RANK = 0.5;   // generator: ×(1 + 0.5×rank)
-export const BOT_BASE_DPS = 4;        // a naked account running a script
+export const BOT_BASE_DPS = 12;       // a naked account running a script
 
 // ITRTG-style trainings: constant cost per fill, every fill pays the gain,
 // rate hard-caps at 1 fill/s (tier max rate = gain/s). Next tier unlocks
@@ -112,14 +113,24 @@ export function capNeeded(b, key) {
 }
 
 // One zone's bot farm rates for n allocated bots (kills capped at 50/s).
+// A squad below the zone's gate DPS can't hold the zone — no yield, no bans.
 export function botZoneRates(b, zi, n) {
   const z = zones[zi];
-  const kps = Math.min(MAX_FILLS_PER_S, (n * botDps(b)) / z.mobHp);
+  const squadDps = n * botDps(b);
+  const held = squadDps >= z.gate;
+  const kps = held ? Math.min(MAX_FILLS_PER_S, squadDps / z.mobHp) : 0;
   return {
+    held,
+    squadDps,
     kps,
     copperPerSec: kps * z.copper,
-    bansPerHour: n * z.detection,
+    bansPerHour: held ? n * z.detection : 0,
   };
+}
+
+// Bots needed for the squad to hold a zone (its gate DPS).
+export function gateNeeded(b, zi) {
+  return Math.ceil(zones[zi].gate / botDps(b));
 }
 
 // Bot enhancing: time per attempt grows exponentially with the plus being
@@ -135,16 +146,17 @@ export function enhInterval(b, plus) {
 }
 
 // Advance the swarm by dtS seconds: creation, training, farming, bans,
-// enhancing. Same path live and offline (caller clamps dt). Long dts are
-// sub-stepped internally so a 12h batch integrates the shrinking population
-// the same way live play does (clamp law: batch ≡ live within chunk error).
-// onEnh(result, item) fires per bot enhance attempt (UI feedback hook).
-export function tick(state, dtS, onEnh = () => {}, rng = Math.random) {
-  while (dtS > 60) { tickChunk(state, 60, onEnh, rng); dtS -= 60; }
-  tickChunk(state, dtS, onEnh, rng);
+// drops, enhancing. Same path live and offline (caller clamps dt). Long
+// dts are sub-stepped internally so a 12h batch integrates the shrinking
+// population the same way live play does (clamp law).
+// onEvent(kind, item) fires per bot event: kind = "drop" for zone gear
+// rolls, or an enhance result ("success"/"fail"/"poor") for the squad.
+export function tick(state, dtS, onEvent = () => {}, rng = Math.random) {
+  while (dtS > 60) { tickChunk(state, 60, onEvent, rng); dtS -= 60; }
+  tickChunk(state, dtS, onEvent, rng);
 }
 
-function tickChunk(state, dtS, onEnh, rng) {
+function tickChunk(state, dtS, onEvent, rng) {
   const b = state.bots;
   const dtH = dtS / 3600;
 
@@ -176,13 +188,19 @@ function tickChunk(state, dtS, onEnh, rng) {
     }
   }
 
-  // farming: every zone with an allocated squad runs in parallel; each
-  // zone's detection bans its own squad at a rate; copper mailed in
+  // farming: every held zone runs in parallel; each zone's detection bans
+  // its own squad at a rate; copper mailed in; drops roll CHANCE-BASED
+  // per kill from the zone's IP band (expected count + random remainder —
+  // exact per-kill odds at live tick sizes, EV at offline batch sizes)
   for (let zi = 0; zi < zones.length; zi++) {
     const n = (b.alloc.zones[zi] || 0) * scale;
     if (n <= 0) continue;
     const r = botZoneRates(b, zi, n);
+    if (!r.held) continue;
     state.copper += r.copperPerSec * dtS;
+    const np = r.kps * dtS * DROP_CHANCE;
+    let drops = Math.floor(np) + (rng() < np - Math.floor(np) ? 1 : 0);
+    while (drops-- > 0) onEvent("drop", rollItem(zones[zi], zi, rng));
     const deaths = r.bansPerHour * dtH;
     b.pop = Math.max(0, b.pop - deaths);
     b.banned = (b.banned || 0) + deaths; // lifetime counter (log flavor)
@@ -198,7 +216,7 @@ function tickChunk(state, dtS, onEnh, rng) {
       while (b.enhCarry >= interval && guard-- > 0) {
         b.enhCarry -= interval;
         const res = enhAttempt(state, item, rng);
-        onEnh(res, item);
+        onEvent(res, item);
         if (res === "poor" || item.plus >= b.enhTarget.plus) { b.enhCarry = 0; break; }
         interval = enhInterval(b, item.plus);
       }

@@ -75,8 +75,8 @@ if (loaded && state.unlocked && state.lastSeen) {
   if (dt > 60) {
     const c0 = state.copper;
     let drops = 0;
-    bots.tick(state, dt);
-    farm.tick(state, dt, Math.random, item => { drops++; onDrop(item); });
+    // enh feedback stays silent offline (slot rows aren't built yet)
+    bots.tick(state, dt, (kind, item) => { if (kind === "drop") { drops++; onDrop(item); } });
     log(`offline ${fmt(dt / 3600)}h: +${fmt(state.copper - c0)}c · ${drops} drops`);
     if (state.gm.idleProc && !state.boss.broken) {
       const r = processIdleAttempts(state, dt);
@@ -209,19 +209,19 @@ for (const type of Object.keys(UTILITY)) {
 $("schedToggle").addEventListener("change", () => { state.gm.schedulerOn = $("schedToggle").checked; });
 
 // ---- farming: dense zone table, built once, cells updated in render ----
-$("zones").innerHTML = `<table class="ztable"><thead><tr>
-  <th class="tl">zone</th><th>gate</th><th>c/s</th><th>drops/h</th><th>kills/s</th><th class="tl">bound</th><th>you</th><th class="tl">bot squad</th>
-</tr></thead><tbody>${farm.zones.map((z, i) => `<tr id="zrow${i}">
-  <td class="tl">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP · det ${z.detection}/h</div><div class="zoneBar"><div class="zoneFill" id="zf${i}"></div></div></td>
-  <td>${fmt(z.gate)}</td><td id="zc${i}">—</td><td id="zd${i}">—</td><td id="zk${i}">—</td>
-  <td class="tl" id="zb${i}">—</td><td><button id="zp${i}">park</button></td>
-  <td class="tl"><span id="za${i}"></span><div class="sub" id="zbi${i}"></div></td>
-</tr>`).join("")}</tbody></table>`;
-farm.zones.forEach((z, i) => {
-  $(`zp${i}`).addEventListener("click", () => {
-    state.farm.zone = state.farm.zone === i ? null : i;
-  });
-  $(`za${i}`).appendChild(allocMini(`zones.${i}`));
+// ---- zones: bot-only, same row component as training ----
+const zoneRows = farm.zones.map((z, i) => {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML =
+    `<span class="rowName">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP · det ${z.detection}/h</div></span>` +
+    `<span class="rowGain">${fmt(z.copper)}c/kill<div class="sub">IP ${fmt(z.ipLo)}–${fmt(z.ipHi)}</div></span>` +
+    `<span class="rowAlloc"></span>` +
+    `<span class="rowStat" id="zs${i}"></span>` +
+    `<div class="rowBar"><div class="rowFill" id="zf${i}"></div></div>`;
+  row.querySelector(".rowAlloc").appendChild(allocMini(`zones.${i}`));
+  $("zones").appendChild(row);
+  return row;
 });
 
 // ---- gear: build slot rows once ----
@@ -293,8 +293,7 @@ function tick() {
   const dt = Math.min((now - lastTick) / 1000, farm.offlineCapS(state)) * devScale; // same clamp as offline
   lastTick = now;
   if (state.unlocked) {
-    bots.tick(state, dt, (r, item) => enhMilestones(item, r));
-    farm.tick(state, dt, Math.random, onDrop);
+    bots.tick(state, dt, (kind, item) => kind === "drop" ? onDrop(item) : enhMilestones(item, kind));
   }
   // encounter scheduler: auto-fire attempts on cooldown while online
   if (state.gm.scheduler && state.gm.schedulerOn && !state.boss.broken && !state.pull && canPull(state, now)) {
@@ -342,10 +341,6 @@ function render() {
   $("ticketsEl").textContent = fmt(state.tickets);
   { // copper rate: numbers should always be visibly going somewhere
     let cps = 0;
-    if (state.farm.zone !== null) {
-      const rc = farm.rateCard(state, farm.zones[state.farm.zone]);
-      if (!rc.locked) cps += rc.copperPerSec;
-    }
     const sc = bots.effScale(state.bots);
     farm.zones.forEach((z, i) => {
       const n = (state.bots.alloc.zones[i] || 0) * sc;
@@ -496,45 +491,24 @@ function render() {
     : tItem.plus >= b.enhTarget.plus ? `done: +${tItem.plus}`
     : `try every ${iv === Infinity ? "—" : fmt(iv)}s · ${fmt(enh.cost(tItem))}c/try`;
 
-  // farming table — numbers in columns, binding stat named
+  // zones — bot squads only; stat shows the squad's ACTUAL kill rate
   farm.zones.forEach((z, i) => {
-    const rc = farm.rateCard(state, z);
-    const row = $(`zrow${i}`);
-    row.classList.toggle("locked", rc.locked);
-    row.classList.toggle("active", state.farm.zone === i);
-    if (rc.locked) {
-      $(`zc${i}`).textContent = $(`zd${i}`).textContent = $(`zk${i}`).textContent = "—";
-      $(`zb${i}`).textContent = "locked";
-    } else {
-      $(`zc${i}`).textContent = rc.copperPerSec >= 0.1 ? fmt(rc.copperPerSec) : rc.copperPerSec.toFixed(2);
-      $(`zd${i}`).textContent = rc.dropsPerHour.toFixed(1);
-      $(`zk${i}`).textContent = rc.kps.toFixed(2);
-      $(`zb${i}`).textContent = rc.capBound
-        ? `CAP ${farm.KILL_CAP}/s`
-        : `DPS ${fmt(dps)} ÷ ${fmt(z.mobHp)} HP`;
-    }
-    const btn = $(`zp${i}`);
-    btn.disabled = rc.locked;
-    btn.textContent = state.farm.zone === i ? "✓" : "park";
-    // bot squad readout: this zone's mail rate + burn rate
     const n = (state.bots.alloc.zones[i] || 0) * scale;
     const zr = bots.botZoneRates(state.bots, i, n);
-    $(`zbi${i}`).textContent = n > 0
-      ? `${fmt(zr.copperPerSec)}c/s · ${zr.bansPerHour.toFixed(2)} bans/h${zr.kps >= farm.KILL_CAP ? " · CAP" : ""}`
-      : "";
-    // zone bar: parked = fills toward your next gear roll; bot squad =
-    // one fill per kill at the squad's real rate (training-bar logic);
-    // at/near the cap it renders solid — fast cycles strobe
-    const zfEl = $(`zf${i}`);
-    if (state.farm.zone === i && !rc.locked) {
-      zfEl.style.width = `${Math.min(100, state.farm.dropCarry * 100)}%`;
-      zfEl.style.background = "";
-    } else if (n > 0 && zr.kps > 0) {
-      zfEl.style.width = zr.kps >= 10 ? "100%" : `${((now / 1000) * zr.kps % 1) * 100}%`;
-      zfEl.style.background = "#5a7a5a"; // bot work reads green, not gold
+    zoneRows[i].classList.toggle("active", n > 0 && zr.held);
+    zoneRows[i].classList.toggle("locked", n > 0 && !zr.held);
+    const stat = $(`zs${i}`);
+    if (n <= 0) {
+      stat.textContent = z.gate > 0 ? `needs squad DPS ${fmt(z.gate)} (${bots.gateNeeded(state.bots, i)} bots)` : "unmanned";
+    } else if (!zr.held) {
+      stat.textContent = `squad DPS ${fmt(zr.squadDps)} / ${fmt(z.gate)} — can't hold`;
     } else {
-      zfEl.style.width = "0";
+      stat.textContent = `${zr.kps.toFixed(2)} kills/s${zr.kps >= farm.KILL_CAP ? " · CAP" : ""} · ${fmt(zr.copperPerSec)}c/s · ${zr.bansPerHour.toFixed(2)} bans/h`;
     }
+    // kill-cycle bar (training-bar logic); solid at/near cap — fast cycles strobe
+    const zfEl = $(`zf${i}`);
+    if (n > 0 && zr.kps > 0) zfEl.style.width = zr.kps >= 10 ? "100%" : `${((now / 1000) * zr.kps % 1) * 100}%`;
+    else zfEl.style.width = "0";
   });
 
   // gear

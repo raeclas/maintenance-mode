@@ -1,63 +1,23 @@
-// farm.js — parking. Kills/s = min(KILL_CAP, DPS/mobHP) — the per-kill cap
-// that offline batches inherit unchanged (clamp law). Drops are deterministic
-// EV: fractional carry, whole items materialize on the carry.
-import { derive } from "./stats.js";
-import { rollItem } from "./gear.js";
-
-export const DROP_PER_KILLS = 400;  // 1 gear roll per 400 kills EV
+// farm.js — zone data. Zones are BOT-ONLY (the player's verb is the Boss):
+// each zone runs when its squad's DPS (number × strength) clears the gate.
+// Kills cap at 50/s per zone (NGU engine ceiling). Drops are chance-based
+// per kill, rolled from the zone's IP band by the squad (see bots.js).
+export const DROP_CHANCE = 1 / 400;  // per kill
 export const OFFLINE_CAP_S = 12 * 3600;
+export const KILL_CAP = 50;
 // GM offline perk extends the clamp (rank-capped at +6h in gm.js)
 export function offlineCapS(state) { return OFFLINE_CAP_S + (state.gm?.offline || 0) * 3600; }
 
-// Starting values; gates displayed on the cards. Each zone ≈ one day of the arc.
-// detection: anti-cheat bans per farming BOT per hour in this zone (player
-// is never banned — you're a real login). Starting values, sim-gated.
+// gate = minimum SQUAD DPS to hold the zone (starting values, sim-gated).
+// detection: anti-cheat bans per farming bot per hour in this zone.
 // Zone names speak the DEAD GAME register (feature-pass gate 3): the old
 // world's leveling path, ending at the raid gate Vess guards.
+// mobHP / gates sized to the BOT curve (bot dps ~12-130), not the player's
+// boss DPS — zones are the swarm's ladder now.
 export const zones = [
-  { id: "z1", name: "Novice Meadow", gate: 0, mobHp: 50, copper: 5, ipLo: 10, ipHi: 30, mob: "Training Slime", detection: 0.1 },
-  { id: "z2", name: "Webbed Ravine", gate: 500, mobHp: 1000, copper: 20, ipLo: 40, ipHi: 120, mob: "Ravine Weaver", detection: 0.25 },
-  { id: "z3", name: "Salt Flats", gate: 2000, mobHp: 4000, copper: 75, ipLo: 150, ipHi: 450, mob: "Salt Strider", detection: 0.5 },
-  { id: "z4", name: "Cinder Steppe", gate: 7500, mobHp: 15000, copper: 300, ipLo: 600, ipHi: 1800, mob: "Steppe Charger", detection: 0.9 },
-  { id: "z5", name: "The Doorstep", gate: 32000, mobHp: 64000, copper: 2250, ipLo: 4500, ipHi: 13500, mob: "Door Sentry", detection: 1.6 },
+  { id: "z1", name: "Novice Meadow", gate: 0, mobHp: 12, copper: 5, ipLo: 10, ipHi: 30, mob: "Training Slime", detection: 0.02 },
+  { id: "z2", name: "Webbed Ravine", gate: 120, mobHp: 60, copper: 20, ipLo: 40, ipHi: 120, mob: "Ravine Weaver", detection: 0.05 },
+  { id: "z3", name: "Salt Flats", gate: 600, mobHp: 250, copper: 75, ipLo: 150, ipHi: 450, mob: "Salt Strider", detection: 0.1 },
+  { id: "z4", name: "Cinder Steppe", gate: 2400, mobHp: 700, copper: 300, ipLo: 600, ipHi: 1800, mob: "Steppe Charger", detection: 0.15 },
+  { id: "z5", name: "The Doorstep", gate: 7000, mobHp: 1500, copper: 2250, ipLo: 4500, ipHi: 13500, mob: "Door Sentry", detection: 0.25 },
 ];
-
-export function dpsOf(state) {
-  const { atk, hitsPerSec } = derive(state);
-  return atk * hitsPerSec;
-}
-
-// NGU-style universal rate ceiling: the engine grants at most 50 kills/s.
-// Below the cap you're DPS-bound (kills/s = DPS ÷ mobHP).
-export const KILL_CAP = 50;
-
-export function killsPerSec(state, zone) {
-  return Math.min(KILL_CAP, dpsOf(state) / zone.mobHp);
-}
-
-export function rateCard(state, zone) {
-  const kps = killsPerSec(state, zone);
-  return {
-    kps,
-    copperPerSec: kps * zone.copper,
-    dropsPerHour: (kps * 3600) / DROP_PER_KILLS,
-    locked: dpsOf(state) < zone.gate,
-    capBound: dpsOf(state) / zone.mobHp >= KILL_CAP,
-  };
-}
-
-// Advance farming by dtS seconds; onDrop(item) fires per materialized item.
-// Same path live and offline (caller clamps dt to OFFLINE_CAP_S).
-export function tick(state, dtS, rng = Math.random, onDrop = () => {}) {
-  const zi = state.farm.zone;
-  if (zi === null) return;
-  const zone = zones[zi];
-  if (dpsOf(state) < zone.gate) return; // gate re-checked every tick (no snapshot abuse)
-  const kills = killsPerSec(state, zone) * dtS;
-  state.copper += kills * zone.copper;
-  state.farm.dropCarry += kills / DROP_PER_KILLS;
-  while (state.farm.dropCarry >= 1) {
-    state.farm.dropCarry -= 1;
-    onDrop(rollItem(zone, zi, rng));
-  }
-}

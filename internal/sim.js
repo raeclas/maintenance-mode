@@ -43,12 +43,6 @@ function mark(t, desc) {
 // per-zone accumulated gear rolls (EV): E[max of n uniform] = lo + span·n/(n+1)
 const rolls = farm.zones.map(() => 0);
 
-function bestZone() {
-  let zi = -1;
-  farm.zones.forEach((z, i) => { if (dps() >= z.gate) zi = i; });
-  return zi;
-}
-
 let t = 0;
 let broken = false;
 let attemptCarry = 0;
@@ -56,30 +50,37 @@ mark(30, `first attempt ${(expectedDepth(derive(S), boss) * 100).toFixed(4)}% (i
 mark(35, "systems unlock");
 S.unlocked = true;
 
-let botOutEarnSteps = 0, totalSteps = 0;
 while (t < MAX_S && !broken) {
   t += STEP;
-  totalSteps++;
 
   // --- NGU waterfall: cap each bar in order, spill surplus to the next.
-  // 40% of pop to zones (best per-bot copper first), rest to training
+  // 40% of pop to zones (best HELD per-bot copper first — a squad must
+  // clear the zone's gate DPS to farm it at all), rest to training
   // (2:1 atk:speed until the speed lane caps).
   {
     const B = S.bots;
     const total = Math.floor(B.pop);
     const speedDone = B.trained.hits >= bots.SPEED_TRAIN_CAP;
-    let farmBudget = Math.floor(total * 0.4);
-    let trainBudget = total - farmBudget;
+    // training only gets what its unlocked bars can actually use (their
+    // 50/s caps); everything else farms — NGU-optimal late game
+    let trainWant = 0;
+    for (let i = 0; i < B.bars.atk.unlocked; i++) trainWant += bots.capNeeded(B, `atk.${i}`);
+    if (!speedDone) for (let i = 0; i < B.bars.speed.unlocked; i++) trainWant += bots.capNeeded(B, `speed.${i}`);
+    // once the speed lane caps (late signal), copper outweighs training —
+    // shift the swarm to the zones
+    let trainBudget = Math.min(trainWant, Math.floor(total * (speedDone ? 0.25 : 0.6)));
+    let farmBudget = total - trainBudget;
 
     B.alloc.zones.fill(0);
     const zOrder = farm.zones
       .map((z, i) => ({ i, per: (bots.botDps(B) / z.mobHp) * z.copper }))
       .sort((x, y) => y.per - x.per);
     for (const o of zOrder) {
-      if (farmBudget <= 0) break;
-      const n = Math.min(farmBudget, bots.capNeeded(B, `zones.${o.i}`));
-      B.alloc.zones[o.i] = n;
-      farmBudget -= n;
+      const need = bots.gateNeeded(B, o.i);
+      if (farmBudget < Math.max(1, need)) continue; // can't hold the gate
+      const n = Math.min(farmBudget, Math.max(need, bots.capNeeded(B, `zones.${o.i}`)));
+      B.alloc.zones[o.i] = Math.min(n, bots.capNeeded(B, `zones.${o.i}`));
+      farmBudget -= B.alloc.zones[o.i];
     }
     trainBudget += farmBudget; // zone caps all hit → surplus trains
 
@@ -103,39 +104,40 @@ while (t < MAX_S && !broken) {
     }
     B.alloc.enh = 0;
   }
-  const botRates = { copperPerSec: farm.zones.reduce((s, z, i) =>
-    s + (S.bots.alloc.zones[i] > 0 ? bots.botZoneRates(S.bots, i, S.bots.alloc.zones[i]).copperPerSec : 0), 0) };
-  bots.tick(S, STEP); // creation, training, farm mail, bans
+  // deterministic EV in the sim: bot ticks use midpoint rng so chance
+  // drops land at expected count and rolls are ignored (gear is EV'd below)
+  bots.tick(S, STEP, () => {}, () => 0.5);
 
-  // --- player farms best gated zone (real rate card) ---
-  const zi = bestZone();
-  S.farm.zone = zi;
-  const z = farm.zones[zi];
-  const rc = farm.rateCard(S, z);
-  S.copper += rc.copperPerSec * STEP;
-  const dropsNow = (rc.dropsPerHour * STEP) / 3600;
-  rolls[zi] += dropsNow;
-  // salvage faucet: non-upgrade drops decompose (autoSalvage assumed on)
-  S.copper += dropsNow * SALVAGE_RATE * (z.ipLo + z.ipHi) / 2;
-
-  // main-character gate: the swarm must not out-earn your own parking
-  if (botRates.copperPerSec > rc.copperPerSec) botOutEarnSteps++;
-
-  // --- gear adoption: EV best roll so far in this zone. Adopt on RAW ip gain
-  // (optimal play re-enhances; copper income covers the re-climb) ---
-  for (const slot of SLOTS) {
-    const n = rolls[zi] / SLOTS.length;
-    if (n < 1) break;
-    const expIp = Math.round(z.ipLo + (z.ipHi - z.ipLo) * (n / (n + 1)));
-    const cur = S.gear[slot];
-    if (!cur || expIp > cur.ip) {
-      if (cur) S.gear.stash.push(cur);
-      S.gear[slot] = { slot, ip: expIp, plus: 0, zone: zi + 1, name: "ev" };
+  // --- gear + salvage: EV of the swarm's chance drops, per zone ---
+  let income = 0;
+  farm.zones.forEach((z, i) => {
+    const n = S.bots.alloc.zones[i];
+    if (n <= 0) return;
+    const zr = bots.botZoneRates(S.bots, i, n);
+    income += zr.copperPerSec;
+    const dropsNow = zr.kps * STEP * farm.DROP_CHANCE;
+    rolls[i] += dropsNow;
+    // salvage faucet: non-upgrade drops decompose (autoSalvage assumed on)
+    S.copper += dropsNow * SALVAGE_RATE * (z.ipLo + z.ipHi) / 2;
+  });
+  // adoption: EV best roll per slot from the RICHEST farmed zone. Adopt on
+  // RAW ip gain (optimal play re-enhances; income covers the re-climb)
+  let bestZi = -1;
+  farm.zones.forEach((z, i) => { if (rolls[i] >= SLOTS.length && (bestZi < 0 || z.ipHi > farm.zones[bestZi].ipHi)) bestZi = i; });
+  if (bestZi >= 0) {
+    const z = farm.zones[bestZi];
+    for (const slot of SLOTS) {
+      const n = rolls[bestZi] / SLOTS.length;
+      const expIp = Math.round(z.ipLo + (z.ipHi - z.ipLo) * (n / (n + 1)));
+      const cur = S.gear[slot];
+      if (!cur || expIp > cur.ip) {
+        if (cur) S.gear.stash.push(cur);
+        S.gear[slot] = { slot, ip: expIp, plus: 0, zone: bestZi + 1, name: "ev" };
+      }
     }
   }
 
   // --- spend copper: rig upgrades with ≤30min payback, then enhance to +10 ---
-  const income = rc.copperPerSec + botRates.copperPerSec;
   for (;;) {
     const options = [
       ["cap", bots.capCost(S.bots)],
@@ -182,10 +184,10 @@ while (t < MAX_S && !broken) {
       if (S.boss.scars >= scarCap(S)) mark(t, "scars capped");
     }
   }
-  // GM spends: unlocks first (verbs), then scar cap, then cheapest flag
+  // GM spends: unlocks first (verbs), then scar cap + session cap, then flags
   buyUnlock(S, "scheduler");
   buyUnlock(S, "idleProc");
-  for (;;) { if (!buyUtility(S, "scar")) break; }
+  for (;;) { if (!buyUtility(S, "scar") && !buyUtility(S, "cap")) break; }
   for (;;) {
     const next = flagCost("dmg", S.gm.dmg) <= flagCost("haste", S.gm.haste) ? "dmg" : "haste";
     if (!buyFlag(S, next)) break;
@@ -199,7 +201,11 @@ while (t < MAX_S && !broken) {
   // --- observation milestones ---
   const mult = dps() / startDps;
   for (const m of [10, 100, 1000, 10000]) if (mult >= m) mark(t, `power ×${m}`);
-  farm.zones.forEach((zz, i) => { if (i > 0 && dps() >= zz.gate) mark(t, `${zz.id} unlocked (${zz.name})`); });
+  farm.zones.forEach((zz, i) => {
+    if (i > 0 && S.bots.alloc.zones[i] > 0 && bots.botZoneRates(S.bots, i, S.bots.alloc.zones[i]).held) {
+      mark(t, `${zz.id} held (${zz.name})`);
+    }
+  });
   for (const pct of [0.001, 0.01, 0.1, 0.5]) {
     if (S.boss.bestDepth >= pct) mark(t, `depth ${pct * 100}%`);
   }
@@ -223,7 +229,8 @@ const x10 = milestones.find(m => m.desc === "power ×10");
 if (!x10 || x10.t > 3600) gates.push(`GATE FAIL: power ×10 at ${x10 ? fmtT(x10.t) : "never"} (want ≤1h)`);
 const d1 = milestones.find(m => m.desc === "depth 1%");
 if (!d1 || d1.t > 86400) gates.push(`GATE FAIL: depth 1% at ${d1 ? fmtT(d1.t) : "never"} (want ≤1d)`);
-if (botOutEarnSteps / totalSteps > 0.1) gates.push(`GATE FAIL: bot swarm out-earns the player in ${(botOutEarnSteps / totalSteps * 100).toFixed(0)}% of steps (main-character law, want ≤10%)`);
+// (main-character income gate retired 2026-07-22: zones are bot-only by
+// design — the player's verb is the Boss, the swarm IS the economy)
 
 const compare = process.argv.includes("--compare");
 const baseUrl = new URL("./baseline.json", import.meta.url);

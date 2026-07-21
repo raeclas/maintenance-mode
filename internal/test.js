@@ -27,7 +27,7 @@ const enh = await import("../enhance.js");
   assert.equal(d.atk, 10);
   assert.equal(d.hitsPerSec, 2.0);
   const b = getBoss(1);
-  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 120_000_000); // 0.0005% exactly
+  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 80_000_000); // 0.00075% exactly
 }
 
 // Stats: gear + bars feed the one-line formula; speed hard cap
@@ -89,8 +89,8 @@ const enh = await import("../enhance.js");
 {
   const s = newState();
   assert.equal(bots.capacity(s.bots), 8);
-  bots.tick(s, 3600); // +2/h
-  assert.ok(Math.abs(s.bots.pop - 4) < 0.01);
+  bots.tick(s, 3600); // +4/h base
+  assert.ok(Math.abs(s.bots.pop - 6) < 0.01);
   bots.tick(s, 100 * 3600);
   assert.equal(s.bots.pop, 8); // capped
 }
@@ -149,20 +149,36 @@ const enh = await import("../enhance.js");
   assert.equal(s4.bots.bars.speed.fills[0], 0); // capped lane doesn't churn fills
 }
 
-// Bots: per-zone squads farm in parallel, bans drain per zone's detection
+// Bots: per-zone squads, squad-DPS gates, chance drops, per-zone bans
 {
   const s = newState();
   s.bots.pop = 8;
   s.bots.alloc.atk = [0, 0, 0, 0];
   s.bots.alloc.speed = [0, 0, 0];
   s.bots.alloc.zones = [5, 3, 0, 0, 0];
-  const z1 = farm.zones[0], z2 = farm.zones[1];
-  const cps = bots.botZoneRates(s.bots, 0, 5).copperPerSec + bots.botZoneRates(s.bots, 1, 3).copperPerSec;
-  const expBans = 5 * z1.detection + 3 * z2.detection; // per hour
-  bots.tick(s, 3600);
-  assert.ok(Math.abs(s.copper - cps * 3600) < cps * 3600 * 0.02);
+  const z1 = farm.zones[0];
+  // z2 gate: 3 bots × 12 DPS = 36 < 120 → squad can't hold it
+  const r2 = bots.botZoneRates(s.bots, 1, 3);
+  assert.ok(!r2.held && r2.kps === 0 && r2.bansPerHour === 0);
+  assert.equal(bots.gateNeeded(s.bots, 1), Math.ceil(120 / 12));
+  const r1 = bots.botZoneRates(s.bots, 0, 5); // held: gate 0
+  assert.ok(r1.held);
+  const expBans = 5 * z1.detection; // only the held zone burns
+  const drops = [];
+  bots.tick(s, 3600, (kind, item) => { if (kind === "drop") drops.push(item); }, () => 0.99);
+  assert.ok(Math.abs(s.copper - r1.copperPerSec * 3600) < r1.copperPerSec * 3600 * 0.02);
   assert.ok(Math.abs(s.bots.banned - expBans) < expBans * 0.25);
-  assert.ok(s.bots.pop > 7 && s.bots.pop <= 8); // generator refills most of it
+  // rng 0.99: only whole expected drops materialize — np/chunk = 5×60/400 = 0.75 → 0
+  assert.equal(drops.length, 0);
+  const s2 = newState();
+  s2.bots.pop = 8;
+  s2.bots.alloc.atk = [0, 0, 0, 0];
+  s2.bots.alloc.speed = [0, 0, 0];
+  s2.bots.alloc.zones = [5, 0, 0, 0, 0];
+  const drops2 = [];
+  bots.tick(s2, 3600, (kind, item) => { if (kind === "drop") drops2.push(item); }, () => 0);
+  assert.equal(drops2.length, 60); // rng 0 → remainder always lands: 1 per 60s chunk
+  assert.ok(drops2[0].ip >= z1.ipLo && drops2[0].ip <= z1.ipHi);
   // zone kill rate caps at 50/s no matter the squad
   assert.ok(bots.botZoneRates(s.bots, 0, 1e6).kps === 50);
 }
@@ -187,7 +203,7 @@ const enh = await import("../enhance.js");
   const s = newState();
   s.copper = 10_000;
   assert.ok(bots.buy(s, "cap") && bots.capacity(s.bots) === 12);
-  assert.ok(bots.buy(s, "create") && bots.createRate(s.bots) === 3);
+  assert.ok(bots.buy(s, "create") && bots.createRate(s.bots) === 6); // 4 × 1.5
   assert.ok(bots.buy(s, "power") && bots.botPower(s.bots) === 1.25);
   assert.ok(bots.buy(s, "speed") && bots.botSpeed(s.bots) === 1.2);
   s.copper = 0;
@@ -207,26 +223,7 @@ const enh = await import("../enhance.js");
   assert.ok(bots.effScale(s.bots) === 0.5);
 }
 
-// Farm: kills/s = min(50, DPS/mobHP) — NGU-style universal rate ceiling
-{
-  const s = newState();
-  s.gear.weapon = { slot: "weapon", ip: 1e6, plus: 0, zone: 5, name: "t" };
-  const z = farm.zones[0];
-  assert.equal(farm.killsPerSec(s, z), farm.KILL_CAP); // monster DPS → capped at 50
-  assert.ok(farm.rateCard(s, z).capBound);
-  const weak = newState(); // DPS 20 vs 50 HP → DPS-bound
-  assert.equal(farm.killsPerSec(weak, z), (10 * 2) / 50);
-  assert.ok(!farm.rateCard(weak, z).capBound);
-  s.farm.zone = 0;
-  const drops = [];
-  farm.tick(s, 100, () => 0.5, it => drops.push(it));
-  assert.equal(drops.length, Math.floor(50 * 100 / farm.DROP_PER_KILLS)); // capped kills → rolls
-  assert.ok(s.copper === 5000 * z.copper);
-  const s2 = newState();
-  s2.farm.zone = 4; // gate 32k, DPS 20 → gated, nothing happens
-  farm.tick(s2, 1000);
-  assert.equal(s2.copper, 0);
-}
+// Farm: zones are bot-only data now — no player kill functions (v8)
 
 // Gear: roll bands, auto-equip stashes loser, lock/salvage discipline
 {
@@ -341,7 +338,6 @@ const enh = await import("../enhance.js");
   s.gm.scar = 2;
   s.gear.weapon = { slot: "weapon", ip: 55, plus: 3, zone: 1, name: "t" };
   s.gear.stash = [{ slot: "charm", ip: 5, plus: 0, zone: 1, name: "u" }];
-  s.farm.zone = 1;
   s.boss = { pulls: 3, bestDepth: 0.01, scars: 0.005, broken: false, nearSaid: false };
   saves.save(s);
   assert.equal(JSON.parse(localStorage.getItem("mm_save")).pull, undefined);
@@ -358,7 +354,6 @@ const enh = await import("../enhance.js");
   assert.equal(s2.copper, 1234);
   assert.equal(s2.gear.weapon.ip, 55);
   assert.equal(s2.gear.stash.length, 1);
-  assert.equal(s2.farm.zone, 1);
   assert.deepEqual(s2.boss, s.boss);
 
   // v1 save (pre-bots, had player field): backfills, keeps siege progress, unlocks

@@ -115,7 +115,7 @@ export function load(state) {
   }
   state.gear = { ...d.gear, ...(s.gear || {}) };
   if (!Array.isArray(state.gear.stash)) state.gear.stash = [];
-  state.farm = { ...d.farm, ...(s.farm || {}) };
+  delete state.farm; // v8: zones are bot-only, player parking is gone
   return s;
 }
 

@@ -211,7 +211,7 @@ players click instantly, raise the material ante, not fail severity.
 | Gear | power lane | item power is THE one scalar (contribution = IP×(1+0.10×plus)); ONE effect per item max; stash cap 50 — trash decomposes VISIBLY to copper (0.5c/ip), locked + equipped items untouchable [attachment law narrowed 2026-07-21: nothing you've KEPT is ever destroyed] |
 | Feats | bonus pool | all achievements/collection feed one visible pool |
 | Bot Farm | prep arc [AMENDED: replaces Levels; XP deleted from the game] | bar progress/s = bots × power × speed; all three copper-improvable |
-| Farm/parking | idle half | chosen spot, visible rate cards, multi-track |
+| Grind (bot zones) [AMENDED 2026-07-22: player parking removed — zones are bot-only; the player's verb is the Boss] | idle half | per-zone squads; zone runs when squad DPS ≥ gate; kills pay copper, drops roll by chance (1/400/kill) from the zone band; per-zone detection burns the squad |
 | Lifecycle | endgame gravity | frontier → farm → autokill; dungeons/raids/minibosses = sub-rungs between walls (middle content, not a 10th system) |
 
 **[NEW design law 2026-07-21 — improvable-stat rule]: every mechanic ships
