@@ -17,27 +17,36 @@
     DPS <b id="dpsEl">—</b> · ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · <span class="copper"><span id="copperEl">0</span>c</span>
   </div>
 
-  <div class="bossPanel">
-    <div id="bossName"></div>
-    <div id="bossTitle"></div>
-    <div id="record"></div>
-  </div>
+  <nav id="tabs" class="game hidden">
+    <button data-tab="battleSec" class="active">Battle</button>
+    <button data-tab="botSec">Bot Farm</button>
+    <button data-tab="farmSec">Farming</button>
+    <button data-tab="gearSec">Gear</button>
+  </nav>
 
-  <canvas id="battle"></canvas>
+  <section id="battleSec" class="tabpane">
+    <div class="bossPanel">
+      <div id="bossName"></div>
+      <div id="bossTitle"></div>
+      <div id="record"></div>
+    </div>
 
-  <div class="controls">
-    <button id="pullBtn">Attempt</button>
-    <span id="depth">—</span>
-    <span id="cooldown"></span>
-  </div>
-  <div id="projection"></div>
+    <canvas id="battle"></canvas>
 
-  <div id="monument" style="display:none">W1 — Broken · Vess, Warden of the First Door</div>
-  <div id="titles" style="display:none"></div>
+    <div class="controls">
+      <button id="pullBtn">Attempt</button>
+      <span id="depth">—</span>
+      <span id="cooldown"></span>
+    </div>
+    <div id="projection"></div>
 
-  <div id="dialogue"></div>
+    <div id="monument" style="display:none">W1 — Broken · Vess, Warden of the First Door</div>
+    <div id="titles" style="display:none"></div>
 
-  <section id="botSec" class="game hidden">
+    <div id="dialogue"></div>
+  </section>
+
+  <section id="botSec" class="game hidden tabpane" style="display:none">
     <h2>Bot Farm</h2>
     <div class="rig">
       <button id="buyCap"></button>
@@ -50,7 +59,12 @@
     <div class="bar" id="barAtk">
       <div class="barHead">
         <span class="trackName">Train ATK</span>
-        <span class="assign"><input type="number" id="allocAtk" min="0" step="1"> bots</span>
+        <span class="assign" data-track="atk">
+          <button data-d="-10">−10</button><button data-d="-1">−1</button>
+          <input type="number" id="allocAtk" min="0" step="1">
+          <button data-d="1">+1</button><button data-d="10">+10</button>
+          <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
+        </span>
         <span id="barAtkInfo"></span>
       </div>
       <div class="barTrack"><div class="barFill" id="barAtkFill"></div></div>
@@ -58,7 +72,12 @@
     <div class="bar" id="barSpeed">
       <div class="barHead">
         <span class="trackName">Train SPEED</span>
-        <span class="assign"><input type="number" id="allocSpd" min="0" step="1"> bots</span>
+        <span class="assign" data-track="spd">
+          <button data-d="-10">−10</button><button data-d="-1">−1</button>
+          <input type="number" id="allocSpd" min="0" step="1">
+          <button data-d="1">+1</button><button data-d="10">+10</button>
+          <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
+        </span>
         <span id="barSpeedInfo"></span>
       </div>
       <div class="barTrack"><div class="barFill" id="barSpeedFill"></div></div>
@@ -66,19 +85,24 @@
     <div class="bar">
       <div class="barHead">
         <span class="trackName">Farm</span>
-        <span class="assign"><input type="number" id="allocFarm" min="0" step="1"> bots</span>
+        <span class="assign" data-track="farm">
+          <button data-d="-10">−10</button><button data-d="-1">−1</button>
+          <input type="number" id="allocFarm" min="0" step="1">
+          <button data-d="1">+1</button><button data-d="10">+10</button>
+          <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
+        </span>
         <select id="botZone"></select>
         <span id="botFarmInfo"></span>
       </div>
     </div>
   </section>
 
-  <section id="farmSec" class="game hidden">
+  <section id="farmSec" class="game hidden tabpane" style="display:none">
     <h2>Farming</h2>
     <div id="zones"></div>
   </section>
 
-  <section id="gearSec" class="game hidden">
+  <section id="gearSec" class="game hidden tabpane" style="display:none">
     <h2>Gear <span id="stacksHud"></span></h2>
     <label class="autoSalv"><input type="checkbox" id="safeguard"> safeguard (3× cost, no drop on fail — works up to +15 only)</label>
     <div id="slots"></div>

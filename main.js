@@ -59,6 +59,19 @@ if (loaded && state.unlocked && state.lastSeen) {
   }
 }
 
+// ---- tabs ----
+function showTab(id) {
+  for (const pane of document.querySelectorAll(".tabpane")) {
+    pane.style.display = pane.id === id ? "" : "none";
+  }
+  for (const btn of document.querySelectorAll("#tabs button")) {
+    btn.classList.toggle("active", btn.dataset.tab === id);
+  }
+}
+for (const btn of document.querySelectorAll("#tabs button")) {
+  btn.addEventListener("click", () => showTab(btn.dataset.tab));
+}
+
 // ---- unlock reveal ----
 function reveal() {
   for (const el of document.querySelectorAll(".game")) el.classList.remove("hidden");
@@ -86,6 +99,23 @@ $("buyPower").addEventListener("click", () => { if (bots.buy(state, "power")) lo
 $("buySpeed").addEventListener("click", () => { if (bots.buy(state, "speed")) log("New hardware. The fans sound like a raid boss."); });
 for (const [track, id] of [["atk", "allocAtk"], ["spd", "allocSpd"], ["farm", "allocFarm"]]) {
   $(id).addEventListener("change", () => bots.setAlloc(state, track, Number($(id).value)));
+}
+// ITRTG-style allocation: ± steps and % presets per track
+for (const row of document.querySelectorAll(".assign[data-track]")) {
+  row.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const track = row.dataset.track;
+    const b = state.bots;
+    if (btn.dataset.d !== undefined) {
+      bots.setAlloc(state, track, b.alloc[track] + Number(btn.dataset.d));
+    } else if (btn.dataset.p === "max") {
+      const others = Object.keys(b.alloc).filter(k => k !== track).reduce((s, k) => s + b.alloc[k], 0);
+      bots.setAlloc(state, track, Math.max(0, Math.floor(b.pop) - others));
+    } else {
+      bots.setAlloc(state, track, Math.round(b.pop * Number(btn.dataset.p) / 100));
+    }
+  });
 }
 for (const [i, z] of farm.zones.entries()) {
   const opt = document.createElement("option");

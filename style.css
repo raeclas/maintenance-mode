@@ -107,6 +107,25 @@ canvas {
 
 /* ---- game sections (revealed after the intro pull) ---- */
 .hidden { display: none !important; }
+
+#tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+#tabs button {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--dim);
+  font-family: Georgia, serif;
+  font-variant: small-caps;
+  letter-spacing: .08em;
+  font-size: 13px;
+  padding: 7px;
+  cursor: pointer;
+}
+#tabs button.active { color: var(--gold); border-color: var(--gold); }
+#tabs button:hover { color: var(--gold); }
+
+.assign { display: inline-flex; align-items: center; gap: 2px; }
+.assign button { padding: 1px 5px; font-size: 10px; }
 #statsbar {
   text-align: center;
   font-family: monospace;
