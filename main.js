@@ -472,7 +472,11 @@ function render() {
       } else {
         stat.textContent = `${fmt(B.fills[i] || 0)} fills`;
       }
-      $(`tf_${bar}${i}`).style.width = !locked && squad > 0 ? `${Math.min(100, ((B.prog[i] || 0) / t.cost) * 100)}%` : "0";
+      // fast bars strobe against the frame rate — render solid instead
+      const tfEl = $(`tf_${bar}${i}`);
+      if (locked || squad <= 0) tfEl.style.width = "0";
+      else if (rate >= 10) tfEl.style.width = "100%"; // at/near cap: solid
+      else tfEl.style.width = `${Math.min(100, ((B.prog[i] || 0) / t.cost) * 100)}%`;
     });
     const el = bar === "atk" ? "Atk" : "Speed";
     const trained = bar === "atk"
@@ -519,13 +523,14 @@ function render() {
       ? `${fmt(zr.copperPerSec)}c/s · ${zr.bansPerHour.toFixed(2)} bans/h${zr.kps >= farm.KILL_CAP ? " · CAP" : ""}`
       : "";
     // zone bar: parked = fills toward your next gear roll; bot squad =
-    // cycles at the squad's real kill rate (100 kills per sweep)
+    // one fill per kill at the squad's real rate (training-bar logic);
+    // at/near the cap it renders solid — fast cycles strobe
     const zfEl = $(`zf${i}`);
     if (state.farm.zone === i && !rc.locked) {
       zfEl.style.width = `${Math.min(100, state.farm.dropCarry * 100)}%`;
       zfEl.style.background = "";
     } else if (n > 0 && zr.kps > 0) {
-      zfEl.style.width = `${((now / 1000) * zr.kps % 100)}%`;
+      zfEl.style.width = zr.kps >= 10 ? "100%" : `${((now / 1000) * zr.kps % 1) * 100}%`;
       zfEl.style.background = "#5a7a5a"; // bot work reads green, not gold
     } else {
       zfEl.style.width = "0";
