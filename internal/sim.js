@@ -50,7 +50,7 @@ function bestZone() {
 
 let t = 0;
 let broken = false;
-mark(30, `first pull ${(expectedDepth(derive(S), boss) * 100).toFixed(4)}% (intro beat)`);
+mark(30, `first attempt ${(expectedDepth(derive(S), boss) * 100).toFixed(4)}% (intro beat)`);
 mark(35, "systems unlock");
 S.unlocked = true;
 

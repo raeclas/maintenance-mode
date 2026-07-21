@@ -69,7 +69,7 @@ if (state.unlocked) reveal();
 $("pullBtn").addEventListener("click", () => {
   if (!startPull(state, Date.now())) return;
   say("pullStart");
-  log(`— Pull ${state.boss.pulls + 1} begins. Enrage in ${boss.windowS}s.`);
+  log(`— Attempt ${state.boss.pulls + 1} begins. Enrage in ${boss.windowS}s.`);
 });
 
 $("wipeBtn").addEventListener("click", () => {
@@ -206,11 +206,11 @@ function tick() {
     notifyResult(depth, state.boss.broken);
     if (state.boss.broken) {
       say("break");
-      log(`★ W1 BROKEN — ${boss.name} steps aside. Pull ${state.boss.pulls}.`);
+      log(`★ W1 BROKEN — ${boss.name} steps aside. Attempt ${state.boss.pulls}.`);
     } else {
       const tier = depth < 0.01 ? "fail_hopeless" : depth >= 0.95 ? "fail_near" : "fail_low";
       say(tier, state.boss.pulls - 1);
-      log(`Pull ${state.boss.pulls}: ${fmtDepth(depth)} — enrage. Scars ${fmtDepth(state.boss.scars)}.`);
+      log(`Attempt ${state.boss.pulls}: ${fmtDepth(depth)} — enrage. Scars ${fmtDepth(state.boss.scars)}.`);
       if (!state.unlocked) {
         state.unlocked = true;
         reveal();
@@ -256,7 +256,7 @@ function render() {
   }
 
   $("record").textContent = state.boss.pulls
-    ? `pulls ${state.boss.pulls} · best ${fmtDepth(state.boss.bestDepth)} · scars ${fmtDepth(state.boss.scars)}`
+    ? `attempts ${state.boss.pulls} · best ${fmtDepth(state.boss.bestDepth)} · scars ${fmtDepth(state.boss.scars)}`
     : "no attempts recorded";
   $("monument").style.display = state.boss.broken ? "" : "none";
 
@@ -269,7 +269,7 @@ function render() {
       const reqDps = ((1 - Math.max(state.boss.scars, SCAR_CAP)) * boss.hp) / boss.windowS;
       $("projection").textContent = `projection: ${fmtDepth(lo)}–${fmtDepth(hi)} · required power: ~×${fmt(reqDps / dps)} current`;
     } else {
-      $("projection").textContent = `projection: ${fmtDepth(lo)}–${fmtDepth(hi)} · breaks in ~${n} pull${n > 1 ? "s" : ""}`;
+      $("projection").textContent = `projection: ${fmtDepth(lo)}–${fmtDepth(hi)} · breaks in ~${n} attempt${n > 1 ? "s" : ""}`;
     }
   }
 

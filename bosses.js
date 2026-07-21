@@ -15,7 +15,7 @@ export const bosses = [
         "A login. A real one. I watched the queue counter for six years — it never moved. Come closer, player. Let me see what woke you.",
         "Back again. The greeting script fires whether I want it to or not. I want it to.",
         "You keep logging in. Do you know how rare that makes you?",
-        "I stopped counting my years at this door. I have started counting your pulls.",
+        "I stopped counting my years at this door. I have started counting your attempts.",
       ],
       pullStart: [
         "Come, then. The window is open.",
