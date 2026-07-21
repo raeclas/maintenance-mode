@@ -104,7 +104,7 @@ const enh = await import("../enhance.js");
   bots.tick(s, 1000); // 8 units/s × 1000s = 8000 units, under the 0.02 fills/s cap
   const fills = Math.floor(8000 / t1.cost);
   assert.equal(s.bots.bars.atk.fills[0], fills);
-  assert.equal(s.bots.trained.atk, fills * t1.gain);
+  assert.ok(Math.abs(s.bots.trained.atk - fills * t1.gain) < 1e-9);
   assert.ok(Math.abs(s.bots.bars.atk.prog - (8000 - fills * t1.cost)) < 1e-6);
 
   // rate cap: a monster squad can't exceed MAX_FILLS_PER_S

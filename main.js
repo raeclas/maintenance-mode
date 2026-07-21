@@ -333,6 +333,16 @@ function render() {
   }
   $("copperEl").textContent = fmt(state.copper);
   $("ticketsEl").textContent = fmt(state.tickets);
+  { // copper rate: numbers should always be visibly going somewhere
+    let cps = 0;
+    if (state.farm.zone !== null) {
+      const rc = farm.rateCard(state, farm.zones[state.farm.zone]);
+      if (!rc.locked) cps += rc.copperPerSec;
+    }
+    const ea = bots.effAlloc(state.bots);
+    if (ea.farm > 0) cps += bots.botFarmRates(state.bots, state.bots.farmZone).copperPerSec;
+    $("copperRate").textContent = cps > 0 ? `+${fmt(cps)}/s` : "—";
+  }
   { // NGU-style ticker: FREE bots (unallocated) vs capacity — allocation drains it
     const a = state.bots.alloc;
     const free = Math.max(0, state.bots.pop - a.atk - a.spd - a.farm - a.enh);
@@ -432,7 +442,11 @@ function render() {
     if (document.activeElement !== input) input.value = b.alloc[track];
     const tiers = bots.TRAININGS[bar];
     const laneCapped = bar === "speed" && b.trained.hits >= bots.SPEED_TRAIN_CAP;
-    const trained = bar === "atk" ? `trained +${fmt(b.trained.atk)} ATK` : `trained +${b.trained.hits.toFixed(2)} hits/s`;
+    const T = tiers[b.bars[bar].tier];
+    const statRate = laneCapped ? 0 : Math.min(eff[track] * quality, T.cost * bots.MAX_FILLS_PER_S) / T.cost * T.gain;
+    const trained = bar === "atk"
+      ? `trained +${b.trained.atk < 1000 ? b.trained.atk.toFixed(2) : fmt(b.trained.atk)} ATK (+${statRate.toFixed(3)}/s)`
+      : `trained +${b.trained.hits.toFixed(4)} hits/s (+${statRate.toFixed(5)}/s)`;
     $(`bar${el}Info`).textContent = laneCapped ? `${trained} · LANE MAX` : trained;
     tiers.forEach((t, i) => {
       const row = tierRows[bar][i];
@@ -442,12 +456,12 @@ function render() {
       row.classList.toggle("active", active);
       const stat = $(`ts_${bar}${i}`);
       if (locked) {
-        stat.textContent = `locked · ${(B.fills[i - 1] || 0)}/${bots.UNLOCK_FILLS} fills of ${tiers[i - 1].name}`;
+        stat.textContent = `locked · ${fmt(B.fills[i - 1] || 0)}/${fmt(bots.UNLOCK_FILLS)} fills of ${tiers[i - 1].name}`;
       } else if (active) {
         const maxed = eff[track] * quality >= t.cost * bots.MAX_FILLS_PER_S;
-        stat.textContent = `${B.fills[i] || 0} fills · ${maxed ? "RATE MAX" : ((Math.min(eff[track] * quality, t.cost * bots.MAX_FILLS_PER_S) / t.cost)).toFixed(3) + " fills/s"}`;
+        stat.textContent = `${fmt(B.fills[i] || 0)} fills · ${maxed ? "RATE MAX" : ((Math.min(eff[track] * quality, t.cost * bots.MAX_FILLS_PER_S) / t.cost)).toFixed(2) + " fills/s"}`;
       } else {
-        stat.textContent = `${B.fills[i] || 0} fills`;
+        stat.textContent = `${fmt(B.fills[i] || 0)} fills`;
       }
       $(`tf_${bar}${i}`).style.width = active ? `${Math.min(100, (B.prog / t.cost) * 100)}%` : "0";
     });
