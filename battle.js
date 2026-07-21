@@ -1,9 +1,9 @@
 // battle.js — canvas battle scene, render-only. No sound (hard veto), no
 // ceremony: the 30s window IS the ritual, the break is one loud frame.
-import { currentDepth, pullFrac } from "./pull.js";
+import { currentDepth, pullFrac, band, scarCap } from "./pull.js";
 import { getBoss } from "./bosses.js";
 import { derive } from "./stats.js";
-import { fmt } from "./format.js";
+import { fmt, fmtDepth } from "./format.js";
 
 const W = 560, H = 260;
 const GATE = { x: 420, y: 175 };  // boss stands here
@@ -112,34 +112,62 @@ function drawHero(now, pulling) {
   ctx.fillRect(x + 12, HERO.y - 66, 5, 44);               // sword
 }
 
+// Bars are RELATIVE so they read at any scale (an absolute bar is 2px wide
+// when depth is 0.5%). During an attempt: depth fills toward the projection
+// band's ceiling; a break marker appears once 100% enters the band. Idle:
+// scars fill toward the scar cap.
 function drawBars(state, now) {
   const p = state.pull;
   const scars = state.boss.scars;
   if (!p && scars <= 0) return;
   const depth = Math.min(1, currentDepth(state, now));
+  const bw = W - 40;
   if (p) { // window timer (top bar) drains; depth (bottom bar) races it
     const frac = pullFrac(state, now);
     ctx.fillStyle = "#22222a";
-    ctx.fillRect(20, H - 44, W - 40, 8);
+    ctx.fillRect(20, H - 44, bw, 8);
     ctx.fillStyle = "#6e5a5a";
-    ctx.fillRect(20, H - 44, (W - 40) * (1 - frac), 8);
+    ctx.fillRect(20, H - 44, bw * (1 - frac), 8);
     ctx.fillStyle = "#8a8a92";
     ctx.font = "bold 10px monospace";
     ctx.textAlign = "left";
     ctx.fillText("ENRAGE", 24, H - 47);
-  }
-  ctx.fillStyle = "#22222a";
-  ctx.fillRect(20, H - 30, W - 40, 14);
-  ctx.fillStyle = "#6e3a32"; // scars: permanent segment, dark old blood
-  ctx.fillRect(20, H - 30, (W - 40) * Math.min(scars, depth), 14);
-  if (p) {
+
+    const { hi } = band(derive(state), getBoss(state.wall), scars);
+    const rel = Math.min(1, depth / hi);
+    const relScar = Math.min(1, scars / hi);
+    ctx.fillStyle = "#22222a";
+    ctx.fillRect(20, H - 30, bw, 14);
+    ctx.fillStyle = "#6e3a32"; // scars: permanent segment, dark old blood
+    ctx.fillRect(20, H - 30, bw * Math.min(relScar, rel), 14);
     ctx.fillStyle = depth >= 0.95 ? "#ffd700" : "#c9a94b";
-    ctx.fillRect(20 + (W - 40) * scars, H - 30, (W - 40) * (depth - scars), 14);
+    ctx.fillRect(20 + bw * relScar, H - 30, bw * (rel - relScar), 14);
+    if (hi >= 1) { // 100% is inside the band: draw the break line
+      const bx = 20 + bw * (1 / hi);
+      ctx.fillStyle = "#ff5a4a";
+      ctx.fillRect(bx - 1, H - 33, 2, 20);
+    }
+    ctx.fillStyle = "#0d0d10";
+    ctx.font = "bold 10px monospace";
+    ctx.textAlign = "left";
+    ctx.fillText("DEPTH", 24, H - 19);
+    ctx.fillStyle = "#8a8a92";
+    ctx.textAlign = "right";
+    ctx.fillText(fmtDepth(depth), 20 + bw - 4, H - 19);
+  } else { // idle: scars vs scar cap
+    const cap = scarCap(state);
+    ctx.fillStyle = "#22222a";
+    ctx.fillRect(20, H - 30, bw, 14);
+    ctx.fillStyle = "#6e3a32";
+    ctx.fillRect(20, H - 30, bw * Math.min(1, scars / cap), 14);
+    ctx.fillStyle = "#0d0d10";
+    ctx.font = "bold 10px monospace";
+    ctx.textAlign = "left";
+    ctx.fillText("SCARS", 24, H - 19);
+    ctx.fillStyle = "#8a8a92";
+    ctx.textAlign = "right";
+    ctx.fillText(`${fmtDepth(scars)} / cap ${fmtDepth(cap)}`, 20 + bw - 4, H - 19);
   }
-  ctx.fillStyle = "#0d0d10";
-  ctx.font = "bold 10px monospace";
-  ctx.textAlign = "left";
-  ctx.fillText(p ? "DEPTH" : "SCARS", 24, H - 19);
 }
 
 export function renderBattle(state, wallNow) {
