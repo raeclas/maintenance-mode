@@ -65,7 +65,10 @@ canvas {
 
 .tier-risk { color: #7aa4d4; }
 .tier-nightmare { color: var(--gold); text-shadow: 0 0 6px rgba(201, 169, 75, .35); }
-#stacksHud { font-size: 11px; color: #b06a5a; letter-spacing: 0; font-variant: normal; }
+#stacksHud { font-size: 11px; color: #b06a5a; letter-spacing: 0; font-variant: normal; text-transform: none; }
+section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2px; }
+#gmSec .row { cursor: default; }
+.ztable button.active { color: var(--gold); border-color: var(--gold); }
 #titles {
   border: 1px dashed var(--line);
   color: var(--gold);
@@ -194,14 +197,39 @@ section.game button:hover:not(:disabled) { border-color: var(--gold); color: var
 section.game button:disabled { color: #55555e; cursor: default; }
 
 .rig { display: flex; gap: 8px; flex-wrap: wrap; }
-.bar { margin: 8px 0; }
-.barHead { display: flex; gap: 12px; align-items: center; font-size: 12px; font-family: monospace; flex-wrap: wrap; }
-.trackName { width: 90px; }
-#botZone { background: #22222a; color: #b9b2a0; border: 1px solid var(--line); font-family: monospace; font-size: 11px; }
-.barHead .assign button { padding: 1px 7px; }
-.barHead .assign b { padding: 0 6px; color: var(--gold); }
+.assignLine { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; font-family: monospace; margin-bottom: 6px; }
 .barTrack { height: 8px; background: #22222a; margin-top: 4px; }
 .barFill { height: 100%; background: var(--gold); width: 0; }
+
+/* row lists — the one component for selectable/purchasable line items */
+.rowlist { border-top: 1px solid var(--line); }
+.rowlist .row {
+  display: grid;
+  grid-template-columns: 150px 110px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 4px;
+  border-bottom: 1px solid #1b1b22;
+  font-family: monospace;
+  font-size: 11px;
+  cursor: pointer;
+  position: relative;
+}
+.rowlist .row .rowName { color: #b9b2a0; }
+.rowlist .row .rowGain { color: #6e6e78; }
+.rowlist .row .rowStat { color: #8a8a92; text-align: right; }
+.rowlist .row.active { border-left: 3px solid var(--gold); padding-left: 8px; }
+.rowlist .row.active .rowName { color: var(--gold); }
+.rowlist .row.locked { opacity: .45; cursor: default; }
+.rowBar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: transparent; }
+.rowFill { height: 100%; background: var(--gold); width: 0; }
+
+/* segmented picker — no dropdowns */
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; }
+.seg button.active { color: var(--gold); border-color: var(--gold); }
+
+.toggleLine { font-size: 11px; font-family: monospace; color: #8a8a92; display: block; margin: 6px 0; }
 .popTrack { margin: 6px 0 10px; }
 .popTrack .barFill { background: #5a7a5a; }
 .assign input[type="number"] {

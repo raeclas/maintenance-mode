@@ -3,8 +3,8 @@ import { newState } from "./state.js";
 import { load, save, wipe } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { getBoss } from "./bosses.js";
-import { startPull, resolvePull, pullDone, currentDepth, canPull, band, pullsToBreakEV, scarCap } from "./pull.js";
-import { GM, gmCost, buyGm, ticketYield, BREAK_TICKETS } from "./gm.js";
+import { startPull, resolvePull, pullDone, currentDepth, canPull, band, pullsToBreakEV, scarCap, cooldownMs, processIdleAttempts } from "./pull.js";
+import { FLAGS, UNLOCKS, UTILITY, flagCost, utilityCost, buyFlag, buyUnlock, buyUtility, gmDmgMult, gmHasteMult, ticketYield, BREAK_TICKETS } from "./gm.js";
 import { initBattle, renderBattle, notifyResult, notifyEnhance } from "./battle.js";
 import { derive } from "./stats.js";
 import * as bots from "./bots.js";
@@ -78,6 +78,11 @@ if (loaded && state.unlocked && state.lastSeen) {
     bots.tick(state, dt);
     farm.tick(state, dt, Math.random, item => { drops++; onDrop(item); });
     log(`offline ${fmt(dt / 3600)}h: +${fmt(state.copper - c0)}c · ${drops} drops`);
+    if (state.gm.idleProc && !state.boss.broken) {
+      const r = processIdleAttempts(state, dt);
+      if (r.attempts) log(`idle processing: ${r.attempts} attempts · best ${fmtDepth(r.best)} · +${fmt(r.tickets)} tickets`);
+      if (r.broke) log(`★ W1 BROKEN while you were away`);
+    }
     save(state);
   }
 }
@@ -122,13 +127,6 @@ $("buySpeed").addEventListener("click", () => bots.buy(state, "speed"));
 for (const [track, id] of [["atk", "allocAtk"], ["spd", "allocSpd"], ["farm", "allocFarm"], ["enh", "allocEnh"]]) {
   $(id).addEventListener("change", () => bots.setAlloc(state, track, Number($(id).value)));
 }
-for (const slot of SLOTS) {
-  const opt = document.createElement("option");
-  opt.value = slot;
-  opt.textContent = slot;
-  $("enhSlot").appendChild(opt);
-}
-$("enhSlot").addEventListener("change", () => { state.bots.enhTarget.slot = $("enhSlot").value; });
 $("enhPlus").addEventListener("change", () => {
   state.bots.enhTarget.plus = Math.max(0, Math.min(enh.MAX_PLUS, Math.floor(Number($("enhPlus").value)) || 0));
 });
@@ -149,36 +147,73 @@ for (const row of document.querySelectorAll(".assign[data-track]")) {
     }
   });
 }
-for (const [i, z] of farm.zones.entries()) {
-  const opt = document.createElement("option");
-  opt.value = i;
-  opt.textContent = z.name;
-  $("botZone").appendChild(opt);
+// ---- training: tier rows (click a row to run it — no dropdowns) ----
+const tierRows = { atk: [], speed: [] };
+for (const lane of ["atk", "speed"]) {
+  const wrap = $(lane === "atk" ? "atkTiers" : "speedTiers");
+  bots.TRAININGS[lane].forEach((t, i) => {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML =
+      `<span class="rowName">${t.name}</span>` +
+      `<span class="rowGain">+${t.gain}${lane === "speed" ? " hits/s" : " ATK"}/fill</span>` +
+      `<span class="rowStat" id="ts_${lane}${i}"></span>` +
+      `<div class="rowBar"><div class="rowFill" id="tf_${lane}${i}"></div></div>`;
+    row.addEventListener("click", () => bots.setTier(state, lane, i));
+    wrap.appendChild(row);
+    tierRows[lane].push(row);
+  });
 }
-$("botZone").addEventListener("change", () => { state.bots.farmZone = Number($("botZone").value); });
-$("tierAtk").addEventListener("change", () => bots.setTier(state, "atk", Number($("tierAtk").value)));
-$("tierSpeed").addEventListener("change", () => bots.setTier(state, "speed", Number($("tierSpeed").value)));
 
-// ---- GM panel: build rows once ----
-for (const type of Object.keys(GM)) {
-  const row = document.createElement("div");
-  row.className = "gmRow";
-  row.innerHTML = `<span class="tl">${GM[type].label}</span><span id="gmr_${type}"></span><button id="gmb_${type}"></button>`;
-  $("gmRows").appendChild(row);
-  row.querySelector("button").addEventListener("click", () => buyGm(state, type));
+// ---- enhance squad: segmented slot picker (no dropdowns) ----
+for (const slot of SLOTS) {
+  const btn = document.createElement("button");
+  btn.textContent = slot;
+  btn.dataset.slot = slot;
+  btn.addEventListener("click", () => { state.bots.enhTarget.slot = slot; });
+  $("enhSeg").appendChild(btn);
 }
+
+// ---- GM tab: account flags / admin tools ----
+for (const type of Object.keys(FLAGS)) {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<span class="rowName">${FLAGS[type].label}</span><span class="rowGain">${FLAGS[type].gain}/rank</span><span class="rowStat" id="gmfr_${type}"></span><button id="gmfb_${type}"></button>`;
+  $("gmFlags").appendChild(row);
+  row.querySelector("button").addEventListener("click", e => { e.stopPropagation(); buyFlag(state, type); });
+}
+for (const type of Object.keys(UNLOCKS)) {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<span class="rowName">${UNLOCKS[type].label}</span><span class="rowGain">${UNLOCKS[type].desc}</span><span class="rowStat"></span><button id="gmub_${type}"></button>`;
+  $("gmTools").appendChild(row);
+  row.querySelector("button").addEventListener("click", e => { e.stopPropagation(); buyUnlock(state, type); });
+}
+for (const type of Object.keys(UTILITY)) {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<span class="rowName">${UTILITY[type].label}</span><span class="rowGain"></span><span class="rowStat" id="gmur_${type}"></span><button id="gmub2_${type}"></button>`;
+  $("gmTools").appendChild(row);
+  row.querySelector("button").addEventListener("click", e => { e.stopPropagation(); buyUtility(state, type); });
+}
+
+// ---- scheduler toggle ----
+$("schedToggle").addEventListener("change", () => { state.gm.schedulerOn = $("schedToggle").checked; });
 
 // ---- farming: dense zone table, built once, cells updated in render ----
 $("zones").innerHTML = `<table class="ztable"><thead><tr>
-  <th class="tl">zone</th><th>gate</th><th>c/s</th><th>drops/h</th><th>kills/s</th><th class="tl">bound</th><th></th>
+  <th class="tl">zone</th><th>gate</th><th>c/s</th><th>drops/h</th><th>kills/s</th><th class="tl">bound</th><th>you</th><th>bots</th>
 </tr></thead><tbody>${farm.zones.map((z, i) => `<tr id="zrow${i}">
-  <td class="tl">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP</div></td>
+  <td class="tl">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP · det ${z.detection}/h</div></td>
   <td>${fmt(z.gate)}</td><td id="zc${i}">—</td><td id="zd${i}">—</td><td id="zk${i}">—</td>
-  <td class="tl" id="zb${i}">—</td><td><button id="zp${i}">park</button></td>
+  <td class="tl" id="zb${i}">—</td><td><button id="zp${i}">park</button></td><td><button id="zq${i}">send</button></td>
 </tr>`).join("")}</tbody></table>`;
 farm.zones.forEach((z, i) => {
   $(`zp${i}`).addEventListener("click", () => {
     state.farm.zone = state.farm.zone === i ? null : i;
+  });
+  $(`zq${i}`).addEventListener("click", () => {
+    state.bots.farmZone = i;
   });
 });
 
@@ -254,6 +289,10 @@ function tick() {
     bots.tick(state, dt, (r, item) => enhMilestones(item, r));
     farm.tick(state, dt, Math.random, onDrop);
   }
+  // encounter scheduler: auto-fire attempts on cooldown while online
+  if (state.gm.scheduler && state.gm.schedulerOn && !state.boss.broken && !state.pull && canPull(state, now)) {
+    startPull(state, now);
+  }
   if (state.pull && pullDone(state, now)) {
     const depth = resolvePull(state, now);
     notifyResult(depth, state.boss.broken);
@@ -287,6 +326,7 @@ function render() {
   $("dpsEl").textContent = fmt(dps);
   $("atkEl").textContent = fmt(d.atk);
   $("hpsEl").textContent = d.hitsPerSec.toFixed(2);
+  $("gmEl").textContent = (gmDmgMult(state) * gmHasteMult(state)).toFixed(2);
   { // odometer weld: projection visible next to the stats that move it
     const w = band(d, boss, state.boss.scars);
     $("projMini").textContent = state.boss.broken ? "100%" : `${fmtDepth(w.lo)}–${fmtDepth(w.hi)}`;
@@ -340,14 +380,35 @@ function render() {
     }
   }
 
-  // GM panel
-  for (const type of Object.keys(GM)) {
+  // GM tab
+  for (const type of Object.keys(FLAGS)) {
+    $(`gmfr_${type}`).textContent = `rank ${state.gm[type]}`;
+    const btn = $(`gmfb_${type}`);
+    btn.textContent = `${fmt(flagCost(type, state.gm[type]))} tickets`;
+    btn.disabled = state.tickets < flagCost(type, state.gm[type]);
+  }
+  for (const type of Object.keys(UNLOCKS)) {
+    const btn = $(`gmub_${type}`);
+    const owned = !!state.gm[type];
+    btn.textContent = owned ? "INSTALLED" : `${fmt(UNLOCKS[type].cost)} tickets`;
+    btn.disabled = owned || state.tickets < UNLOCKS[type].cost;
+  }
+  for (const type of Object.keys(UTILITY)) {
     const rank = state.gm[type];
-    const maxed = rank >= GM[type].max;
-    $(`gmr_${type}`).textContent = `${rank}/${GM[type].max}`;
-    const btn = $(`gmb_${type}`);
-    btn.textContent = maxed ? "MAX" : `${fmt(gmCost(type, rank))} tickets`;
-    btn.disabled = maxed || state.tickets < gmCost(type, rank);
+    const maxed = rank >= UTILITY[type].max;
+    $(`gmur_${type}`).textContent = `${rank}/${UTILITY[type].max}`;
+    const btn = $(`gmub2_${type}`);
+    btn.textContent = maxed ? "MAX" : `${fmt(utilityCost(type, rank))} tickets`;
+    btn.disabled = maxed || state.tickets < utilityCost(type, rank);
+  }
+
+  // encounter scheduler line (Boss screen)
+  $("schedLine").style.display = state.gm.scheduler ? "" : "none";
+  if (state.gm.scheduler) {
+    $("schedToggle").checked = state.gm.schedulerOn;
+    $("schedInfo").textContent = state.gm.schedulerOn && !state.boss.broken
+      ? (state.pull ? "running" : `next in ${Math.max(0, Math.ceil((state.cooldownUntil - now) / 1000))}s`)
+      : "";
   }
 
   if (!state.unlocked) return;
@@ -370,27 +431,26 @@ function render() {
     const input = $(`alloc${track === "atk" ? "Atk" : "Spd"}`);
     if (document.activeElement !== input) input.value = b.alloc[track];
     const tiers = bots.TRAININGS[bar];
-    const sel = $(`tier${el}`);
-    if (sel.children.length !== B.unlocked) { // rebuild options when a tier unlocks
-      sel.innerHTML = "";
-      for (let i = 0; i < B.unlocked; i++) {
-        const o = document.createElement("option");
-        o.value = i;
-        o.textContent = `${tiers[i].name} (+${tiers[i].gain})`;
-        sel.appendChild(o);
-      }
-    }
-    if (document.activeElement !== sel) sel.value = B.tier;
-    const t = tiers[B.tier];
-    const rate = Math.min(eff[track] * quality, t.cost * bots.MAX_FILLS_PER_S); // units/s
-    const maxed = eff[track] * quality >= t.cost * bots.MAX_FILLS_PER_S;
     const laneCapped = bar === "speed" && b.trained.hits >= bots.SPEED_TRAIN_CAP;
-    const trained = bar === "atk" ? `+${fmt(b.trained.atk)} ATK` : `+${b.trained.hits.toFixed(2)} hits/s`;
-    const next = B.unlocked < tiers.length && B.tier === B.unlocked - 1
-      ? ` · next tier ${B.fills[B.tier] || 0}/${bots.UNLOCK_FILLS}` : "";
-    $(`bar${el}Info`).textContent = laneCapped ? `${trained} · LANE MAX`
-      : `${trained} · ${maxed ? "RATE MAX" : (rate / t.cost).toFixed(2) + " fills/s"}${next}`;
-    $(`bar${el}Fill`).style.width = `${Math.min(100, (B.prog / t.cost) * 100)}%`;
+    const trained = bar === "atk" ? `trained +${fmt(b.trained.atk)} ATK` : `trained +${b.trained.hits.toFixed(2)} hits/s`;
+    $(`bar${el}Info`).textContent = laneCapped ? `${trained} · LANE MAX` : trained;
+    tiers.forEach((t, i) => {
+      const row = tierRows[bar][i];
+      const locked = i >= B.unlocked;
+      const active = i === B.tier && !locked;
+      row.classList.toggle("locked", locked);
+      row.classList.toggle("active", active);
+      const stat = $(`ts_${bar}${i}`);
+      if (locked) {
+        stat.textContent = `locked · ${(B.fills[i - 1] || 0)}/${bots.UNLOCK_FILLS} fills of ${tiers[i - 1].name}`;
+      } else if (active) {
+        const maxed = eff[track] * quality >= t.cost * bots.MAX_FILLS_PER_S;
+        stat.textContent = `${B.fills[i] || 0} fills · ${maxed ? "RATE MAX" : ((Math.min(eff[track] * quality, t.cost * bots.MAX_FILLS_PER_S) / t.cost)).toFixed(3) + " fills/s"}`;
+      } else {
+        stat.textContent = `${B.fills[i] || 0} fills`;
+      }
+      $(`tf_${bar}${i}`).style.width = active ? `${Math.min(100, (B.prog / t.cost) * 100)}%` : "0";
+    });
   }
   if (document.activeElement !== $("allocFarm")) $("allocFarm").value = b.alloc.farm;
   $("autoSalvage").checked = state.gear.autoSalvage;
@@ -401,7 +461,7 @@ function render() {
 
   // bot enhance squad
   if (document.activeElement !== $("allocEnh")) $("allocEnh").value = b.alloc.enh;
-  if (document.activeElement !== $("enhSlot")) $("enhSlot").value = b.enhTarget.slot;
+  for (const btn of $("enhSeg").children) btn.classList.toggle("active", btn.dataset.slot === b.enhTarget.slot);
   if (document.activeElement !== $("enhPlus")) $("enhPlus").value = b.enhTarget.plus;
   const tItem = state.gear[b.enhTarget.slot];
   const iv = tItem ? bots.enhInterval(b, tItem.plus) : Infinity;
@@ -428,6 +488,9 @@ function render() {
     const btn = $(`zp${i}`);
     btn.disabled = rc.locked;
     btn.textContent = state.farm.zone === i ? "✓" : "park";
+    const bq = $(`zq${i}`);
+    bq.textContent = state.bots.farmZone === i ? "✓" : "send";
+    bq.classList.toggle("active", state.bots.farmZone === i);
   });
 
   // gear

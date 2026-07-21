@@ -1,7 +1,7 @@
 [
   {
     "t": 30,
-    "desc": "first attempt 0.0010% (intro beat)"
+    "desc": "first attempt 0.0007% (intro beat)"
   },
   {
     "t": 35,
@@ -41,26 +41,26 @@
   },
   {
     "t": 25200,
-    "desc": "depth 1%"
-  },
-  {
-    "t": 25200,
-    "desc": "depth 10%"
-  },
-  {
-    "t": 25800,
     "desc": "power ×10000"
   },
   {
-    "t": 86400,
-    "desc": "depth 50%"
+    "t": 25200,
+    "desc": "depth 1%"
   },
   {
-    "t": 93600,
+    "t": 28800,
+    "desc": "depth 10%"
+  },
+  {
+    "t": 40800,
     "desc": "scars capped"
   },
   {
-    "t": 550800,
+    "t": 43800,
+    "desc": "depth 50%"
+  },
+  {
+    "t": 470400,
     "desc": "W1 broken (EV)"
   }
 ]

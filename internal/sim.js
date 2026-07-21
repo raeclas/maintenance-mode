@@ -15,8 +15,8 @@
 import fs from "node:fs";
 import { newState } from "../state.js";
 import { getBoss } from "../bosses.js";
-import { expectedDepth, scarCap, SCAR_RATE } from "../pull.js";
-import { ticketYield, buyGm } from "../gm.js";
+import { expectedDepth, scarCap, cooldownMs, SCAR_RATE } from "../pull.js";
+import { ticketYield, buyFlag, buyUnlock, buyUtility, flagCost } from "../gm.js";
 import { derive } from "../stats.js";
 import * as bots from "../bots.js";
 import * as farm from "../farm.js";
@@ -51,6 +51,7 @@ function bestZone() {
 
 let t = 0;
 let broken = false;
+let attemptCarry = 0;
 mark(30, `first attempt ${(expectedDepth(derive(S), boss) * 100).toFixed(4)}% (intro beat)`);
 mark(35, "systems unlock");
 S.unlocked = true;
@@ -138,9 +139,16 @@ while (t < MAX_S && !broken) {
     best.it.plus++;
   }
 
-  // --- one EV pull per waking hour (16h/day); attempts file tickets ---
+  // --- attempts: hourly by hand; on cooldown once the scheduler is
+  // installed (waking 16h/day); idleProc extends to sleep hours ---
   const waking = t % 86400 < 16 * 3600;
-  if (waking && t % 3600 < STEP) {
+  const cycleS = cooldownMs(S) / 1000 + boss.windowS;
+  let attempts = 0;
+  if (waking) attempts = S.gm.scheduler ? attemptCarry + STEP / cycleS : (t % 3600 < STEP ? 1 : 0);
+  else if (S.gm.idleProc) attempts = attemptCarry + STEP / cycleS;
+  attemptCarry = attempts % 1;
+  attempts = Math.floor(attempts);
+  while (attempts-- > 0 && !broken) {
     const fresh = expectedDepth(derive(S), boss);
     const total = S.boss.scars + fresh;
     S.boss.bestDepth = Math.max(S.boss.bestDepth, Math.min(total, 1));
@@ -152,8 +160,14 @@ while (t < MAX_S && !broken) {
       S.boss.scars = Math.min(scarCap(S), S.boss.scars + fresh * SCAR_RATE);
       if (S.boss.scars >= scarCap(S)) mark(t, "scars capped");
     }
-    // GM spends: scar cap first (break math), then session slots
-    for (;;) { if (!buyGm(S, "scar") && !buyGm(S, "cap")) break; }
+  }
+  // GM spends: unlocks first (verbs), then scar cap, then cheapest flag
+  buyUnlock(S, "scheduler");
+  buyUnlock(S, "idleProc");
+  for (;;) { if (!buyUtility(S, "scar")) break; }
+  for (;;) {
+    const next = flagCost("dmg", S.gm.dmg) <= flagCost("haste", S.gm.haste) ? "dmg" : "haste";
+    if (!buyFlag(S, next)) break;
   }
 
   if (process.env.SIMDBG && t % 21600 < STEP) {

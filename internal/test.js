@@ -27,7 +27,7 @@ const enh = await import("../enhance.js");
   assert.equal(d.atk, 10);
   assert.equal(d.hitsPerSec, 2.0);
   const b = getBoss(1);
-  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 60_000_000); // 0.001% exactly
+  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 90_000_000); // ≈0.0007%
 }
 
 // Stats: gear + bars feed the one-line formula; speed hard cap
@@ -75,7 +75,7 @@ const enh = await import("../enhance.js");
 // Resolve: overwhelming stats → break, no cooldown
 {
   const s = newState();
-  s.gear.weapon = { slot: "weapon", ip: 2_000_000, plus: 0, zone: 5, name: "t" };
+  s.gear.weapon = { slot: "weapon", ip: 3_000_000, plus: 0, zone: 5, name: "t" };
   pull.startPull(s, 1_000_000, () => 0.5);
   assert.ok(!pull.pullDone(s, s.pull.startedAt + 5_000)); // rolled 2.0× → 100% mid-window
   assert.ok(pull.pullDone(s, s.pull.endsAt - 14_000));    // breaks early at 100%
@@ -392,25 +392,58 @@ const enh = await import("../enhance.js");
   assert.equal(saves.importSave("not json"), false);
 }
 
-// GM panel: rank caps, ticket costs, effects
+// GM tab: flags (era-priced, uncapped), unlocks (one-time), utility (rank caps)
 {
   const gm = await import("../gm.js");
   const s = newState();
   s.tickets = 1e9;
-  assert.ok(gm.buyGm(s, "scar") && s.gm.scar === 1);
-  while (gm.buyGm(s, "scar"));
-  assert.equal(s.gm.scar, gm.GM.scar.max); // hard rank cap (law 1)
+
+  // utility: hard rank caps (law 1)
+  while (gm.buyUtility(s, "scar"));
+  assert.equal(s.gm.scar, gm.UTILITY.scar.max);
   assert.ok(Math.abs(pull.scarCap(s) - (pull.SCAR_CAP + 0.03)) < 1e-12);
-  while (gm.buyGm(s, "cooldown"));
+  while (gm.buyUtility(s, "cooldown"));
   assert.equal(pull.cooldownMs(s), 30_000); // 60s − 6×5s
-  while (gm.buyGm(s, "offline"));
+  while (gm.buyUtility(s, "offline"));
   assert.equal(farm.offlineCapS(s), (12 + 6) * 3600);
-  while (gm.buyGm(s, "cap"));
+  while (gm.buyUtility(s, "cap"));
   assert.equal(bots.capacity(s.bots, s.gm.cap), 8 + 20); // +2 × 10 ranks
+
+  // flags: uncapped, era-priced, multipliers displayed in derive
+  assert.ok(gm.buyFlag(s, "dmg") && s.gm.dmg === 1);
+  assert.equal(gm.flagCost("dmg", 10), Math.round(60 * Math.pow(2, 10)));
+  s.gm.dmg = 5; s.gm.haste = 5;
+  assert.ok(Math.abs(gm.gmDmgMult(s) - 1.2) < 1e-12);
+  assert.ok(Math.abs(gm.gmHasteMult(s) - 1.1) < 1e-12);
+  const base = newState();
+  const withGm = newState();
+  withGm.gm.dmg = 5; withGm.gm.haste = 5;
+  assert.ok(Math.abs(derive(withGm).atk - derive(base).atk * 1.2) < 1e-9);
+  assert.ok(Math.abs(derive(withGm).hitsPerSec - derive(base).hitsPerSec * 1.1) < 1e-9);
+
+  // unlocks: one-time
+  assert.ok(gm.buyUnlock(s, "scheduler"));
+  assert.equal(gm.buyUnlock(s, "scheduler"), false); // already installed
+  assert.ok(gm.buyUnlock(s, "idleProc"));
+
   const poor = newState();
-  assert.equal(gm.buyGm(poor, "scar"), false); // no tickets
-  assert.equal(gm.ticketYield(0.00001), 1);    // hopeless attempts still pay 1
-  assert.equal(gm.ticketYield(0.5), 500);
+  assert.equal(gm.buyFlag(poor, "dmg"), false);
+  assert.equal(gm.buyUnlock(poor, "scheduler"), false);
+  assert.equal(gm.ticketYield(0.0000001), 1); // hopeless attempts still pay 1
+  assert.equal(gm.ticketYield(0.25), 75);     // 150 × √0.25
+}
+
+// Idle encounter processing: clamped attempts, real rolls, tickets flow
+{
+  const s = newState();
+  s.gm.idleProc = true;
+  s.gear.weapon = { slot: "weapon", ip: 500, plus: 0, zone: 1, name: "t" };
+  const t0 = s.tickets;
+  const r = pull.processIdleAttempts(s, 4 * 3600, () => 0.5); // 4h, EV rolls
+  assert.ok(r.attempts >= 1 && r.attempts <= Math.floor(4 * 3600 / (60 + 30)));
+  assert.equal(s.boss.pulls, r.attempts);
+  assert.ok(s.tickets > t0);
+  assert.ok(s.boss.scars > 0);
 }
 
 // Dialogue completeness: every event key the UI emits has ≥1 non-empty line

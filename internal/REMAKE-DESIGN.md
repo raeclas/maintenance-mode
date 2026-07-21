@@ -223,11 +223,19 @@ Currencies: **copper + tickets. Hard cap two.** [AMENDED 2026-07-21:
 tickets take the reserved materials slot.] **Tickets** = meta currency:
 every attempt files support tickets nobody handles (max(1, depth×1000);
 break +500 — faucet bounded by the attempt cooldown, sim-modeled). Spent
-in the **GM panel** on permanent, RANK-CAPPED perks (law 1): session
-slots +2 (×10), offline cap +1h (×6), attempt cooldown −5s (×6), scar cap
-+1% (×3). Attempts are never dead time: every resolve is a paycheck.
-W1 HP rebased 30M→60M in the same commit (ticket perks + tier training
-shifted the curve; break EV 6.4d, gates green). GS = derived display
+in the **GM tab** (GP/AP model, reworked 2026-07-21 after "perks feel
+meaningless" verdict): **account flags** — damage override +4%/rank,
+haste override +2%/rank, UNCAPPED but era-priced (×2.0/×2.2 per rank;
+law 1 satisfied by price); **admin tools** — encounter scheduler
+(auto-attempts on cooldown while online) and idle encounter processing
+(attempts resolve offline, clamped) as one-time verb unlocks, plus
+rank-capped utility (session cap ×10, idle timeout ×6, lockout ×6,
+repair-scripts-off scar cap ×3). Ticket yield is sub-linear (150×√depth)
+so the tickets→flags→depth loop can't run away. Haste multiplies past
+the trained 5.0 cap — the cap is a training-lane identity, GM is its own
+displayed lane: DPS = (base+trained+gear)×GMdmg × hits×GMhaste.
+W1 HP rebased 60M→90M same commit (flags ≈ ×1.5 by break; EV 5.4d,
+gates green). Attempts are never dead time. GS = derived display
 number (gear + enhance + feats), never a stored stat.
 
 ## 7. Bot Farm — the prep arc [REWRITTEN 2026-07-21, replaces Levels]

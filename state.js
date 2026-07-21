@@ -2,12 +2,13 @@
 // saveSystem normalizes over these defaults; the sim imports it too.
 export function newState() {
   return {
-    v: 5,
+    v: 6,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     copper: 0,
     tickets: 0,    // meta currency: damaging Content files support tickets nobody handles
-    gm: { cap: 0, offline: 0, cooldown: 0, scar: 0 }, // GM panel ranks (rank-capped, law 1)
+    // GM tab: flags (uncapped, era-priced), unlocks (booleans), utility (rank-capped)
+    gm: { dmg: 0, haste: 0, scheduler: false, idleProc: false, schedulerOn: true, cap: 0, offline: 0, cooldown: 0, scar: 0 },
     failstacks: 0, // Luck's mechanical body — every fail banks +1%, success spends the bank
     titles: [],    // earned forever (attachment law): "+18" etc.
     wall: 1,

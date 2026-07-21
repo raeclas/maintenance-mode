@@ -3,6 +3,7 @@
 // (REMAKE-DESIGN §3).
 import { getBoss } from "./bosses.js";
 import { derive } from "./stats.js";
+import { ticketYield, BREAK_TICKETS } from "./gm.js";
 
 // Starting values (Numbers Policy). Test plan: W1 should feel like a siege —
 // ~5-6 pulls, scars visibly chipping. If walls "fall over", lower SCAR_CAP;
@@ -91,6 +92,29 @@ export function currentDepth(state, now) {
 // True once the pull is over: window elapsed, or 100% reached early.
 export function pullDone(state, now) {
   return !!state.pull && (now >= state.pull.endsAt || currentDepth(state, now) >= 1);
+}
+
+// Idle encounter processing (GM unlock): resolve the attempts that would
+// have fired while away. Same rolls, same scars, same faucets; count is
+// clamped by the caller's already-clamped dt. Returns a summary.
+export function processIdleAttempts(state, dtS, rng = Math.random) {
+  const boss = getBoss(state.wall);
+  const cycleS = cooldownMs(state) / 1000 + boss.windowS;
+  let n = Math.floor(dtS / cycleS);
+  const out = { attempts: 0, tickets: 0, best: 0, broke: false };
+  while (n-- > 0 && !state.boss.broken) {
+    state.cooldownUntil = 0;
+    if (!startPull(state, 0, rng)) break;
+    const depth = resolvePull(state, boss.windowS * 1000);
+    const y = ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0);
+    state.tickets += y;
+    out.tickets += y;
+    out.attempts++;
+    out.best = Math.max(out.best, depth);
+    if (state.boss.broken) out.broke = true;
+  }
+  state.cooldownUntil = Date.now() + (out.attempts ? cooldownMs(state) : 0);
+  return out;
 }
 
 // Returns final total depth (capped at 100%). Break needs no cooldown;

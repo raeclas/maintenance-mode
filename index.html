@@ -28,6 +28,7 @@
     <button data-tab="botSec">Training</button>
     <button data-tab="farmSec">Grind</button>
     <button data-tab="gearSec">Player</button>
+    <button data-tab="gmSec">GM</button>
   </nav>
 
   <section id="battleSec" class="tabpane">
@@ -45,19 +46,17 @@
       <span id="cooldown"></span>
     </div>
     <div id="projection"></div>
+    <label id="schedLine" class="toggleLine" style="display:none">
+      <input type="checkbox" id="schedToggle"> encounter scheduler <span id="schedInfo" class="sub"></span>
+    </label>
 
     <div id="monument" style="display:none">W1 — Broken · Vess, Warden of the First Door</div>
 
     <div id="dialogue"></div>
-
-    <div id="gmPanel" class="game hidden">
-      <h3>GM panel <span class="sub">— tickets buy permanent perks</span></h3>
-      <div id="gmRows"></div>
-    </div>
   </section>
 
   <section id="botSec" class="game hidden tabpane" style="display:none">
-    <h2>Training</h2>
+    <h3>Rig</h3>
     <div class="rig">
       <button id="buyCap"></button>
       <button id="buyCreate"></button>
@@ -66,81 +65,85 @@
     </div>
     <div class="sub" id="rigStats"></div>
     <div class="barTrack popTrack"><div class="barFill" id="popFill"></div></div>
-    <div class="bar" id="barAtk">
-      <div class="barHead">
-        <span class="trackName">Train ATK</span>
-        <span class="assign" data-track="atk">
-          <button data-d="-10">−10</button><button data-d="-1">−1</button>
-          <input type="number" id="allocAtk" min="0" step="1">
-          <button data-d="1">+1</button><button data-d="10">+10</button>
-          <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
-        </span>
-        <select id="tierAtk"></select>
-        <span id="barAtkInfo"></span>
-      </div>
-      <div class="barTrack"><div class="barFill" id="barAtkFill"></div></div>
+
+    <h3>ATK scripts</h3>
+    <div class="assignLine">
+      <span class="assign" data-track="atk">
+        <button data-d="-10">−10</button><button data-d="-1">−1</button>
+        <input type="number" id="allocAtk" min="0" step="1">
+        <button data-d="1">+1</button><button data-d="10">+10</button>
+        <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
+      </span>
+      <span class="sub" id="barAtkInfo"></span>
     </div>
-    <div class="bar" id="barSpeed">
-      <div class="barHead">
-        <span class="trackName">Train SPEED</span>
-        <span class="assign" data-track="spd">
-          <button data-d="-10">−10</button><button data-d="-1">−1</button>
-          <input type="number" id="allocSpd" min="0" step="1">
-          <button data-d="1">+1</button><button data-d="10">+10</button>
-          <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
-        </span>
-        <select id="tierSpeed"></select>
-        <span id="barSpeedInfo"></span>
-      </div>
-      <div class="barTrack"><div class="barFill" id="barSpeedFill"></div></div>
+    <div class="rowlist" id="atkTiers"></div>
+
+    <h3>SPEED scripts</h3>
+    <div class="assignLine">
+      <span class="assign" data-track="spd">
+        <button data-d="-10">−10</button><button data-d="-1">−1</button>
+        <input type="number" id="allocSpd" min="0" step="1">
+        <button data-d="1">+1</button><button data-d="10">+10</button>
+        <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
+      </span>
+      <span class="sub" id="barSpeedInfo"></span>
     </div>
-    <div class="bar">
-      <div class="barHead">
-        <span class="trackName">Enhance</span>
-        <span class="assign" data-track="enh">
-          <button data-d="-10">−10</button><button data-d="-1">−1</button>
-          <input type="number" id="allocEnh" min="0" step="1">
-          <button data-d="1">+1</button><button data-d="10">+10</button>
-          <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
-        </span>
-        <select id="enhSlot"></select>
-        <span class="sub">to +</span><input type="number" id="enhPlus" min="0" max="20" step="1">
-        <span id="botEnhInfo"></span>
-      </div>
+    <div class="rowlist" id="speedTiers"></div>
+
+    <h3>Enhance squad</h3>
+    <div class="assignLine">
+      <span class="assign" data-track="enh">
+        <button data-d="-10">−10</button><button data-d="-1">−1</button>
+        <input type="number" id="allocEnh" min="0" step="1">
+        <button data-d="1">+1</button><button data-d="10">+10</button>
+        <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
+      </span>
+      <span class="seg" id="enhSeg"></span>
+      <span class="sub">to +</span><input type="number" id="enhPlus" min="0" max="20" step="1">
+      <span class="sub" id="botEnhInfo"></span>
     </div>
   </section>
 
   <section id="farmSec" class="game hidden tabpane" style="display:none">
-    <h2>Grind</h2>
-    <div class="bar">
-      <div class="barHead">
-        <span class="trackName">Bot squad</span>
-        <span class="assign" data-track="farm">
-          <button data-d="-10">−10</button><button data-d="-1">−1</button>
-          <input type="number" id="allocFarm" min="0" step="1">
-          <button data-d="1">+1</button><button data-d="10">+10</button>
-          <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
-        </span>
-        <select id="botZone"></select>
-        <span id="botFarmInfo"></span>
-      </div>
+    <h3>Bot squad</h3>
+    <div class="assignLine">
+      <span class="assign" data-track="farm">
+        <button data-d="-10">−10</button><button data-d="-1">−1</button>
+        <input type="number" id="allocFarm" min="0" step="1">
+        <button data-d="1">+1</button><button data-d="10">+10</button>
+        <button data-p="25">25%</button><button data-p="50">50%</button><button data-p="max">max</button><button data-p="0">0</button>
+      </span>
+      <span class="sub" id="botFarmInfo"></span>
     </div>
+
+    <h3>Zones</h3>
     <div id="zones"></div>
   </section>
 
   <section id="gearSec" class="game hidden tabpane" style="display:none">
-    <h2>Player</h2>
-    <div id="playerStats">DPS <b id="dpsEl">—</b> · ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · proj <span id="projMini">—</span></div>
+    <h3>Character</h3>
+    <div id="playerStats">DPS <b id="dpsEl">—</b> · ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · GM ×<span id="gmEl">1.00</span> · proj <span id="projMini">—</span></div>
     <div id="titles" style="display:none"></div>
+
     <h3>Gear <span id="stacksHud"></span></h3>
-    <label class="autoSalv"><input type="checkbox" id="safeguard"> safeguard (3× cost, no drop on fail — works up to +15 only)</label>
+    <label class="toggleLine"><input type="checkbox" id="safeguard"> safeguard (3× cost, no drop on fail — up to +15 only)</label>
     <div id="slots"></div>
+
+    <h3>Stash</h3>
     <div id="stashHead">
       <button id="stashToggle"></button>
       <button id="salvageAll">salvage all unlocked</button>
-      <label class="autoSalv"><input type="checkbox" id="autoSalvage"> auto-salvage non-upgrades</label>
+      <label class="toggleLine"><input type="checkbox" id="autoSalvage"> auto-salvage non-upgrades</label>
     </div>
     <div id="stashList" style="display:none"></div>
+  </section>
+
+  <section id="gmSec" class="game hidden tabpane" style="display:none">
+    <h3>Account flags</h3>
+    <div class="rowlist" id="gmFlags"></div>
+
+    <h3>Admin tools</h3>
+    <div class="rowlist" id="gmTools"></div>
   </section>
 
   <div id="log"></div>
