@@ -375,6 +375,17 @@ const enh = await import("../enhance.js");
   assert.equal(rebirth.banWave(newState()), 0);
 }
 
+// Wall progression: W2 exists, is a distinct wall, harder + re-steepened speed
+{
+  const w1 = getBoss(1), w2 = getBoss(2);
+  assert.ok(w1 && w2 && w2.wall === 2);
+  assert.ok(w2.hp > w1.hp);                 // a bigger wall (now that the tools exist)
+  assert.ok(w2.speedKnee > w1.speedKnee);   // speed re-steepens on the harder wall
+  assert.ok(w2.dialogue.greet && w2.dialogue.break); // has its own face (pillar 2)
+  assert.equal(getBoss(3), undefined);      // W2 is currently the last door
+  assert.deepEqual(newState().cleared, []); // cleared-list monument starts empty
+}
+
 // Enhance: zones, checkpoint falls, failstacks, safeguard, cost gating
 {
   const s = newState();

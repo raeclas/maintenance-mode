@@ -25,6 +25,29 @@ export const bosses = [
       ],
     },
   },
+  {
+    id: "w2",
+    wall: 2,
+    name: "Maren",
+    title: "Warden of the Second Door",
+    hp: 20_000_000_000, // starting value — player now has R2 gear + rebirth; heavy playtest tune
+    windowS: 30,
+    speedKnee: 9.0, // re-steepens speed: past 5 hits/s pays full value again on this wall
+    dialogue: {
+      greet: [
+        "You came through Vess's door. Few ever did. Fewer still came looking for the second.",
+      ],
+      fail_hopeless: [
+        "The First Door fell to old tools. This one was sealed after the exploits were catalogued — it expects your scripts. Bring more than you did for Vess.",
+      ],
+      fail_near: [
+        "…The seal remembers that pressure now.",
+      ],
+      break: [
+        "Then go deeper. I kept this door for the players who never arrived. You're years too late — but you came.",
+      ],
+    },
+  },
 ];
 
 export function getBoss(wall) {

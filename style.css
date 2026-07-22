@@ -478,3 +478,20 @@ footer { text-align: center; margin-top: 18px; }
 .helpTopic h3 { color: #9a8a5a; font-variant: small-caps; letter-spacing: .08em; margin: 0 0 6px; font-size: 13px; }
 .helpTopic p { font-size: 12px; line-height: 1.5; margin: 0 0 8px; color: #b9b2a0; }
 .helpTopic b { color: var(--gold); font-weight: normal; }
+
+/* --- wall progression --- */
+#descendBtn {
+  display: block;
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: Georgia, serif;
+  font-variant: small-caps;
+  letter-spacing: .1em;
+  font-size: 15px;
+  padding: 10px;
+  margin: 8px 0;
+  cursor: pointer;
+}
+#descendBtn:hover { background: var(--gold); color: #0d0d10; }

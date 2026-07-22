@@ -13,6 +13,7 @@ export function newState() {
     gm: { dmg: 0, haste: 0, scheduler: false, idleProc: false, schedulerOn: true, cap: 0, offline: 0, cooldown: 0, scar: 0 },
     failstacks: 0, // Luck's mechanical body — every fail banks +1%, success spends the bank
     titles: [],    // earned forever (attachment law): "+18" etc.
+    cleared: [],   // broken walls, permanent monument (attachment): "W1 Vess" …
     wall: 1,
     boss: { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false }, // per-current-wall record
     cooldownUntil: 0, // epoch ms — survives reload

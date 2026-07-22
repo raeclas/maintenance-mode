@@ -18,7 +18,7 @@ import { fmt, fmtDepth } from "./format.js";
 
 const state = newState();
 const loaded = load(state);
-const boss = getBoss(state.wall);
+let boss = getBoss(state.wall); // reassigned by advanceWall on a break
 window.__mm = { state, save: () => save(state) }; // dev hook
 
 // ---- dev mode: ?dev in the URL. Time scale + shortcuts. Never saved. ----
@@ -30,6 +30,27 @@ const $ = id => document.getElementById(id);
 function say(event) {
   const line = boss.dialogue[event]?.[0];
   if (line) $("dialogue").textContent = `${boss.name}: “${line}”`;
+}
+
+// Wall progression: after a break, descend to the next Warden. The cleared
+// wall is recorded forever (attachment law — the cleared list is the account's
+// power language, §9). Boss record resets for the new wall; `boss` reassigns
+// so every reader (say, band, pacing) picks up the new data.
+function advanceWall() {
+  const cur = getBoss(state.wall);
+  const next = getBoss(state.wall + 1);
+  if (!state.boss.broken || !next) return;
+  const rec = `W${cur.wall} ${cur.name}`;
+  if (!state.cleared.includes(rec)) state.cleared.push(rec);
+  state.wall = next.wall;
+  state.boss = { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false };
+  state.cooldownUntil = 0;
+  boss = next;
+  $("bossName").textContent = boss.name;
+  $("bossTitle").textContent = boss.title;
+  say("greet");
+  log(`— descending to ${boss.name}, ${boss.title}`);
+  save(state);
 }
 
 function log(msg) {
@@ -85,7 +106,7 @@ if (loaded && state.unlocked && state.lastSeen) {
     if (state.gm.idleProc && !state.boss.broken) {
       const r = processIdleAttempts(state, dt);
       if (r.attempts) log(`idle processing: ${r.attempts} attempts · best ${fmtDepth(r.best)} · +${fmt(r.tickets)} tickets`);
-      if (r.broke) log(`★ W1 BROKEN while you were away`);
+      if (r.broke) log(`★ W${state.wall} BROKEN while you were away`);
     }
     save(state);
   }
@@ -330,6 +351,7 @@ function closeHelp() { $("helpModal").style.display = "none"; }
 $("helpBtn").addEventListener("click", () => openHelp());
 $("helpClose").addEventListener("click", closeHelp);
 $("helpModal").addEventListener("click", e => { if (e.target === $("helpModal")) closeHelp(); });
+$("descendBtn").addEventListener("click", advanceWall);
 
 $("stashToggle").addEventListener("click", () => {
   const l = $("stashList");
@@ -410,7 +432,7 @@ function tick() {
     state.tickets += yieldT;
     if (state.boss.broken) {
       say("break");
-      log(`★ W1 BROKEN — attempt ${state.boss.pulls} · +${fmt(yieldT)} tickets`);
+      log(`★ W${state.wall} BROKEN — ${boss.name} · attempt ${state.boss.pulls} · +${fmt(yieldT)} tickets`);
     } else {
       // milestone-only dialogue: intro fail, first near-miss. Silence otherwise.
       if (state.boss.pulls === 1) say("fail_hopeless");
@@ -509,7 +531,14 @@ function render() {
   $("record").textContent = state.boss.pulls
     ? `attempts ${state.boss.pulls} · best ${fmtDepth(state.boss.bestDepth)} · scars ${fmtDepth(state.boss.scars)}`
     : "no attempts recorded";
-  $("monument").style.display = state.boss.broken ? "" : "none";
+  { // wall progression: descend button after a break, permanent cleared list
+    const next = getBoss(state.wall + 1);
+    $("descendBtn").style.display = state.boss.broken && next ? "" : "none";
+    const cleared = state.cleared.slice();
+    if (state.boss.broken && !next) cleared.push(`W${state.wall} ${boss.name} — final`);
+    $("monument").style.display = cleared.length ? "" : "none";
+    $("monument").textContent = cleared.length ? `Broken: ${cleared.join(" · ")}` : "";
+  }
 
   if (state.boss.broken || state.pull) {
     $("projection").textContent = "";
