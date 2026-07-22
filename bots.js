@@ -50,10 +50,17 @@ export const TRAININGS = {
   ],
 };
 
-export function botPower(b) { return 1 + POWER_PER_RANK * b.powerRank; }
-export function botSpeed(b) { return 1 + SPEED_PER_RANK * b.speedRank; }
-export function capacity(b, gmCap = 0) { return CAP_BASE + CAP_PER_RANK * b.capRank + 2 * gmCap; }
-export function createRate(b) { return CREATE_PER_H * (1 + CREATE_PER_RANK * b.createRank); } // per hour
+// Server privileges: ticket-bought admin leverage that STACKS on top of the
+// copper rig ranks (|| 0 keeps old saves safe). See PRIV below.
+export const T_POWER_PER_RANK = 0.5;
+export const T_SPEED_PER_RANK = 0.4;
+export const T_CREATE_PER_RANK = 0.5;
+export const T_CAP_PER_RANK = 8;
+
+export function botPower(b) { return 1 + POWER_PER_RANK * b.powerRank + T_POWER_PER_RANK * (b.tPower || 0); }
+export function botSpeed(b) { return 1 + SPEED_PER_RANK * b.speedRank + T_SPEED_PER_RANK * (b.tSpeed || 0); }
+export function capacity(b, gmCap = 0) { return CAP_BASE + CAP_PER_RANK * b.capRank + T_CAP_PER_RANK * (b.tCap || 0) + 2 * gmCap; }
+export function createRate(b) { return CREATE_PER_H * (1 + CREATE_PER_RANK * b.createRank + T_CREATE_PER_RANK * (b.tGen || 0)); } // per hour
 // One bot's zone DPS. player = derived stats {atk, hitsPerSec}. Squad DPS is
 // n × this — each bot ≈ 1% of player DPS (0.1 atk × 0.1 speed) before ranks.
 export function botDps(b, player) {
@@ -78,6 +85,27 @@ export function buy(state, what) {
   if (state.copper < cost) return false;
   state.copper -= cost;
   b[what + "Rank"]++;
+  return true;
+}
+
+// Server privileges — the TICKET-bought bot lane (admin leverage the grubby
+// copper can't buy). Rendered in the GM tab; dying-server/admin register.
+// Uncapped, era-priced (exponential) so the boss→tickets→farm loop stays
+// bounded (law 1). Ranks live on state.bots (effect reads b directly).
+// Starting values, playtest-tuned.
+export const PRIV = {
+  power: { label: "priority execution", gain: "+50% bot power", field: "tPower", base: 40, mult: 1.6 },
+  speed: { label: "rate-limit lift", gain: "+40% bot speed", field: "tSpeed", base: 50, mult: 1.6 },
+  gen: { label: "auto-provisioning", gain: "+50% generation", field: "tGen", base: 80, mult: 1.7 },
+  cap: { label: "reserved sessions", gain: "+8 capacity", field: "tCap", base: 60, mult: 1.7 },
+};
+export function privRank(b, what) { return b[PRIV[what].field] || 0; }
+export function privCost(b, what) { return Math.round(PRIV[what].base * Math.pow(PRIV[what].mult, privRank(b, what))); }
+export function buyPriv(state, what) {
+  const cost = privCost(state.bots, what);
+  if (state.tickets < cost) return false;
+  state.tickets -= cost;
+  state.bots[PRIV[what].field] = privRank(state.bots, what) + 1;
   return true;
 }
 

@@ -24,6 +24,8 @@ export function newState() {
       createRank: 0,  // generator: 2/h × (1 + 0.5×rank)
       powerRank: 0,   // script quality: power = 1 + 0.25×rank
       speedRank: 0,   // hardware: speed = 1 + 0.20×rank
+      // ticket-bought server privileges (GM tab) — stack on the copper ranks
+      tPower: 0, tSpeed: 0, tGen: 0, tCap: 0,
       // NGU model: every bar takes its OWN allocation and all bars run in
       // parallel. Max a bar's rate → surplus belongs on the next bar.
       alloc: {

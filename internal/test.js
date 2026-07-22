@@ -459,6 +459,16 @@ const enh = await import("../enhance.js");
   assert.equal(gm.buyUnlock(poor, "scheduler"), false);
   assert.equal(gm.ticketYield(0.0000001), 1); // hopeless attempts still pay 1
   assert.equal(gm.ticketYield(0.25), 75);     // 150 × √0.25
+
+  // server privileges: ticket-bought, stack ON TOP of copper ranks
+  const sp = newState();
+  const p0 = bots.botPower(sp.bots);
+  sp.tickets = bots.privCost(sp.bots, "power");
+  assert.ok(bots.buyPriv(sp, "power"));
+  assert.equal(sp.tickets, 0);                          // tickets deducted
+  assert.equal(sp.bots.tPower, 1);
+  assert.ok(Math.abs(bots.botPower(sp.bots) - (p0 + bots.T_POWER_PER_RANK)) < 1e-9); // stacks
+  assert.equal(bots.buyPriv(sp, "cap"), false);          // no tickets left
 }
 
 // Idle encounter processing: clamped attempts, real rolls, tickets flow

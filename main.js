@@ -204,6 +204,13 @@ for (const type of Object.keys(UTILITY)) {
   $("gmTools").appendChild(row);
   row.querySelector("button").addEventListener("click", e => { e.stopPropagation(); buyUtility(state, type); });
 }
+for (const type of Object.keys(bots.PRIV)) {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<span class="rowName">${bots.PRIV[type].label}</span><span class="rowGain">${bots.PRIV[type].gain}/rank</span><span class="rowStat" id="gmpr_${type}"></span><button id="gmpb_${type}"></button>`;
+  $("gmPriv").appendChild(row);
+  row.querySelector("button").addEventListener("click", e => { e.stopPropagation(); bots.buyPriv(state, type); });
+}
 
 // ---- scheduler toggle ----
 $("schedToggle").addEventListener("change", () => { state.gm.schedulerOn = $("schedToggle").checked; });
@@ -422,6 +429,13 @@ function render() {
     const btn = $(`gmub2_${type}`);
     btn.textContent = maxed ? "MAX" : `${fmt(utilityCost(type, rank))} tickets`;
     btn.disabled = maxed || state.tickets < utilityCost(type, rank);
+  }
+  for (const type of Object.keys(bots.PRIV)) {
+    const cost = bots.privCost(state.bots, type);
+    $(`gmpr_${type}`).textContent = `rank ${bots.privRank(state.bots, type)}`;
+    const btn = $(`gmpb_${type}`);
+    btn.textContent = `${fmt(cost)} tickets`;
+    btn.disabled = state.tickets < cost;
   }
 
   // encounter scheduler line (Boss screen)
