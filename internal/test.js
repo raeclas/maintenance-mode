@@ -21,6 +21,7 @@ const gear = await import("../gear.js");
 const rarity = await import("../rarity.js");
 const affixes = await import("../affixes.js");
 const rebirth = await import("../rebirth.js");
+const trophies = await import("../trophies.js");
 const enh = await import("../enhance.js");
 
 // Stats: formula lock at starting values (the intro beat number)
@@ -384,6 +385,33 @@ const enh = await import("../enhance.js");
   assert.ok(w2.dialogue.greet && w2.dialogue.break); // has its own face (pillar 2)
   assert.equal(getBoss(3), undefined);      // W2 is currently the last door
   assert.deepEqual(newState().cleared, []); // cleared-list monument starts empty
+}
+
+// Boss Trophy set: award on break, permanent stat boost, set bonus, survives Ban Wave
+{
+  const s = newState();
+  assert.deepEqual(s.trophies, []);
+  const before = derive(s).atk;
+
+  // award W1's trophy — idempotent, boosts the ATK lane
+  const t = trophies.awardTrophy(s, 1);
+  assert.ok(t && t.name === "Vess's Hinge-Key");
+  assert.deepEqual(s.trophies, [1]);
+  assert.equal(trophies.awardTrophy(s, 1), null);      // idempotent
+  assert.ok(derive(s).atk > before * 1.14);            // +15% ATK, no set bonus yet
+  assert.ok(!trophies.setComplete(s));                 // W2 still missing
+
+  // complete the set (both walls) → the ×1.5 damage capstone lights up
+  const partial = derive(s).atk;
+  trophies.awardTrophy(s, 2);                           // Maren's Seal (haste lane)
+  assert.ok(trophies.setComplete(s));
+  assert.ok(derive(s).atk > partial * (1 + trophies.SET_BONUS) - 1e-6); // set bonus applies
+
+  // survives Ban Wave (attachment — the cabinet is untouchable)
+  s.bots.bars.atk.fills = [100, 0, 0, 0];
+  rebirth.banWave(s);
+  assert.deepEqual(s.trophies, [1, 2]);
+  assert.ok(trophies.setComplete(s));
 }
 
 // Enhance: zones, checkpoint falls, failstacks, safeguard, cost gating

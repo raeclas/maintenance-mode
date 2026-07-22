@@ -13,6 +13,7 @@ import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMa
 import { RARITIES, RARITY_BY_ID } from "./rarity.js";
 import { affixLabel } from "./affixes.js";
 import { banWave, pendingScripts, scriptMult, totalFills } from "./rebirth.js";
+import { awardTrophy, allTrophyWalls, ownsTrophy, setComplete, SET_BONUS } from "./trophies.js";
 import * as enh from "./enhance.js";
 import { fmt, fmtDepth } from "./format.js";
 
@@ -106,7 +107,11 @@ if (loaded && state.unlocked && state.lastSeen) {
     if (state.gm.idleProc && !state.boss.broken) {
       const r = processIdleAttempts(state, dt);
       if (r.attempts) log(`idle processing: ${r.attempts} attempts · best ${fmtDepth(r.best)} · +${fmt(r.tickets)} tickets`);
-      if (r.broke) log(`★ W${state.wall} BROKEN while you were away`);
+      if (r.broke) {
+        log(`★ W${state.wall} BROKEN while you were away`);
+        const t = awardTrophy(state, state.wall);
+        if (t) log(`🏆 Trophy: ${t.name}`);
+      }
     }
     save(state);
   }
@@ -433,6 +438,8 @@ function tick() {
     if (state.boss.broken) {
       say("break");
       log(`★ W${state.wall} BROKEN — ${boss.name} · attempt ${state.boss.pulls} · +${fmt(yieldT)} tickets`);
+      const t = awardTrophy(state, state.wall); // the boss's unique piece drops on the break
+      if (t) { log(`🏆 Trophy: ${t.name} (+${t.pct}% ${t.lane === "atk" ? "ATK" : "haste"})`); stashDirty = true; }
     } else {
       // milestone-only dialogue: intro fail, first near-miss. Silence otherwise.
       if (state.boss.pulls === 1) say("fail_hopeless");
@@ -736,6 +743,24 @@ function render() {
   }
   $("titles").style.display = state.titles.length ? "" : "none";
   $("titles").textContent = state.titles.length ? `Titles: ${state.titles.join(" · ")}` : "";
+
+  { // Trophy cabinet: owned pieces active, locked ones name their Warden
+    const walls = allTrophyWalls();
+    const owned = walls.filter(w => ownsTrophy(state, w)).length;
+    $("trophySet").textContent = walls.length
+      ? (setComplete(state)
+          ? `SET COMPLETE · ×${(1 + SET_BONUS).toFixed(2)} damage`
+          : `${owned}/${walls.length} · full set → ×${(1 + SET_BONUS).toFixed(2)} damage`)
+      : "";
+    $("trophyCabinet").innerHTML = walls.map(w => {
+      const bw = getBoss(w), t = bw.trophy, own = ownsTrophy(state, w);
+      const stat = t.lane === "atk" ? `+${t.pct}% ATK` : `+${t.pct}% haste`;
+      return own
+        ? `<div class="trophy owned"><span class="trophyName">🏆 ${t.name}</span><span class="trophyStat">${stat}</span><span class="trophyFlavor">${t.flavor}</span></div>`
+        : `<div class="trophy locked"><span class="trophyName">◈ ??? </span><span class="trophyStat">${stat}</span><span class="trophyFlavor">break ${bw.name}, ${bw.title}</span></div>`;
+    }).join("");
+  }
+
   if (stashDirty) renderStash();
 }
 

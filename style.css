@@ -495,3 +495,22 @@ footer { text-align: center; margin-top: 18px; }
   cursor: pointer;
 }
 #descendBtn:hover { background: var(--gold); color: #0d0d10; }
+
+/* --- boss Trophy cabinet --- */
+#trophySet { color: var(--gold); font-family: monospace; font-size: 11px; }
+#trophyCabinet { display: flex; flex-direction: column; gap: 6px; }
+.trophy {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 10px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--line);
+  background: #17171c;
+  font-size: 12px;
+}
+.trophy.owned { border-left-color: var(--gold); }
+.trophy .trophyName { font-weight: 600; color: #b9b2a0; }
+.trophy.owned .trophyName { color: var(--gold); }
+.trophy .trophyStat { text-align: right; font-family: monospace; color: #6bbf7a; }
+.trophy.locked .trophyStat { color: #55555e; }
+.trophy .trophyFlavor { grid-column: 1 / -1; font-size: 11px; font-style: italic; color: #6e6e78; }

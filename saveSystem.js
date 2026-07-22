@@ -70,6 +70,7 @@ export function load(state) {
   state.failstacks = s.failstacks ?? 0;
   state.titles = Array.isArray(s.titles) ? s.titles : [];
   state.cleared = Array.isArray(s.cleared) ? s.cleared : []; // v9 wall monuments
+  state.trophies = Array.isArray(s.trophies) ? s.trophies : []; // v9 boss Trophy set
   state.wall = s.wall ?? d.wall;
   state.boss = { ...d.boss, ...(s.boss || {}) };
   state.cooldownUntil = s.cooldownUntil ?? 0;
