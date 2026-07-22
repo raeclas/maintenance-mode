@@ -9,7 +9,9 @@ import { initBattle, renderBattle, notifyResult, notifyEnhance } from "./battle.
 import { derive } from "./stats.js";
 import * as bots from "./bots.js";
 import * as farm from "./farm.js";
-import { autoEquip, equipFromStash, contribution, salvage, salvageValue, SLOTS, STASH_CAP } from "./gear.js";
+import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, SLOTS, STASH_CAP } from "./gear.js";
+import { RARITIES, RARITY_BY_ID } from "./rarity.js";
+import { affixLabel } from "./affixes.js";
 import * as enh from "./enhance.js";
 import { fmt, fmtDepth } from "./format.js";
 
@@ -39,11 +41,12 @@ function log(msg) {
 let stashDirty = true;
 
 function onDrop(item) {
-  const r = autoEquip(state, item);
+  const rar = RARITY_BY_ID[item.rarity]?.name || item.rarity;
+  const r = routeDrop(state, item); // filter: keep→stash, else→scrap (never auto-equip)
   stashDirty = true;
-  const fate = r.equipped ? "equipped" : r.salvaged ? `salvaged +${fmt(salvageValue(item))}c` : "stashed";
-  log(`drop: ${item.name} ${fmt(item.ip)}IP · ${fate}`);
-  if (r.overflow) log(`stash full: salvaged ${r.overflow.name} +${fmt(salvageValue(r.overflow))}c`);
+  const fate = r.kept ? "stashed" : `salvaged +${r.scrap.n} ${item.rarity} scrap`;
+  log(`drop: ${rar} ${item.name} ${fmt(item.ip)}IP · ${fate}`);
+  if (r.overflow) log(`stash full: salvaged ${r.overflow.item.name} +${r.overflow.scrap.n} ${r.overflow.scrap.rarity} scrap`);
 }
 
 // enhance feedback is visual: the slot row glows on success, flickers on fail
@@ -253,16 +256,22 @@ $("stashToggle").addEventListener("click", () => {
   const l = $("stashList");
   l.style.display = l.style.display === "none" ? "" : "none";
 });
-$("autoSalvage").addEventListener("change", () => { state.gear.autoSalvage = $("autoSalvage").checked; });
-$("salvageAll").addEventListener("click", () => {
-  const keep = [], goners = [];
-  for (const it of state.gear.stash) (it.lock ? keep : goners).push(it);
-  if (!goners.length) return;
-  let total = 0;
-  for (const it of goners) total += salvage(state, it);
-  state.gear.stash = keep;
+// rarity dropdowns are built from the data (add a tier → it shows up here)
+for (const sel of [$("keepRarity"), $("salvageRarity")]) {
+  sel.innerHTML = RARITIES.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
+}
+$("salvageRarity").value = "uncommon"; // default sweep target
+
+// loot filter dials (passive, on-drop) — keep at/above rarity AND ip
+$("keepRarity").addEventListener("change", () => { state.gear.keepRarity = $("keepRarity").value; });
+$("keepIp").addEventListener("change", () => { state.gear.keepIp = Math.max(0, Math.floor(+$("keepIp").value) || 0); });
+// manual bulk sweep — salvage all unlocked stash items ≤ chosen rarity
+$("salvageMatch").addEventListener("click", () => {
+  const { count, tally } = salvageMatching(state, $("salvageRarity").value);
+  if (!count) return;
   stashDirty = true;
-  log(`salvaged ${goners.length} items +${fmt(total)}c`);
+  const parts = Object.entries(tally).map(([r, n]) => `${n} ${r}`).join(", ");
+  log(`salvaged ${count} items → ${parts} scrap`);
 });
 
 function renderStash() {
@@ -273,14 +282,21 @@ function renderStash() {
   el.innerHTML = "";
   sorted.forEach(item => {
     const idx = state.gear.stash.indexOf(item);
+    const rar = RARITY_BY_ID[item.rarity] || RARITIES[0];
+    const affixes = (item.affixes || []).map(a => affixLabel(a)).join(" · ") || "—";
     const row = document.createElement("div");
-    row.innerHTML = `<span>${item.lock ? "🔒 " : ""}${item.name} · ${item.slot} · IP ${fmt(item.ip)}${item.plus ? " +" + item.plus : ""}</span>` +
-      `<span><button class="eq">equip</button><button class="lk">${item.lock ? "unlock" : "lock"}</button><button class="sv" ${item.lock ? "disabled" : ""}>salvage +${fmt(salvageValue(item))}c</button></span>`;
+    row.innerHTML =
+      `<span><span class="itemName" style="color:${rar.color}">${item.lock ? "🔒 " : ""}${item.name}</span>` +
+        ` · ${item.slot} · IP ${fmt(item.ip)}${item.plus ? " +" + item.plus : ""}` +
+        `<span class="affixLine">${affixes}</span></span>` +
+      `<span><button class="eq">equip</button><button class="lk">${item.lock ? "unlock" : "lock"}</button>` +
+        `<button class="sv" ${item.lock ? "disabled" : ""}>salvage +${scrapYield(item)}</button></span>`;
     row.querySelector(".eq").addEventListener("click", () => { equipFromStash(state, idx); stashDirty = true; });
     row.querySelector(".lk").addEventListener("click", () => { item.lock = !item.lock; stashDirty = true; });
     row.querySelector(".sv").addEventListener("click", () => {
       state.gear.stash.splice(idx, 1);
-      log(`salvaged ${item.name} (+${fmt(salvage(state, item))}c)`);
+      const s = salvage(state, item);
+      log(`salvaged ${item.name} → +${s.n} ${s.rarity} scrap`);
       stashDirty = true;
     });
     el.appendChild(row);
@@ -501,7 +517,11 @@ function render() {
       : `trained +${b.trained.hits.toFixed(4)} hits/s (+${laneRate.toFixed(5)}/s)`;
     $(`bar${el}Info`).textContent = trained;
   }
-  $("autoSalvage").checked = state.gear.autoSalvage;
+  if (document.activeElement !== $("keepRarity")) $("keepRarity").value = state.gear.keepRarity;
+  if (document.activeElement !== $("keepIp")) $("keepIp").value = state.gear.keepIp;
+  $("scrapWallet").textContent = RARITIES
+    .filter(r => (state.scrap[r.id] || 0) > 0)
+    .map(r => `${fmt(state.scrap[r.id])} ${r.name.toLowerCase()}`).join(" · ") || "no scrap yet";
 
   // bot enhance squad
   for (const btn of $("enhSeg").children) btn.classList.toggle("active", btn.dataset.slot === b.enhTarget.slot);
@@ -541,9 +561,14 @@ function render() {
   for (const slot of SLOTS) {
     const item = state.gear[slot];
     const si = $(`si_${slot}`);
-    si.textContent = item
-      ? `${item.name} · IP ${fmt(item.ip)} ${item.plus ? `+${item.plus}` : ""} → ${fmt(contribution(item))} ATK`
-      : "—";
+    if (item) {
+      const rar = RARITY_BY_ID[item.rarity] || RARITIES[0];
+      const affixes = (item.affixes || []).map(a => affixLabel(a)).join(" · ");
+      si.innerHTML =
+        `<span class="itemName" style="color:${rar.color}">${item.name}</span>` +
+        ` · IP ${fmt(item.ip)} ${item.plus ? `+${item.plus}` : ""} → ${fmt(contribution(item))} ATK` +
+        (affixes ? `<span class="affixLine">${affixes}</span>` : "");
+    } else si.textContent = "—";
     si.className = "slotItem" + (item ? ` tier-${enh.zone(item.plus)}` : "");
     const btn = $(`se_${slot}`);
     btn.disabled = !item || item.plus >= enh.MAX_PLUS;

@@ -1,6 +1,9 @@
-// gear.js — Diablo-style item power: ONE scalar per item, zero special
-// effects in v1. contribution = ip × (1 + 0.10 × plus) ATK.
-// Attachment law: nothing is ever destroyed — replaced gear goes to stash.
+// gear.js — Diablo/PoE-lite items: a base power scalar (ip × 1.12^plus)
+// PLUS rolled affixes. Rarity = affix COUNT, ip = affix TIER (see
+// rarity.js / affixes.js). Attachment law: nothing is ever destroyed —
+// replaced or filtered gear goes to stash or salvages into Scrap.
+import { RARITIES, RARITY_IDX, rollRarity } from "./rarity.js";
+import { AFFIXES, rollAffixes } from "./affixes.js";
 
 export const SLOTS = ["weapon", "armor", "charm"];
 
@@ -11,35 +14,42 @@ const NAMES = {
   charm: ["Cracked Bead", "Weaver-Eye Charm", "Salt Talisman", "Ember Sigil", "Door Sentry Sigil"],
 };
 
-// Compounding, not linear: every plus is felt, high plusses are events
-// (starting value 1.12 — +12 ≈ ×3.9, +20 ≈ ×9.6; sim-gated).
+// Base item power (the "white" scalar). Compounding: +12 ≈ ×3.9, +20 ≈ ×9.6.
+// Affixes ride ON TOP and are summed into their lanes by derive().
 export function contribution(item) {
   return item.ip * Math.pow(1.12, item.plus);
 }
 
-// zoneIdx 0-based; band comes from farm.js zone table
+// zoneIdx 0-based; ip band comes from the zone. Rarity is standardized
+// (same odds everywhere); affix count follows rarity, affix tier follows ip.
 export function rollItem(zone, zoneIdx, rng = Math.random) {
   const slot = SLOTS[Math.floor(rng() * SLOTS.length)];
   const ip = Math.round(zone.ipLo + (zone.ipHi - zone.ipLo) * rng());
-  return { slot, ip, plus: 0, zone: zoneIdx + 1, name: NAMES[slot][zoneIdx] };
+  const rarity = rollRarity(rng);
+  return {
+    slot, ip, plus: 0, zone: zoneIdx + 1, name: NAMES[slot][zoneIdx],
+    rarity: rarity.id,
+    affixes: rollAffixes(ip, rarity.affixes, rng),
+  };
 }
 
 export const STASH_CAP = 50;
-export const SALVAGE_RATE = 0.5; // copper per ip when an item decomposes
 
-// Salvage value: an item decomposes into copper (visible, never silent).
-export function salvageValue(item) {
-  return Math.max(1, Math.round(SALVAGE_RATE * item.ip));
+// ---- Salvage → tiered Scrap (the sink; feeds the Reforge bench, Slice 2).
+// Yield scales with rarity index and √ip. Deposited into state.scrap by tier.
+export function scrapYield(item) {
+  const ri = RARITY_IDX[item.rarity] ?? 0;
+  return Math.max(1, Math.round((0.5 + ri) * Math.sqrt(item.ip)));
 }
 
 export function salvage(state, item) {
-  const v = salvageValue(item);
-  state.copper += v;
-  return v;
+  const r = item.rarity || "common";
+  const n = scrapYield(item);
+  state.scrap[r] = (state.scrap[r] || 0) + n;
+  return { rarity: r, n };
 }
 
-// Stash discipline: locked and equipped items are untouchable; past the
-// cap, the lowest-contribution unlocked item decomposes (logged by caller).
+// Stash discipline: past cap, the lowest-base-power UNLOCKED item salvages.
 function stashPush(state, item) {
   state.gear.stash.push(item);
   if (state.gear.stash.length <= STASH_CAP) return null;
@@ -51,29 +61,43 @@ function stashPush(state, item) {
   }
   if (worst === -1) return null; // everything locked — cap yields to the lock
   const [gone] = state.gear.stash.splice(worst, 1);
-  salvage(state, gone);
-  return gone;
+  return { item: gone, scrap: salvage(state, gone) };
 }
 
-// Equip if strictly better than current; loser goes to stash (or straight
-// to salvage when autoSalvage is on and the drop isn't an upgrade).
-// Returns { equipped, salvaged, overflow } for the caller's log line.
-export function autoEquip(state, item) {
-  const cur = state.gear[item.slot];
-  if (!cur || contribution(item) > contribution(cur)) {
-    let overflow = null;
-    if (cur) overflow = stashPush(state, cur);
-    state.gear[item.slot] = item;
-    return { equipped: true, salvaged: false, overflow };
-  }
-  if (state.gear.autoSalvage) {
-    salvage(state, item);
-    return { equipped: false, salvaged: true, overflow: null };
-  }
-  return { equipped: false, salvaged: false, overflow: stashPush(state, item) };
+// ---- Loot filter: the DISPOSAL front door. NEVER auto-equips (agency law —
+// the player builds). Keep if it clears BOTH floors (rarity AND ip — a
+// low-ip Origin from an old zone is still junk); else it salvages to Scrap.
+export function meetsKeep(item, keepRarity, keepIp) {
+  return (RARITY_IDX[item.rarity] ?? 0) >= (RARITY_IDX[keepRarity] ?? 0) && item.ip >= (keepIp || 0);
 }
 
-// Manual: swap a stash item into its slot (plusses travel with the item).
+// Route a fresh drop through the filter. Returns { kept, scrap?, overflow? }.
+export function routeDrop(state, item) {
+  const g = state.gear;
+  if (meetsKeep(item, g.keepRarity, g.keepIp)) {
+    return { kept: true, overflow: stashPush(state, item) };
+  }
+  return { kept: false, scrap: salvage(state, item) };
+}
+
+// Manual bulk sweep: salvage every UNLOCKED stash item at/below maxRarity
+// (rarity index). Locked + equipped are untouched. Returns a scrap tally.
+export function salvageMatching(state, maxRarityId) {
+  const maxIdx = RARITY_IDX[maxRarityId] ?? 0;
+  const keep = [], tally = {};
+  let count = 0;
+  for (const it of state.gear.stash) {
+    if (!it.lock && (RARITY_IDX[it.rarity] ?? 0) <= maxIdx) {
+      const { rarity, n } = salvage(state, it);
+      tally[rarity] = (tally[rarity] || 0) + n;
+      count++;
+    } else keep.push(it);
+  }
+  state.gear.stash = keep;
+  return { count, tally };
+}
+
+// Manual: swap a stash item into its slot (plusses + affixes travel with it).
 export function equipFromStash(state, idx) {
   const item = state.gear.stash[idx];
   if (!item) return false;

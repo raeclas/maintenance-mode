@@ -2,7 +2,8 @@
 // DPS = (10 + trainedATK + Σ gear) × GMdmg × hits/s × GMhaste
 // GM terms are a separate, DISPLAYED lane (era-priced flags); the trained
 // speed cap stays a training-lane identity — haste multiplies past it.
-import { contribution } from "./gear.js";
+import { contribution, SLOTS } from "./gear.js";
+import { AFFIXES } from "./affixes.js";
 import { gmDmgMult, gmHasteMult } from "./gm.js";
 import { getBoss } from "./bosses.js";
 
@@ -21,14 +22,26 @@ export function softHits(raw, knee = SPEED_KNEE) {
   return raw <= knee ? raw : knee * Math.pow(raw / knee, SPEED_SOFT_P);
 }
 
+// Lanes are CODE (few, fixed identities); affixes are DATA summed into them.
+// Every term below is displayed (law 5): gear base power + each affix line.
 export function derive(state) {
-  let gearAtk = 0;
-  for (const slot of ["weapon", "armor", "charm"]) {
+  let gearAtk = 0, atkPct = 0, hitsFlat = 0, hastePct = 0, copperPct = 0;
+  for (const slot of SLOTS) {
     const it = state.gear[slot];
-    if (it) gearAtk += contribution(it);
+    if (!it) continue;
+    gearAtk += contribution(it); // base item power (ip × 1.12^plus)
+    for (const af of it.affixes || []) {
+      const a = AFFIXES[af.id];
+      if (!a) continue;
+      if (a.lane === "atk" && a.kind === "flat") gearAtk += af.value;
+      else if (a.lane === "atk") atkPct += af.value;
+      else if (a.lane === "speed" && a.kind === "flat") hitsFlat += af.value;
+      else if (a.lane === "speed") hastePct += af.value;
+      else if (a.lane === "farm") copperPct += af.value;
+    }
   }
-  const atk = (BASE_ATK + state.bots.trained.atk + gearAtk) * gmDmgMult(state);
+  const atk = (BASE_ATK + state.bots.trained.atk + gearAtk) * (1 + atkPct / 100) * gmDmgMult(state);
   const knee = getBoss(state.wall)?.speedKnee ?? SPEED_KNEE;
-  const hitsPerSec = softHits(BASE_HPS + state.bots.trained.hits, knee) * gmHasteMult(state);
-  return { atk, hitsPerSec };
+  const hitsPerSec = softHits(BASE_HPS + state.bots.trained.hits + hitsFlat, knee) * (1 + hastePct / 100) * gmHasteMult(state);
+  return { atk, hitsPerSec, copperMult: 1 + copperPct / 100 };
 }

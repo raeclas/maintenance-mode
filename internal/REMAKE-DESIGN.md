@@ -488,6 +488,8 @@ mobs, gear, boss fight, enhance verbs, titles.
 | armor by zone | Padded Vest · Weaver-Silk Jerkin · Salt-Crusted Cuirass · Cinder Scale Coat · Sentry Plate |
 | charms by zone | Cracked Bead · Weaver-Eye Charm · Salt Talisman · Ember Sigil · Door Sentry Sigil |
 | boss verbs/nouns | Attempt · enrage · depth · scars · break · title · safeguard |
+| gear rarities (2026-07-22) | Common · Uncommon · Rare · Epic · Legendary · Mythic · Origin |
+| gear verbs/nouns (2026-07-22) | affix · Reforge · Scrap (tiered salvage material) · Salvage · Loot filter (keep ≥ rarity/ip) |
 | W1 | Vess, Warden of the First Door |
 
 **The botter's toolkit** (2006 botting-forum speak) — owns: bots, rig,

@@ -22,7 +22,20 @@ import { ticketYield, buyFlag, buyUnlock, buyUtility, flagCost } from "../gm.js"
 import { derive, SPEED_KNEE, BASE_HPS } from "../stats.js";
 import * as bots from "../bots.js";
 import * as farm from "../farm.js";
-import { contribution, SLOTS, SALVAGE_RATE } from "../gear.js";
+import { contribution, SLOTS } from "../gear.js";
+import { AFFIXES, affixTier } from "../affixes.js";
+
+// EV gear model: optimal play keeps DAMAGE rolls, so credit the equipped EV
+// item a Rare's worth of atk affixes (atkFlat + atkPct) at mid tier value.
+// ponytail: coarse — ignores haste/copper rolls and roll variance; gear feeds
+// player DPS so this is sim-relevant, restamp baseline + playtest to tune.
+function evAffixes(ip) {
+  const t = affixTier(ip);
+  return ["atkFlat", "atkPct"].map(id => {
+    const a = AFFIXES[id], mid = a.base + a.per * (t - 1);
+    return { id, tier: t, value: a.round ? Math.round(mid) : +mid.toFixed(2) };
+  });
+}
 import { cost as enhCost, evCostPerIpFrom, chance } from "../enhance.js";
 
 const S = newState();
@@ -123,8 +136,7 @@ while (t < MAX_S && !broken) {
     income += zr.copperPerSec;
     const dropsNow = zr.kps * STEP * farm.DROP_CHANCE;
     rolls[i] += dropsNow;
-    // salvage faucet: non-upgrade drops decompose (autoSalvage assumed on)
-    S.copper += dropsNow * SALVAGE_RATE * (z.ipLo + z.ipHi) / 2;
+    // v9: salvage yields SCRAP (reforge fuel), not copper — no copper faucet here
   });
   // adoption: EV best roll per slot from the RICHEST farmed zone. Adopt on
   // RAW ip gain (optimal play re-enhances; income covers the re-climb)
@@ -138,7 +150,7 @@ while (t < MAX_S && !broken) {
       const cur = S.gear[slot];
       if (!cur || expIp > cur.ip) {
         if (cur) S.gear.stash.push(cur);
-        S.gear[slot] = { slot, ip: expIp, plus: 0, zone: bestZi + 1, name: "ev" };
+        S.gear[slot] = { slot, ip: expIp, plus: 0, zone: bestZi + 1, name: "ev", rarity: "rare", affixes: evAffixes(expIp) };
       }
     }
   }

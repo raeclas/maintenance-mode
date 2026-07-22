@@ -96,10 +96,21 @@
     <div id="slots"></div>
 
     <h3>Stash</h3>
+    <div id="scrapWallet" class="scrapWallet">no scrap yet</div>
     <div id="stashHead">
-      <button id="stashToggle"></button>
-      <button id="salvageAll">salvage all unlocked</button>
-      <label class="toggleLine"><input type="checkbox" id="autoSalvage"> auto-salvage non-upgrades</label>
+      <div class="filterRow">
+        <span class="filterLabel">keep drops ≥</span>
+        <select id="keepRarity"></select>
+        <span class="filterLabel">· ip ≥</span>
+        <input id="keepIp" type="number" min="0" value="0" class="ipDial">
+        <span class="filterHint">rest auto-salvage to scrap</span>
+      </div>
+      <div class="filterRow">
+        <button id="stashToggle"></button>
+        <span class="filterLabel">· salvage all ≤</span>
+        <select id="salvageRarity"></select>
+        <button id="salvageMatch">salvage matching</button>
+      </div>
     </div>
     <div id="stashList" style="display:none"></div>
   </section>

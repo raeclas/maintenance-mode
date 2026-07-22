@@ -18,6 +18,8 @@ const { derive, softHits } = await import("../stats.js");
 const bots = await import("../bots.js");
 const farm = await import("../farm.js");
 const gear = await import("../gear.js");
+const rarity = await import("../rarity.js");
+const affixes = await import("../affixes.js");
 const enh = await import("../enhance.js");
 
 // Stats: formula lock at starting values (the intro beat number)
@@ -230,43 +232,75 @@ const enh = await import("../enhance.js");
 
 // Farm: zones are bot-only data now — no player kill functions (v8)
 
-// Gear: roll bands, auto-equip stashes loser, lock/salvage discipline
+// Gear v9: rarity + affixes on roll; loot filter (never auto-equips);
+// salvage → tiered scrap; bulk sweep; stash overflow → scrap; lock discipline
 {
   const s = newState();
-  const item = gear.rollItem(farm.zones[0], 0, () => 0.999);
+  // rollItem: ip in band, a rarity, affix count = rarity's slot count
+  const item = gear.rollItem(farm.zones[0], 0, () => 0.5);
   assert.ok(item.ip <= 30 && item.ip >= 10);
-  assert.ok(gear.autoEquip(s, { slot: "weapon", ip: 20, plus: 0, zone: 1, name: "a" }).equipped);
-  assert.ok(!gear.autoEquip(s, { slot: "weapon", ip: 10, plus: 0, zone: 1, name: "b" }).equipped); // worse → stash
-  assert.equal(s.gear.stash.length, 1);
-  assert.ok(gear.autoEquip(s, { slot: "weapon", ip: 50, plus: 0, zone: 1, name: "c" }).equipped);
-  assert.equal(s.gear.stash.length, 2); // old weapon stashed, never deleted below cap
-  assert.ok(gear.equipFromStash(s, 0));
-  assert.equal(s.gear.stash.length, 2); // swap, total conserved
+  assert.ok(rarity.RARITY_BY_ID[item.rarity]);
+  assert.equal(item.affixes.length, rarity.RARITY_BY_ID[item.rarity].affixes);
   assert.ok(Math.abs(gear.contribution({ ip: 100, plus: 12 }) - 100 * Math.pow(1.12, 12)) < 1e-9);
 
-  // autoSalvage: non-upgrade decomposes straight to copper
-  s.gear.autoSalvage = true;
-  const c0 = s.copper;
-  const r = gear.autoEquip(s, { slot: "weapon", ip: 4, plus: 0, zone: 1, name: "d" });
-  assert.ok(r.salvaged && !r.equipped);
-  assert.equal(s.copper, c0 + gear.salvageValue({ ip: 4 }));
-  assert.equal(s.gear.stash.length, 2); // never reached the stash
-  s.gear.autoSalvage = false;
+  // meetsKeep: BOTH floors — a low-ip Origin fails the ip floor (law: standardized
+  // rarity means old zones spit high-rarity junk)
+  assert.ok(gear.meetsKeep({ rarity: "epic", ip: 500 }, "rare", 100));
+  assert.ok(!gear.meetsKeep({ rarity: "origin", ip: 20 }, "rare", 100));   // ip too low
+  assert.ok(!gear.meetsKeep({ rarity: "common", ip: 9999 }, "rare", 100)); // rarity too low
 
-  // stash cap: overflow decomposes the WORST unlocked item; locked immune
-  s.gear.stash = [];
-  s.gear.stash.push({ slot: "charm", ip: 1, plus: 0, zone: 1, name: "worst", lock: true });
+  // routeDrop NEVER equips: a keeper goes to stash, junk salvages to scrap
+  s.gear.keepRarity = "rare"; s.gear.keepIp = 0;
+  const keep = gear.routeDrop(s, { slot: "weapon", ip: 40, plus: 0, rarity: "epic", affixes: [], name: "k" });
+  assert.ok(keep.kept && !s.gear.weapon);            // stashed, not worn
+  assert.equal(s.gear.stash.length, 1);
+  const junk = gear.routeDrop(s, { slot: "weapon", ip: 40, plus: 0, rarity: "common", affixes: [], name: "j" });
+  assert.ok(!junk.kept && junk.scrap.n > 0);         // salvaged to scrap
+  assert.equal(s.scrap.common, junk.scrap.n);
+  assert.equal(s.gear.stash.length, 1);              // junk never hit the stash
+
+  // scrap yield is tiered: higher rarity at equal ip yields more
+  assert.ok(gear.scrapYield({ rarity: "legendary", ip: 100 }) > gear.scrapYield({ rarity: "common", ip: 100 }));
+
+  // manual equip conserves items (swap, never delete)
+  s.gear.stash = [{ slot: "weapon", ip: 20, plus: 0, rarity: "rare", affixes: [], name: "a" }];
+  assert.ok(gear.equipFromStash(s, 0));
+  assert.equal(s.gear.weapon.name, "a");
+  assert.equal(s.gear.stash.length, 0);
+
+  // bulk sweep: salvage all unlocked ≤ chosen rarity; locked + higher survive
+  s.gear.stash = [
+    { slot: "charm", ip: 10, plus: 0, rarity: "common", affixes: [], name: "c1" },
+    { slot: "charm", ip: 10, plus: 0, rarity: "uncommon", affixes: [], name: "u1", lock: true },
+    { slot: "charm", ip: 10, plus: 0, rarity: "epic", affixes: [], name: "e1" },
+  ];
+  const sweep = gear.salvageMatching(s, "uncommon"); // ≤ uncommon, but u1 is locked
+  assert.equal(sweep.count, 1);                       // only c1
+  assert.equal(s.gear.stash.length, 2);              // locked u1 + epic e1 remain
+  assert.ok(s.gear.stash.some(it => it.name === "u1") && s.gear.stash.some(it => it.name === "e1"));
+
+  // stash cap: overflow salvages the WORST unlocked item → scrap; locked immune
+  s.gear.stash = [{ slot: "charm", ip: 1, plus: 0, rarity: "common", affixes: [], name: "worst", lock: true }];
   for (let i = 0; i < gear.STASH_CAP - 1; i++) {
-    s.gear.stash.push({ slot: "charm", ip: 100 + i, plus: 0, zone: 1, name: `f${i}` });
+    s.gear.stash.push({ slot: "charm", ip: 100 + i, plus: 0, rarity: "common", affixes: [], name: `f${i}` });
   }
   assert.equal(s.gear.stash.length, gear.STASH_CAP);
-  const r2 = gear.autoEquip(s, { slot: "charm", ip: 2, plus: 0, zone: 1, name: "junk" }); // worse than equipped? no charm equipped → equips!
-  assert.ok(r2.equipped); // first charm equips
-  const r3 = gear.autoEquip(s, { slot: "charm", ip: 1.5, plus: 0, zone: 1, name: "junk2" }); // worse → stash → overflow
-  assert.ok(!r3.equipped && r3.overflow);
+  const over = gear.routeDrop(s, { slot: "charm", ip: 200, plus: 0, rarity: "rare", affixes: [], name: "new" });
+  assert.ok(over.kept && over.overflow);             // kept (rare≥rare), pushed cap over → worst salvaged
   assert.equal(s.gear.stash.length, gear.STASH_CAP);
-  assert.equal(r3.overflow.name, "junk2"); // junk2 itself is the worst unlocked
-  assert.ok(s.gear.stash.some(it => it.name === "worst")); // locked ip-1 item survives
+  assert.ok(s.gear.stash.some(it => it.name === "worst")); // locked ip-1 survives the cull
+
+  // affix registry maps every affix to a known lane (data/code boundary)
+  for (const id of affixes.AFFIX_IDS) {
+    assert.ok(["atk", "speed", "farm"].includes(affixes.AFFIXES[id].lane));
+  }
+  // affixes actually move derive()'s lanes
+  const s2 = newState();
+  s2.gear.weapon = { slot: "weapon", ip: 100, plus: 0, rarity: "rare",
+    affixes: [{ id: "atkFlat", tier: 3, value: 50 }, { id: "hits", tier: 3, value: 0.5 }], name: "t" };
+  const d0 = derive(newState()), d1 = derive(s2);
+  assert.ok(d1.atk > d0.atk + 100);          // base ip + flat atk affix
+  assert.ok(d1.hitsPerSec > d0.hitsPerSec);  // hits affix lifts speed
 }
 
 // Enhance: zones, checkpoint falls, failstacks, safeguard, cost gating

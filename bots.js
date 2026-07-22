@@ -238,7 +238,7 @@ function tickChunk(state, dtS, onEvent, rng) {
     if (n <= 0) continue;
     const r = botZoneRates(b, zi, n, player);
     if (!r.held) continue;
-    state.copper += r.copperPerSec * dtS;
+    state.copper += r.copperPerSec * dtS * (player.copperMult || 1); // +copper affixes
     const np = r.kps * dtS * DROP_CHANCE;
     let drops = Math.floor(np) + (rng() < np - Math.floor(np) ? 1 : 0);
     while (drops-- > 0) onEvent("drop", rollItem(zones[zi], zi, rng));

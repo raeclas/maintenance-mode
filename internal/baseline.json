@@ -12,55 +12,55 @@
     "desc": "power ×10"
   },
   {
-    "t": 13800,
-    "desc": "z2 held (Webbed Ravine)"
-  },
-  {
-    "t": 14400,
+    "t": 13200,
     "desc": "power ×100"
   },
   {
-    "t": 14400,
+    "t": 13200,
+    "desc": "z2 held (Webbed Ravine)"
+  },
+  {
+    "t": 13800,
     "desc": "power ×1000"
   },
   {
-    "t": 14400,
+    "t": 13800,
     "desc": "z4 held (Cinder Steppe)"
+  },
+  {
+    "t": 14400,
+    "desc": "power ×10000"
+  },
+  {
+    "t": 14400,
+    "desc": "z5 held (The Doorstep)"
   },
   {
     "t": 14400,
     "desc": "depth 0.1%"
   },
   {
-    "t": 15000,
-    "desc": "power ×10000"
-  },
-  {
-    "t": 15000,
-    "desc": "z5 held (The Doorstep)"
-  },
-  {
-    "t": 15600,
-    "desc": "z3 held (Salt Flats)"
-  },
-  {
-    "t": 18000,
+    "t": 14400,
     "desc": "depth 1%"
   },
   {
-    "t": 18000,
+    "t": 14400,
     "desc": "depth 10%"
   },
   {
-    "t": 39600,
+    "t": 15000,
+    "desc": "z3 held (Salt Flats)"
+  },
+  {
+    "t": 32400,
     "desc": "depth 50%"
   },
   {
-    "t": 40200,
+    "t": 33000,
     "desc": "scars capped"
   },
   {
-    "t": 57000,
+    "t": 41400,
     "desc": "W1 broken (EV)"
   }
 ]
