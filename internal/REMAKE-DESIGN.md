@@ -498,6 +498,7 @@ shell chrome.
 | meta currency | tickets (support tickets nobody handles) |
 | spend surface | GM panel |
 | perk voice | session cap · idle timeout · lockout · repair scripts (finalized in GM rework) |
+| server privileges (ticket-bought bot lane, 2026-07-22) | priority execution (power) · rate-limit lift (speed) · auto-provisioning (generation) · reserved sessions (capacity) |
 | shell lines | PLAYERS counter · "[content not yet installed on this realm]" |
 
 ---
