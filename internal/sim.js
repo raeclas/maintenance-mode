@@ -19,7 +19,7 @@ import { newState } from "../state.js";
 import { getBoss } from "../bosses.js";
 import { expectedDepth, scarCap, cooldownMs, SCAR_RATE } from "../pull.js";
 import { ticketYield, buyFlag, buyUnlock, buyUtility, flagCost } from "../gm.js";
-import { derive } from "../stats.js";
+import { derive, SPEED_KNEE, BASE_HPS } from "../stats.js";
 import * as bots from "../bots.js";
 import * as farm from "../farm.js";
 import { contribution, SLOTS, SALVAGE_RATE } from "../gear.js";
@@ -63,7 +63,10 @@ while (t < MAX_S && !broken) {
     const B = S.bots;
     const P = derive(S); // zone squad DPS borrows player power
     const total = Math.floor(B.pop);
-    const speedDone = B.trained.hits >= bots.SPEED_TRAIN_CAP;
+    // optimal play stops speed at the knee — past it returns diminish (soft
+    // cap in stats.js), so copper/farm/atk win. Not a hard cap: just where a
+    // greedy bot rationally stops. Harder walls raise the knee → sim invests more.
+    const speedDone = B.trained.hits >= SPEED_KNEE - BASE_HPS;
     // training only gets what its unlocked bars can actually use (their
     // 50/s caps); everything else farms — NGU-optimal late game
     let trainWant = 0;

@@ -471,13 +471,12 @@ function render() {
   for (const bar of ["atk", "speed"]) {
     const B = b.bars[bar];
     const tiers = bots.TRAININGS[bar];
-    const laneCapped = bar === "speed" && b.trained.hits >= bots.SPEED_TRAIN_CAP;
     let laneRate = 0;
     tiers.forEach((t, i) => {
       const row = tierRows[bar][i];
       const locked = i >= B.unlocked;
       const squad = (b.alloc[bar][i] || 0) * scale;
-      const rate = locked || laneCapped ? 0 : Math.min(squad * quality, t.cost * bots.MAX_FILLS_PER_S) / t.cost;
+      const rate = locked ? 0 : Math.min(squad * quality, t.cost * bots.MAX_FILLS_PER_S) / t.cost;
       laneRate += rate * t.gain;
       row.classList.toggle("locked", locked);
       row.classList.toggle("active", !locked && squad > 0);
@@ -500,7 +499,7 @@ function render() {
     const trained = bar === "atk"
       ? `trained +${b.trained.atk < 1000 ? b.trained.atk.toFixed(2) : fmt(b.trained.atk)} ATK (+${laneRate.toFixed(3)}/s)`
       : `trained +${b.trained.hits.toFixed(4)} hits/s (+${laneRate.toFixed(5)}/s)`;
-    $(`bar${el}Info`).textContent = laneCapped ? `${trained} · LANE MAX` : trained;
+    $(`bar${el}Info`).textContent = trained;
   }
   $("autoSalvage").checked = state.gear.autoSalvage;
 

@@ -9,6 +9,7 @@ export const bosses = [
     title: "Warden of the First Door",
     hp: 80_000_000, // starting value: first pull ≈ 0.00075% — W1 is the long wall; break needs nightmare pushes (§3b, §5)
     windowS: 30,    // starting value: W1 enrage window (duration = gravitas dial)
+    speedKnee: 5.0, // hits/s where speed's returns start diminishing (= old cap; harder walls raise this to re-value speed)
     dialogue: {
       greet: [
         "A login. A real one. Six years, and the queue counter finally moved.",

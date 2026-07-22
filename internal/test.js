@@ -14,7 +14,7 @@ const { newState } = await import("../state.js");
 const { bosses, getBoss } = await import("../bosses.js");
 const pull = await import("../pull.js");
 const saves = await import("../saveSystem.js");
-const { derive } = await import("../stats.js");
+const { derive, softHits } = await import("../stats.js");
 const bots = await import("../bots.js");
 const farm = await import("../farm.js");
 const gear = await import("../gear.js");
@@ -30,15 +30,17 @@ const enh = await import("../enhance.js");
   assert.equal(pull.expectedDepth(d, b), 20 * 30 / 80_000_000); // 0.00075% exactly
 }
 
-// Stats: gear + bars feed the one-line formula; speed hard cap
+// Stats: gear + bars feed the one-line formula; speed SOFT cap (no hard cap)
 {
   const s = newState();
   s.bots.trained.atk = 80;
-  s.bots.trained.hits = 99; // over lane cap → clamped to 5.0 total
+  s.bots.trained.hits = 99; // raw 101 hits — soft cap, NOT clamped to 5.0
   s.gear.weapon = { slot: "weapon", ip: 100, plus: 10, zone: 1, name: "t" }; // 100×1.12^10
   const d = derive(s);
   assert.ok(Math.abs(d.atk - (10 + 80 + 100 * Math.pow(1.12, 10))) < 1e-9);
-  assert.equal(d.hitsPerSec, 5.0);
+  // above the knee (5.0), diminishing but well past the old 5.0 wall
+  assert.ok(Math.abs(d.hitsPerSec - softHits(2.0 + 99)) < 1e-9);
+  assert.ok(d.hitsPerSec > 5.0); // the point: never hard-capped
 }
 
 // Pull math: band endpoints + break chance edges (constants retuned)
@@ -138,15 +140,15 @@ const enh = await import("../enhance.js");
   bots.tick(s3, 60);
   assert.equal(s3.bots.bars.atk.unlocked, 2);
 
-  // speed lane cap: gains stop at SPEED_TRAIN_CAP
+  // speed lane: NO hard cap — training keeps gaining past the old 5.0 wall
   const s4 = newState();
   s4.bots.pop = 8;
   s4.bots.alloc.atk = [0, 0, 0, 0];
   s4.bots.alloc.speed = [8, 0, 0];
-  s4.bots.trained.hits = bots.SPEED_TRAIN_CAP;
+  s4.bots.trained.hits = 3.0; // already at the old cap
   bots.tick(s4, 10_000);
-  assert.equal(s4.bots.trained.hits, bots.SPEED_TRAIN_CAP);
-  assert.equal(s4.bots.bars.speed.fills[0], 0); // capped lane doesn't churn fills
+  assert.ok(s4.bots.trained.hits > 3.0);       // keeps climbing, never capped
+  assert.ok(s4.bots.bars.speed.fills[0] > 0);  // lane still churns fills
 }
 
 // Bots: per-zone squads, squad-DPS gates, chance drops, per-zone bans

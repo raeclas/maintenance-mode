@@ -33,7 +33,6 @@ export const BOT_SPD_FRAC = 0.10;
 // higher tiers raise the ceiling with bigger cost AND bigger gain.
 export const UNLOCK_FILLS = 10_000;
 export const MAX_FILLS_PER_S = 50;
-export const SPEED_TRAIN_CAP = 3.0; // trained hits/s: lane tops out at 2.0 + 5.0 total
 // Training names speak the BOTTER register (feature-pass gate 3): script
 // names a 2006 botting forum would trade.
 export const TRAININGS = {
@@ -211,7 +210,6 @@ function tickChunk(state, dtS, onEvent, rng) {
   const quality = botPower(b) * botSpeed(b);
   const scale = effScale(b);
   for (const bar of ["atk", "speed"]) {
-    if (bar === "speed" && b.trained.hits >= SPEED_TRAIN_CAP) continue; // lane capped
     const B = b.bars[bar];
     for (let i = 0; i < B.unlocked; i++) {
       const squad = (b.alloc[bar][i] || 0) * scale;
@@ -223,7 +221,7 @@ function tickChunk(state, dtS, onEvent, rng) {
         B.prog[i] -= t.cost;
         B.fills[i] = (B.fills[i] || 0) + 1;
         if (bar === "atk") b.trained.atk += t.gain;
-        else b.trained.hits = Math.min(SPEED_TRAIN_CAP, b.trained.hits + t.gain);
+        else b.trained.hits += t.gain; // no hard cap — speed's returns soft-cap in stats.js
         if (i === B.unlocked - 1 && B.unlocked < TRAININGS[bar].length && B.fills[i] >= UNLOCK_FILLS) {
           B.unlocked++;
         }
