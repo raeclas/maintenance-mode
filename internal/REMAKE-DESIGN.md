@@ -83,9 +83,19 @@ Additional gates: first-session power ≥ ×10 (≤1h), depth 1% by day 1.
 
 Lane budget at W1 break (~×18,250 DPS needed: fresh 73% + scars 27%):
 gear IP dominant (3 slots × z5 band × enhance ×2.0 at +10 EV plateau),
-trained ATK carries the early hours, trained Speed ×2.5 (hard cap),
+trained ATK carries the early hours, trained Speed ×2.5 (at W1 knee),
 zone ladder ×3 IP steps with DPS gates near each zone's gear ceiling.
 Tuning levers, in order: z5 IP band, scar cap 27→30%, bar cost constant.
+
+**[AMENDED 2026-07-22 — speed SOFT cap, design law: no hard caps on power
+stats.** Numbers always go up; a hard cap that zeros the next point makes
+investment feel wasted (user veto). Speed's old 5.0 hard cap is now a per-wall
+KNEE (`boss.speedKnee`, W1=5.0): linear below, diminishing above via
+`softHits(raw, knee) = knee×(raw/knee)^0.5` — always positive, never a wall.
+Harder walls raise the knee to re-value past speed ("re-steepen"). The taper
+is what guards the atk×speed quadratic runaway (law 5) in place of the old
+cap. `SPEED_CAP`/`SPEED_TRAIN_CAP` deleted. Mechanism caps (50/s engine,
+stash, GM rank caps, scar pity) are NOT stats and stay.]
 
 - **Enrage window** (not player death, not regen stall): depth moves every
   time power moves. Honest thermometer. Starting values: 30s at W1 scaling to
