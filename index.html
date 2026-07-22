@@ -21,6 +21,10 @@
       <div class="chipVal tickets"><b id="ticketsEl">0</b></div>
       <div class="chipLbl">tickets</div>
     </div>
+    <div class="chip" id="scriptChip" style="display:none">
+      <div class="chipVal scripts"><b id="scriptsEl">0</b></div>
+      <div class="chipLbl">scripts · ×<span id="scriptMultEl">1.00</span> dmg</div>
+    </div>
   </div>
 
   <nav id="tabs" class="game hidden">
@@ -78,6 +82,12 @@
       <span class="seg" id="enhSeg"></span>
       <span class="sub">to +</span><input type="number" id="enhPlus" min="0" max="20" step="1">
       <span class="sub" id="botEnhInfo"></span>
+    </div>
+
+    <h3>Ban Wave <span class="sub">— the anti-cheat notices the farm</span></h3>
+    <div id="banWave">
+      <div class="sub" id="banWaveInfo"></div>
+      <button id="banWaveBtn">Ban Wave</button>
     </div>
   </section>
 

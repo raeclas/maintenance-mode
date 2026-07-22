@@ -12,6 +12,7 @@ import * as farm from "./farm.js";
 import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, canReforge, reforgeCost, reforge, SLOTS, STASH_CAP } from "./gear.js";
 import { RARITIES, RARITY_BY_ID } from "./rarity.js";
 import { affixLabel } from "./affixes.js";
+import { banWave, pendingScripts, scriptMult, totalFills } from "./rebirth.js";
 import * as enh from "./enhance.js";
 import { fmt, fmtDepth } from "./format.js";
 
@@ -280,6 +281,25 @@ for (const slot of SLOTS) {
   $(`rfd_${slot}`).addEventListener("click", () => { delete pendingReforge[slot]; });
 }
 
+// Ban Wave — armed two-click confirm (irreversible reset of the bot stratum)
+let banArmed = false;
+let banTimer = 0;
+$("banWaveBtn").addEventListener("click", () => {
+  if (!banArmed) {
+    if (pendingScripts(state) <= 0) return;
+    banArmed = true;
+    clearTimeout(banTimer);
+    banTimer = setTimeout(() => { banArmed = false; }, 4000); // disarm if not confirmed
+    return;
+  }
+  banArmed = false;
+  clearTimeout(banTimer);
+  const gained = banWave(state);
+  if (gained > 0) log(`⚡ Ban Wave — farm reset · banked +${fmt(gained)} scripts (×${scriptMult(state).toFixed(2)} damage)`);
+  stashDirty = true;
+  save(state);
+});
+
 $("stashToggle").addEventListener("click", () => {
   const l = $("stashList");
   l.style.display = l.style.display === "none" ? "" : "none";
@@ -392,6 +412,14 @@ function render() {
   }
   $("copperEl").textContent = fmt(state.copper);
   $("ticketsEl").textContent = fmt(state.tickets);
+  { // scripts chip appears once the first Ban Wave has been earned
+    const show = (state.scripts || 0) > 0 || (state.rebirths || 0) > 0;
+    $("scriptChip").style.display = show ? "" : "none";
+    if (show) {
+      $("scriptsEl").textContent = fmt(state.scripts);
+      $("scriptMultEl").textContent = scriptMult(state).toFixed(2);
+    }
+  }
   { // copper rate: numbers should always be visibly going somewhere
     let cps = 0;
     const sc = bots.effScale(state.bots);
@@ -404,6 +432,17 @@ function render() {
   { // NGU-style ticker: FREE bots (unallocated) vs capacity — allocation drains it
     $("resBots").textContent = `${bots.freeBots(state.bots).toFixed(1)} / ${bots.capacity(state.bots, state.gm.cap)}`;
     $("resRate").textContent = `+${bots.createRate(state.bots).toFixed(1)}`;
+  }
+  { // Ban Wave panel: payout preview + what survives (attachment reassurance)
+    const pend = pendingScripts(state);
+    const btn = $("banWaveBtn");
+    $("banWaveInfo").innerHTML = banArmed
+      ? `<span class="warn">wipes bots · training · copper. Keeps gear, scrap, tickets, scripts, story. Bank <b>+${fmt(pend)}</b> scripts?</span>`
+      : `<b>+${fmt(pend)}</b> scripts ready (from ${fmt(totalFills(state))} training fills)` +
+        (state.rebirths ? ` · ${fmt(state.rebirths)} Ban Waves` : "");
+    btn.disabled = pend <= 0 && !banArmed;
+    btn.textContent = banArmed ? "confirm Ban Wave" : "Ban Wave";
+    btn.classList.toggle("armed", banArmed);
   }
 
   // pull row

@@ -20,6 +20,7 @@ const farm = await import("../farm.js");
 const gear = await import("../gear.js");
 const rarity = await import("../rarity.js");
 const affixes = await import("../affixes.js");
+const rebirth = await import("../rebirth.js");
 const enh = await import("../enhance.js");
 
 // Stats: formula lock at starting values (the intro beat number)
@@ -320,6 +321,58 @@ const enh = await import("../enhance.js");
   const d0 = derive(newState()), d1 = derive(s2);
   assert.ok(d1.atk > d0.atk + 100);          // base ip + flat atk affix
   assert.ok(d1.hitsPerSec > d0.hitsPerSec);  // hits affix lifts speed
+}
+
+// Ban Wave (rebirth): √ payout, player-damage mult, disposable-stratum reset,
+// attachment (gear/tickets/rig ranks survive), allocation strategy persists
+{
+  const s = newState();
+  s.bots.bars.atk.fills = [100, 0, 0, 0];
+  s.bots.bars.speed.fills = [44, 0, 0];         // 144 fills → √ = 12 scripts
+  assert.equal(rebirth.totalFills(s), 144);
+  assert.equal(rebirth.pendingScripts(s), 12);
+
+  // √ starves spam: doubling fills pays far less than double
+  const sm = newState(); sm.bots.bars.atk.fills = [288, 0, 0, 0];
+  assert.ok(rebirth.pendingScripts(sm) < 2 * rebirth.pendingScripts(s));
+
+  // scriptMult is a displayed damage term; derive() scales with it
+  s.scripts = 50;
+  assert.ok(Math.abs(rebirth.scriptMult(s) - 1.5) < 1e-9);
+  s.gear.weapon = { slot: "weapon", ip: 100, plus: 0, rarity: "common", affixes: [], name: "t" };
+  const before = derive({ ...s, scripts: 0 }).atk;
+  const after = derive(s).atk;
+  assert.ok(Math.abs(after - before * 1.5) < 1e-6); // +50% damage from 50 scripts
+
+  // set up things that MUST survive, and a farm that must reset
+  s.scripts = 0; // fresh count for the bank math
+  s.tickets = 999; s.copper = 5000;
+  s.gm.dmg = 3; s.bots.powerRank = 7;           // GM perk + rig rank persist
+  s.bots.pop = 40; s.bots.trained.atk = 500; s.bots.trained.hits = 2;
+  s.bots.alloc.atk = [10, 5, 0, 0]; s.bots.alloc.zones = [3, 2, 0, 0, 0]; s.bots.alloc.enh = 4;
+  s.gear.stash = [{ slot: "charm", ip: 9, plus: 0, rarity: "rare", affixes: [], name: "keep" }];
+
+  const gained = rebirth.banWave(s);
+  assert.equal(gained, 12);
+  assert.equal(s.scripts, 12);                  // banked
+  assert.equal(s.rebirths, 1);
+  // disposable stratum wiped
+  assert.equal(s.copper, 0);
+  assert.equal(s.bots.pop, newState().bots.pop);
+  assert.equal(s.bots.trained.atk, 0);
+  assert.equal(s.bots.bars.atk.fills.reduce((a, b) => a + b, 0), 0);
+  // attachment: gear, tickets, GM perks, rig ranks all survive
+  assert.equal(s.tickets, 999);
+  assert.equal(s.gm.dmg, 3);
+  assert.equal(s.bots.powerRank, 7);
+  assert.equal(s.gear.stash.length, 1);
+  // allocation strategy persists (training collapsed to tier 0, zones/enh kept)
+  assert.equal(s.bots.alloc.atk[0], 15);        // 10+5 collapsed onto tier 0
+  assert.deepEqual(s.bots.alloc.zones, [3, 2, 0, 0, 0]);
+  assert.equal(s.bots.alloc.enh, 4);
+
+  // no free scripts: a fresh state can't Ban Wave for nothing
+  assert.equal(rebirth.banWave(newState()), 0);
 }
 
 // Enhance: zones, checkpoint falls, failstacks, safeguard, cost gating

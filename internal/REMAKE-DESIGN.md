@@ -299,7 +299,18 @@ anonymity is the attachment law by construction.
   copy is functional; the activity log is a terse ticker. Enhance feedback
   is VISUAL (row glow/flicker, shake by band), never text spam.
 
-### 7b. Rebirth — "Ban Wave" [DESIGNED 2026-07-21, build next slice]
+### 7b. Rebirth — "Ban Wave" [BUILT 2026-07-22 — MVP: player-damage mult]
+
+**Built as:** Scripts = √(training fills this run); permanent player-damage
+×(1+1%/script) — a DISPLAYED term (law 5). Player-coupled bots mean it lifts
+the boss fight AND the farm at once (resolved the old "which lane" question).
+Reset wipes bots/bars/trained/copper ONLY; KEEPS gear/scrap/rig-ranks/tickets/
+GM/scars/titles/wall AND the allocation strategy (bots auto-refill it as they
+regrow — the re-climb tedium fix). √ payout starves spam. Automation spends +
+the boss Trophy-set collection (the loot destination) are the NEXT slices.
+Original design below.
+
+### 7b (original). Rebirth — "Ban Wave" [DESIGNED 2026-07-21]
 
 Player-triggered, never scheduled (no-obligation law). The anti-cheat
 script finally notices the farm.
@@ -502,6 +513,7 @@ training, automation.
 | ATK trainings | swing macro → combo macro → cancel-weave script → frame-perfect script |
 | SPEED trainings | autoclicker → turbo clicker → no-delay hack |
 | verbs | park · farm · mail(ed) · spoofing (reserved) |
+| rebirth (2026-07-22) | Ban Wave (the reset event) · scripts (prestige currency, permanent +damage) |
 
 **The dying server** (admin/ops decay) — owns: meta currency, GM perks,
 shell chrome.

@@ -5,6 +5,7 @@
 import { contribution, SLOTS } from "./gear.js";
 import { AFFIXES } from "./affixes.js";
 import { gmDmgMult, gmHasteMult } from "./gm.js";
+import { scriptMult } from "./rebirth.js";
 import { getBoss } from "./bosses.js";
 
 export const BASE_ATK = 10;
@@ -40,7 +41,7 @@ export function derive(state) {
       else if (a.lane === "farm") copperPct += af.value;
     }
   }
-  const atk = (BASE_ATK + state.bots.trained.atk + gearAtk) * (1 + atkPct / 100) * gmDmgMult(state);
+  const atk = (BASE_ATK + state.bots.trained.atk + gearAtk) * (1 + atkPct / 100) * gmDmgMult(state) * scriptMult(state);
   const knee = getBoss(state.wall)?.speedKnee ?? SPEED_KNEE;
   const hitsPerSec = softHits(BASE_HPS + state.bots.trained.hits + hitsFlat, knee) * (1 + hastePct / 100) * gmHasteMult(state);
   return { atk, hitsPerSec, copperMult: 1 + copperPct / 100 };

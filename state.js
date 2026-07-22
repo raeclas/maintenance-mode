@@ -7,6 +7,8 @@ export function newState() {
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     copper: 0,
     tickets: 0,    // meta currency: damaging Content files support tickets nobody handles
+    scripts: 0,    // Ban Wave prestige currency — permanent +damage, survives rebirth
+    rebirths: 0,   // lifetime Ban Waves (log/flavor)
     // GM tab: flags (uncapped, era-priced), unlocks (booleans), utility (rank-capped)
     gm: { dmg: 0, haste: 0, scheduler: false, idleProc: false, schedulerOn: true, cap: 0, offline: 0, cooldown: 0, scar: 0 },
     failstacks: 0, // Luck's mechanical body — every fail banks +1%, success spends the bank

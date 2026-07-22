@@ -64,6 +64,8 @@ export function load(state) {
   state.unlocked = s.unlocked ?? (s.boss?.pulls > 0); // v1 save mid-siege: keep systems open
   state.copper = s.copper ?? 0;
   state.tickets = s.tickets ?? 0;
+  state.scripts = s.scripts ?? 0;   // v9 Ban Wave prestige currency
+  state.rebirths = s.rebirths ?? 0;
   state.gm = { ...d.gm, ...(s.gm || {}) };
   state.failstacks = s.failstacks ?? 0;
   state.titles = Array.isArray(s.titles) ? s.titles : [];
