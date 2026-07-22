@@ -295,10 +295,41 @@ $("banWaveBtn").addEventListener("click", () => {
   banArmed = false;
   clearTimeout(banTimer);
   const gained = banWave(state);
-  if (gained > 0) log(`⚡ Ban Wave — farm reset · banked +${fmt(gained)} scripts (×${scriptMult(state).toFixed(2)} damage)`);
+  if (gained > 0) {
+    log(`⚡ Ban Wave #${fmt(state.rebirths)} — farm reset · banked +${fmt(gained)} scripts (×${scriptMult(state).toFixed(2)} damage)`);
+    if (state.rebirths === 1) openHelp("banwave"); // first-time explainer popup
+  }
   stashDirty = true;
   save(state);
 });
+
+// Help menu — a modal that doubles as the first-time explainer popup. Topics
+// are data; add an entry to grow it. openHelp(id) scrolls to that topic.
+const HELP = [
+  {
+    id: "banwave",
+    title: "Ban Wave",
+    body: [
+      "The anti-cheat finally notices your farm and bans the bots.",
+      "You LOSE the disposable bot layer — bots, training progress and copper reset to a fresh start.",
+      "You KEEP everything your character owns: gear, plusses, scrap, tickets, GM perks, scars, titles and boss progress. None of it ever resets.",
+      "In return you bank <b>Scripts</b> = √(training fills this run). Every Script permanently adds <b>+1% damage</b>, and Scripts never reset.",
+      "Because your bots borrow your power, more damage means a faster farm too — so each Ban Wave you rebuild quicker and climb higher than before.",
+      "Bank when the √ payout is worth the reset: pushing twice as long pays less than twice the Scripts.",
+    ],
+  },
+];
+function openHelp(topicId) {
+  $("helpContent").innerHTML = HELP.map(h =>
+    `<section class="helpTopic" id="help_${h.id}"><h3>${h.title}</h3>${h.body.map(p => `<p>${p}</p>`).join("")}</section>`
+  ).join("");
+  $("helpModal").style.display = "";
+  if (topicId) $(`help_${topicId}`)?.scrollIntoView();
+}
+function closeHelp() { $("helpModal").style.display = "none"; }
+$("helpBtn").addEventListener("click", () => openHelp());
+$("helpClose").addEventListener("click", closeHelp);
+$("helpModal").addEventListener("click", e => { if (e.target === $("helpModal")) closeHelp(); });
 
 $("stashToggle").addEventListener("click", () => {
   const l = $("stashList");
@@ -439,7 +470,7 @@ function render() {
     $("banWaveInfo").innerHTML = banArmed
       ? `<span class="warn">wipes bots · training · copper. Keeps gear, scrap, tickets, scripts, story. Bank <b>+${fmt(pend)}</b> scripts?</span>`
       : `<b>+${fmt(pend)}</b> scripts ready (from ${fmt(totalFills(state))} training fills)` +
-        (state.rebirths ? ` · ${fmt(state.rebirths)} Ban Waves` : "");
+        ` · <b>${fmt(state.rebirths || 0)}</b> done`;
     btn.disabled = pend <= 0 && !banArmed;
     btn.textContent = banArmed ? "confirm Ban Wave" : "Ban Wave";
     btn.classList.toggle("armed", banArmed);

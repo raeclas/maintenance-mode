@@ -424,3 +424,57 @@ footer { text-align: center; margin-top: 18px; }
 #banWaveInfo { font-size: 11px; font-family: monospace; flex: 1; min-width: 180px; }
 #banWaveInfo .warn { color: #d08a3e; }
 #banWaveBtn.armed { border-color: #d0553e; color: #d0553e; }
+
+/* --- Help modal + button --- */
+.helpBtn {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--dim);
+  font-family: Georgia, serif;
+  font-size: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  align-self: center;
+  margin-left: auto;
+}
+.helpBtn:hover { color: var(--gold); border-color: var(--gold); }
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+.modalBox {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  padding: 18px 20px;
+  max-width: 460px;
+  width: 100%;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+.modalBox h2 { color: var(--gold); font-variant: small-caps; letter-spacing: .1em; margin: 0 0 10px; font-size: 16px; }
+.modalClose {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.modalClose:hover { color: var(--gold); }
+.helpTopic { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+.helpTopic:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+.helpTopic h3 { color: #9a8a5a; font-variant: small-caps; letter-spacing: .08em; margin: 0 0 6px; font-size: 13px; }
+.helpTopic p { font-size: 12px; line-height: 1.5; margin: 0 0 8px; color: #b9b2a0; }
+.helpTopic b { color: var(--gold); font-weight: normal; }
