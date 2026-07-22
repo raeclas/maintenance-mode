@@ -240,12 +240,15 @@ let pendingReforge = {}; // transient per-slot candidate affixes (preview-then-c
 for (const slot of SLOTS) {
   const div = document.createElement("div");
   div.className = "slot";
-  div.innerHTML = `<div class="slotName">${slot}</div><div class="slotItem" id="si_${slot}">—</div>
-    <button id="se_${slot}">enhance</button><span class="enhInfo" id="sei_${slot}"></span>
-    <button id="rf_${slot}">reforge</button><span class="enhInfo" id="rfi_${slot}"></span>
+  div.innerHTML = `<div class="slotName">${slot}</div>
+    <div class="slotItem" id="si_${slot}">—</div>
+    <div class="slotControls">
+      <span class="ctlGroup"><button id="se_${slot}">enhance</button><span class="enhInfo" id="sei_${slot}"></span></span>
+      <span class="ctlGroup"><button id="rf_${slot}">reforge</button><span class="enhInfo" id="rfi_${slot}"></span></span>
+    </div>
     <div class="reforgeCand" id="rfc_${slot}" style="display:none">
       <span id="rfcl_${slot}"></span>
-      <button id="rfk_${slot}">keep</button><button id="rfr_${slot}">reroll</button><button id="rfd_${slot}">discard</button>
+      <span class="ctlGroup"><button id="rfk_${slot}">keep</button><button id="rfr_${slot}">reroll</button><button id="rfd_${slot}">discard</button></span>
     </div>`;
   $("slots").appendChild(div);
   slotEls[slot] = div;
@@ -310,6 +313,8 @@ function renderStash() {
     const rar = RARITY_BY_ID[item.rarity] || RARITIES[0];
     const affixes = (item.affixes || []).map(a => affixLabel(a)).join(" · ") || "—";
     const row = document.createElement("div");
+    row.className = "stashRow";
+    row.style.borderLeftColor = rar.color;
     row.innerHTML =
       `<span><span class="itemName" style="color:${rar.color}">${item.lock ? "🔒 " : ""}${item.name}</span>` +
         ` · ${item.slot} · IP ${fmt(item.ip)}${item.plus ? " +" + item.plus : ""}` +
@@ -544,9 +549,10 @@ function render() {
   }
   if (document.activeElement !== $("keepRarity")) $("keepRarity").value = state.gear.keepRarity;
   if (document.activeElement !== $("keepIp")) $("keepIp").value = state.gear.keepIp;
-  $("scrapWallet").textContent = RARITIES
-    .filter(r => (state.scrap[r.id] || 0) > 0)
-    .map(r => `${fmt(state.scrap[r.id])} ${r.name.toLowerCase()}`).join(" · ") || "no scrap yet";
+  const owned = RARITIES.filter(r => (state.scrap[r.id] || 0) > 0);
+  $("scrapWallet").innerHTML = owned.length
+    ? owned.map(r => `<span class="scrapPill" style="border-color:${r.color};color:${r.color}">${fmt(state.scrap[r.id])} ${r.name.toLowerCase()}</span>`).join("")
+    : `<span class="muted">no scrap yet — salvage drops to earn it</span>`;
 
   // bot enhance squad
   for (const btn of $("enhSeg").children) btn.classList.toggle("active", btn.dataset.slot === b.enhTarget.slot);
@@ -588,12 +594,19 @@ function render() {
     const si = $(`si_${slot}`);
     if (item) {
       const rar = RARITY_BY_ID[item.rarity] || RARITIES[0];
-      const affixes = (item.affixes || []).map(a => affixLabel(a)).join(" · ");
+      const lines = (item.affixes || []).map(a => `<div class="affixItem">${affixLabel(a)}</div>`).join("");
       si.innerHTML =
-        `<span class="itemName" style="color:${rar.color}">${item.name}</span>` +
-        ` · IP ${fmt(item.ip)} ${item.plus ? `+${item.plus}` : ""} → ${fmt(contribution(item))} ATK` +
-        (affixes ? `<span class="affixLine">${affixes}</span>` : "");
-    } else si.textContent = "—";
+        `<div class="itemHeader">` +
+          `<span class="itemName" style="color:${rar.color}">${item.name}</span>` +
+          `<span class="rarityTag" style="color:${rar.color}">${rar.name}</span>` +
+          `<span class="itemMeta">IP ${fmt(item.ip)}${item.plus ? ` +${item.plus}` : ""} · ${fmt(contribution(item))} ATK</span>` +
+        `</div>` +
+        (lines ? `<div class="affixList">${lines}</div>` : `<div class="affixList muted">no affixes</div>`);
+      slotEls[slot].style.borderLeftColor = rar.color;
+    } else {
+      si.textContent = "—";
+      slotEls[slot].style.borderLeftColor = "";
+    }
     si.className = "slotItem" + (item ? ` tier-${enh.zone(item.plus)}` : "");
     const btn = $(`se_${slot}`);
     btn.disabled = !item || item.plus >= enh.MAX_PLUS;
