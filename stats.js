@@ -46,5 +46,5 @@ export function derive(state) {
   const atk = (BASE_ATK + state.bots.trained.atk + gearAtk) * (1 + atkPct / 100) * (1 + tm.atkPct / 100) * gmDmgMult(state) * scriptMult(state) * tm.dmgMult;
   const knee = getBoss(state.wall)?.speedKnee ?? SPEED_KNEE;
   const hitsPerSec = softHits(BASE_HPS + state.bots.trained.hits + hitsFlat, knee) * (1 + hastePct / 100) * (1 + tm.hastePct / 100) * gmHasteMult(state);
-  return { atk, hitsPerSec, copperMult: 1 + copperPct / 100 };
+  return { atk, hitsPerSec, copperMult: 1 + (copperPct + tm.copperPct) / 100 };
 }

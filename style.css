@@ -496,21 +496,28 @@ footer { text-align: center; margin-top: 18px; }
 }
 #descendBtn:hover { background: var(--gold); color: #0d0d10; }
 
-/* --- boss Trophy cabinet --- */
+/* --- boss Trophy cabinet: one 7-piece set per Warden --- */
 #trophySet { color: var(--gold); font-family: monospace; font-size: 11px; }
-#trophyCabinet { display: flex; flex-direction: column; gap: 6px; }
-.trophy {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 2px 10px;
+#trophyCabinet { display: flex; flex-direction: column; gap: 8px; }
+.trophySet {
   padding: 6px 10px;
   border-left: 3px solid var(--line);
   background: #17171c;
-  font-size: 12px;
 }
-.trophy.owned { border-left-color: var(--gold); }
-.trophy .trophyName { font-weight: 600; color: #b9b2a0; }
-.trophy.owned .trophyName { color: var(--gold); }
-.trophy .trophyStat { text-align: right; font-family: monospace; color: #6bbf7a; }
-.trophy.locked .trophyStat { color: #55555e; }
-.trophy .trophyFlavor { grid-column: 1 / -1; font-size: 11px; font-style: italic; color: #6e6e78; }
+.trophySet.complete { border-left-color: var(--gold); }
+.trophySetHead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+.trophySetName { font-weight: 600; color: #b9b2a0; font-size: 12px; }
+.trophySet.complete .trophySetName { color: var(--gold); }
+.trophySetProg { font-family: monospace; font-size: 11px; color: #8a8f9c; }
+.trophySet.complete .trophySetProg { color: var(--gold); }
+.pips { display: flex; flex-wrap: wrap; gap: 4px; }
+.pip {
+  font-size: 10px;
+  font-family: monospace;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: help;
+}
+.pip.own { color: var(--gold); border-color: var(--gold); }
+.pip.miss { color: #4a4a52; }

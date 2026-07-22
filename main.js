@@ -2,8 +2,8 @@
 import { newState } from "./state.js";
 import { load, save, wipe } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
-import { getBoss } from "./bosses.js";
-import { startPull, resolvePull, pullDone, currentDepth, canPull, band, pullsToBreakEV, scarCap, cooldownMs, processIdleAttempts } from "./pull.js";
+import { bosses, getBoss } from "./bosses.js";
+import { startPull, resolvePull, resolveFarm, pullDone, currentDepth, canPull, band, pullsToBreakEV, scarCap, cooldownMs, processIdleAttempts } from "./pull.js";
 import { FLAGS, UNLOCKS, UTILITY, flagCost, utilityCost, buyFlag, buyUnlock, buyUtility, gmDmgMult, gmHasteMult, ticketYield, BREAK_TICKETS } from "./gm.js";
 import { initBattle, renderBattle, notifyResult, notifyEnhance } from "./battle.js";
 import { derive } from "./stats.js";
@@ -13,7 +13,7 @@ import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMa
 import { RARITIES, RARITY_BY_ID } from "./rarity.js";
 import { affixLabel } from "./affixes.js";
 import { banWave, pendingScripts, scriptMult, totalFills } from "./rebirth.js";
-import { awardTrophy, allTrophyWalls, ownsTrophy, setComplete, SET_BONUS } from "./trophies.js";
+import { grantBreakPiece, rollFarmDrop, bossHasSet, PARTS, pieceOf, ownedIdxs, ownsPiece, setComplete, setCount, SET_BONUS } from "./trophies.js";
 import * as enh from "./enhance.js";
 import { fmt, fmtDepth } from "./format.js";
 
@@ -53,6 +53,8 @@ function advanceWall() {
   log(`— descending to ${boss.name}, ${boss.title}`);
   save(state);
 }
+
+const laneWord = lane => lane === "atk" ? "ATK" : lane === "speed" ? "haste" : "copper";
 
 function log(msg) {
   const div = document.createElement("div");
@@ -109,8 +111,8 @@ if (loaded && state.unlocked && state.lastSeen) {
       if (r.attempts) log(`idle processing: ${r.attempts} attempts · best ${fmtDepth(r.best)} · +${fmt(r.tickets)} tickets`);
       if (r.broke) {
         log(`★ W${state.wall} BROKEN while you were away`);
-        const t = awardTrophy(state, state.wall);
-        if (t) log(`🏆 Trophy: ${t.name}`);
+        const piece = grantBreakPiece(state, state.wall);
+        if (piece) log(`🏆 ${piece.name} recovered`);
       }
     }
     save(state);
@@ -431,27 +433,41 @@ function tick() {
     startPull(state, now);
   }
   if (state.pull && pullDone(state, now)) {
-    const depth = resolvePull(state, now);
-    notifyResult(depth, state.boss.broken);
-    const yieldT = ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0);
-    state.tickets += yieldT;
-    if (state.boss.broken) {
-      say("break");
-      log(`★ W${state.wall} BROKEN — ${boss.name} · attempt ${state.boss.pulls} · +${fmt(yieldT)} tickets`);
-      const t = awardTrophy(state, state.wall); // the boss's unique piece drops on the break
-      if (t) { log(`🏆 Trophy: ${t.name} (+${t.pct}% ${t.lane === "atk" ? "ATK" : "haste"})`); stashDirty = true; }
-    } else {
-      // milestone-only dialogue: intro fail, first near-miss. Silence otherwise.
-      if (state.boss.pulls === 1) say("fail_hopeless");
-      else if (depth >= 0.95 && !state.boss.nearSaid) { state.boss.nearSaid = true; say("fail_near"); }
-      log(`attempt ${state.boss.pulls}: ${fmtDepth(depth)} · scars ${fmtDepth(state.boss.scars)} · +${yieldT} tickets`);
-      if (!state.unlocked) {
-        state.unlocked = true;
-        reveal();
-        log("— new panels: TRAINING · GRIND · PLAYER");
+    if (state.pull.farm) {
+      // Farm status: re-fought a broken boss for its set. Kill = tickets +
+      // a chance at a not-yet-owned piece; completing the set lights the bonus.
+      const y = resolveFarm(state, now);
+      const piece = rollFarmDrop(state, state.wall);
+      if (piece) {
+        log(`🏆 ${piece.name} dropped! +${piece.pct}% ${laneWord(piece.lane)} · +${fmt(y)} tickets`);
+        if (setComplete(state, state.wall)) log(`★ ${boss.set.name} SET COMPLETE — ×${(1 + SET_BONUS).toFixed(2)} damage`);
+      } else {
+        log(`farmed ${boss.name}: no drop · +${fmt(y)} tickets`);
       }
+      save(state);
+    } else {
+      const depth = resolvePull(state, now);
+      notifyResult(depth, state.boss.broken);
+      const yieldT = ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0);
+      state.tickets += yieldT;
+      if (state.boss.broken) {
+        say("break");
+        log(`★ W${state.wall} BROKEN — ${boss.name} · attempt ${state.boss.pulls} · +${fmt(yieldT)} tickets`);
+        const piece = grantBreakPiece(state, state.wall); // guaranteed first set piece
+        if (piece) log(`🏆 ${piece.name} recovered · +${piece.pct}% ${laneWord(piece.lane)} — re-Attempt to farm the rest`);
+      } else {
+        // milestone-only dialogue: intro fail, first near-miss. Silence otherwise.
+        if (state.boss.pulls === 1) say("fail_hopeless");
+        else if (depth >= 0.95 && !state.boss.nearSaid) { state.boss.nearSaid = true; say("fail_near"); }
+        log(`attempt ${state.boss.pulls}: ${fmtDepth(depth)} · scars ${fmtDepth(state.boss.scars)} · +${yieldT} tickets`);
+        if (!state.unlocked) {
+          state.unlocked = true;
+          reveal();
+          log("— new panels: TRAINING · GRIND · PLAYER");
+        }
+      }
+      save(state);
     }
-    save(state);
   }
   if (now - lastSave > 5000) { lastSave = now; save(state); }
 }
@@ -507,8 +523,14 @@ function render() {
 
   // pull row
   const pb = $("pullBtn");
+  pb.textContent = "Attempt"; // farm states relabel to "Farm" below
   $("ticketGain").textContent = "";
-  if (state.pull) {
+  if (state.pull && state.pull.farm) {
+    $("depth").textContent = "OPEN";
+    pb.disabled = true;
+    pb.textContent = "Farm";
+    $("cooldown").textContent = `farming ${boss.name}… ${Math.max(0, (state.pull.endsAt - now) / 1000).toFixed(0)}s`;
+  } else if (state.pull) {
     const dCur = Math.min(1, currentDepth(state, now));
     $("depth").textContent = fmtDepth(dCur);
     pb.disabled = true;
@@ -520,11 +542,20 @@ function render() {
     const total = ticketYield(dEnd) + (dEnd >= 1 ? BREAK_TICKETS : 0);
     const bonus = Math.max(0, total - base);
     $("ticketGain").textContent = `tickets ${fmt(base)}${bonus > 0 ? ` (+${fmt(bonus)})` : ""}`;
-  } else if (state.boss.broken) {
-    $("depth").textContent = "100%";
+  } else if (state.boss.broken && !canPull(state, now)) {
+    // farming, on cooldown between attempts
+    $("depth").textContent = "OPEN";
     pb.disabled = true;
-    pb.textContent = "THE DOOR STANDS OPEN";
-    $("cooldown").textContent = "W2 — [content not yet installed on this realm]";
+    pb.textContent = "Farm";
+    $("cooldown").textContent = `farm again in ${Math.ceil((state.cooldownUntil - now) / 1000)}s`;
+  } else if (state.boss.broken) {
+    // Farm status: the door stands open — re-Attempt for set pieces
+    $("depth").textContent = "OPEN";
+    pb.disabled = false;
+    pb.textContent = "Farm";
+    $("cooldown").textContent = bossHasSet(state.wall)
+      ? `set ${setCount(state, state.wall)}/${PARTS.length} · farm for pieces`
+      : "farm for tickets";
   } else if (!canPull(state, now)) {
     $("depth").textContent = fmtDepth(state.boss.bestDepth);
     pb.disabled = true;
@@ -744,21 +775,24 @@ function render() {
   $("titles").style.display = state.titles.length ? "" : "none";
   $("titles").textContent = state.titles.length ? `Titles: ${state.titles.join(" · ")}` : "";
 
-  { // Trophy cabinet: owned pieces active, locked ones name their Warden
-    const walls = allTrophyWalls();
-    const owned = walls.filter(w => ownsTrophy(state, w)).length;
-    $("trophySet").textContent = walls.length
-      ? (setComplete(state)
-          ? `SET COMPLETE · ×${(1 + SET_BONUS).toFixed(2)} damage`
-          : `${owned}/${walls.length} · full set → ×${(1 + SET_BONUS).toFixed(2)} damage`)
-      : "";
-    $("trophyCabinet").innerHTML = walls.map(w => {
-      const bw = getBoss(w), t = bw.trophy, own = ownsTrophy(state, w);
-      const stat = t.lane === "atk" ? `+${t.pct}% ATK` : `+${t.pct}% haste`;
-      return own
-        ? `<div class="trophy owned"><span class="trophyName">🏆 ${t.name}</span><span class="trophyStat">${stat}</span><span class="trophyFlavor">${t.flavor}</span></div>`
-        : `<div class="trophy locked"><span class="trophyName">◈ ??? </span><span class="trophyStat">${stat}</span><span class="trophyFlavor">break ${bw.name}, ${bw.title}</span></div>`;
+  { // Trophy cabinet: one 7-piece set per Warden. Owned pieces glow; unowned
+    // are silhouettes. Break for the first, farm the boss for the rest.
+    const walls = bosses.filter(b => b.set).map(b => b.wall);
+    let done = 0;
+    const html = walls.map(w => {
+      const bw = getBoss(w), have = setCount(state, w), complete = setComplete(state, w);
+      if (complete) done++;
+      const pips = PARTS.map((_, i) => {
+        const p = pieceOf(w, i), own = ownsPiece(state, w, i);
+        return `<span class="pip ${own ? "own" : "miss"}" title="${p.name} · +${p.pct}% ${laneWord(p.lane)}">${own ? p.part : "◈"}</span>`;
+      }).join("");
+      return `<div class="trophySet ${complete ? "complete" : ""}">` +
+        `<div class="trophySetHead"><span class="trophySetName">${bw.set.name}</span>` +
+        `<span class="trophySetProg">${have}/${PARTS.length}${complete ? ` · ×${(1 + SET_BONUS).toFixed(2)} dmg` : ""}</span></div>` +
+        `<div class="pips">${pips}</div></div>`;
     }).join("");
+    $("trophySet").textContent = walls.length ? `${done}/${walls.length} sets complete` : "";
+    $("trophyCabinet").innerHTML = html;
   }
 
   if (stashDirty) renderStash();

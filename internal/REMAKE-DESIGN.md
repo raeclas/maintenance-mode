@@ -505,6 +505,7 @@ mobs, gear, boss fight, enhance verbs, titles.
 | boss verbs/nouns | Attempt · enrage · depth · scars · break · title · safeguard |
 | gear rarities (2026-07-22) | Common · Uncommon · Rare · Epic · Legendary · Mythic · Origin |
 | gear verbs/nouns (2026-07-22) | affix · Reforge · Scrap (tiered salvage material) · Salvage · Loot filter (keep ≥ rarity/ip) |
+| boss Trophy sets (2026-07-22) | one 7-piece set per Warden (door parts: Hinge · Bolt · Latch · Keyward · Lintel · Threshold · Frame) · set names "The First/Second Door" · Farm status (re-Attempt a broken boss for pieces) |
 | W1 | Vess, Warden of the First Door |
 
 **The botter's toolkit** (2006 botting-forum speak) — owns: bots, rig,

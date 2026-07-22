@@ -387,31 +387,43 @@ const enh = await import("../enhance.js");
   assert.deepEqual(newState().cleared, []); // cleared-list monument starts empty
 }
 
-// Boss Trophy set: award on break, permanent stat boost, set bonus, survives Ban Wave
+// Boss Trophy SETS: 7-piece per boss, break gives one, farm drops the rest,
+// full set → bonus, permanent boost, survives Ban Wave
 {
   const s = newState();
-  assert.deepEqual(s.trophies, []);
-  const before = derive(s).atk;
+  assert.deepEqual(s.setPieces, {});
+  assert.equal(trophies.PARTS.length, 7);
 
-  // award W1's trophy — idempotent, boosts the ATK lane
-  const t = trophies.awardTrophy(s, 1);
-  assert.ok(t && t.name === "Vess's Hinge-Key");
-  assert.deepEqual(s.trophies, [1]);
-  assert.equal(trophies.awardTrophy(s, 1), null);      // idempotent
-  assert.ok(derive(s).atk > before * 1.14);            // +15% ATK, no set bonus yet
-  assert.ok(!trophies.setComplete(s));                 // W2 still missing
+  // break grants exactly one guaranteed piece of the wall's set
+  const first = trophies.grantBreakPiece(s, 1);
+  assert.ok(first && first.wall === 1);
+  assert.equal(trophies.setCount(s, 1), 1);
+  assert.ok(!trophies.setComplete(s, 1));
 
-  // complete the set (both walls) → the ×1.5 damage capstone lights up
-  const partial = derive(s).atk;
-  trophies.awardTrophy(s, 2);                           // Maren's Seal (haste lane)
-  assert.ok(trophies.setComplete(s));
-  assert.ok(derive(s).atk > partial * (1 + trophies.SET_BONUS) - 1e-6); // set bonus applies
+  // a piece boosts its lane in derive (scaled by the boss's set mult)
+  const base = newState();
+  const p0 = trophies.pieceOf(1, 0); // Hinge, atk lane
+  base.setPieces = { 1: [0] };
+  if (p0.lane === "atk") assert.ok(derive(base).atk > derive(newState()).atk);
+
+  // farm drops fill the rest; grant all 7 → set complete + ×1.5 damage bonus
+  for (let i = 0; i < 7; i++) trophies.grantBreakPiece(s, 1); // idempotent top-up to full
+  assert.equal(trophies.setCount(s, 1), 7);
+  assert.ok(trophies.setComplete(s, 1));
+  const noBonus = { ...newState(), setPieces: { 1: [0] } };
+  const withBonus = { ...newState(), setPieces: { 1: [0, 1, 2, 3, 4, 5, 6] } };
+  assert.ok(derive(withBonus).atk > derive(noBonus).atk); // set bonus + more pieces
+
+  // rollFarmDrop only grants unowned pieces; deterministic rng that always hits
+  const s2 = newState();
+  const got = trophies.rollFarmDrop(s2, 1, () => 0); // 0 < FARM_DROP_CHANCE → drops
+  assert.ok(got && trophies.setCount(s2, 1) === 1);
 
   // survives Ban Wave (attachment — the cabinet is untouchable)
   s.bots.bars.atk.fills = [100, 0, 0, 0];
   rebirth.banWave(s);
-  assert.deepEqual(s.trophies, [1, 2]);
-  assert.ok(trophies.setComplete(s));
+  assert.equal(trophies.setCount(s, 1), 7);
+  assert.ok(trophies.setComplete(s, 1));
 }
 
 // Enhance: zones, checkpoint falls, failstacks, safeguard, cost gating

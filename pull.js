@@ -60,17 +60,21 @@ export function rollDepth(player, boss, rng = Math.random) {
   return ev * (1 - VARIANCE + 2 * VARIANCE * rng());
 }
 
+// A broken boss stays Attempt-able — Farm status (§9): re-fight it for set-
+// piece drops instead of depth. Only the cooldown gates farm attempts.
 export function canPull(state, now) {
-  return !state.pull && !state.boss.broken && now >= state.cooldownUntil;
+  return !state.pull && now >= state.cooldownUntil;
 }
 
 export function startPull(state, now, rng = Math.random) {
   if (!canPull(state, now)) return false;
   const boss = getBoss(state.wall);
+  const farm = state.boss.broken; // broken → farming for loot, not depth
   state.pull = {
     startedAt: now,
     endsAt: now + boss.windowS * 1000,
-    rolledFresh: rollDepth(derive(state), boss, rng),
+    rolledFresh: farm ? 0 : rollDepth(derive(state), boss, rng),
+    farm,
   };
   return true;
 }
@@ -89,9 +93,23 @@ export function currentDepth(state, now) {
   return state.boss.scars + p.rolledFresh * pullFrac(state, now);
 }
 
-// True once the pull is over: window elapsed, or 100% reached early.
+// True once the pull is over: window elapsed, or 100% reached early. Farm
+// attempts resolve purely on the window (no depth to reach).
 export function pullDone(state, now) {
-  return !!state.pull && (now >= state.pull.endsAt || currentDepth(state, now) >= 1);
+  if (!state.pull) return false;
+  if (state.pull.farm) return now >= state.pull.endsAt;
+  return now >= state.pull.endsAt || currentDepth(state, now) >= 1;
+}
+
+// Resolve a FARM attempt on a broken boss: a kill for tickets. The caller
+// rolls the set-piece drop (trophies.rollFarmDrop). Returns tickets earned.
+export function resolveFarm(state, now) {
+  state.pull = null;
+  state.boss.pulls++;
+  const y = ticketYield(1); // a full "kill" of the (already-broken) boss
+  state.tickets += y;
+  state.cooldownUntil = now + cooldownMs(state);
+  return y;
 }
 
 // Idle encounter processing (GM unlock): resolve the attempts that would

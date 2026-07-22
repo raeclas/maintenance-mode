@@ -14,7 +14,7 @@ export function newState() {
     failstacks: 0, // Luck's mechanical body — every fail banks +1%, success spends the bank
     titles: [],    // earned forever (attachment law): "+18" etc.
     cleared: [],   // broken walls, permanent monument (attachment): "W1 Vess" …
-    trophies: [],  // boss Trophy set: wall numbers whose piece you own (permanent)
+    setPieces: {}, // boss Trophy sets: { [wall]: [owned part indices] } (permanent)
     wall: 1,
     boss: { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false }, // per-current-wall record
     cooldownUntil: 0, // epoch ms — survives reload
