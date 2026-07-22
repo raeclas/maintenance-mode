@@ -294,6 +294,25 @@ const enh = await import("../enhance.js");
   for (const id of affixes.AFFIX_IDS) {
     assert.ok(["atk", "speed", "farm"].includes(affixes.AFFIXES[id].lane));
   }
+
+  // Reforge bench: spends OWN-rarity scrap, rerolls affixes, ip/rarity fixed,
+  // preview-then-commit (candidate does NOT mutate the item)
+  const sr = newState();
+  const rItem = { slot: "weapon", ip: 100, plus: 0, rarity: "rare", affixes: [{ id: "copper", tier: 3, value: 20 }], name: "rf" };
+  sr.gear.weapon = rItem;
+  assert.ok(gear.canReforge(rItem));
+  assert.ok(!gear.canReforge({ rarity: "common", ip: 100 })); // commons: nothing to roll
+  const rc = gear.reforgeCost(rItem);                          // rare scrap, tier-3 ip=100
+  assert.equal(rc.rarity, "rare");
+  assert.ok(gear.reforge(sr, rItem) === null);                 // no scrap → refused, no mutation
+  assert.deepEqual(rItem.affixes, [{ id: "copper", tier: 3, value: 20 }]);
+  sr.scrap.rare = rc.n * 2;
+  const cand = gear.reforge(sr, rItem);                        // spends scrap, returns candidate
+  assert.equal(sr.scrap.rare, rc.n);                           // one roll deducted
+  assert.equal(cand.length, rarity.RARITY_BY_ID.rare.affixes); // affix COUNT held (=2)
+  assert.deepEqual(rItem.affixes, [{ id: "copper", tier: 3, value: 20 }]); // NOT committed yet
+  rItem.affixes = cand;                                        // caller commits
+  assert.equal(rItem.affixes.length, 2);
   // affixes actually move derive()'s lanes
   const s2 = newState();
   s2.gear.weapon = { slot: "weapon", ip: 100, plus: 0, rarity: "rare",

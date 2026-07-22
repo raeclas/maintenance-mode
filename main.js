@@ -9,7 +9,7 @@ import { initBattle, renderBattle, notifyResult, notifyEnhance } from "./battle.
 import { derive } from "./stats.js";
 import * as bots from "./bots.js";
 import * as farm from "./farm.js";
-import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, SLOTS, STASH_CAP } from "./gear.js";
+import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, canReforge, reforgeCost, reforge, SLOTS, STASH_CAP } from "./gear.js";
 import { RARITIES, RARITY_BY_ID } from "./rarity.js";
 import { affixLabel } from "./affixes.js";
 import * as enh from "./enhance.js";
@@ -236,20 +236,45 @@ const zoneRows = farm.zones.map((z, i) => {
 
 // ---- gear: build slot rows once ----
 const slotEls = {};
+let pendingReforge = {}; // transient per-slot candidate affixes (preview-then-commit)
 for (const slot of SLOTS) {
   const div = document.createElement("div");
   div.className = "slot";
   div.innerHTML = `<div class="slotName">${slot}</div><div class="slotItem" id="si_${slot}">—</div>
-    <button id="se_${slot}">enhance</button><span class="enhInfo" id="sei_${slot}"></span>`;
+    <button id="se_${slot}">enhance</button><span class="enhInfo" id="sei_${slot}"></span>
+    <button id="rf_${slot}">reforge</button><span class="enhInfo" id="rfi_${slot}"></span>
+    <div class="reforgeCand" id="rfc_${slot}" style="display:none">
+      <span id="rfcl_${slot}"></span>
+      <button id="rfk_${slot}">keep</button><button id="rfr_${slot}">reroll</button><button id="rfd_${slot}">discard</button>
+    </div>`;
   $("slots").appendChild(div);
   slotEls[slot] = div;
-  div.querySelector("button").addEventListener("click", () => {
+  $(`se_${slot}`).addEventListener("click", () => {
     const item = state.gear[slot];
     if (!item) return;
     const r = enh.attempt(state, item, Math.random, $("safeguard").checked);
     if (r === "poor" || r === "max") return; // button state explains itself
     enhMilestones(item, r); // feedback is the row flash, not log spam
   });
+  // reforge bench: roll a candidate (spends scrap), preview, commit or discard
+  const rollCand = () => {
+    const item = state.gear[slot];
+    const cand = reforge(state, item, Math.random);
+    if (!cand) { log("reforge: not enough scrap"); return; }
+    pendingReforge[slot] = cand;
+    flashSlot(slot, true);
+  };
+  $(`rf_${slot}`).addEventListener("click", rollCand);
+  $(`rfr_${slot}`).addEventListener("click", rollCand);
+  $(`rfk_${slot}`).addEventListener("click", () => {
+    const item = state.gear[slot], cand = pendingReforge[slot];
+    if (!item || !cand) return;
+    item.affixes = cand;
+    delete pendingReforge[slot];
+    log(`reforged ${item.name}`);
+    flashSlot(slot, true);
+  });
+  $(`rfd_${slot}`).addEventListener("click", () => { delete pendingReforge[slot]; });
 }
 
 $("stashToggle").addEventListener("click", () => {
@@ -291,7 +316,7 @@ function renderStash() {
         `<span class="affixLine">${affixes}</span></span>` +
       `<span><button class="eq">equip</button><button class="lk">${item.lock ? "unlock" : "lock"}</button>` +
         `<button class="sv" ${item.lock ? "disabled" : ""}>salvage +${scrapYield(item)}</button></span>`;
-    row.querySelector(".eq").addEventListener("click", () => { equipFromStash(state, idx); stashDirty = true; });
+    row.querySelector(".eq").addEventListener("click", () => { equipFromStash(state, idx); delete pendingReforge[item.slot]; stashDirty = true; });
     row.querySelector(".lk").addEventListener("click", () => { item.lock = !item.lock; stashDirty = true; });
     row.querySelector(".sv").addEventListener("click", () => {
       state.gear.stash.splice(idx, 1);
@@ -582,6 +607,20 @@ function render() {
     } else {
       $(`sei_${slot}`).textContent = "";
     }
+    // reforge bench: cost readout, afford-gating, candidate preview
+    const rf = $(`rf_${slot}`);
+    const canRf = canReforge(item);
+    const cost = canRf ? reforgeCost(item) : null;
+    const afford = cost && (state.scrap[cost.rarity] || 0) >= cost.n;
+    rf.disabled = !canRf || !afford;
+    $(`rfi_${slot}`).textContent = !item ? "" : !canRf ? "no affixes" : `${cost.n} ${cost.rarity} scrap/roll`;
+    const cand = pendingReforge[slot];
+    const rfc = $(`rfc_${slot}`);
+    if (item && cand) {
+      rfc.style.display = "";
+      $(`rfcl_${slot}`).innerHTML = `→ ${cand.map(a => affixLabel(a)).join(" · ")}`;
+      $(`rfr_${slot}`).disabled = !afford;
+    } else rfc.style.display = "none";
   }
   $("titles").style.display = state.titles.length ? "" : "none";
   $("titles").textContent = state.titles.length ? `Titles: ${state.titles.join(" · ")}` : "";

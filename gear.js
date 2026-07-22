@@ -2,8 +2,8 @@
 // PLUS rolled affixes. Rarity = affix COUNT, ip = affix TIER (see
 // rarity.js / affixes.js). Attachment law: nothing is ever destroyed —
 // replaced or filtered gear goes to stash or salvages into Scrap.
-import { RARITIES, RARITY_IDX, rollRarity } from "./rarity.js";
-import { AFFIXES, rollAffixes } from "./affixes.js";
+import { RARITIES, RARITY_BY_ID, RARITY_IDX, rollRarity } from "./rarity.js";
+import { AFFIXES, rollAffixes, affixTier } from "./affixes.js";
 
 export const SLOTS = ["weapon", "armor", "charm"];
 
@@ -95,6 +95,31 @@ export function salvageMatching(state, maxRarityId) {
   }
   state.gear.stash = keep;
   return { count, tally };
+}
+
+// ---- Reforge bench (Slice 2): reroll an item's affixes for Scrap of its
+// OWN rarity tier. Cannot change rarity (affix COUNT) or ip (affix TIER) —
+// only the composition + values reroll, within the item's fixed budget.
+// Commons have no affixes, so nothing to reforge.
+export function canReforge(item) {
+  return item && (RARITY_BY_ID[item.rarity]?.affixes || 0) > 0;
+}
+
+// Cost is like-for-like scrap (sacrifice duplicates of the tier to perfect
+// one), scaling with the item's affix tier. Starting values, playtest-tuned.
+export function reforgeCost(item) {
+  return { rarity: item.rarity, n: 2 * affixTier(item.ip) };
+}
+
+// Roll a CANDIDATE affix set — does NOT mutate the item (preview-then-commit,
+// so a bad roll never demotes gear: attachment law 8). Deducts scrap on roll;
+// returns the candidate, or null if the bench can't afford / can't reforge.
+export function reforge(state, item, rng = Math.random) {
+  if (!canReforge(item)) return null;
+  const c = reforgeCost(item);
+  if ((state.scrap[c.rarity] || 0) < c.n) return null;
+  state.scrap[c.rarity] -= c.n;
+  return rollAffixes(item.ip, RARITY_BY_ID[item.rarity].affixes, rng);
 }
 
 // Manual: swap a stash item into its slot (plusses + affixes travel with it).
