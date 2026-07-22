@@ -304,10 +304,12 @@ anonymity is the attachment law by construction.
 **Built as:** Scripts = √(training fills this run); permanent player-damage
 ×(1+1%/script) — a DISPLAYED term (law 5). Player-coupled bots mean it lifts
 the boss fight AND the farm at once (resolved the old "which lane" question).
-Reset wipes bots/bars/trained/copper ONLY; KEEPS gear/scrap/rig-ranks/tickets/
-GM/scars/titles/wall AND the allocation strategy (bots auto-refill it as they
-regrow — the re-climb tedium fix). √ payout starves spam. Automation spends +
-the boss Trophy-set collection (the loot destination) are the NEXT slices.
+Reset wipes bots/bars/trained/copper + frees all bots (alloc → fresh seed)
+ONLY; KEEPS gear/scrap/rig-ranks/tickets/GM/scars/titles/wall. √ payout starves
+spam. (Alloc-persist was tried as a tedium fix but resets pop to 2, so
+persisting absolute counts displayed alloc-15/pop-2 nonsense — a "restore last
+allocation" button belongs in the automation slice instead.) Automation spends
++ the boss Trophy-set collection (the loot destination) are the NEXT slices.
 Original design below.
 
 ### 7b (original). Rebirth — "Ban Wave" [DESIGNED 2026-07-21]

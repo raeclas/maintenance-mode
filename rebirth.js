@@ -29,9 +29,10 @@ export function scriptMult(state) {
 // Perform the Ban Wave. Banks scripts, resets ONLY the born-disposable bot
 // stratum + copper. Keeps everything the character owns (attachment law 8):
 // gear + scrap + stash, rig ranks, tickets, GM perks, scars, titles, wall.
-// Also KEEPS the allocation strategy (bots auto-refill the same pattern as
-// they regrow) — the re-climb tedium fix. Training alloc collapses onto the
-// only unlocked tier so no bots sit idle on a re-locked tier.
+// All bots are FREED (clean slate) — you re-allocate as the farm regrows. A
+// "restore last allocation" convenience is a later automation slice, not a
+// persisted over-allocation (pop resets to the seed, so persisting absolute
+// counts just displays alloc 15 / pop 2 nonsense).
 export function banWave(state) {
   const gained = pendingScripts(state);
   if (gained <= 0) return 0;
@@ -42,13 +43,9 @@ export function banWave(state) {
   b.pop = f.pop;             // farm collapses to seed population
   b.bars = f.bars;           // training tiers re-lock, fills/prog zeroed
   b.trained = f.trained;     // trained ATK/hits back to base
+  b.alloc = f.alloc;         // all bots freed — fresh allocation
   b.enhCarry = 0;
-  for (const bar of ["atk", "speed"]) {
-    const sum = b.alloc[bar].reduce((s, n) => s + n, 0); // preserve the strategy
-    b.alloc[bar] = f.alloc[bar].slice();
-    b.alloc[bar][0] = sum;   // all onto tier 0 (the only unlocked tier now)
-  }
-  // b.alloc.zones / b.alloc.enh, rig ranks, tPriv, enhTarget all persist as-is
+  // rig ranks, tPriv, enhTarget persist as-is (bought upgrades, not the swarm)
   state.copper = 0;
   return gained;
 }

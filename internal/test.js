@@ -366,10 +366,10 @@ const enh = await import("../enhance.js");
   assert.equal(s.gm.dmg, 3);
   assert.equal(s.bots.powerRank, 7);
   assert.equal(s.gear.stash.length, 1);
-  // allocation strategy persists (training collapsed to tier 0, zones/enh kept)
-  assert.equal(s.bots.alloc.atk[0], 15);        // 10+5 collapsed onto tier 0
-  assert.deepEqual(s.bots.alloc.zones, [3, 2, 0, 0, 0]);
-  assert.equal(s.bots.alloc.enh, 4);
+  // allocation resets to a fresh character's seed — NOT the persisted over-
+  // allocation (the bug: tier-0 rows kept 15 bots against a pop of 2)
+  assert.deepEqual(s.bots.alloc, newState().bots.alloc);
+  assert.equal(bots.allocTotal(s.bots), 2); // just the two seed bots
 
   // no free scripts: a fresh state can't Ban Wave for nothing
   assert.equal(rebirth.banWave(newState()), 0);
