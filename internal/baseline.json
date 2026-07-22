@@ -8,75 +8,75 @@
     "desc": "systems unlock"
   },
   {
-    "t": 9600,
+    "t": 2400,
     "desc": "power ×10"
   },
   {
-    "t": 13200,
+    "t": 4200,
     "desc": "power ×100"
   },
   {
-    "t": 13200,
-    "desc": "z2 held (Webbed Ravine)"
-  },
-  {
-    "t": 13800,
+    "t": 4200,
     "desc": "power ×1000"
   },
   {
-    "t": 13800,
+    "t": 4200,
     "desc": "z4 held (Cinder Steppe)"
   },
   {
-    "t": 14400,
+    "t": 4800,
     "desc": "power ×10000"
   },
   {
-    "t": 14400,
+    "t": 4800,
     "desc": "z5 held (The Doorstep)"
   },
   {
-    "t": 14400,
-    "desc": "depth 0.1%"
-  },
-  {
-    "t": 14400,
-    "desc": "depth 1%"
-  },
-  {
-    "t": 14400,
-    "desc": "depth 10%"
-  },
-  {
-    "t": 15000,
+    "t": 4800,
     "desc": "z6 held (The Threshold)"
   },
   {
-    "t": 15000,
+    "t": 5400,
     "desc": "z7 held (Ashen Nave)"
   },
   {
-    "t": 15600,
+    "t": 5400,
     "desc": "z8 held (Flooded Undercroft)"
   },
   {
-    "t": 15600,
+    "t": 5400,
     "desc": "z9 held (The Long Dark)"
   },
   {
-    "t": 15600,
+    "t": 5400,
     "desc": "z10 held (The Second Door)"
   },
   {
-    "t": 16200,
+    "t": 6000,
+    "desc": "z2 held (Webbed Ravine)"
+  },
+  {
+    "t": 6000,
     "desc": "z3 held (Salt Flats)"
   },
   {
-    "t": 18000,
+    "t": 7200,
     "desc": "W1 broken (EV)"
   },
   {
-    "t": 18000,
+    "t": 7200,
+    "desc": "depth 0.1%"
+  },
+  {
+    "t": 7200,
+    "desc": "depth 1%"
+  },
+  {
+    "t": 7200,
+    "desc": "depth 10%"
+  },
+  {
+    "t": 7200,
     "desc": "depth 50%"
   }
 ]

@@ -22,7 +22,7 @@ export function newState() {
     // Bot Farm: population FLOW. Generator fills toward server capacity;
     // farming bots get banned at zone detection rates. Alloc = % of pop.
     bots: {
-      pop: 2,         // live bot accounts (float — it's a stream)
+      pop: 8,         // live bot accounts (float — it's a stream); a working swarm from minute one
       banned: 0,      // lifetime bans (log flavor)
       capRank: 0,     // session slots: capacity = 8 + 4×rank
       createRank: 0,  // generator: 2/h × (1 + 0.5×rank)

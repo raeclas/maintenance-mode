@@ -94,11 +94,10 @@ const enh = await import("../enhance.js");
 // Bots: population flow — creation toward server capacity
 {
   const s = newState();
-  assert.equal(bots.capacity(s.bots), 8);
-  bots.tick(s, 3600); // +4/h base
-  assert.ok(Math.abs(s.bots.pop - 6) < 0.01);
+  assert.equal(bots.capacity(s.bots), bots.CAP_BASE); // 40
   bots.tick(s, 100 * 3600);
-  assert.equal(s.bots.pop, 8); // capped
+  assert.equal(s.bots.pop, bots.CAP_BASE); // fills to cap
+  assert.ok(bots.createRate(s.bots) >= 60); // fast base generation — no dead-wait
 }
 
 // Bots: training — parallel bars, constant cost per fill, per-bar rate cap
@@ -211,8 +210,8 @@ const enh = await import("../enhance.js");
 {
   const s = newState();
   s.copper = 10_000;
-  assert.ok(bots.buy(s, "cap") && bots.capacity(s.bots) === 12);
-  assert.ok(bots.buy(s, "create") && bots.createRate(s.bots) === 6); // 4 × 1.5
+  assert.ok(bots.buy(s, "cap") && bots.capacity(s.bots) === bots.CAP_BASE + bots.CAP_PER_RANK);
+  assert.ok(bots.buy(s, "create") && bots.createRate(s.bots) === bots.CREATE_PER_H * 1.5);
   assert.ok(bots.buy(s, "power") && bots.botPower(s.bots) === 1.25);
   assert.ok(bots.buy(s, "speed") && bots.botSpeed(s.bots) === 1.2);
   s.copper = 0;
@@ -522,7 +521,7 @@ const enh = await import("../enhance.js");
   localStorage.setItem("mm_save", JSON.stringify({ v: 1, player: { atk: 10 }, boss: { pulls: 5, scars: 0.2 } }));
   const s3 = newState();
   saves.load(s3);
-  assert.equal(s3.bots.pop, 2);
+  assert.equal(s3.bots.pop, newState().bots.pop); // backfills to the current seed pop
   assert.equal(s3.boss.scars, 0.2);
   assert.equal(s3.unlocked, true); // mid-siege v1 save keeps systems open
 
@@ -594,7 +593,7 @@ const enh = await import("../enhance.js");
   while (gm.buyUtility(s, "offline"));
   assert.equal(farm.offlineCapS(s), (12 + 6) * 3600);
   while (gm.buyUtility(s, "cap"));
-  assert.equal(bots.capacity(s.bots, s.gm.cap), 8 + 20); // +2 × 10 ranks
+  assert.equal(bots.capacity(s.bots, s.gm.cap), bots.CAP_BASE + 20); // +2 × 10 GM ranks
 
   // flags: uncapped, era-priced, multipliers displayed in derive
   assert.ok(gm.buyFlag(s, "dmg") && s.gm.dmg === 1);

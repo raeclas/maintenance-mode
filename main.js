@@ -69,7 +69,7 @@ function onDrop(item) {
   const rar = RARITY_BY_ID[item.rarity]?.name || item.rarity;
   const r = routeDrop(state, item); // filter: keep→stash, else→scrap (never auto-equip)
   stashDirty = true;
-  const fate = r.kept ? "stashed" : `salvaged +${r.scrap.n} ${item.rarity} scrap`;
+  const fate = r.kept ? "stashed" : `salvaged +${fmt(r.scrap.copper)}c +${r.scrap.n} ${item.rarity} scrap`;
   log(`drop: ${rar} ${item.name} ${fmt(item.ip)}IP · ${fate}`);
   if (r.overflow) log(`stash full: salvaged ${r.overflow.item.name} +${r.overflow.scrap.n} ${r.overflow.scrap.rarity} scrap`);
 }
@@ -406,7 +406,7 @@ function renderStash() {
     row.querySelector(".sv").addEventListener("click", () => {
       state.gear.stash.splice(idx, 1);
       const s = salvage(state, item);
-      log(`salvaged ${item.name} → +${s.n} ${s.rarity} scrap`);
+      log(`salvaged ${item.name} → +${fmt(s.copper)}c +${s.n} ${s.rarity} scrap`);
       stashDirty = true;
     });
     el.appendChild(row);

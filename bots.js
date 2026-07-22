@@ -10,9 +10,9 @@ import { rollItem } from "./gear.js";
 import { attempt as enhAttempt } from "./enhance.js";
 import { derive } from "./stats.js";
 
-export const CREATE_PER_H = 4;        // base bots/hour from the generator
-export const CAP_BASE = 8;            // dead server's leftover session slots
-export const CAP_PER_RANK = 4;        // each rank clears more dead sessions
+export const CREATE_PER_H = 60;       // base bots/hour (~1/min) — no dead-wait at the start
+export const CAP_BASE = 40;           // dead server's leftover session slots — a usable swarm fast
+export const CAP_PER_RANK = 10;       // each rank clears more dead sessions
 export const POWER_PER_RANK = 0.25;   // script quality
 export const SPEED_PER_RANK = 0.20;   // hardware
 export const CREATE_PER_RANK = 0.5;   // generator: ×(1 + 0.5×rank)
