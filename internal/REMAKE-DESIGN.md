@@ -495,8 +495,10 @@ generated, it is.
 mobs, gear, boss fight, enhance verbs, titles.
 | Thing | Name |
 |---|---|
-| zones (leveling path → raid gate) | Novice Meadow · Webbed Ravine · Salt Flats · Cinder Steppe · The Doorstep |
-| mobs | Training Slime · Ravine Weaver · Salt Strider · Steppe Charger · Door Sentry |
+| zones R1 (leveling path → raid gate) | Novice Meadow · Webbed Ravine · Salt Flats · Cinder Steppe · The Doorstep |
+| zones R2 (behind the First Door, 2026-07-22) | The Threshold · Ashen Nave · Flooded Undercroft · The Long Dark · The Second Door |
+| mobs R1 | Training Slime · Ravine Weaver · Salt Strider · Steppe Charger · Door Sentry |
+| mobs R2 | Threshold Husk · Nave Revenant · Undercroft Lurker · Pale Sentinel · Sealed Warden |
 | weapons by zone | Rusty Shortsword · Ravine Pike · Salt-Etched Saber · Cinder Warblade · Sentry Halberd |
 | armor by zone | Padded Vest · Weaver-Silk Jerkin · Salt-Crusted Cuirass · Cinder Scale Coat · Sentry Plate |
 | charms by zone | Cracked Bead · Weaver-Eye Charm · Salt Talisman · Ember Sigil · Door Sentry Sigil |

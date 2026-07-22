@@ -456,7 +456,7 @@ const enh = await import("../enhance.js");
   saves.load(s2);
   assert.deepEqual(s2.bots.bars.atk, { fills: [50, 3, 0, 0], prog: [11, 4, 0, 0], unlocked: 2 });
   assert.deepEqual(s2.bots.alloc.atk, [2, 1, 0, 0]);
-  assert.deepEqual(s2.bots.alloc.zones, [0, 1, 0, 0, 0]);
+  assert.deepEqual(s2.bots.alloc.zones, [0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
   assert.equal(s2.bots.trained.atk, 56);
   assert.equal(s2.tickets, 77);
   assert.equal(s2.gm.scar, 2);
@@ -506,7 +506,7 @@ const enh = await import("../enhance.js");
   saves.load(s6);
   assert.deepEqual(s6.bots.alloc.atk, [3, 0, 0, 0]);
   assert.deepEqual(s6.bots.alloc.speed, [2, 0, 0]);
-  assert.deepEqual(s6.bots.alloc.zones, [0, 0, 4, 0, 0]); // farm squad landed on its old zone
+  assert.deepEqual(s6.bots.alloc.zones, [0, 0, 4, 0, 0, 0, 0, 0, 0, 0]); // farm squad landed on its old zone
   assert.equal(s6.bots.alloc.enh, 1);
   assert.deepEqual(s6.bots.bars.atk.fills, [9, 1, 0, 0]); // history kept
   assert.equal(s6.bots.bars.atk.unlocked, 2);

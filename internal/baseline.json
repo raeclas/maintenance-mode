@@ -49,18 +49,34 @@
   },
   {
     "t": 15000,
+    "desc": "z6 held (The Threshold)"
+  },
+  {
+    "t": 15000,
+    "desc": "z7 held (Ashen Nave)"
+  },
+  {
+    "t": 15600,
+    "desc": "z8 held (Flooded Undercroft)"
+  },
+  {
+    "t": 15600,
+    "desc": "z9 held (The Long Dark)"
+  },
+  {
+    "t": 15600,
+    "desc": "z10 held (The Second Door)"
+  },
+  {
+    "t": 16200,
     "desc": "z3 held (Salt Flats)"
   },
   {
-    "t": 32400,
-    "desc": "depth 50%"
-  },
-  {
-    "t": 33000,
-    "desc": "scars capped"
-  },
-  {
-    "t": 41400,
+    "t": 18000,
     "desc": "W1 broken (EV)"
+  },
+  {
+    "t": 18000,
+    "desc": "depth 50%"
   }
 ]

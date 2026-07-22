@@ -33,7 +33,7 @@ export function newState() {
       alloc: {
         atk: [1, 0, 0, 0],   // per ATK training tier
         speed: [1, 0, 0],    // per SPEED training tier
-        zones: [0, 0, 0, 0, 0], // bots farming each zone
+        zones: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // bots farming each zone (2 regions × 5)
         enh: 0,
       },
       enhTarget: { slot: "weapon", plus: 10 }, // bots enhance this item toward this plus
