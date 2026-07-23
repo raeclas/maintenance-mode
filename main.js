@@ -440,11 +440,13 @@ for (const sel of [$("keepRarity"), $("salvageRarity")]) {
 $("salvageRarity").value = "uncommon"; // default sweep target
 
 // loot filter dials (passive, on-drop) — keep at/above rarity AND ip
+$("autoFilter").addEventListener("change", () => { state.gear.autoFilter = $("autoFilter").checked; });
 $("keepRarity").addEventListener("change", () => { state.gear.keepRarity = $("keepRarity").value; });
 $("keepIp").addEventListener("change", () => { state.gear.keepIp = Math.max(0, Math.floor(+$("keepIp").value) || 0); });
-// manual bulk sweep — salvage all unlocked stash items ≤ chosen rarity
+// manual bulk sweep — salvage all unlocked stash items ≤ rarity AND ≤ ip (0 ip = ignore ip)
 $("salvageMatch").addEventListener("click", () => {
-  const { count, tally } = salvageMatching(state, $("salvageRarity").value);
+  const ip = Math.floor(+$("salvageIp").value) || 0;
+  const { count, tally } = salvageMatching(state, $("salvageRarity").value, ip > 0 ? ip : Infinity);
   if (!count) return;
   stashDirty = true;
   const parts = Object.entries(tally).map(([r, n]) => `${n} ${r}`).join(", ");
@@ -783,6 +785,7 @@ function render() {
       : `trained +${b.trained.hits.toFixed(4)} hits/s (+${laneRate.toFixed(5)}/s)`;
     $(`bar${el}Info`).textContent = trained;
   }
+  $("autoFilter").checked = state.gear.autoFilter !== false;
   if (document.activeElement !== $("keepRarity")) $("keepRarity").value = state.gear.keepRarity;
   if (document.activeElement !== $("keepIp")) $("keepIp").value = state.gear.keepIp;
   const owned = RARITIES.filter(r => (state.scrap[r.id] || 0) > 0);

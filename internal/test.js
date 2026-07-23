@@ -261,6 +261,13 @@ const enh = await import("../enhance.js");
   assert.equal(s.scrap.common, junk.scrap.n);
   assert.equal(s.gear.stash.length, 1);              // junk never hit the stash
 
+  // auto-filter OFF: everything is kept (no auto-salvage), even junk
+  s.gear.autoFilter = false;
+  const kept2 = gear.routeDrop(s, { slot: "weapon", ip: 5, plus: 0, rarity: "common", affixes: [], name: "j2" });
+  assert.ok(kept2.kept);
+  assert.equal(s.gear.stash.length, 2);
+  s.gear.autoFilter = true;
+
   // scrap yield is tiered: higher rarity at equal ip yields more
   assert.ok(gear.scrapYield({ rarity: "legendary", ip: 100 }) > gear.scrapYield({ rarity: "common", ip: 100 }));
 
@@ -280,6 +287,15 @@ const enh = await import("../enhance.js");
   assert.equal(sweep.count, 1);                       // only c1
   assert.equal(s.gear.stash.length, 2);              // locked u1 + epic e1 remain
   assert.ok(s.gear.stash.some(it => it.name === "u1") && s.gear.stash.some(it => it.name === "e1"));
+
+  // manual sweep respects the ip axis too (≤ rarity AND ≤ ip) — aligned with the filter
+  s.gear.stash = [
+    { slot: "charm", ip: 100, plus: 0, rarity: "common", affixes: [], name: "lowip" },
+    { slot: "charm", ip: 9999, plus: 0, rarity: "common", affixes: [], name: "highip" },
+  ];
+  const sw = gear.salvageMatching(s, "rare", 500);   // common ≤ rare, but only ip ≤ 500
+  assert.equal(sw.count, 1);
+  assert.ok(s.gear.stash.some(it => it.name === "highip")); // high-ip common survives the ip cap
 
   // stash cap: overflow salvages the WORST unlocked item → scrap; locked immune
   s.gear.stash = [{ slot: "charm", ip: 1, plus: 0, rarity: "common", affixes: [], name: "worst", lock: true }];

@@ -125,16 +125,17 @@
     <div id="scrapWallet" class="scrapWallet">no scrap yet</div>
     <div id="stashHead">
       <div class="filterRow">
-        <span class="filterLabel">keep drops ≥</span>
+        <label class="filterLabel"><input type="checkbox" id="autoFilter"> auto-salvage · keep ≥</label>
         <select id="keepRarity"></select>
         <span class="filterLabel">· ip ≥</span>
         <input id="keepIp" type="number" min="0" value="0" class="ipDial">
-        <span class="filterHint">rest auto-salvage to scrap</span>
       </div>
       <div class="filterRow">
         <button id="stashToggle"></button>
-        <span class="filterLabel">· salvage all ≤</span>
+        <span class="filterLabel">· salvage ≤</span>
         <select id="salvageRarity"></select>
+        <span class="filterLabel">· ip ≤</span>
+        <input id="salvageIp" type="number" min="0" value="0" class="ipDial">
         <button id="salvageMatch">salvage matching</button>
       </div>
     </div>

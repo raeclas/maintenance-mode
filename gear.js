@@ -77,22 +77,24 @@ export function meetsKeep(item, keepRarity, keepIp) {
 }
 
 // Route a fresh drop through the filter. Returns { kept, scrap?, overflow? }.
+// With the auto-filter OFF, every drop is kept (stashed) — no auto-salvage.
 export function routeDrop(state, item) {
   const g = state.gear;
-  if (meetsKeep(item, g.keepRarity, g.keepIp)) {
+  if (g.autoFilter === false || meetsKeep(item, g.keepRarity, g.keepIp)) {
     return { kept: true, overflow: stashPush(state, item) };
   }
   return { kept: false, scrap: salvage(state, item) };
 }
 
-// Manual bulk sweep: salvage every UNLOCKED stash item at/below maxRarity
-// (rarity index). Locked + equipped are untouched. Returns a scrap tally.
-export function salvageMatching(state, maxRarityId) {
+// Manual bulk sweep: salvage every UNLOCKED stash item at/below BOTH maxRarity
+// (rarity index) AND maxIp — the same two axes as the auto filter. Locked +
+// equipped are untouched. Returns a scrap tally.
+export function salvageMatching(state, maxRarityId, maxIp = Infinity) {
   const maxIdx = RARITY_IDX[maxRarityId] ?? 0;
   const keep = [], tally = {};
   let count = 0;
   for (const it of state.gear.stash) {
-    if (!it.lock && (RARITY_IDX[it.rarity] ?? 0) <= maxIdx) {
+    if (!it.lock && (RARITY_IDX[it.rarity] ?? 0) <= maxIdx && it.ip <= maxIp) {
       const { rarity, n } = salvage(state, it);
       tally[rarity] = (tally[rarity] || 0) + n;
       count++;

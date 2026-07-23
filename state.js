@@ -56,6 +56,7 @@ export function newState() {
     gear: {
       weapon: null, armor: null, charm: null,
       stash: [],            // item = {slot, ip, plus, rarity, affixes[], zone, name, lock?}
+      autoFilter: true,     // loot filter on: auto-salvage drops below the floors
       keepRarity: "rare",   // loot filter: keep drops at/above this rarity AND
       keepIp: 0,            //   at/above this ip; everything else auto-salvages
     },
