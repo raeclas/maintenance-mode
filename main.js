@@ -89,6 +89,8 @@ function log(msg) {
 
 let stashDirty = true;
 let lastWallSel = ""; // wall-selector rebuild cache
+let lastRenderNow = Date.now();  // for per-frame dt (kill-cycle bar integrator)
+const zonePhase = [];            // per-zone accumulated kill phase (0..1 shown)
 
 function onDrop(item) {
   const rar = RARITY_BY_ID[item.rarity]?.name || item.rarity;
@@ -553,6 +555,8 @@ function tick() {
 
 function render() {
   const now = Date.now();
+  const frameDt = Math.min(0.25, (now - lastRenderNow) / 1000); // clamp tab-switch/idle gaps
+  lastRenderNow = now;
   renderBattle(state, now);
   const d = derive(state);
   const dps = d.atk * d.hitsPerSec;
@@ -810,10 +814,14 @@ function render() {
     } else {
       stat.textContent = `${zr.kps.toFixed(2)} kills/s${zr.kps >= farm.KILL_CAP ? " · CAP" : ""} · ${fmt(zr.copperPerSec)}c/s · ${zr.bansPerHour.toFixed(2)} bans/h`;
     }
-    // kill-cycle bar (training-bar logic); solid at/near cap — fast cycles strobe
+    // kill-cycle bar: integrate phase incrementally (speed = kps, one fill per
+    // kill). NOT frac(now×kps) — that spins wildly whenever kps drifts (pop
+    // growth), because now≈1.8e9 amplifies any d(kps)/dt.
     const zfEl = $(`zf${i}`);
-    if (n > 0 && zr.kps > 0) zfEl.style.width = zr.kps >= 10 ? "100%" : `${((now / 1000) * zr.kps % 1) * 100}%`;
-    else zfEl.style.width = "0";
+    if (n > 0 && zr.kps > 0) {
+      zonePhase[i] = ((zonePhase[i] || 0) + zr.kps * frameDt) % 1;
+      zfEl.style.width = zr.kps >= 10 ? "100%" : `${zonePhase[i] * 100}%`;
+    } else { zonePhase[i] = 0; zfEl.style.width = "0"; }
   });
 
   // gear
