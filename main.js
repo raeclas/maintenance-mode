@@ -1,6 +1,6 @@
 // main.js — wiring: load → offline batch → loop → autosave; all UI sections.
 import { newState } from "./state.js";
-import { load, save, wipe } from "./saveSystem.js";
+import { load, save, wipe, exportSave } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { bosses, getBoss } from "./bosses.js";
 import { startPull, resolvePull, resolveFarm, pullDone, currentDepth, canPull, band, pullsToBreakEV, scarCap, cooldownMs, processIdleAttempts } from "./pull.js";
@@ -38,20 +38,43 @@ function say(event) {
 // wall is recorded forever (attachment law — the cleared list is the account's
 // power language, §9). Boss record resets for the new wall; `boss` reassigns
 // so every reader (say, band, pacing) picks up the new data.
-function advanceWall() {
-  const cur = getBoss(state.wall);
-  const next = getBoss(state.wall + 1);
-  if (!state.boss.broken || !next) return;
-  const rec = `W${cur.wall} ${cur.name}`;
-  if (!state.cleared.includes(rec)) state.cleared.push(rec);
-  state.wall = next.wall;
-  state.boss = { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false };
-  state.cooldownUntil = 0;
-  boss = next;
+// A cleared wall you're farming needs no fight-progress — it's just broken.
+function farmRecord() { return { pulls: 0, bestDepth: 1, scars: 1, broken: true, nearSaid: true }; }
+
+function refreshBoss() {
+  boss = getBoss(state.wall);
   $("bossName").textContent = boss.name;
   $("bossTitle").textContent = boss.title;
-  say("greet");
-  log(`— descending to ${boss.name}, ${boss.title}`);
+  say(state.boss.broken ? "break" : "greet");
+}
+
+// Switch the active wall among 1..maxWall (fight the frontier, or farm a
+// cleared Warden for its set). Frontier progress is preserved in frontierBoss.
+function switchWall(w) {
+  w = Math.max(1, Math.min(w, state.maxWall));
+  if (w === state.wall) return;
+  if (state.wall === state.maxWall) state.frontierBoss = state.boss; // stash frontier progress
+  state.wall = w;
+  state.boss = w === state.maxWall ? state.frontierBoss : farmRecord();
+  state.cooldownUntil = 0;
+  refreshBoss();
+  save(state);
+}
+
+// Descend: only from a BROKEN frontier. Records the clear + opens the next wall.
+function advanceWall() {
+  const cur = getBoss(state.wall);
+  const next = getBoss(state.maxWall + 1);
+  if (!state.boss.broken || state.wall !== state.maxWall || !next) return;
+  const rec = `W${cur.wall} ${cur.name}`;
+  if (!state.cleared.includes(rec)) state.cleared.push(rec);
+  state.maxWall = next.wall;
+  state.wall = next.wall;
+  state.frontierBoss = { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false };
+  state.boss = state.frontierBoss;
+  state.cooldownUntil = 0;
+  refreshBoss();
+  log(`— descending to ${next.name}, ${next.title}`);
   save(state);
 }
 
@@ -65,6 +88,7 @@ function log(msg) {
 }
 
 let stashDirty = true;
+let lastWallSel = ""; // wall-selector rebuild cache
 
 function onDrop(item) {
   const rar = RARITY_BY_ID[item.rarity]?.name || item.rarity;
@@ -363,6 +387,7 @@ const HELP = [
   },
 ];
 function openHelp(topicId) {
+  $("helpTitle").textContent = "Help";
   $("helpContent").innerHTML = HELP.map(h =>
     `<section class="helpTopic" id="help_${h.id}"><h3>${h.title}</h3>${h.body.map(p => `<p>${p}</p>`).join("")}</section>`
   ).join("");
@@ -374,6 +399,14 @@ $("helpBtn").addEventListener("click", () => openHelp());
 $("helpClose").addEventListener("click", closeHelp);
 $("helpModal").addEventListener("click", e => { if (e.target === $("helpModal")) closeHelp(); });
 $("descendBtn").addEventListener("click", advanceWall);
+$("wallSelect").addEventListener("click", e => { const w = e.target.dataset?.wall; if (w) switchWall(Number(w)); });
+$("exportBtn").addEventListener("click", () => {
+  const text = exportSave(state);
+  try { navigator.clipboard?.writeText(text); } catch {}
+  $("helpTitle").textContent = "Export save";
+  $("helpContent").innerHTML = `<p>Copied to clipboard — or select all below and copy:</p><textarea readonly class="exportBox" onclick="this.select()">${text.replace(/</g, "&lt;")}</textarea>`;
+  $("helpModal").style.display = "";
+});
 
 // ---- Dungeon delve: the character's active push-your-luck verb ----
 let dungeonCdUntil = 0;
@@ -620,13 +653,29 @@ function render() {
   $("record").textContent = state.boss.pulls
     ? `attempts ${state.boss.pulls} · best ${fmtDepth(state.boss.bestDepth)} · scars ${fmtDepth(state.boss.scars)}`
     : "no attempts recorded";
-  { // wall progression: descend button after a break, permanent cleared list
-    const next = getBoss(state.wall + 1);
-    $("descendBtn").style.display = state.boss.broken && next ? "" : "none";
+  { // wall progression + wall selector (switch to a cleared wall to farm it)
+    const next = getBoss(state.maxWall + 1);
+    $("descendBtn").style.display = (state.wall === state.maxWall && state.boss.broken && next) ? "" : "none";
     const cleared = state.cleared.slice();
-    if (state.boss.broken && !next) cleared.push(`W${state.wall} ${boss.name} — final`);
+    if (state.wall === state.maxWall && state.boss.broken && !next) cleared.push(`W${state.wall} ${boss.name} — final`);
     $("monument").style.display = cleared.length ? "" : "none";
     $("monument").textContent = cleared.length ? `Broken: ${cleared.join(" · ")}` : "";
+    const sel = `${state.maxWall}:${state.wall}`;
+    if (state.maxWall > 1) {
+      $("wallSelect").style.display = "";
+      if (sel !== lastWallSel) {
+        lastWallSel = sel;
+        $("wallSelect").innerHTML = "";
+        for (let w = 1; w <= state.maxWall; w++) {
+          const bw = getBoss(w);
+          const btn = document.createElement("button");
+          btn.dataset.wall = w;
+          btn.className = "wallBtn" + (w === state.wall ? " active" : "");
+          btn.textContent = w < state.maxWall ? `W${w} ${bw.name} ⚑` : `W${w} ${bw.name}`;
+          $("wallSelect").appendChild(btn);
+        }
+      }
+    } else { $("wallSelect").style.display = "none"; lastWallSel = ""; }
   }
 
   if (state.boss.broken || state.pull) {
@@ -835,7 +884,7 @@ function render() {
       if (complete) done++;
       const pips = PARTS.map((_, i) => {
         const p = pieceOf(w, i), own = ownsPiece(state, w, i);
-        return `<span class="pip ${own ? "own" : "miss"}" title="${p.name} · +${p.pct}% ${laneWord(p.lane)}">${own ? p.part : "◈"}</span>`;
+        return `<span class="pip ${own ? "own" : "miss"}">${own ? "✓" : "◈"} ${p.part} <b>+${p.pct}% ${laneWord(p.lane)}</b></span>`;
       }).join("");
       return `<div class="trophySet ${complete ? "complete" : ""}">` +
         `<div class="trophySetHead"><span class="trophySetName">${bw.set.name}</span>` +

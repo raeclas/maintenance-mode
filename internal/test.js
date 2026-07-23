@@ -387,6 +387,30 @@ const enh = await import("../enhance.js");
   assert.deepEqual(newState().cleared, []); // cleared-list monument starts empty
 }
 
+// Wall model: switch back to a cleared wall to farm it. maxWall = frontier;
+// walls below it load as broken farm records; the frontier keeps its progress.
+{
+  localStorage.setItem("mm_save", JSON.stringify({
+    v: 9, unlocked: true, wall: 1, maxWall: 2,
+    frontierBoss: { pulls: 7, bestDepth: 0.4, scars: 0.3, broken: false, nearSaid: true },
+  }));
+  const s = newState();
+  saves.load(s);
+  assert.equal(s.maxWall, 2);
+  assert.equal(s.wall, 1);                 // viewing the cleared wall
+  assert.equal(s.boss.broken, true);       // W1 is a broken farm target
+  assert.equal(s.frontierBoss.pulls, 7);   // W2's fight-progress preserved
+  // at the frontier, boss IS the frontier record
+  localStorage.setItem("mm_save", JSON.stringify({
+    v: 9, unlocked: true, wall: 2, maxWall: 2,
+    frontierBoss: { pulls: 7, bestDepth: 0.4, scars: 0.3, broken: false, nearSaid: true },
+  }));
+  const s2 = newState();
+  saves.load(s2);
+  assert.equal(s2.boss.pulls, 7);
+  assert.equal(s2.boss.broken, false);
+}
+
 // Boss Trophy SETS: 7-piece per boss, break gives one, farm drops the rest,
 // full set → bonus, permanent boost, survives Ban Wave
 {
@@ -536,6 +560,7 @@ const enh = await import("../enhance.js");
   s.gear.weapon = { slot: "weapon", ip: 55, plus: 3, zone: 1, name: "t" };
   s.gear.stash = [{ slot: "charm", ip: 5, plus: 0, zone: 1, name: "u" }];
   s.boss = { pulls: 3, bestDepth: 0.01, scars: 0.005, broken: false, nearSaid: false };
+  s.frontierBoss = s.boss; // invariant: at the frontier, boss IS frontierBoss
   saves.save(s);
   assert.equal(JSON.parse(localStorage.getItem("mm_save")).pull, undefined);
   const s2 = newState();

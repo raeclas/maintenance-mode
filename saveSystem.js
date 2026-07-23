@@ -71,8 +71,15 @@ export function load(state) {
   state.titles = Array.isArray(s.titles) ? s.titles : [];
   state.cleared = Array.isArray(s.cleared) ? s.cleared : []; // v9 wall monuments
   state.setPieces = (s.setPieces && typeof s.setPieces === "object" && !Array.isArray(s.setPieces)) ? s.setPieces : {}; // v9 boss Trophy sets
-  state.wall = s.wall ?? d.wall;
-  state.boss = { ...d.boss, ...(s.boss || {}) };
+  // wall model: maxWall = frontier; walls below it are farmable. Only the
+  // frontier keeps fight-progress (frontierBoss); cleared walls are broken
+  // farm records synthesized on switch. Old saves: maxWall = wall.
+  state.maxWall = s.maxWall ?? s.wall ?? d.wall;
+  state.frontierBoss = { ...d.frontierBoss, ...(s.frontierBoss ?? s.boss ?? {}) };
+  state.wall = Math.min(s.wall ?? state.maxWall, state.maxWall);
+  state.boss = state.wall === state.maxWall
+    ? state.frontierBoss
+    : { pulls: 0, bestDepth: 1, scars: 1, broken: true, nearSaid: true }; // farm a cleared wall
   state.cooldownUntil = s.cooldownUntil ?? 0;
   state.pull = null; // reload mid-pull drops the pull — nothing gained until resolve
   const { assign, count, farmZone, ...sBots } = s.bots || {}; // pre-v7 fields handled below

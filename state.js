@@ -15,8 +15,10 @@ export function newState() {
     titles: [],    // earned forever (attachment law): "+18" etc.
     cleared: [],   // broken walls, permanent monument (attachment): "W1 Vess" …
     setPieces: {}, // boss Trophy sets: { [wall]: [owned part indices] } (permanent)
-    wall: 1,
-    boss: { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false }, // per-current-wall record
+    wall: 1,       // the wall you're currently AT (fight the frontier, or farm a cleared one)
+    maxWall: 1,    // deepest wall unlocked — you can switch among walls 1..maxWall
+    boss: { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false }, // active wall's record
+    frontierBoss: { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false }, // maxWall's persisted progress
     cooldownUntil: 0, // epoch ms — survives reload
     pull: null,       // transient {startedAt, endsAt, rolledFresh} — never serialized
     // Bot Farm: population FLOW. Generator fills toward server capacity;
