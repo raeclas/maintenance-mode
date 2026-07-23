@@ -198,7 +198,7 @@ function checkUnlocks() {
   const s = state, f = s.features;
   const cond = {
     training: s.boss.pulls >= 1,
-    grind: f.training && s.bots.pop >= 15,
+    grind: f.training, // the bot-farm layer (train + deploy) opens together
     player: f.grind && s.everDropped,
     gm: f.training && s.tickets >= 30,
     delve: f.player && dps >= 100,
