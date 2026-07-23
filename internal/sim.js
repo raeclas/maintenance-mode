@@ -32,7 +32,8 @@ import { AFFIXES, affixTier } from "../affixes.js";
 function evAffixes(ip) {
   const t = affixTier(ip);
   return ["atkFlat", "atkPct"].map(id => {
-    const a = AFFIXES[id], mid = a.base + a.per * (t - 1);
+    const a = AFFIXES[id];
+    const mid = a.ipFrac != null ? a.ipFrac * ip : a.base + a.per * (t - 1);
     return { id, tier: t, value: a.round ? Math.round(mid) : +mid.toFixed(2) };
   });
 }

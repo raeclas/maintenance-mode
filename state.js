@@ -51,7 +51,7 @@ export function newState() {
     // v9: gear = rarity + rolled affixes. Salvage → tiered Scrap (reforge fuel).
     scrap: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, origin: 0 },
     // Dungeon delve — the character's active push-your-luck run
-    dungeon: { active: false, floor: 0, best: 0, auto: false, haul: { copper: 0, gear: [] } },
+    dungeon: { active: false, floor: 0, best: 0, auto: false, haul: { copper: 0 } },
     // v8: zones are bot-only — the player's verb is the Boss. No farm{}.
     gear: {
       weapon: null, armor: null, charm: null,

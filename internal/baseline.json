@@ -17,11 +17,11 @@
   },
   {
     "t": 4200,
-    "desc": "power ×1000"
+    "desc": "z2 held (Webbed Ravine)"
   },
   {
-    "t": 4200,
-    "desc": "z4 held (Cinder Steppe)"
+    "t": 4800,
+    "desc": "power ×1000"
   },
   {
     "t": 4800,
@@ -32,7 +32,7 @@
     "desc": "z5 held (The Doorstep)"
   },
   {
-    "t": 4800,
+    "t": 5400,
     "desc": "z6 held (The Threshold)"
   },
   {
@@ -48,16 +48,16 @@
     "desc": "z9 held (The Long Dark)"
   },
   {
-    "t": 5400,
-    "desc": "z10 held (The Second Door)"
-  },
-  {
-    "t": 6000,
-    "desc": "z2 held (Webbed Ravine)"
-  },
-  {
     "t": 6000,
     "desc": "z3 held (Salt Flats)"
+  },
+  {
+    "t": 6000,
+    "desc": "z4 held (Cinder Steppe)"
+  },
+  {
+    "t": 6000,
+    "desc": "z10 held (The Second Door)"
   },
   {
     "t": 7200,

@@ -411,22 +411,18 @@ $("exportBtn").addEventListener("click", () => {
 // ---- Dungeon delve: the character's active push-your-luck verb ----
 let dungeonCdUntil = 0;
 const charDps = () => { const dd = derive(state); return dd.atk * dd.hitsPerSec; };
-function bankDelveGear(gear) { for (const it of gear) onDrop(it); } // route through the loot filter
 $("descendBtn2").addEventListener("click", () => {
   if (Date.now() < dungeonCdUntil) return;
   const r = dungeon.descend(state, charDps());
   dungeonCdUntil = Date.now() + dungeon.CLEAR_S * 1000;
-  if (r.cleared) log(`delve: floor ${r.floor} cleared · +${fmt(r.copper)}c${r.gear ? ` · ${r.gear.name}` : ""}`);
+  if (r.cleared) log(`delve: floor ${r.floor} cleared · +${fmt(r.copper)}c`);
   else log(`delve: WIPED on floor ${r.wipedAt} — lost ${fmt(r.lost.copper)}c haul`);
-  stashDirty = true;
   save(state);
 });
 $("extractBtn").addEventListener("click", () => {
   if (!state.dungeon.active) return;
   const out = dungeon.extract(state);
-  bankDelveGear(out.gear);
-  log(`delve: extracted floor ${out.floor} · banked +${fmt(out.copper)}c${out.gear.length ? ` + ${out.gear.length} gear` : ""}`);
-  stashDirty = true;
+  log(`delve: extracted floor ${out.floor} · banked +${fmt(out.copper)}c`);
   save(state);
 });
 $("autoDelve").addEventListener("change", () => { state.dungeon.auto = $("autoDelve").checked; });
@@ -548,8 +544,7 @@ function tick() {
         dungeon.descend(state, dps);
         dungeonCdUntil = now + dungeon.CLEAR_S * 1000;
       } else if (dg.active) {
-        bankDelveGear(dungeon.extract(state).gear); // hit the safe ceiling → bank, loop next tick
-        stashDirty = true;
+        dungeon.extract(state); // hit the safe ceiling → bank copper, loop next tick
       }
     }
   }
@@ -902,7 +897,7 @@ function render() {
       ? `on floor <b>${dg.floor}</b> · descend to ${nextN}: <b>${(chance * 100).toFixed(0)}%</b> clear (diff ${fmt(dungeon.diff(nextN))} vs your ${fmt(Math.round(dps))} DPS)`
       : `idle · safe depth <b>${dungeon.safeDepth(dps)}</b> · deepest ever <b>${dg.best || 0}</b>`;
     $("delveHaul").textContent = dg.active
-      ? `haul: ${fmt(dg.haul.copper)}c${dg.haul.gear.length ? ` + ${dg.haul.gear.length} gear` : ""} — extract to keep it`
+      ? `haul: ${fmt(dg.haul.copper)}c — extract to keep it`
       : "";
     const cd = Math.max(0, dungeonCdUntil - now);
     $("descendBtn2").disabled = cd > 0;

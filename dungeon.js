@@ -8,13 +8,13 @@
 //
 // Timing/auto/offline live in main.js (cadence + the away-safe loop); this
 // module is pure: difficulty, odds, loot, and the descend/extract mutations.
-import { rollItem } from "./gear.js";
-
 export const CLEAR_S = 2;              // seconds per floor (pacing; main gates it)
 const DIFF_BASE = 10, DIFF_GROWTH = 1.7;
-const COPPER_BASE = 6, LOOT_GROWTH = 1.8;
-const GEAR_CHANCE = 0.30;             // per cleared floor
-const GEAR_IP_BASE = 15, GEAR_IP_GROWTH = 1.6;
+// Loot GROWS SLOWER than difficulty (1.4 < 1.7) so pushing infinitely deep has
+// diminishing copper-per-risk — the greed is self-bounding. The Delve is the
+// character's COPPER source only; it no longer drops gear (that was the
+// unbounded runaway that out-geared the zones). Playtest-tuned.
+const COPPER_BASE = 8, LOOT_GROWTH = 1.4;
 
 export function diff(floor) { return Math.round(DIFF_BASE * Math.pow(DIFF_GROWTH, floor - 1)); }
 
@@ -34,18 +34,9 @@ export function safeDepth(dps) {
 
 export function floorCopper(floor) { return Math.round(COPPER_BASE * Math.pow(LOOT_GROWTH, floor - 1)); }
 
-// A floor's gear drop (or null). ip scales with depth — deep delves are a
-// real gear source. Names reuse the zone pool (index capped).
-export function floorGear(floor, rng = Math.random) {
-  if (rng() >= GEAR_CHANCE) return null;
-  const mid = Math.round(GEAR_IP_BASE * Math.pow(GEAR_IP_GROWTH, floor - 1));
-  const zone = { ipLo: Math.max(1, Math.round(mid * 0.7)), ipHi: Math.round(mid * 1.4) };
-  return rollItem(zone, Math.min(floor - 1, 9), rng);
-}
+function resetRun(d) { d.active = false; d.floor = 0; d.haul = { copper: 0 }; }
 
-function resetRun(d) { d.active = false; d.floor = 0; d.haul = { copper: 0, gear: [] }; }
-
-// Attempt the next floor. Success → loot into haul, floor++. Fail → WIPE:
+// Attempt the next floor. Success → copper into haul, floor++. Fail → WIPE:
 // the un-banked haul is lost and the run resets. Returns an event to log.
 export function descend(state, dps, rng = Math.random) {
   const d = state.dungeon;
@@ -56,20 +47,17 @@ export function descend(state, dps, rng = Math.random) {
     d.best = Math.max(d.best || 0, next);
     const copper = floorCopper(next);
     d.haul.copper += copper;
-    const gear = floorGear(next, rng);
-    if (gear) d.haul.gear.push(gear);
-    return { cleared: true, floor: next, copper, gear };
+    return { cleared: true, floor: next, copper };
   }
   const lost = { copper: d.haul.copper, floor: d.floor };
   resetRun(d);
   return { cleared: false, wipedAt: next, lost };
 }
 
-// Bank the haul: copper to the wallet now, gear handed back for the caller to
-// route through the loot filter. Run resets.
+// Bank the haul copper to the wallet. Run resets.
 export function extract(state) {
   const d = state.dungeon;
-  const out = { copper: d.haul.copper, gear: d.haul.gear, floor: d.floor };
+  const out = { copper: d.haul.copper, floor: d.floor };
   state.copper += d.haul.copper;
   resetRun(d);
   return out;
