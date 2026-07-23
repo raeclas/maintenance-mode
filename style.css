@@ -521,3 +521,15 @@ footer { text-align: center; margin-top: 18px; }
 }
 .pip.own { color: var(--gold); border-color: var(--gold); }
 .pip.miss { color: #4a4a52; }
+
+/* --- Dungeon delve --- */
+#delveState { font-family: monospace; font-size: 13px; margin-bottom: 4px; }
+#delveState b { color: var(--gold); }
+#delveHaul { color: #d08a3e; min-height: 14px; margin-bottom: 8px; }
+#delveControls { margin: 6px 0; }
+#descendBtn2 {
+  background: var(--gold); color: #0d0d10; border: none;
+  font-variant: small-caps; letter-spacing: .08em; font-size: 14px; padding: 8px 22px; cursor: pointer;
+}
+#descendBtn2:disabled { background: #3a3a44; color: #77777f; cursor: default; }
+#delveLog { min-height: 14px; }

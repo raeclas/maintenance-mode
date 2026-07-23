@@ -22,7 +22,7 @@ import { ticketYield, buyFlag, buyUnlock, buyUtility, flagCost } from "../gm.js"
 import { derive, SPEED_KNEE, BASE_HPS } from "../stats.js";
 import * as bots from "../bots.js";
 import * as farm from "../farm.js";
-import { contribution, SLOTS, SALVAGE_COPPER } from "../gear.js";
+import { contribution, SLOTS } from "../gear.js";
 import { AFFIXES, affixTier } from "../affixes.js";
 
 // EV gear model: optimal play keeps DAMAGE rolls, so credit the equipped EV
@@ -136,8 +136,8 @@ while (t < MAX_S && !broken) {
     income += zr.copperPerSec;
     const dropsNow = zr.kps * STEP * farm.DROP_CHANCE;
     rolls[i] += dropsNow;
-    // salvage faucet: every drop returns a little copper (+ scrap) — EV
-    S.copper += dropsNow * SALVAGE_COPPER * (z.ipLo + z.ipHi) / 2;
+    // salvage yields SCRAP now; the character's copper is the dungeon delve
+    // (playtest-gated, not modelled here — sim stays a conservative lower bound)
   });
   // adoption: EV best roll per slot from the RICHEST farmed zone. Adopt on
   // RAW ip gain (optimal play re-enhances; income covers the re-climb)

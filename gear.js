@@ -45,18 +45,13 @@ export function scrapYield(item) {
   return Math.max(1, Math.round((0.5 + ri) * Math.sqrt(item.ip)));
 }
 
-// Salvage also returns a little copper (the early-game bootstrap faucet — a
-// starter swarm's z1 drops fund the first rig upgrades before real farming).
-export const SALVAGE_COPPER = 0.4; // copper per ip
-export function salvageCopper(item) { return Math.max(1, Math.round(SALVAGE_COPPER * item.ip)); }
-
+// Salvage yields SCRAP only (reforge fuel). The character's copper comes from
+// their own verb — the dungeon delve — not from passively skimming bot drops.
 export function salvage(state, item) {
   const r = item.rarity || "common";
   const n = scrapYield(item);
   state.scrap[r] = (state.scrap[r] || 0) + n;
-  const c = salvageCopper(item);
-  state.copper += c;
-  return { rarity: r, n, copper: c };
+  return { rarity: r, n };
 }
 
 // Stash discipline: past cap, the lowest-base-power UNLOCKED item salvages.

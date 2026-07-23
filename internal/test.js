@@ -22,6 +22,7 @@ const rarity = await import("../rarity.js");
 const affixes = await import("../affixes.js");
 const rebirth = await import("../rebirth.js");
 const trophies = await import("../trophies.js");
+const dungeon = await import("../dungeon.js");
 const enh = await import("../enhance.js");
 
 // Stats: formula lock at starting values (the intro beat number)
@@ -423,6 +424,41 @@ const enh = await import("../enhance.js");
   rebirth.banWave(s);
   assert.equal(trophies.setCount(s, 1), 7);
   assert.ok(trophies.setComplete(s, 1));
+}
+
+// Dungeon delve: push-your-luck — safe floors always clear, deep floors gamble,
+// wipe loses the haul, extract banks copper, deeper = exponentially more loot
+{
+  const s = newState();
+  const dps = 1000;
+  // within power = certain; beyond = a coin-flip that drops off
+  assert.equal(dungeon.clearChance(1, dps), 1);
+  assert.ok(dungeon.diff(2) > dungeon.diff(1));                 // difficulty climbs
+  const sd = dungeon.safeDepth(dps);
+  assert.ok(sd >= 1 && dungeon.clearChance(sd, dps) === 1 && dungeon.clearChance(sd + 1, dps) < 1);
+  assert.ok(dungeon.floorCopper(5) > dungeon.floorCopper(1));   // deeper pays more
+
+  // descend a safe floor: haul grows, no bank yet
+  const r = dungeon.descend(s, dps, () => 0.999);
+  assert.ok(r.cleared && s.dungeon.floor === 1 && s.dungeon.haul.copper > 0);
+  assert.equal(s.copper, 0);                                    // haul is un-banked
+
+  // extract banks the haul and resets the run
+  const before = s.dungeon.haul.copper;
+  const out = dungeon.extract(s);
+  assert.equal(s.copper, before);
+  assert.equal(out.copper, before);
+  assert.equal(s.dungeon.active, false);
+  assert.equal(s.dungeon.floor, 0);
+
+  // WIPE: forced failure loses the un-banked haul
+  const s2 = newState();
+  dungeon.descend(s2, dps, () => 0.999); // floor 1, some haul
+  const w = dungeon.descend(s2, 1, () => 0.999); // dps 1 vs deep diff → chance ~0 → wipe
+  assert.ok(!w.cleared && w.wipedAt);
+  assert.equal(s2.dungeon.floor, 0);
+  assert.equal(s2.dungeon.haul.copper, 0);       // haul lost
+  assert.equal(s2.copper, 0);                    // nothing banked
 }
 
 // Enhance: zones, checkpoint falls, failstacks, safeguard, cost gating

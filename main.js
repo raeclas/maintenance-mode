@@ -14,6 +14,7 @@ import { RARITIES, RARITY_BY_ID } from "./rarity.js";
 import { affixLabel } from "./affixes.js";
 import { banWave, pendingScripts, scriptMult, totalFills } from "./rebirth.js";
 import { grantBreakPiece, rollFarmDrop, bossHasSet, PARTS, pieceOf, ownedIdxs, ownsPiece, setComplete, setCount, SET_BONUS } from "./trophies.js";
+import * as dungeon from "./dungeon.js";
 import * as enh from "./enhance.js";
 import { fmt, fmtDepth } from "./format.js";
 
@@ -69,7 +70,7 @@ function onDrop(item) {
   const rar = RARITY_BY_ID[item.rarity]?.name || item.rarity;
   const r = routeDrop(state, item); // filter: keep→stash, else→scrap (never auto-equip)
   stashDirty = true;
-  const fate = r.kept ? "stashed" : `salvaged +${fmt(r.scrap.copper)}c +${r.scrap.n} ${item.rarity} scrap`;
+  const fate = r.kept ? "stashed" : `salvaged +${r.scrap.n} ${item.rarity} scrap`;
   log(`drop: ${rar} ${item.name} ${fmt(item.ip)}IP · ${fate}`);
   if (r.overflow) log(`stash full: salvaged ${r.overflow.item.name} +${r.overflow.scrap.n} ${r.overflow.scrap.rarity} scrap`);
 }
@@ -106,6 +107,20 @@ if (loaded && state.unlocked && state.lastSeen) {
     // enh feedback stays silent offline (slot rows aren't built yet)
     bots.tick(state, dt, (kind, item) => { if (kind === "drop") { drops++; onDrop(item); } });
     log(`offline ${fmt(dt / 3600)}h: +${fmt(state.copper - c0)}c · ${drops} drops`);
+    if (state.dungeon.auto) { // away-safe delving — copper only (gear is a live reward)
+      const dps = derive(state).atk * derive(state).hitsPerSec;
+      const sd = dungeon.safeDepth(dps);
+      if (sd > 0) {
+        const d0 = state.copper;
+        let steps = Math.min(Math.floor(dt / dungeon.CLEAR_S), 200000); // clamp like live
+        while (steps-- > 0) {
+          if (dungeon.clearChance(state.dungeon.floor + 1, dps) >= 1) dungeon.descend(state, dps, () => 0.999);
+          else dungeon.extract(state); // banks copper; gear discarded offline
+        }
+        if (state.dungeon.active) dungeon.extract(state);
+        if (state.copper - d0 > 0) log(`offline delve (safe depth ${sd}): +${fmt(state.copper - d0)}c`);
+      }
+    }
     if (state.gm.idleProc && !state.boss.broken) {
       const r = processIdleAttempts(state, dt);
       if (r.attempts) log(`idle processing: ${r.attempts} attempts · best ${fmtDepth(r.best)} · +${fmt(r.tickets)} tickets`);
@@ -360,6 +375,29 @@ $("helpClose").addEventListener("click", closeHelp);
 $("helpModal").addEventListener("click", e => { if (e.target === $("helpModal")) closeHelp(); });
 $("descendBtn").addEventListener("click", advanceWall);
 
+// ---- Dungeon delve: the character's active push-your-luck verb ----
+let dungeonCdUntil = 0;
+const charDps = () => { const dd = derive(state); return dd.atk * dd.hitsPerSec; };
+function bankDelveGear(gear) { for (const it of gear) onDrop(it); } // route through the loot filter
+$("descendBtn2").addEventListener("click", () => {
+  if (Date.now() < dungeonCdUntil) return;
+  const r = dungeon.descend(state, charDps());
+  dungeonCdUntil = Date.now() + dungeon.CLEAR_S * 1000;
+  if (r.cleared) log(`delve: floor ${r.floor} cleared · +${fmt(r.copper)}c${r.gear ? ` · ${r.gear.name}` : ""}`);
+  else log(`delve: WIPED on floor ${r.wipedAt} — lost ${fmt(r.lost.copper)}c haul`);
+  stashDirty = true;
+  save(state);
+});
+$("extractBtn").addEventListener("click", () => {
+  if (!state.dungeon.active) return;
+  const out = dungeon.extract(state);
+  bankDelveGear(out.gear);
+  log(`delve: extracted floor ${out.floor} · banked +${fmt(out.copper)}c${out.gear.length ? ` + ${out.gear.length} gear` : ""}`);
+  stashDirty = true;
+  save(state);
+});
+$("autoDelve").addEventListener("change", () => { state.dungeon.auto = $("autoDelve").checked; });
+
 $("stashToggle").addEventListener("click", () => {
   const l = $("stashList");
   l.style.display = l.style.display === "none" ? "" : "none";
@@ -406,7 +444,7 @@ function renderStash() {
     row.querySelector(".sv").addEventListener("click", () => {
       state.gear.stash.splice(idx, 1);
       const s = salvage(state, item);
-      log(`salvaged ${item.name} → +${fmt(s.copper)}c +${s.n} ${s.rarity} scrap`);
+      log(`salvaged ${item.name} → +${s.n} ${s.rarity} scrap`);
       stashDirty = true;
     });
     el.appendChild(row);
@@ -467,6 +505,19 @@ function tick() {
         }
       }
       save(state);
+    }
+  }
+  { // auto-delve: safe-depth farming on the descend cadence (live)
+    const dg = state.dungeon;
+    if (dg.auto && now >= dungeonCdUntil) {
+      const dps = charDps();
+      if (dungeon.clearChance(dg.floor + 1, dps) >= 1 && dungeon.safeDepth(dps) > 0) {
+        dungeon.descend(state, dps);
+        dungeonCdUntil = now + dungeon.CLEAR_S * 1000;
+      } else if (dg.active) {
+        bankDelveGear(dungeon.extract(state).gear); // hit the safe ceiling → bank, loop next tick
+        stashDirty = true;
+      }
     }
   }
   if (now - lastSave > 5000) { lastSave = now; save(state); }
@@ -793,6 +844,23 @@ function render() {
     }).join("");
     $("trophySet").textContent = walls.length ? `${done}/${walls.length} sets complete` : "";
     $("trophyCabinet").innerHTML = html;
+  }
+
+  { // delve panel
+    const dg = state.dungeon, dps = charDps();
+    const nextN = dg.floor + 1, chance = dungeon.clearChance(nextN, dps);
+    $("delveState").innerHTML = dg.active
+      ? `on floor <b>${dg.floor}</b> · descend to ${nextN}: <b>${(chance * 100).toFixed(0)}%</b> clear (diff ${fmt(dungeon.diff(nextN))} vs your ${fmt(Math.round(dps))} DPS)`
+      : `idle · safe depth <b>${dungeon.safeDepth(dps)}</b> · deepest ever <b>${dg.best || 0}</b>`;
+    $("delveHaul").textContent = dg.active
+      ? `haul: ${fmt(dg.haul.copper)}c${dg.haul.gear.length ? ` + ${dg.haul.gear.length} gear` : ""} — extract to keep it`
+      : "";
+    const cd = Math.max(0, dungeonCdUntil - now);
+    $("descendBtn2").disabled = cd > 0;
+    $("descendBtn2").textContent = dg.active ? "Descend" : "Enter";
+    $("extractBtn").disabled = !dg.active;
+    $("delveCd").textContent = cd > 0 ? `${(cd / 1000).toFixed(1)}s` : "";
+    if (document.activeElement !== $("autoDelve")) $("autoDelve").checked = dg.auto;
   }
 
   if (stashDirty) renderStash();

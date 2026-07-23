@@ -41,6 +41,7 @@
     <button data-tab="botSec">Training</button>
     <button data-tab="farmSec">Grind</button>
     <button data-tab="gearSec">Player</button>
+    <button data-tab="dungeonSec">Delve</button>
     <button data-tab="gmSec">GM</button>
   </nav>
 
@@ -136,6 +137,19 @@
       </div>
     </div>
     <div id="stashList" style="display:none"></div>
+  </section>
+
+  <section id="dungeonSec" class="game hidden tabpane" style="display:none">
+    <h3>Delve <span class="sub">— descend for loot; bank before your build gives out</span></h3>
+    <div id="delveState"></div>
+    <div id="delveHaul" class="sub"></div>
+    <div class="controls" id="delveControls">
+      <button id="descendBtn2">Descend</button>
+      <button id="extractBtn">Extract</button>
+      <span id="delveCd" class="sub"></span>
+    </div>
+    <label class="toggleLine"><input type="checkbox" id="autoDelve"> auto-delve (safe depth only — runs while you're away)</label>
+    <div id="delveLog" class="sub"></div>
   </section>
 
   <section id="gmSec" class="game hidden tabpane" style="display:none">
