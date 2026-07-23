@@ -560,3 +560,7 @@ footer { text-align: center; margin-top: 18px; }
   font-size: 10px;
   resize: vertical;
 }
+
+/* --- locked (???) tabs — the visible ladder --- */
+#tabs button.locked { color: #45454d; border-color: #1b1b22; cursor: default; letter-spacing: .2em; }
+#tabs button.locked:hover { color: #45454d; border-color: #1b1b22; }

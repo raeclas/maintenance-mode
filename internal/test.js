@@ -560,6 +560,19 @@ const enh = await import("../enhance.js");
   // note: evCost(15) is CHEAP — +15 is a checkpoint, pushing +16 risks only copper
 }
 
+// Progressive unlocks: fresh state hides all tabs; a genuinely OLD save (no
+// features field) that was already unlocked keeps its tabs (don't re-hide).
+{
+  assert.equal(newState().features.training, false);
+  assert.equal(newState().features.rebirth, false);
+  localStorage.setItem("mm_save", JSON.stringify({ v: 8, unlocked: true, boss: { pulls: 3 }, cleared: ["W1 Vess"] }));
+  const s = newState();
+  saves.load(s);
+  assert.equal(s.features.training, true);  // backfilled
+  assert.equal(s.features.player, true);
+  assert.equal(s.features.rebirth, true);   // had a cleared wall → rebirth stays open
+}
+
 // Save v2 round-trip + v1 backfill + durability
 {
   const s = newState();

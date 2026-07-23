@@ -62,6 +62,16 @@ export function load(state) {
   const d = newState();
   state.lastSeen = s.lastSeen ?? 0;
   state.unlocked = s.unlocked ?? (s.boss?.pulls > 0); // v1 save mid-siege: keep systems open
+  // progressive unlocks. Old saves (no features) that were already unlocked
+  // keep everything open — don't re-hide tabs a player already had.
+  if (s.features && typeof s.features === "object") {
+    state.features = { ...d.features, ...s.features };
+  } else if (state.unlocked) {
+    state.features = { training: true, grind: true, player: true, gm: true,
+      delve: (s.dungeon?.best || 0) > 0 || (s.cleared?.length || 0) > 0,
+      rebirth: (s.cleared?.length || 0) > 0 || (s.rebirths || 0) > 0 };
+  }
+  state.everDropped = s.everDropped ?? state.unlocked;
   state.copper = s.copper ?? 0;
   state.tickets = s.tickets ?? 0;
   state.scripts = s.scripts ?? 0;   // v9 Ban Wave prestige currency

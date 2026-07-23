@@ -5,6 +5,10 @@ export function newState() {
     v: 9,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
+    // progressive feature unlocks (NGU/ITRTG-style ??? tabs). Boss is always
+    // open; the rest light up on milestones — the game's visible ladder.
+    features: { training: false, grind: false, player: false, gm: false, delve: false, rebirth: false },
+    everDropped: false, // a gear drop has happened (gates the Player tab)
     copper: 0,
     tickets: 0,    // meta currency: damaging Content files support tickets nobody handles
     scripts: 0,    // Ban Wave prestige currency — permanent +damage, survives rebirth

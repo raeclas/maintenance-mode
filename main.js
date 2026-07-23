@@ -93,6 +93,7 @@ let lastRenderNow = Date.now();  // for per-frame dt (kill-cycle bar integrator)
 const zonePhase = [];            // per-zone accumulated kill phase (0..1 shown)
 
 function onDrop(item) {
+  state.everDropped = true; // gates the Player tab
   const rar = RARITY_BY_ID[item.rarity]?.name || item.rarity;
   const r = routeDrop(state, item); // filter: keep→stash, else→scrap (never auto-equip)
   stashDirty = true;
@@ -160,17 +161,56 @@ if (loaded && state.unlocked && state.lastSeen) {
   }
 }
 
-// ---- tabs ----
+// ---- tabs + progressive feature unlocks ----
+const TAB_FEATURE = { botSec: "training", farmSec: "grind", gearSec: "player", dungeonSec: "delve", gmSec: "gm" };
+const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", gmSec: "GM" };
+const UNLOCK_MSG = {
+  training: "TRAINING — the old bot farms. Run scripts, build a swarm.",
+  grind: "GRIND — deploy the swarm on the leveling zones for copper + gear.",
+  player: "PLAYER — your character. Manage gear, enhance, reforge, trophies.",
+  gm: "GM — leftover admin tools. Spend the support tickets nobody answers.",
+  delve: "DELVE — the character's own run. Descend for copper; bank before you wipe.",
+  rebirth: "BAN WAVE — the anti-cheat notices the farm. Reset it for permanent Scripts.",
+};
+let tabsDirty = true;
+
+function tabUnlocked(id) { const f = TAB_FEATURE[id]; return !f || state.features[f]; }
 function showTab(id) {
-  for (const pane of document.querySelectorAll(".tabpane")) {
-    pane.style.display = pane.id === id ? "" : "none";
-  }
-  for (const btn of document.querySelectorAll("#tabs button")) {
-    btn.classList.toggle("active", btn.dataset.tab === id);
-  }
+  if (!tabUnlocked(id)) return; // ??? tabs are not enterable yet
+  for (const pane of document.querySelectorAll(".tabpane")) pane.style.display = pane.id === id ? "" : "none";
+  for (const btn of document.querySelectorAll("#tabs button")) btn.classList.toggle("active", btn.dataset.tab === id);
 }
 for (const btn of document.querySelectorAll("#tabs button")) {
   btn.addEventListener("click", () => showTab(btn.dataset.tab));
+}
+function renderTabs() {
+  tabsDirty = false;
+  for (const btn of document.querySelectorAll("#tabs button")) {
+    const open = tabUnlocked(btn.dataset.tab);
+    btn.textContent = open ? TAB_NAME[btn.dataset.tab] : "???";
+    btn.classList.toggle("locked", !open);
+  }
+}
+
+// milestone triggers — the cadence of new toys (starting values, playtest-tuned)
+function checkUnlocks() {
+  const dps = charDps();
+  const s = state, f = s.features;
+  const cond = {
+    training: s.boss.pulls >= 1,
+    grind: f.training && s.bots.pop >= 15,
+    player: f.grind && s.everDropped,
+    gm: f.training && s.tickets >= 30,
+    delve: f.player && dps >= 100,
+    rebirth: s.cleared.length >= 1 || s.rebirths >= 1,
+  };
+  for (const feat of Object.keys(cond)) {
+    if (!f[feat] && cond[feat]) {
+      f[feat] = true;
+      tabsDirty = true;
+      log(`★ NEW: ${UNLOCK_MSG[feat]}`);
+    }
+  }
 }
 
 // ---- unlock reveal ----
@@ -533,8 +573,7 @@ function tick() {
         log(`attempt ${state.boss.pulls}: ${fmtDepth(depth)} · scars ${fmtDepth(state.boss.scars)} · +${yieldT} tickets`);
         if (!state.unlocked) {
           state.unlocked = true;
-          reveal();
-          log("— new panels: TRAINING · GRIND · PLAYER");
+          reveal(); // tabs appear; checkUnlocks lights each one on its milestone
         }
       }
       save(state);
@@ -552,6 +591,7 @@ function tick() {
       }
     }
   }
+  if (state.unlocked) checkUnlocks();
   if (now - lastSave > 5000) { lastSave = now; save(state); }
 }
 
@@ -559,6 +599,7 @@ function render() {
   const now = Date.now();
   const frameDt = Math.min(0.25, (now - lastRenderNow) / 1000); // clamp tab-switch/idle gaps
   lastRenderNow = now;
+  if (tabsDirty) renderTabs();
   renderBattle(state, now);
   const d = derive(state);
   const dps = d.atk * d.hitsPerSec;
@@ -594,7 +635,8 @@ function render() {
     $("resBots").textContent = `${bots.freeBots(state.bots).toFixed(1)} / ${bots.capacity(state.bots, state.gm.cap)}`;
     $("resRate").textContent = `+${bots.createRate(state.bots).toFixed(1)}`;
   }
-  { // Ban Wave panel: payout preview + what survives (attachment reassurance)
+  $("banWaveSection").style.display = state.features.rebirth ? "" : "none";
+  if (state.features.rebirth) { // Ban Wave panel: payout preview + what survives
     const pend = pendingScripts(state);
     const btn = $("banWaveBtn");
     $("banWaveInfo").innerHTML = banArmed
