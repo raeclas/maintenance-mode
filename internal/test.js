@@ -242,6 +242,19 @@ const enh = await import("../enhance.js");
   assert.ok(farm.zoneUnlocked(4, 14));   // z15 opens after W4
 }
 
+// Overkill Saturation: surplus squad DPS past the kill-cap biases loot QUALITY
+{
+  assert.equal(farm.lootBias(0.5), 0);   // below the cap → no bias
+  assert.equal(farm.lootBias(1), 0);
+  assert.equal(farm.lootBias(2), 1);     // 2× over → +1 band
+  assert.equal(farm.lootBias(8), 3);     // 8× → +3
+  assert.equal(farm.lootBias(1e6), 3);   // log-capped at 3 (top rarities stay events)
+  assert.equal(farm.saturation(100, 1), 100 / (farm.KILL_CAP * 1));
+  // bias pulls the ip roll toward the band top
+  const z = farm.zones[0];
+  assert.ok(gear.rollItem(z, 0, () => 0.5, 3).ip > gear.rollItem(z, 0, () => 0.5, 0).ip);
+}
+
 // Farm: zones are bot-only data now — no player kill functions (v8)
 
 // Gear v9: rarity + affixes on roll; loot filter (never auto-equips);

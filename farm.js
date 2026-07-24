@@ -15,6 +15,13 @@ export function offlineCapS(state) { return OFFLINE_CAP_S + (state.gm?.offline |
 export function zoneUnlockClears(zi) { return zi < 5 ? 0 : zi < 10 ? 1 : 4; }
 export function zoneUnlocked(clearedCount, zi) { return (clearedCount || 0) >= zoneUnlockClears(zi); }
 
+// Overkill Saturation — squad DPS past the 50/s kill-cap isn't wasted: it
+// biases loot QUALITY. sat = squadDps / (dps needed to cap kills). Above 1
+// (i.e. AT the cap with surplus), each doubling adds one "band" of loot
+// quality, log-capped at 3 so top rarities stay events (law 1 band-cap).
+export function saturation(squadDps, mobHp) { return squadDps / (KILL_CAP * mobHp); }
+export function lootBias(sat) { return Math.max(0, Math.min(3, Math.floor(Math.log2(Math.max(1, sat))))); }
+
 // gate = minimum SQUAD DPS to hold the zone (starting values, sim-gated).
 // detection: anti-cheat bans per farming bot per hour in this zone.
 // Zone names speak the DEAD GAME register (feature-pass gate 3): the old

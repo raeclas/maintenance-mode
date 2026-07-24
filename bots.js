@@ -5,7 +5,7 @@
 // loved ever dies (attachment law holds by construction).
 // Live tick and offline batch are the SAME function (clamp law).
 // Starting values throughout — sim-gated; test plans in REMAKE-DESIGN §7.
-import { zones, DROP_CHANCE, zoneUnlocked } from "./farm.js";
+import { zones, DROP_CHANCE, zoneUnlocked, saturation, lootBias } from "./farm.js";
 import { rollItem } from "./gear.js";
 import { attempt as enhAttempt } from "./enhance.js";
 import { derive } from "./stats.js";
@@ -253,7 +253,8 @@ function tickChunk(state, dtS, onEvent, rng) {
     state.copper += r.copperPerSec * dtS * (player.copperMult || 1); // +copper affixes
     const np = r.kps * dtS * DROP_CHANCE;
     let drops = Math.floor(np) + (rng() < np - Math.floor(np) ? 1 : 0);
-    while (drops-- > 0) onEvent("drop", rollItem(zones[zi], zi, rng));
+    const bias = lootBias(saturation(r.squadDps, zones[zi].mobHp)); // over-farm → richer loot
+    while (drops-- > 0) onEvent("drop", rollItem(zones[zi], zi, rng, bias));
     const deaths = r.bansPerHour * dtH;
     b.pop = Math.max(0, b.pop - deaths);
     b.banned = (b.banned || 0) + deaths; // lifetime counter (log flavor)

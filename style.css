@@ -612,3 +612,6 @@ footer { text-align: center; margin-top: 18px; }
 section.game button.affordable { border-color: var(--gold); color: var(--gold); }
 .rowlist .row.maxed .rowStat { color: var(--gold); }
 .rowlist .row.maxed .rowFill { background: var(--gold); }
+
+/* Overkill Saturation — the coupling's payoff, made visible on the zone */
+.sat { color: var(--gold); }

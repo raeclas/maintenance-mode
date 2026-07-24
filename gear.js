@@ -28,10 +28,14 @@ export function contribution(item) {
 
 // zoneIdx 0-based; ip band comes from the zone. Rarity is standardized
 // (same odds everywhere); affix count follows rarity, affix tier follows ip.
-export function rollItem(zone, zoneIdx, rng = Math.random) {
+// bias = Overkill Saturation band bonus (0–3). Pulls ip toward the band top
+// and gives rarity keep-best-of-(1+bias) rolls — richer loot for over-farming.
+export function rollItem(zone, zoneIdx, rng = Math.random, bias = 0) {
   const slot = SLOTS[Math.floor(rng() * SLOTS.length)];
-  const ip = Math.round(zone.ipLo + (zone.ipHi - zone.ipLo) * rng());
-  const rarity = rollRarity(rng);
+  const ipT = Math.min(1, rng() + bias * 0.12); // each band pulls ~12% toward ipHi
+  const ip = Math.round(zone.ipLo + (zone.ipHi - zone.ipLo) * ipT);
+  let rarity = rollRarity(rng);
+  for (let k = 0; k < bias; k++) { const r2 = rollRarity(rng); if (RARITY_IDX[r2.id] > RARITY_IDX[rarity.id]) rarity = r2; }
   return {
     slot, ip, plus: 0, zone: zoneIdx + 1, name: NAMES[slot][zoneIdx],
     rarity: rarity.id,

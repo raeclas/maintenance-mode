@@ -876,7 +876,9 @@ function render() {
     } else if (!zr.held) {
       stat.textContent = `squad DPS ${fmt(zr.squadDps)} / ${fmt(z.gate)} — can't hold`;
     } else {
-      stat.textContent = `${zr.kps.toFixed(2)} kills/s${zr.kps >= farm.KILL_CAP ? " · CAP" : ""} · ${fmt(zr.copperPerSec)}c/s · ${zr.bansPerHour.toFixed(2)} bans/h`;
+      const sat = farm.saturation(zr.squadDps, z.mobHp), bias = farm.lootBias(sat);
+      const satTerm = bias > 0 ? ` · <span class="sat">SAT ×${sat.toFixed(1)} → +${bias} bands</span>` : "";
+      stat.innerHTML = `${zr.kps.toFixed(2)} kills/s${zr.kps >= farm.KILL_CAP ? " · CAP" : ""} · ${fmt(zr.copperPerSec)}c/s · ${zr.bansPerHour.toFixed(2)} bans/h${satTerm}`;
     }
     // kill-cycle bar: integrate phase incrementally (speed = kps, one fill per
     // kill). NOT frac(now×kps) — that spins wildly whenever kps drifts (pop
