@@ -66,7 +66,6 @@
     <!-- arena: the fight as one unit -->
     <div class="arena">
       <canvas id="battle"></canvas>
-      <div id="playerStats">ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · GM ×<span id="gmEl">1.00</span> · proj <span id="projMini">—</span></div>
       <div class="controls">
         <button id="pullBtn">Attempt</button>
         <span id="depth">—</span>
@@ -130,6 +129,14 @@
 
   <section id="gearSec" class="game hidden tabpane" style="display:none">
     <div id="titles" style="display:none"></div>
+
+    <h3>Combat Power <span class="sub">— the factors your gear moves</span></h3>
+    <div class="chipGroup" id="powerBreakdown">
+      <div class="chip"><div class="chipVal"><b id="cpElP">—</b></div><div class="chipLbl">combat power</div></div>
+      <div class="chip"><div class="chipVal"><b id="atkEl">—</b></div><div class="chipLbl">atk</div></div>
+      <div class="chip"><div class="chipVal"><b id="hpsEl">—</b></div><div class="chipLbl">hits/s</div></div>
+      <div class="chip"><div class="chipVal">×<b id="gmEl">1.00</b></div><div class="chipLbl">gm mult</div></div>
+    </div>
 
     <h3>Trophies <span class="sub" id="trophySet"></span></h3>
     <div id="trophyCabinet"></div>

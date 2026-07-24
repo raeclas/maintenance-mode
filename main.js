@@ -618,13 +618,10 @@ function render() {
     cpSample = dps; cpSampleT = now;
   }
   $("cpRate").textContent = cpRate > 0 ? `+${fmt(cpRate)}/s` : "—";
+  $("cpElP").textContent = fmt(dps); // Player-tab breakdown: total + its factors (law 5)
   $("atkEl").textContent = fmt(d.atk);
   $("hpsEl").textContent = d.hitsPerSec.toFixed(2);
   $("gmEl").textContent = (gmDmgMult(state) * gmHasteMult(state)).toFixed(2);
-  { // odometer weld: projection visible next to the stats that move it
-    const w = band(d, boss, state.boss.scars);
-    $("projMini").textContent = state.boss.broken ? "100%" : `${fmtDepth(w.lo)}–${fmtDepth(w.hi)}`;
-  }
   $("copperEl").textContent = fmt(state.copper);
   $("ticketsEl").textContent = fmt(state.tickets);
   { // scripts chip appears once the first Ban Wave has been earned
