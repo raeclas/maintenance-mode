@@ -250,6 +250,11 @@ section.game button:disabled { color: #55555e; cursor: default; }
 /* alloc controls recede (dim, quiet) so the numbers they feed read louder;
    roomier tap targets for mobile */
 .allocMini button { padding: 4px 8px; font-size: 11px; color: #6e6e78; border-color: #1b1b22; }
+/* power controls (cap/max/0) collapse behind ⋯ until tapped — the row's
+   default state is just −/value/+ */
+.allocMore { display: none; align-items: center; gap: 3px; }
+.allocMini.expanded .allocMore { display: inline-flex; }
+.allocMini.expanded .allocX { color: var(--gold); border-color: var(--line); }
 .allocMini input {
   width: 44px;
   background: #17171c;
