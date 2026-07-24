@@ -107,8 +107,13 @@ export function load(state) {
     },
     trained: { ...d.bots.trained, ...(s.bots?.trained || {}) },
     bars: (v4Bars || v6Bars) ? structuredClone(d.bots.bars) : {
-      atk: { ...d.bots.bars.atk, ...(oldBars?.atk || {}) },
-      speed: { ...d.bots.bars.speed, ...(oldBars?.speed || {}) },
+      // resize to the current tier count, preserving saved fills/prog/unlocked
+      atk: { unlocked: oldBars?.atk?.unlocked ?? 1,
+        fills: d.bots.bars.atk.fills.map((_, i) => oldBars?.atk?.fills?.[i] ?? 0),
+        prog: d.bots.bars.atk.prog.map((_, i) => oldBars?.atk?.prog?.[i] ?? 0) },
+      speed: { unlocked: oldBars?.speed?.unlocked ?? 1,
+        fills: d.bots.bars.speed.fills.map((_, i) => oldBars?.speed?.fills?.[i] ?? 0),
+        prog: d.bots.bars.speed.prog.map((_, i) => oldBars?.speed?.prog?.[i] ?? 0) },
     },
   };
   if (v4Bars) { // v4 → v5: quadratic bar levels become trained stats, tiers reset

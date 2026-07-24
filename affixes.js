@@ -26,7 +26,8 @@ export const AFFIX_IDS = Object.keys(AFFIXES);
 // Affix TIER from item ip — one tier per zone ip band (each band is the next
 // zone's ipLo). Deeper zone = higher ip = higher-tier (stronger) affixes: the
 // chase re-steepens with every region. Add a threshold when zones extend.
-const TIER_IP = [40, 150, 600, 4500, 13500, 40500, 121500, 364500, 1093500];
+const TIER_IP = [40, 150, 600, 4500, 13500, 40500, 121500, 364500, 1093500,
+  3280500, 9841500, 29524500, 88573500, 265720500];
 export function affixTier(ip) {
   let t = 1;
   for (const th of TIER_IP) { if (ip >= th) t++; else break; }

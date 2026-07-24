@@ -12,7 +12,7 @@ import { derive } from "./stats.js";
 
 export const CREATE_PER_H = 60;       // base bots/hour (~1/min) — no dead-wait at the start
 export const CAP_BASE = 40;           // dead server's leftover session slots — a usable swarm fast
-export const CAP_PER_RANK = 10;       // each rank clears more dead sessions
+export const CAP_GROWTH = 1.2;        // capacity ×1.2 per rank — the swarm scales into the thousands
 export const POWER_PER_RANK = 0.25;   // script quality
 export const SPEED_PER_RANK = 0.20;   // hardware
 export const CREATE_PER_RANK = 0.5;   // generator: ×(1 + 0.5×rank)
@@ -32,6 +32,8 @@ export const BOT_SPD_FRAC = 0.10;
 // have small costs so the cap is REACHABLE (RATE MAX = the visible goal);
 // higher tiers raise the ceiling with bigger cost AND bigger gain.
 export const UNLOCK_FILLS = 10_000;
+export const UNLOCK_GROWTH = 3;   // each deeper tier needs ×3 more fills to unlock — paced
+export function unlockFills(tierIdx) { return UNLOCK_FILLS * Math.pow(UNLOCK_GROWTH, tierIdx); }
 export const MAX_FILLS_PER_S = 50;
 // Training names speak the BOTTER register (feature-pass gate 3): script
 // names a 2006 botting forum would trade.
@@ -41,11 +43,17 @@ export const TRAININGS = {
     { name: "combo macro", cost: 12, gain: 0.005 },      // caps at 600
     { name: "cancel-weave script", cost: 120, gain: 0.045 },
     { name: "frame-perfect script", cost: 1000, gain: 0.35 },
+    { name: "packet-replay macro", cost: 8000, gain: 2.8 },
+    { name: "netcode desync", cost: 64000, gain: 22 },
+    { name: "tick-rate exploit", cost: 500000, gain: 175 },
   ],
   speed: [
     { name: "autoclicker", cost: 2, gain: 0.00001 },
     { name: "turbo clicker", cost: 24, gain: 0.0001 },
     { name: "no-delay hack", cost: 240, gain: 0.0009 },
+    { name: "input injector", cost: 2000, gain: 0.007 },
+    { name: "kernel clicker", cost: 18000, gain: 0.055 },
+    { name: "hypervisor spoof", cost: 150000, gain: 0.42 },
   ],
 };
 
@@ -58,7 +66,11 @@ export const T_CAP_PER_RANK = 8;
 
 export function botPower(b) { return 1 + POWER_PER_RANK * b.powerRank + T_POWER_PER_RANK * (b.tPower || 0); }
 export function botSpeed(b) { return 1 + SPEED_PER_RANK * b.speedRank + T_SPEED_PER_RANK * (b.tSpeed || 0); }
-export function capacity(b, gmCap = 0) { return CAP_BASE + CAP_PER_RANK * b.capRank + T_CAP_PER_RANK * (b.tCap || 0) + 2 * gmCap; }
+// Multiplicative: each capRank multiplies the swarm ceiling (flat priv/GM
+// bonuses ride inside the multiply). rank 28 → ~13k slots instead of 348.
+export function capacity(b, gmCap = 0) {
+  return Math.round((CAP_BASE + T_CAP_PER_RANK * (b.tCap || 0) + 2 * gmCap) * Math.pow(CAP_GROWTH, b.capRank));
+}
 export function createRate(b) { return CREATE_PER_H * (1 + CREATE_PER_RANK * b.createRank + T_CREATE_PER_RANK * (b.tGen || 0)); } // per hour
 // One bot's zone DPS. player = derived stats {atk, hitsPerSec}. Squad DPS is
 // n × this — each bot ≈ 1% of player DPS (0.1 atk × 0.1 speed) before ranks.
@@ -71,7 +83,7 @@ export function botDps(b, player) {
 // Copper costs (exponential — copper can't runaway-compound the chain).
 // Bases softened 2026-07-22 (flatter scaling) so rig upgrades stay buyable
 // deep instead of walling out; still exponential. Playtest-tuned (bot lane).
-export function capCost(b) { return Math.round(800 * Math.pow(1.9, b.capRank)); }
+export function capCost(b) { return Math.round(800 * Math.pow(1.65, b.capRank)); }
 export function createCost(b) { return Math.round(500 * Math.pow(1.7, b.createRank)); }
 export function powerCost(b) { return Math.round(200 * Math.pow(1.6, b.powerRank)); }
 export function speedCost(b) { return Math.round(300 * Math.pow(1.7, b.speedRank)); }
@@ -222,7 +234,7 @@ function tickChunk(state, dtS, onEvent, rng) {
         B.fills[i] = (B.fills[i] || 0) + 1;
         if (bar === "atk") b.trained.atk += t.gain;
         else b.trained.hits += t.gain; // no hard cap — speed's returns soft-cap in stats.js
-        if (i === B.unlocked - 1 && B.unlocked < TRAININGS[bar].length && B.fills[i] >= UNLOCK_FILLS) {
+        if (i === B.unlocked - 1 && B.unlocked < TRAININGS[bar].length && B.fills[i] >= unlockFills(i)) {
           B.unlocked++;
         }
       }

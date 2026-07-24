@@ -211,7 +211,7 @@ const enh = await import("../enhance.js");
 {
   const s = newState();
   s.copper = 10_000;
-  assert.ok(bots.buy(s, "cap") && bots.capacity(s.bots) === bots.CAP_BASE + bots.CAP_PER_RANK);
+  assert.ok(bots.buy(s, "cap") && bots.capacity(s.bots) === Math.round(bots.CAP_BASE * bots.CAP_GROWTH));
   assert.ok(bots.buy(s, "create") && bots.createRate(s.bots) === bots.CREATE_PER_H * 1.5);
   assert.ok(bots.buy(s, "power") && bots.botPower(s.bots) === 1.25);
   assert.ok(bots.buy(s, "speed") && bots.botSpeed(s.bots) === 1.2);
@@ -600,9 +600,9 @@ const enh = await import("../enhance.js");
   assert.equal(JSON.parse(localStorage.getItem("mm_save")).pull, undefined);
   const s2 = newState();
   saves.load(s2);
-  assert.deepEqual(s2.bots.bars.atk, { fills: [50, 3, 0, 0], prog: [11, 4, 0, 0], unlocked: 2 });
-  assert.deepEqual(s2.bots.alloc.atk, [2, 1, 0, 0]);
-  assert.deepEqual(s2.bots.alloc.zones, [0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+  assert.deepEqual(s2.bots.bars.atk, { fills: [50, 3, 0, 0, 0, 0, 0], prog: [11, 4, 0, 0, 0, 0, 0], unlocked: 2 });
+  assert.deepEqual(s2.bots.alloc.atk, [2, 1, 0, 0, 0, 0, 0]);
+  assert.deepEqual(s2.bots.alloc.zones, [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   assert.equal(s2.bots.trained.atk, 56);
   assert.equal(s2.tickets, 77);
   assert.equal(s2.gm.scar, 2);
@@ -628,7 +628,7 @@ const enh = await import("../enhance.js");
   assert.equal(s5.bots.pop, 5);
   assert.equal(s5.bots.powerRank, 1);
   assert.equal(s5.bots.assign, undefined); // v2 field dropped
-  assert.deepEqual(s5.bots.alloc.atk, [1, 0, 0, 0]); // defaults
+  assert.deepEqual(s5.bots.alloc.atk, [1, 0, 0, 0, 0, 0, 0]); // defaults
 
   // v4 save (quadratic bars): lvl converts to trained stats, tiers reset
   localStorage.setItem("mm_save", JSON.stringify({ v: 4, bots: { pop: 6, bars: { atk: { lvl: 20, prog: 5 }, speed: { lvl: 150, prog: 5 } } } }));
@@ -636,7 +636,7 @@ const enh = await import("../enhance.js");
   saves.load(s7);
   assert.equal(s7.bots.trained.atk, 160);       // 8 × 20
   assert.equal(s7.bots.trained.hits, 3.0);      // 0.03 × min(150,100), capped
-  assert.deepEqual(s7.bots.bars.atk.fills, [0, 0, 0, 0]); // fresh bar state
+  assert.deepEqual(s7.bots.bars.atk.fills, [0, 0, 0, 0, 0, 0, 0]); // fresh bar state
 
   // v6 save (scalar alloc + single-active-tier bars) → vectors, history kept
   localStorage.setItem("mm_save", JSON.stringify({
@@ -650,11 +650,11 @@ const enh = await import("../enhance.js");
   }));
   const s6 = newState();
   saves.load(s6);
-  assert.deepEqual(s6.bots.alloc.atk, [3, 0, 0, 0]);
-  assert.deepEqual(s6.bots.alloc.speed, [2, 0, 0]);
-  assert.deepEqual(s6.bots.alloc.zones, [0, 0, 4, 0, 0, 0, 0, 0, 0, 0]); // farm squad landed on its old zone
+  assert.deepEqual(s6.bots.alloc.atk, [3, 0, 0, 0, 0, 0, 0]);
+  assert.deepEqual(s6.bots.alloc.speed, [2, 0, 0, 0, 0, 0]);
+  assert.deepEqual(s6.bots.alloc.zones, [0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); // farm squad landed on its old zone
   assert.equal(s6.bots.alloc.enh, 1);
-  assert.deepEqual(s6.bots.bars.atk.fills, [9, 1, 0, 0]); // history kept
+  assert.deepEqual(s6.bots.bars.atk.fills, [9, 1, 0, 0, 0, 0, 0]); // history kept
   assert.equal(s6.bots.bars.atk.unlocked, 2);
   assert.equal(s6.bots.trained.atk, 12);
 

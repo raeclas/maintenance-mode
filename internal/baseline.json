@@ -49,15 +49,35 @@
   },
   {
     "t": 6000,
+    "desc": "z10 held (The Second Door)"
+  },
+  {
+    "t": 6000,
+    "desc": "z11 held (Frostbound Wastes)"
+  },
+  {
+    "t": 6000,
+    "desc": "z12 held (The Sunken Archive)"
+  },
+  {
+    "t": 6000,
+    "desc": "z13 held (Obsidian Reach)"
+  },
+  {
+    "t": 6000,
+    "desc": "z14 held (The Hollow Spire)"
+  },
+  {
+    "t": 6000,
+    "desc": "z15 held (World's Edge)"
+  },
+  {
+    "t": 6600,
     "desc": "z3 held (Salt Flats)"
   },
   {
-    "t": 6000,
+    "t": 6600,
     "desc": "z4 held (Cinder Steppe)"
-  },
-  {
-    "t": 6000,
-    "desc": "z10 held (The Second Door)"
   },
   {
     "t": 7200,

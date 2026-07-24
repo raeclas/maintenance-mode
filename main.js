@@ -808,7 +808,7 @@ function render() {
       row.classList.toggle("active", !locked && squad > 0);
       const stat = $(`ts_${bar}${i}`);
       if (locked) {
-        stat.textContent = `locked · ${fmt(B.fills[i - 1] || 0)}/${fmt(bots.UNLOCK_FILLS)} fills of ${tiers[i - 1].name}`;
+        stat.textContent = `locked · ${fmt(B.fills[i - 1] || 0)}/${fmt(bots.unlockFills(i - 1))} fills of ${tiers[i - 1].name}`;
       } else if (squad > 0) {
         const maxed = squad * quality >= t.cost * bots.MAX_FILLS_PER_S;
         stat.textContent = `${fmt(B.fills[i] || 0)} fills · ${maxed ? "RATE MAX" : rate.toFixed(2) + " fills/s"}`;

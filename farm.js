@@ -27,4 +27,10 @@ export const zones = [
   { id: "z8", name: "Flooded Undercroft", gate: 190000, mobHp: 52000, copper: 65000, ipLo: 121500, ipHi: 364500, mob: "Undercroft Lurker", detection: 0.4 },
   { id: "z9", name: "The Long Dark", gate: 570000, mobHp: 170000, copper: 200000, ipLo: 364500, ipHi: 1093500, mob: "Pale Sentinel", detection: 0.45 },
   { id: "z10", name: "The Second Door", gate: 1700000, mobHp: 550000, copper: 620000, ipLo: 1093500, ipHi: 3280500, mob: "Sealed Warden", detection: 0.5 },
+  // Region 3 — deeper into the dead server. ×3 ip/gate steps continued.
+  { id: "z11", name: "Frostbound Wastes", gate: 5100000, mobHp: 1650000, copper: 1860000, ipLo: 3280500, ipHi: 9841500, mob: "Wastes Wight", detection: 0.5 },
+  { id: "z12", name: "The Sunken Archive", gate: 15300000, mobHp: 5000000, copper: 5600000, ipLo: 9841500, ipHi: 29524500, mob: "Archive Colossus", detection: 0.52 },
+  { id: "z13", name: "Obsidian Reach", gate: 46000000, mobHp: 15000000, copper: 17000000, ipLo: 29524500, ipHi: 88573500, mob: "Reach Devourer", detection: 0.54 },
+  { id: "z14", name: "The Hollow Spire", gate: 138000000, mobHp: 45000000, copper: 50000000, ipLo: 88573500, ipHi: 265720500, mob: "Spire Revenant", detection: 0.56 },
+  { id: "z15", name: "World's Edge", gate: 414000000, mobHp: 135000000, copper: 150000000, ipLo: 265720500, ipHi: 797161500, mob: "Edge Sentinel", detection: 0.58 },
 ];
