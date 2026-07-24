@@ -80,12 +80,25 @@ function advanceWall() {
 
 const laneWord = lane => lane === "atk" ? "ATK" : lane === "speed" ? "haste" : "copper";
 
+// The log is the dead server's console: classify each line by event kind so
+// it's scannable by type, and swap the emoji markers for terminal glyphs.
 function log(msg) {
+  let cls = "log-plain";
+  if (msg.startsWith("★")) cls = "log-event";
+  else if (msg.startsWith("🏆")) { cls = "log-loot"; msg = "◆ " + msg.slice(2).trimStart(); }
+  else if (msg.startsWith("⚡")) { cls = "log-warn"; msg = "! " + msg.slice(1).trimStart(); }
+  else if (/wiped|ban wave|banned/i.test(msg)) cls = "log-warn";
+  else if (/^(drop:|salvaged|delve:|farmed|offline)/.test(msg)) cls = "log-dim";
   const div = document.createElement("div");
+  div.className = "logline " + cls;
   div.textContent = msg;
   $("log").prepend(div);
   while ($("log").children.length > 40) $("log").lastChild.remove();
 }
+
+// state-in-form: a purchase you can afford reads LIVE (gold edge); can't →
+// disabled+dim. Glanceable "what can I buy right now" across every panel.
+function buyState(btn, ok) { btn.disabled = !ok; btn.classList.toggle("affordable", ok); }
 
 let stashDirty = true;
 let lastWallSel = ""; // wall-selector rebuild cache
@@ -740,13 +753,13 @@ function render() {
     $(`gmfr_${type}`).textContent = `rank ${state.gm[type]}`;
     const btn = $(`gmfb_${type}`);
     btn.textContent = `${fmt(flagCost(type, state.gm[type]))} tickets`;
-    btn.disabled = state.tickets < flagCost(type, state.gm[type]);
+    buyState(btn, state.tickets >= flagCost(type, state.gm[type]));
   }
   for (const type of Object.keys(UNLOCKS)) {
     const btn = $(`gmub_${type}`);
     const owned = !!state.gm[type];
     btn.textContent = owned ? "INSTALLED" : `${fmt(UNLOCKS[type].cost)} tickets`;
-    btn.disabled = owned || state.tickets < UNLOCKS[type].cost;
+    buyState(btn, !owned && state.tickets >= UNLOCKS[type].cost);
   }
   for (const type of Object.keys(UTILITY)) {
     const rank = state.gm[type];
@@ -754,14 +767,12 @@ function render() {
     $(`gmur_${type}`).textContent = `${rank}/${UTILITY[type].max}`;
     const btn = $(`gmub2_${type}`);
     btn.textContent = maxed ? "MAX" : `${fmt(utilityCost(type, rank))} tickets`;
-    btn.disabled = maxed || state.tickets < utilityCost(type, rank);
+    buyState(btn, !maxed && state.tickets >= utilityCost(type, rank));
   }
   for (const type of Object.keys(bots.PRIV)) {
     const cost = bots.privCost(state.bots, type);
     $(`gmpr_${type}`).textContent = `rank ${bots.privRank(state.bots, type)}`;
-    const btn = $(`gmpb_${type}`);
-    btn.textContent = `${fmt(cost)} tickets`;
-    btn.disabled = state.tickets < cost;
+    buyState($(`gmpb_${type}`), state.tickets >= cost);
   }
 
   // encounter scheduler line (Boss screen)
@@ -778,10 +789,9 @@ function render() {
   // bot farm
   const b = state.bots;
   // rig labels speak the BOTTER register; "session" stays the GM panel's word
-  $("buyCap").textContent = buyLabel(`multiclient +${4}`, bots.capCost(b));
-  $("buyCreate").textContent = buyLabel("account creator +", bots.createCost(b));
-  $("buyPower").textContent = buyLabel("script version +", bots.powerCost(b));
-  $("buySpeed").textContent = buyLabel("overclock +", bots.speedCost(b));
+  const rig = [["buyCap", `multiclient +${4}`, bots.capCost(b)], ["buyCreate", "account creator +", bots.createCost(b)],
+    ["buyPower", "script version +", bots.powerCost(b)], ["buySpeed", "overclock +", bots.speedCost(b)]];
+  for (const [id, label, cost] of rig) { $(id).textContent = buyLabel(label, cost); buyState($(id), state.copper >= cost); }
   const scale = bots.effScale(b);
   const scaled = scale < 0.995 ? ` · short ${((1 - scale) * 100).toFixed(0)}% (bans)` : "";
   $("rigStats").textContent =
@@ -803,14 +813,15 @@ function render() {
       const locked = i >= B.unlocked;
       const squad = (b.alloc[bar][i] || 0) * scale;
       const rate = locked ? 0 : Math.min(squad * quality, t.cost * bots.MAX_FILLS_PER_S) / t.cost;
+      const maxed = !locked && squad > 0 && squad * quality >= t.cost * bots.MAX_FILLS_PER_S;
       laneRate += rate * t.gain;
       row.classList.toggle("locked", locked);
       row.classList.toggle("active", !locked && squad > 0);
+      row.classList.toggle("maxed", maxed); // capped → distinct "done" state
       const stat = $(`ts_${bar}${i}`);
       if (locked) {
         stat.textContent = `locked · ${fmt(B.fills[i - 1] || 0)}/${fmt(bots.unlockFills(i - 1))} fills of ${tiers[i - 1].name}`;
       } else if (squad > 0) {
-        const maxed = squad * quality >= t.cost * bots.MAX_FILLS_PER_S;
         stat.textContent = `${fmt(B.fills[i] || 0)} fills · ${maxed ? "RATE MAX" : rate.toFixed(2) + " fills/s"}`;
       } else {
         stat.textContent = `${fmt(B.fills[i] || 0)} fills`;
