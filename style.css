@@ -48,7 +48,9 @@ main { width: 600px; max-width: 96vw; padding: 18px 0 40px; }
 .bossPanel { text-align: center; margin: 10px 0 6px; }
 #bossName { color: var(--gold); font-size: var(--fs-masthead); font-variant: small-caps; }
 #bossTitle { font-size: var(--fs-small); font-style: italic; }
-#record { font-size: var(--fs-small); font-family: monospace; margin-top: 2px; }
+#record { margin-top: 2px; }
+/* caption role — secondary status text (record, cooldown, projection, ...) */
+.caption { font-family: monospace; font-size: var(--fs-small); color: var(--recede); }
 /* boss-tab zones — group the flat element list into fight / progress */
 .arena { border: 1px solid var(--line); background: var(--panel); padding: 8px 12px 10px; margin: 8px 0; }
 .arena #battle { display: block; max-width: 100%; height: auto; margin: 0 auto; }
@@ -83,9 +85,8 @@ canvas {
 }
 #pullBtn:disabled { background: #3a3a44; color: var(--recede); cursor: default; }
 #depth { color: var(--gold); font-size: var(--fs-hero); font-family: monospace; min-width: 90px; }
-#cooldown { font-size: var(--fs-small); font-family: monospace; }
 #ticketGain { font-size: var(--fs-small); font-family: monospace; color: var(--risk); margin-left: 8px; }
-#projection { font-size: var(--fs-small); font-family: monospace; color: var(--gold); min-height: 16px; margin: -4px 0 4px; }
+#projection { color: var(--gold); min-height: 16px; margin: -4px 0 4px; }
 
 #dialogue {
   border-left: 3px solid var(--gold);
