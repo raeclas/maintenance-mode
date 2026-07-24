@@ -399,8 +399,14 @@ const enh = await import("../enhance.js");
   assert.ok(w2.hp > w1.hp);                 // a bigger wall (now that the tools exist)
   assert.ok(w2.speedKnee > w1.speedKnee);   // speed re-steepens on the harder wall
   assert.ok(w2.dialogue.greet && w2.dialogue.break); // has its own face (pillar 2)
-  assert.equal(getBoss(3), undefined);      // W2 is currently the last door
   assert.deepEqual(newState().cleared, []); // cleared-list monument starts empty
+  // walls climb to W10 with a monotonic hp + speedKnee curve; each has a set
+  for (let w = 1; w < 10; w++) {
+    const a = getBoss(w), b = getBoss(w + 1);
+    assert.ok(a && b && b.hp > a.hp && b.speedKnee > a.speedKnee);
+    assert.ok(b.set && b.set.mult > a.set.mult && b.dialogue.greet && b.dialogue.break);
+  }
+  assert.equal(getBoss(11), undefined);     // W10 is the final door
 }
 
 // Wall model: switch back to a cleared wall to farm it. maxWall = frontier;

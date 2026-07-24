@@ -508,6 +508,7 @@ mobs, gear, boss fight, enhance verbs, titles.
 | boss Trophy sets (2026-07-22) | one 7-piece set per Warden (door parts: Hinge · Bolt · Latch · Keyward · Lintel · Threshold · Frame) · set names "The First/Second Door" · Farm status (re-Attempt a broken boss for pieces) |
 | dungeon (2026-07-23) | Delve · floor · descend · extract · wipe · haul · safe depth. The character's active push-your-luck verb + their copper/gear source (salvage = scrap only) |
 | W1 | Vess, Warden of the First Door |
+| W2–W10 Wardens (2026-07-24, rough curve) | Maren · Korrin · Osei · Thale · Ilva · Domar · Sef · Yara · The Last Warden — Wardens of the 2nd–10th Doors. Each door = a year the dead server outlived its players; W10 break reveals PLAYERS ONLINE: 1 was always you |
 
 **The botter's toolkit** (2006 botting-forum speak) — owns: bots, rig,
 training, automation.
