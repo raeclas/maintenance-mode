@@ -193,6 +193,21 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   margin-bottom: 8px;
 }
 #playerStats b { color: var(--gold); font-size: var(--fs-display); font-weight: normal; }
+/* Combat Power felt-jump: pulse the number + float a "+X" delta on gains */
+#dpsEl { display: inline-block; }
+#dpsEl.cpJump { animation: cpJump .5s ease-out; }
+@keyframes cpJump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.28); text-shadow: 0 0 8px rgba(201, 169, 75, .6); }
+  100% { transform: scale(1); }
+}
+#cpDelta { color: var(--gold); font-family: monospace; font-size: var(--fs-body); margin-left: 3px; opacity: 0; }
+#cpDelta.rise { animation: cpRise .9s ease-out; }
+@keyframes cpRise {
+  0% { opacity: 0; transform: translateY(3px); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-9px); }
+}
 
 section.game {
   border: 1px solid var(--line);

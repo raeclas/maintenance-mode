@@ -107,6 +107,7 @@ function charDps() { const dd = derive(state); return dd.atk * dd.hitsPerSec; }
 let stashDirty = true;
 let lastWallSel = ""; // wall-selector rebuild cache
 let lastRenderNow = Date.now();  // for per-frame dt (kill-cycle bar integrator)
+let prevCP = null;  // last Combat Power shown — drives the felt-jump pulse on gains
 const zonePhase = [];            // per-zone accumulated kill phase (0..1 shown)
 
 function onDrop(item) {
@@ -610,6 +611,17 @@ function render() {
   const dps = d.atk * d.hitsPerSec;
 
   $("dpsEl").textContent = fmt(dps);
+  // Combat Power felt-jump: pulse the number + float a "+X" when it climbs.
+  if (prevCP !== null && dps > prevCP) {
+    const gainStr = fmt(dps - prevCP);
+    if (gainStr !== "0") {
+      const el = $("dpsEl"), delta = $("cpDelta");
+      el.classList.remove("cpJump"); void el.offsetWidth; el.classList.add("cpJump"); // restart anim
+      delta.textContent = `+${gainStr}`;
+      delta.classList.remove("rise"); void delta.offsetWidth; delta.classList.add("rise");
+    }
+  }
+  prevCP = dps;
   $("atkEl").textContent = fmt(d.atk);
   $("hpsEl").textContent = d.hitsPerSec.toFixed(2);
   $("gmEl").textContent = (gmDmgMult(state) * gmHasteMult(state)).toFixed(2);
