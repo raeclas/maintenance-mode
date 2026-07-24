@@ -54,32 +54,39 @@
   </nav>
 
   <section id="battleSec" class="tabpane">
+    <!-- identity -->
     <div class="bossPanel">
       <div id="bossName"></div>
       <div id="bossTitle"></div>
-      <div id="record"></div>
     </div>
 
+    <!-- navigation: switch to a cleared wall -->
     <div id="wallSelect" style="display:none"></div>
 
-    <div id="playerStats">ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · GM ×<span id="gmEl">1.00</span> · proj <span id="projMini">—</span></div>
-
-    <canvas id="battle"></canvas>
-
-    <div class="controls">
-      <button id="pullBtn">Attempt</button>
-      <span id="depth">—</span>
-      <span id="cooldown"></span>
-      <span id="ticketGain"></span>
+    <!-- arena: the fight as one unit -->
+    <div class="arena">
+      <canvas id="battle"></canvas>
+      <div id="playerStats">ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · GM ×<span id="gmEl">1.00</span> · proj <span id="projMini">—</span></div>
+      <div class="controls">
+        <button id="pullBtn">Attempt</button>
+        <span id="depth">—</span>
+        <span id="cooldown"></span>
+        <span id="ticketGain"></span>
+      </div>
+      <div id="projection"></div>
+      <label id="schedLine" class="toggleLine" style="display:none">
+        <input type="checkbox" id="schedToggle"> encounter scheduler <span id="schedInfo" class="sub"></span>
+      </label>
     </div>
-    <div id="projection"></div>
-    <label id="schedLine" class="toggleLine" style="display:none">
-      <input type="checkbox" id="schedToggle"> encounter scheduler <span id="schedInfo" class="sub"></span>
-    </label>
 
-    <button id="descendBtn" style="display:none">Descend to the next door →</button>
-    <div id="monument" style="display:none"></div>
+    <!-- progress -->
+    <div class="progress">
+      <div id="record"></div>
+      <div id="monument" style="display:none"></div>
+      <button id="descendBtn" style="display:none">Descend to the next door →</button>
+    </div>
 
+    <!-- story -->
     <div id="dialogue"></div>
   </section>
 
