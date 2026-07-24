@@ -9,7 +9,7 @@ import { initBattle, renderBattle, notifyResult, notifyEnhance } from "./battle.
 import { derive } from "./stats.js";
 import * as bots from "./bots.js";
 import * as farm from "./farm.js";
-import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, canReforge, reforgeCost, reforge, SLOTS, STASH_CAP } from "./gear.js";
+import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, canReforge, reforgeCost, reforge, isUpgrade, SLOTS, STASH_CAP } from "./gear.js";
 import { RARITIES, RARITY_BY_ID } from "./rarity.js";
 import { affixLabel } from "./affixes.js";
 import { banWave, pendingScripts, scriptMult, totalFills } from "./rebirth.js";
@@ -501,23 +501,26 @@ $("salvageMatch").addEventListener("click", () => {
 
 function renderStash() {
   stashDirty = false;
-  const sorted = [...state.gear.stash].sort((a, b) => contribution(b) - contribution(a)).slice(0, 15);
+  // group by slot, best-first — same-slot items cluster so comparison is easy
+  const sorted = [...state.gear.stash]
+    .sort((a, b) => a.slot.localeCompare(b.slot) || contribution(b) - contribution(a))
+    .slice(0, 24);
   $("stashToggle").textContent = `stash (${state.gear.stash.length}/${STASH_CAP})`;
   const el = $("stashList");
   el.innerHTML = "";
-  sorted.forEach(item => {
+  for (const item of sorted) {
     const idx = state.gear.stash.indexOf(item);
     const rar = RARITY_BY_ID[item.rarity] || RARITIES[0];
-    const affixes = (item.affixes || []).map(a => affixLabel(a, state)).join(" · ") || "—";
+    const up = isUpgrade(state, item); // strict upgrade over what's equipped in the slot
+    const affixes = (item.affixes || []).map(a => affixLabel(a, state)).join(" · ");
     const row = document.createElement("div");
-    row.className = "stashRow";
-    row.style.borderLeftColor = rar.color;
+    row.className = "stashRow" + (up ? " upgrade" : "") + (item.lock ? " locked" : "");
+    row.style.borderLeftColor = up ? "var(--gold)" : rar.color;
     row.innerHTML =
-      `<span><span class="itemName" style="color:${rar.color}">${item.lock ? "🔒 " : ""}${item.name}</span>` +
-        ` · ${item.slot} · IP ${fmt(item.ip)}${item.plus ? " +" + item.plus : ""}` +
-        `<span class="affixLine">${affixes}</span></span>` +
-      `<span><button class="eq">equip</button><button class="lk">${item.lock ? "unlock" : "lock"}</button>` +
-        `<button class="sv" ${item.lock ? "disabled" : ""}>salvage +${scrapYield(item)}</button></span>`;
+      `<span class="sMark">${up ? "▲" : item.lock ? "L" : ""}</span>` +
+      `<span class="sName" style="color:${rar.color}">${item.name}</span>` +
+      `<span class="sAct"><button class="eq">equip</button><button class="lk">${item.lock ? "unlock" : "lock"}</button><button class="sv" ${item.lock ? "disabled" : ""}>×${scrapYield(item)}</button></span>` +
+      `<span class="sInfo">${item.slot} · IP ${fmt(item.ip)}${item.plus ? ` +${item.plus}` : ""}${affixes ? ` · ${affixes}` : ""}</span>`;
     row.querySelector(".eq").addEventListener("click", () => { equipFromStash(state, idx); delete pendingReforge[item.slot]; stashDirty = true; });
     row.querySelector(".lk").addEventListener("click", () => { item.lock = !item.lock; stashDirty = true; });
     row.querySelector(".sv").addEventListener("click", () => {
@@ -527,10 +530,13 @@ function renderStash() {
       stashDirty = true;
     });
     el.appendChild(row);
-  });
-  if (state.gear.stash.length > 15) {
+  }
+  if (!state.gear.stash.length) el.innerHTML = `<div class="muted" style="padding:6px 4px">stash empty — drops land here</div>`;
+  else if (state.gear.stash.length > 24) {
     const more = document.createElement("div");
-    more.textContent = `…and ${state.gear.stash.length - 15} more`;
+    more.className = "muted";
+    more.style.padding = "4px";
+    more.textContent = `…and ${state.gear.stash.length - 24} more (salvage to clear)`;
     el.appendChild(more);
   }
 }

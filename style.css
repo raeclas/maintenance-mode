@@ -292,7 +292,6 @@ section.game button:disabled { color: #55555e; cursor: default; }
 }
 .autoSalv { font-size: 11px; font-family: monospace; margin-left: 10px; }
 #stashHead { display: flex; align-items: center; gap: 8px; }
-#stashList button { padding: 1px 6px; margin-left: 4px; }
 
 /* dense zone table (ITRTG-style: numbers in columns) */
 .ztable { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 11px; }
@@ -348,8 +347,24 @@ section.game button:disabled { color: #55555e; cursor: default; }
 .slotItem { font-size: 12px; font-family: monospace; }
 .enhInfo { font-size: 10px; font-family: monospace; color: #6e6e78; }
 #stashHead { margin-top: 8px; }
-#stashList { font-family: monospace; font-size: 11px; padding-top: 6px; }
-#stashList div { display: flex; justify-content: space-between; padding: 2px 0; }
+/* stash — scannable grid: ▲ upgrade marker · name · actions / info line */
+#stashList { font-family: monospace; font-size: var(--fs-small); margin-top: 6px; }
+.stashRow {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  gap: 0 8px;
+  align-items: center;
+  padding: 3px 6px;
+  border-left: 3px solid var(--line);
+  border-bottom: 1px solid #1b1b22;
+}
+.stashRow.upgrade { background: rgba(201, 169, 75, .07); }
+.sMark { grid-column: 1; grid-row: 1; text-align: center; color: var(--gold); font-weight: bold; }
+.stashRow.locked .sMark { color: #6e6e78; font-weight: normal; }
+.sName { grid-column: 2; grid-row: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sAct { grid-column: 3; grid-row: 1; display: inline-flex; gap: 3px; }
+.sInfo { grid-column: 2 / -1; grid-row: 2; color: #6e6e78; font-size: var(--fs-label); overflow-wrap: anywhere; }
+.stashRow button { padding: 3px 7px; font-size: var(--fs-label); }
 
 #devPanel {
   border: 1px dashed #6e3a32;
@@ -461,7 +476,6 @@ footer { text-align: center; margin-top: 18px; }
   font-size: 11px;
   font-family: monospace;
 }
-.stashRow { border-left: 3px solid var(--line); padding-left: 6px !important; }
 
 /* --- Ban Wave (rebirth) --- */
 .scripts, .scripts b { color: #6bbf7a !important; }
