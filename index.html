@@ -9,25 +9,29 @@
 <body>
 <main>
   <div id="resbar" class="game hidden">
-    <div class="chip">
-      <div class="chipVal"><b id="cpEl">—</b></div>
-      <div class="chipLbl">combat power · <span id="cpRate">—</span></div>
+    <div class="chipGroup">
+      <div class="chip">
+        <div class="chipVal"><b id="cpEl">—</b></div>
+        <div class="chipLbl">combat power · <span id="cpRate">—</span></div>
+      </div>
+      <div class="chip">
+        <div class="chipVal"><b id="resBots">—</b></div>
+        <div class="chipLbl">bots · <span id="resRate">+0</span>/h</div>
+      </div>
     </div>
-    <div class="chip">
-      <div class="chipVal"><b id="resBots">—</b></div>
-      <div class="chipLbl">bots · <span id="resRate">+0</span>/h</div>
-    </div>
-    <div class="chip">
-      <div class="chipVal copper"><b id="copperEl">0</b>c</div>
-      <div class="chipLbl">copper · <span id="copperRate">—</span></div>
-    </div>
-    <div class="chip">
-      <div class="chipVal tickets"><b id="ticketsEl">0</b></div>
-      <div class="chipLbl">tickets</div>
-    </div>
-    <div class="chip" id="scriptChip" style="display:none">
-      <div class="chipVal scripts"><b id="scriptsEl">0</b></div>
-      <div class="chipLbl">scripts · ×<span id="scriptMultEl">1.00</span> dmg</div>
+    <div class="chipGroup">
+      <div class="chip">
+        <div class="chipVal copper"><b id="copperEl">0</b>c</div>
+        <div class="chipLbl">copper · <span id="copperRate">—</span></div>
+      </div>
+      <div class="chip">
+        <div class="chipVal tickets"><b id="ticketsEl">0</b></div>
+        <div class="chipLbl">tickets</div>
+      </div>
+      <div class="chip" id="scriptChip" style="display:none">
+        <div class="chipVal scripts"><b id="scriptsEl">0</b></div>
+        <div class="chipLbl">scripts · ×<span id="scriptMultEl">1.00</span> dmg</div>
+      </div>
     </div>
     <button id="helpBtn" class="helpBtn" title="Help">?</button>
   </div>
