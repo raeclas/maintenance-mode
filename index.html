@@ -10,6 +10,10 @@
 <main>
   <div id="resbar" class="game hidden">
     <div class="chip">
+      <div class="chipVal"><b id="cpEl">—</b></div>
+      <div class="chipLbl">combat power · <span id="cpRate">—</span></div>
+    </div>
+    <div class="chip">
       <div class="chipVal"><b id="resBots">—</b></div>
       <div class="chipLbl">bots · <span id="resRate">+0</span>/h</div>
     </div>
@@ -54,7 +58,7 @@
 
     <div id="wallSelect" style="display:none"></div>
 
-    <div id="playerStats">Combat Power <b id="dpsEl">—</b><span id="cpDelta"></span> · ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · GM ×<span id="gmEl">1.00</span> · proj <span id="projMini">—</span></div>
+    <div id="playerStats">ATK <span id="atkEl">—</span> · <span id="hpsEl">—</span> hits/s · GM ×<span id="gmEl">1.00</span> · proj <span id="projMini">—</span></div>
 
     <canvas id="battle"></canvas>
 

@@ -107,7 +107,7 @@ function charDps() { const dd = derive(state); return dd.atk * dd.hitsPerSec; }
 let stashDirty = true;
 let lastWallSel = ""; // wall-selector rebuild cache
 let lastRenderNow = Date.now();  // for per-frame dt (kill-cycle bar integrator)
-let prevCP = null;  // last Combat Power shown — drives the felt-jump pulse on gains
+let cpSample = null, cpSampleT = 0, cpRate = 0;  // Combat Power rate sampler (~1s window)
 const zonePhase = [];            // per-zone accumulated kill phase (0..1 shown)
 
 function onDrop(item) {
@@ -609,19 +609,15 @@ function render() {
   renderBattle(state, now);
   const d = derive(state);
   const dps = d.atk * d.hitsPerSec;
-
-  $("dpsEl").textContent = fmt(dps);
-  // Combat Power felt-jump: pulse the number + float a "+X" when it climbs.
-  if (prevCP !== null && dps > prevCP) {
-    const gainStr = fmt(dps - prevCP);
-    if (gainStr !== "0") {
-      const el = $("dpsEl"), delta = $("cpDelta");
-      el.classList.remove("cpJump"); void el.offsetWidth; el.classList.add("cpJump"); // restart anim
-      delta.textContent = `+${gainStr}`;
-      delta.classList.remove("rise"); void delta.offsetWidth; delta.classList.add("rise");
-    }
+  $("cpEl").textContent = fmt(dps);
+  // Combat Power rate: measured over a ~1s window — catches all continuous
+  // growth (training now, farm later) without re-deriving each faucet.
+  if (cpSample === null) { cpSample = dps; cpSampleT = now; }
+  else if (now - cpSampleT >= 1000) {
+    cpRate = (dps - cpSample) / ((now - cpSampleT) / 1000);
+    cpSample = dps; cpSampleT = now;
   }
-  prevCP = dps;
+  $("cpRate").textContent = cpRate > 0 ? `+${fmt(cpRate)}/s` : "—";
   $("atkEl").textContent = fmt(d.atk);
   $("hpsEl").textContent = d.hitsPerSec.toFixed(2);
   $("gmEl").textContent = (gmDmgMult(state) * gmHasteMult(state)).toFixed(2);
