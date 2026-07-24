@@ -291,6 +291,17 @@ const enh = await import("../enhance.js");
   assert.equal(s.gear.stash.length, 2);
   s.gear.autoFilter = true;
 
+  // auto-equip module: strict upgrades equip, replaced gear → stash (attachment)
+  const ae = newState();
+  ae.gm.autoequip = true;
+  assert.ok(gear.routeDrop(ae, { slot: "weapon", ip: 100, plus: 0, rarity: "common", affixes: [], name: "a" }).equipped);
+  const up = gear.routeDrop(ae, { slot: "weapon", ip: 200, plus: 0, rarity: "common", affixes: [], name: "b" });
+  assert.ok(up.equipped && ae.gear.weapon.name === "b");        // higher ip equips
+  assert.ok(ae.gear.stash.some(it => it.name === "a"));        // old one preserved in stash
+  assert.ok(!gear.routeDrop(ae, { slot: "weapon", ip: 50, plus: 0, rarity: "common", affixes: [], name: "c" }).equipped); // worse → not equipped
+  // no module → never auto-equips (agency default)
+  assert.ok(!gear.routeDrop(newState(), { slot: "weapon", ip: 999, plus: 0, rarity: "epic", affixes: [], name: "d" }).equipped);
+
   // scrap yield is tiered: higher rarity at equal ip yields more
   assert.ok(gear.scrapYield({ rarity: "legendary", ip: 100 }) > gear.scrapYield({ rarity: "common", ip: 100 }));
 

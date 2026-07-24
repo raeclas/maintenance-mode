@@ -14,6 +14,7 @@ export const FLAGS = {
 
 // Admin tools: one-time feature unlocks (verbs, not dials).
 export const UNLOCKS = {
+  autoequip: { label: "auto-equip module", desc: "equips strict upgrades on drop (replaced gear → stash)", cost: 60 },
   scheduler: { label: "encounter scheduler", desc: "auto-fires attempts on cooldown while online", cost: 150 },
   idleProc: { label: "idle encounter processing", desc: "attempts resolve while away (offline-clamped)", cost: 400 },
 };

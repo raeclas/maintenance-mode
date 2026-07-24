@@ -83,10 +83,23 @@ export function meetsKeep(item, keepRarity, keepIp) {
   return (RARITY_IDX[item.rarity] ?? 0) >= (RARITY_IDX[keepRarity] ?? 0) && item.ip >= (keepIp || 0);
 }
 
-// Route a fresh drop through the filter. Returns { kept, scrap?, overflow? }.
-// With the auto-filter OFF, every drop is kept (stashed) — no auto-salvage.
+// A drop is a strict upgrade if it out-powers the equipped item in its slot.
+export function isUpgrade(state, item) {
+  const cur = state.gear[item.slot];
+  return !cur || contribution(item) > contribution(cur);
+}
+
+// Route a fresh drop. Returns { equipped|kept, scrap?, overflow? }.
+// Auto-equip (gated by the GM module + the toggle) grabs strict upgrades, the
+// replaced item to stash (attachment law). Else the loot filter: keep→stash,
+// junk→scrap. With the auto-filter OFF, every drop is kept.
 export function routeDrop(state, item) {
   const g = state.gear;
+  if (state.gm?.autoequip && g.autoEquip !== false && isUpgrade(state, item)) {
+    const cur = g[item.slot];
+    g[item.slot] = item;
+    return { equipped: true, overflow: cur ? stashPush(state, cur) : null };
+  }
   if (g.autoFilter === false || meetsKeep(item, g.keepRarity, g.keepIp)) {
     return { kept: true, overflow: stashPush(state, item) };
   }

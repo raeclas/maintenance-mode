@@ -14,7 +14,7 @@ export function newState() {
     scripts: 0,    // Ban Wave prestige currency — permanent +damage, survives rebirth
     rebirths: 0,   // lifetime Ban Waves (log/flavor)
     // GM tab: flags (uncapped, era-priced), unlocks (booleans), utility (rank-capped)
-    gm: { dmg: 0, haste: 0, scheduler: false, idleProc: false, schedulerOn: true, cap: 0, offline: 0, cooldown: 0, scar: 0 },
+    gm: { dmg: 0, haste: 0, autoequip: false, scheduler: false, idleProc: false, schedulerOn: true, cap: 0, offline: 0, cooldown: 0, scar: 0 },
     failstacks: 0, // Luck's mechanical body — every fail banks +1%, success spends the bank
     titles: [],    // earned forever (attachment law): "+18" etc.
     cleared: [],   // broken walls, permanent monument (attachment): "W1 Vess" …
@@ -60,6 +60,7 @@ export function newState() {
     gear: {
       weapon: null, armor: null, charm: null,
       stash: [],            // item = {slot, ip, plus, rarity, affixes[], zone, name, lock?}
+      autoEquip: true,      // once the GM module is unlocked: auto-equip strict upgrades
       autoFilter: true,     // loot filter on: auto-salvage drops below the floors
       keepRarity: "rare",   // loot filter: keep drops at/above this rarity AND
       keepIp: 0,            //   at/above this ip; everything else auto-salvages

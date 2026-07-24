@@ -114,7 +114,7 @@ function onDrop(item) {
   const rar = RARITY_BY_ID[item.rarity]?.name || item.rarity;
   const r = routeDrop(state, item); // filter: keep→stash, else→scrap (never auto-equip)
   stashDirty = true;
-  const fate = r.kept ? "stashed" : `salvaged +${r.scrap.n} ${item.rarity} scrap`;
+  const fate = r.equipped ? "equipped" : r.kept ? "stashed" : `salvaged +${r.scrap.n} ${item.rarity} scrap`;
   log(`drop: ${rar} ${item.name} ${fmt(item.ip)}IP · ${fate}`);
   if (r.overflow) log(`stash full: salvaged ${r.overflow.item.name} +${r.overflow.scrap.n} ${r.overflow.scrap.rarity} scrap`);
 }
@@ -486,6 +486,7 @@ $("salvageRarity").value = "uncommon"; // default sweep target
 
 // loot filter dials (passive, on-drop) — keep at/above rarity AND ip
 $("autoFilter").addEventListener("change", () => { state.gear.autoFilter = $("autoFilter").checked; });
+$("autoEquip").addEventListener("change", () => { state.gear.autoEquip = $("autoEquip").checked; });
 $("keepRarity").addEventListener("change", () => { state.gear.keepRarity = $("keepRarity").value; });
 $("keepIp").addEventListener("change", () => { state.gear.keepIp = Math.max(0, Math.floor(+$("keepIp").value) || 0); });
 // manual bulk sweep — salvage all unlocked stash items ≤ rarity AND ≤ ip (0 ip = ignore ip)
@@ -825,6 +826,8 @@ function render() {
       : `trained +${b.trained.hits.toFixed(4)} hits/s (+${laneRate.toFixed(5)}/s)`;
     $(`bar${el}Info`).textContent = trained;
   }
+  $("autoEquipLine").style.display = state.gm.autoequip ? "" : "none"; // appears once the module is unlocked
+  $("autoEquip").checked = state.gear.autoEquip !== false;
   $("autoFilter").checked = state.gear.autoFilter !== false;
   if (document.activeElement !== $("keepRarity")) $("keepRarity").value = state.gear.keepRarity;
   if (document.activeElement !== $("keepIp")) $("keepIp").value = state.gear.keepIp;
