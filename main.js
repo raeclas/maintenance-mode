@@ -854,7 +854,7 @@ function render() {
     zoneRows[i].classList.toggle("locked", !unlocked || (n > 0 && !zr.held));
     const stat = $(`zs${i}`);
     if (!unlocked) {
-      stat.textContent = `🔒 break W${farm.zoneUnlockClears(i)} to open this region`;
+      stat.textContent = `[LOCKED] break W${farm.zoneUnlockClears(i)}`;
     } else if (n <= 0) {
       stat.textContent = "unmanned";
     } else if (!zr.held) {

@@ -123,27 +123,26 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
 
 .assign { display: inline-flex; align-items: center; gap: 2px; }
 .assign button { padding: 1px 5px; font-size: 10px; }
+/* admin-console readout strip — flat, hairline-divided, no boxes */
 #resbar {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  padding: 8px;
-  margin-bottom: 10px;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 6px 4px;
+  margin-bottom: 12px;
 }
 .chip {
-  background: #1b1b22;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 5px 16px;
+  padding: 2px 16px;
   text-align: center;
-  min-width: 90px;
+  border-left: 1px solid var(--line);
 }
+.chip:first-child { border-left: none; }
 .chipVal { font-family: monospace; font-size: 16px; color: #b9b2a0; }
 .chipVal b { color: var(--gold); font-weight: normal; }
-.chipLbl { font-size: 9px; font-family: monospace; letter-spacing: .1em; color: #6e6e78; text-transform: uppercase; margin-top: 1px; }
+.chipLbl { font-size: 9px; font-family: monospace; letter-spacing: .12em; color: #6e6e78; text-transform: uppercase; margin-top: 1px; }
 .copper, .copper b { color: #d08a3e !important; }
 .tickets, .tickets b { color: #7aa4d4 !important; }
 #gmPanel .gmRow {
@@ -218,20 +217,23 @@ section.game button:disabled { color: #55555e; cursor: default; }
   font-size: 11px;
   position: relative;
 }
-.allocMini { display: inline-flex; align-items: center; gap: 2px; }
-.allocMini button { padding: 1px 5px; font-size: 10px; }
+.allocMini { display: inline-flex; align-items: center; gap: 3px; }
+/* alloc controls recede (dim, quiet) so the numbers they feed read louder;
+   roomier tap targets for mobile */
+.allocMini button { padding: 4px 8px; font-size: 11px; color: #6e6e78; border-color: #1b1b22; }
 .allocMini input {
-  width: 42px;
-  background: #22222a;
+  width: 44px;
+  background: #17171c;
   color: var(--gold);
   border: 1px solid var(--line);
   font-family: monospace;
-  padding: 1px 3px;
-  font-size: 11px;
+  padding: 3px 4px;
+  font-size: 12px;
 }
+/* row hierarchy: live OUTPUT is the hero (bone), reference recedes (dim) */
 .rowlist .row .rowName { color: #b9b2a0; }
-.rowlist .row .rowGain { color: #6e6e78; }
-.rowlist .row .rowStat { color: #8a8a92; text-align: right; }
+.rowlist .row .rowGain { color: #55555e; }
+.rowlist .row .rowStat { color: #b9b2a0; text-align: right; }
 .rowlist .row.active { border-left: 3px solid var(--gold); padding-left: 8px; }
 .rowlist .row.active .rowName { color: var(--gold); }
 .rowlist .row.locked { opacity: .45; cursor: default; }
@@ -269,7 +271,17 @@ section.game button:disabled { color: #55555e; cursor: default; }
 }
 .ztable td { text-align: right; padding: 4px 6px; border-bottom: 1px solid #1b1b22; color: #b9b2a0; }
 .ztable .tl { text-align: left; }
-.ztable .sub, .sub { color: #6e6e78; font-size: 10px; }
+/* the server's flavor/help voice — mono italic, never small-caps serif, so
+   sentence-length header text stops being all-caps-serif soup */
+.ztable .sub, .sub {
+  color: #6e6e78;
+  font-size: 10px;
+  font-family: monospace;
+  font-style: italic;
+  font-variant: normal;
+  text-transform: none;
+  letter-spacing: 0;
+}
 .ztable tr.locked td { color: #4a4a52; }
 .ztable tr.active td:first-child { color: var(--gold); }
 .ztable button { padding: 1px 8px; }
@@ -410,7 +422,6 @@ footer { text-align: center; margin-top: 18px; }
 .scrapPill {
   display: inline-block;
   border: 1px solid;
-  border-radius: 10px;
   padding: 1px 8px;
   margin: 0 4px 4px 0;
   font-size: 11px;
@@ -427,14 +438,13 @@ footer { text-align: center; margin-top: 18px; }
 
 /* --- Help modal + button --- */
 .helpBtn {
-  background: var(--panel);
+  background: none;
   border: 1px solid var(--line);
   color: var(--dim);
-  font-family: Georgia, serif;
-  font-size: 14px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+  font-family: monospace;
+  font-size: 13px;
+  width: 26px;
+  height: 26px;
   cursor: pointer;
   align-self: center;
   margin-left: auto;
@@ -516,7 +526,6 @@ footer { text-align: center; margin-top: 18px; }
   font-family: monospace;
   padding: 2px 7px;
   border: 1px solid var(--line);
-  border-radius: 3px;
   cursor: help;
 }
 .pip.own { color: var(--gold); border-color: var(--gold); }
