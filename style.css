@@ -47,8 +47,8 @@ main { width: 600px; max-width: 96vw; padding: 18px 0 40px; }
 
 .bossPanel { text-align: center; margin: 10px 0 6px; }
 #bossName { color: var(--gold); font-size: var(--fs-masthead); font-variant: small-caps; }
-#bossTitle { font-size: 12px; font-style: italic; }
-#record { font-size: 11px; font-family: monospace; margin-top: 2px; }
+#bossTitle { font-size: var(--fs-small); font-style: italic; }
+#record { font-size: var(--fs-small); font-family: monospace; margin-top: 2px; }
 /* boss-tab zones — group the flat element list into fight / progress */
 .arena { border: 1px solid var(--line); background: var(--panel); padding: 8px 12px 10px; margin: 8px 0; }
 .arena #battle { display: block; max-width: 100%; height: auto; margin: 0 auto; }
@@ -82,10 +82,10 @@ canvas {
   cursor: pointer;
 }
 #pullBtn:disabled { background: #3a3a44; color: var(--recede); cursor: default; }
-#depth { color: var(--gold); font-size: 26px; font-family: monospace; min-width: 90px; }
-#cooldown { font-size: 12px; font-family: monospace; }
-#ticketGain { font-size: 12px; font-family: monospace; color: #7aa4d4; margin-left: 8px; }
-#projection { font-size: 12px; font-family: monospace; color: var(--gold); min-height: 16px; margin: -4px 0 4px; }
+#depth { color: var(--gold); font-size: var(--fs-hero); font-family: monospace; min-width: 90px; }
+#cooldown { font-size: var(--fs-small); font-family: monospace; }
+#ticketGain { font-size: var(--fs-small); font-family: monospace; color: #7aa4d4; margin-left: 8px; }
+#projection { font-size: var(--fs-small); font-family: monospace; color: var(--gold); min-height: 16px; margin: -4px 0 4px; }
 
 #dialogue {
   border-left: 3px solid var(--gold);
@@ -99,7 +99,7 @@ canvas {
 
 .tier-risk { color: #7aa4d4; }
 .tier-nightmare { color: var(--gold); text-shadow: 0 0 6px rgba(201, 169, 75, .35); }
-#stacksHud { font-size: 11px; color: #b06a5a; letter-spacing: 0; font-variant: normal; text-transform: none; }
+#stacksHud { font-size: var(--fs-small); color: #b06a5a; letter-spacing: 0; font-variant: normal; text-transform: none; }
 section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2px; }
 #gmSec .row { cursor: default; }
 .ztable button.active { color: var(--gold); border-color: var(--gold); }
@@ -109,7 +109,7 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   border: 1px dashed var(--line);
   color: var(--gold);
   text-align: center;
-  font-size: 12px;
+  font-size: var(--fs-small);
   padding: 5px;
   margin: 8px 0;
 }
@@ -162,7 +162,7 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   font-family: Georgia, serif;
   font-variant: small-caps;
   letter-spacing: .08em;
-  font-size: 13px;
+  font-size: var(--fs-body);
   padding: 7px;
   cursor: pointer;
 }
@@ -170,7 +170,7 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
 #tabs button:hover { color: var(--gold); }
 
 .assign { display: inline-flex; align-items: center; gap: 2px; }
-.assign button { padding: 1px 5px; font-size: 10px; }
+.assign button { padding: 1px 5px; font-size: var(--fs-label); }
 /* admin-console readout strip — flat, hairline-divided, no boxes */
 #resbar {
   display: flex;
@@ -209,14 +209,14 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   align-items: center;
   gap: 10px;
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--fs-small);
   padding: 3px 0;
   border-top: 1px solid #1b1b22;
 }
 #gmPanel .gmRow .tl { flex: 1; }
 #gmPanel button { min-width: 90px; }
 #gmPanel h3 { border-top: none; padding-top: 0; margin-top: 4px; }
-#tierAtk, #tierSpeed { background: #22222a; color: var(--bone); border: 1px solid var(--line); font-family: monospace; font-size: 11px; }
+#tierAtk, #tierSpeed { background: #22222a; color: var(--bone); border: 1px solid var(--line); font-family: monospace; font-size: var(--fs-small); }
 
 section.game {
   border: 1px solid var(--line);
@@ -233,7 +233,7 @@ section.game h2 {
 }
 section.game h3 {
   margin: 10px 0 6px;
-  font-size: 12px;
+  font-size: var(--fs-small);
   font-variant: small-caps;
   letter-spacing: .1em;
   color: #9a8a5a;
@@ -245,7 +245,7 @@ section.game button {
   color: var(--bone);
   border: 1px solid var(--line);
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--fs-small);
   padding: 4px 10px;
   cursor: pointer;
 }
@@ -253,7 +253,7 @@ section.game button:hover:not(:disabled) { border-color: var(--gold); color: var
 section.game button:disabled { color: #55555e; cursor: default; }
 
 .rig { display: flex; gap: 8px; flex-wrap: wrap; }
-.assignLine { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; font-family: monospace; margin-bottom: 6px; }
+.assignLine { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: var(--fs-small); font-family: monospace; margin-bottom: 6px; }
 .barTrack { height: 8px; background: #22222a; margin-top: 4px; }
 .barFill { height: 100%; background: var(--gold); width: 0; }
 
@@ -273,7 +273,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
 .allocMini { display: inline-flex; align-items: center; gap: 3px; }
 /* alloc controls recede (dim, quiet) so the numbers they feed read louder;
    roomier tap targets for mobile */
-.allocMini button { padding: 4px 8px; font-size: 11px; color: #6e6e78; border-color: #1b1b22; }
+.allocMini button { padding: 4px 8px; font-size: var(--fs-small); color: #6e6e78; border-color: #1b1b22; }
 /* power controls (cap/max/0) collapse behind ⋯ until tapped — the row's
    default state is just −/value/+ */
 .allocMore { display: none; align-items: center; gap: 3px; }
@@ -286,7 +286,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
   border: 1px solid var(--line);
   font-family: monospace;
   padding: 3px 4px;
-  font-size: 12px;
+  font-size: var(--fs-small);
 }
 /* row hierarchy: live OUTPUT is the hero (bone), reference recedes (dim) */
 .rowlist .row .rowName { color: var(--bone); }
@@ -303,7 +303,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
 .seg button { border-radius: 0; }
 .seg button.active { color: var(--gold); border-color: var(--gold); }
 
-.toggleLine { font-size: 11px; font-family: monospace; color: var(--dim); display: block; margin: 6px 0; }
+.toggleLine { font-size: var(--fs-small); font-family: monospace; color: var(--dim); display: block; margin: 6px 0; }
 .popTrack { margin: 6px 0 10px; }
 .popTrack .barFill { background: #5a7a5a; }
 .assign input[type="number"] {
@@ -314,11 +314,11 @@ section.game button:disabled { color: #55555e; cursor: default; }
   font-family: monospace;
   padding: 2px 4px;
 }
-.autoSalv { font-size: 11px; font-family: monospace; margin-left: 10px; }
+.autoSalv { font-size: var(--fs-small); font-family: monospace; margin-left: 10px; }
 #stashHead { display: flex; align-items: center; gap: 8px; }
 
 /* dense zone table (ITRTG-style: numbers in columns) */
-.ztable { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 11px; }
+.ztable { width: 100%; border-collapse: collapse; font-family: monospace; font-size: var(--fs-small); }
 .ztable th {
   color: #6e6e78;
   font-weight: normal;
@@ -332,7 +332,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
    sentence-length header text stops being all-caps-serif soup */
 .ztable .sub, .sub {
   color: #6e6e78;
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-family: monospace;
   font-style: italic;
   font-variant: normal;
@@ -367,9 +367,9 @@ section.game button:disabled { color: #55555e; cursor: default; }
   background: #17171c;
 }
 .slot:first-child { margin-top: 0; }
-.slotName { font-variant: small-caps; color: #6e6e78; font-size: 11px; letter-spacing: 0.5px; }
-.slotItem { font-size: 12px; font-family: monospace; }
-.enhInfo { font-size: 10px; font-family: monospace; color: #6e6e78; }
+.slotName { font-variant: small-caps; color: #6e6e78; font-size: var(--fs-small); letter-spacing: 0.5px; }
+.slotItem { font-size: var(--fs-small); font-family: monospace; }
+.enhInfo { font-size: var(--fs-label); font-family: monospace; color: #6e6e78; }
 #stashHead { margin-top: 8px; }
 /* stash — scannable grid: ▲ upgrade marker · name · actions / info line */
 #stashList { font-family: monospace; font-size: var(--fs-small); margin-top: 6px; }
@@ -394,7 +394,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
   border: 1px dashed #6e3a32;
   color: #b06a5a;
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--fs-small);
   padding: 6px;
   margin-bottom: 10px;
   display: flex;
@@ -407,7 +407,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
   color: #b06a5a;
   border: 1px solid #6e3a32;
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--fs-small);
   cursor: pointer;
 }
 
@@ -434,7 +434,7 @@ footer { text-align: center; margin-top: 18px; }
   background: none;
   border: none;
   color: #55555e;
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-family: monospace;
   cursor: pointer;
   text-decoration: underline;
@@ -444,14 +444,14 @@ footer { text-align: center; margin-top: 18px; }
 .itemName { font-weight: 600; }
 .affixLine {
   display: block;
-  font-size: 11px;
+  font-size: var(--fs-small);
   color: var(--dim);
   margin-top: 2px;
   overflow-wrap: anywhere;
 }
 .slotItem .affixLine { margin-top: 1px; }
 .scrapWallet {
-  font-size: 11px;
+  font-size: var(--fs-small);
   color: var(--gold-dim);
   margin: 2px 0 6px;
   overflow-wrap: anywhere;
@@ -463,8 +463,8 @@ footer { text-align: center; margin-top: 18px; }
   gap: 4px 8px;
   margin-bottom: 4px;
 }
-.filterLabel { font-size: 12px; color: var(--dim); }
-.filterHint { font-size: 10px; color: #55555e; }
+.filterLabel { font-size: var(--fs-small); color: var(--dim); }
+.filterHint { font-size: var(--fs-label); color: #55555e; }
 .ipDial { width: 72px; }
 
 /* --- v9 reforge bench candidate --- */
@@ -474,7 +474,7 @@ footer { text-align: center; margin-top: 18px; }
   padding: 4px 6px;
   background: #1c1c22;
   border-left: 2px solid var(--gold-dim);
-  font-size: 11px;
+  font-size: var(--fs-small);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -485,10 +485,10 @@ footer { text-align: center; margin-top: 18px; }
 /* --- v9 gear cards (slice 3 polish) --- */
 .itemHeader { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
 .itemHeader .itemName { font-weight: 600; }
-.rarityTag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; }
-.itemMeta { margin-left: auto; color: var(--dim); font-size: 11px; }
+.rarityTag { font-size: var(--fs-label); text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; }
+.itemMeta { margin-left: auto; color: var(--dim); font-size: var(--fs-small); }
 .affixList { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 3px; }
-.affixItem { font-size: 11px; color: var(--dim); }
+.affixItem { font-size: var(--fs-small); color: var(--dim); }
 .affixList.muted, .muted { color: #55555e; font-style: italic; }
 .slotControls { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; align-items: center; }
 .ctlGroup { display: inline-flex; align-items: center; gap: 6px; }
@@ -497,14 +497,14 @@ footer { text-align: center; margin-top: 18px; }
   border: 1px solid;
   padding: 1px 8px;
   margin: 0 4px 4px 0;
-  font-size: 11px;
+  font-size: var(--fs-small);
   font-family: monospace;
 }
 
 /* --- Ban Wave (rebirth) --- */
 .scripts, .scripts b { color: #6bbf7a !important; }
 #banWave { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-#banWaveInfo { font-size: 11px; font-family: monospace; flex: 1; min-width: 180px; }
+#banWaveInfo { font-size: var(--fs-small); font-family: monospace; flex: 1; min-width: 180px; }
 #banWaveInfo .warn { color: #d08a3e; }
 #banWaveBtn.armed { border-color: #d0553e; color: #d0553e; }
 
@@ -514,7 +514,7 @@ footer { text-align: center; margin-top: 18px; }
   border: 1px solid var(--line);
   color: var(--dim);
   font-family: monospace;
-  font-size: 13px;
+  font-size: var(--fs-body);
   width: 26px;
   height: 26px;
   cursor: pointer;
@@ -542,7 +542,7 @@ footer { text-align: center; margin-top: 18px; }
   max-height: 82vh;
   overflow-y: auto;
 }
-.modalBox h2 { color: var(--gold); font-variant: small-caps; letter-spacing: .1em; margin: 0 0 10px; font-size: 16px; }
+.modalBox h2 { color: var(--gold); font-variant: small-caps; letter-spacing: .1em; margin: 0 0 10px; font-size: var(--fs-display); }
 .modalClose {
   position: absolute;
   top: 8px;
@@ -557,8 +557,8 @@ footer { text-align: center; margin-top: 18px; }
 .modalClose:hover { color: var(--gold); }
 .helpTopic { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
 .helpTopic:first-child { border-top: none; padding-top: 0; margin-top: 0; }
-.helpTopic h3 { color: #9a8a5a; font-variant: small-caps; letter-spacing: .08em; margin: 0 0 6px; font-size: 13px; }
-.helpTopic p { font-size: 12px; line-height: 1.5; margin: 0 0 8px; color: var(--bone); }
+.helpTopic h3 { color: #9a8a5a; font-variant: small-caps; letter-spacing: .08em; margin: 0 0 6px; font-size: var(--fs-body); }
+.helpTopic p { font-size: var(--fs-small); line-height: 1.5; margin: 0 0 8px; color: var(--bone); }
 .helpTopic b { color: var(--gold); font-weight: normal; }
 
 /* --- wall progression --- */
@@ -579,7 +579,7 @@ footer { text-align: center; margin-top: 18px; }
 #descendBtn:hover { background: var(--gold); color: #0d0d10; }
 
 /* --- boss Trophy cabinet: one 7-piece set per Warden --- */
-#trophySet { color: var(--gold); font-family: monospace; font-size: 11px; }
+#trophySet { color: var(--gold); font-family: monospace; font-size: var(--fs-small); }
 #trophyCabinet { display: flex; flex-direction: column; gap: 8px; }
 .trophySet {
   padding: 6px 10px;
@@ -588,13 +588,13 @@ footer { text-align: center; margin-top: 18px; }
 }
 .trophySet.complete { border-left-color: var(--gold); }
 .trophySetHead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
-.trophySetName { font-weight: 600; color: var(--bone); font-size: 12px; }
+.trophySetName { font-weight: 600; color: var(--bone); font-size: var(--fs-small); }
 .trophySet.complete .trophySetName { color: var(--gold); }
-.trophySetProg { font-family: monospace; font-size: 11px; color: var(--dim); }
+.trophySetProg { font-family: monospace; font-size: var(--fs-small); color: var(--dim); }
 .trophySet.complete .trophySetProg { color: var(--gold); }
 .pips { display: flex; flex-wrap: wrap; gap: 4px; }
 .pip {
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-family: monospace;
   padding: 2px 7px;
   border: 1px solid var(--line);
@@ -604,7 +604,7 @@ footer { text-align: center; margin-top: 18px; }
 .pip.miss { color: #4a4a52; }
 
 /* --- Dungeon delve --- */
-#delveState { font-family: monospace; font-size: 13px; margin-bottom: 4px; }
+#delveState { font-family: monospace; font-size: var(--fs-body); margin-bottom: 4px; }
 #delveState b { color: var(--gold); }
 #delveHaul { color: #d08a3e; min-height: 14px; margin-bottom: 8px; }
 #delveControls { margin: 6px 0; }
@@ -622,7 +622,7 @@ footer { text-align: center; margin-top: 18px; }
   border: 1px solid var(--line);
   color: var(--dim);
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--fs-small);
   padding: 4px 10px;
   cursor: pointer;
 }
@@ -638,7 +638,7 @@ footer { text-align: center; margin-top: 18px; }
   color: var(--dim);
   border: 1px solid var(--line);
   font-family: monospace;
-  font-size: 10px;
+  font-size: var(--fs-label);
   resize: vertical;
 }
 
