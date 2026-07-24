@@ -59,7 +59,7 @@ canvas {
   display: block;
   width: 100%;
   border: 1px solid var(--line);
-  background: #101014;
+  background: var(--well);
   image-rendering: pixelated;
 }
 
@@ -84,7 +84,7 @@ canvas {
 #pullBtn:disabled { background: #3a3a44; color: var(--recede); cursor: default; }
 #depth { color: var(--gold); font-size: var(--fs-hero); font-family: monospace; min-width: 90px; }
 #cooldown { font-size: var(--fs-small); font-family: monospace; }
-#ticketGain { font-size: var(--fs-small); font-family: monospace; color: #7aa4d4; margin-left: 8px; }
+#ticketGain { font-size: var(--fs-small); font-family: monospace; color: var(--risk); margin-left: 8px; }
 #projection { font-size: var(--fs-small); font-family: monospace; color: var(--gold); min-height: 16px; margin: -4px 0 4px; }
 
 #dialogue {
@@ -97,13 +97,13 @@ canvas {
   margin: 12px 0;
 }
 
-.tier-risk { color: #7aa4d4; }
+.tier-risk { color: var(--risk); }
 .tier-nightmare { color: var(--gold); text-shadow: 0 0 6px rgba(201, 169, 75, .35); }
-#stacksHud { font-size: var(--fs-small); color: #b06a5a; letter-spacing: 0; font-variant: normal; text-transform: none; }
+#stacksHud { font-size: var(--fs-small); color: var(--warn); letter-spacing: 0; font-variant: normal; text-transform: none; }
 section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2px; }
 #gmSec .row { cursor: default; }
 .ztable button.active { color: var(--gold); border-color: var(--gold); }
-.zoneBar { height: 2px; background: #22222a; margin-top: 3px; }
+.zoneBar { height: 2px; background: var(--field); margin-top: 3px; }
 .zoneFill { height: 100%; background: var(--gold); width: 0; }
 #titles {
   border: 1px dashed var(--line);
@@ -133,7 +133,7 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   border-top: 1px solid var(--line);
   padding: 8px 0 3px;
 }
-.cursor { color: #6bbf7a; animation: blink 1.1s steps(1) infinite; }
+.cursor { color: var(--live); animation: blink 1.1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 #log {
   font-family: monospace;
@@ -144,10 +144,10 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
 .logline { padding: 1px 0; animation: logIn .3s ease-out; }
 @keyframes logIn { from { opacity: 0; transform: translateX(-4px); } }
 .log-plain { color: var(--bone); }
-.log-dim { color: #6e6e78; }
+.log-dim { color: var(--recede); }
 .log-event { color: var(--gold); }
 .log-loot { color: var(--gold); }
-.log-warn { color: #b06a5a; }
+.log-warn { color: var(--warn); }
 @media (prefers-reduced-motion: reduce) { .cursor, .logline { animation: none; } }
 
 /* ---- game sections (revealed after the intro pull) ---- */
@@ -202,8 +202,8 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
 .chipVal { font-family: monospace; font-size: var(--fs-display); color: var(--bone); }
 .chipVal b { color: var(--gold); font-weight: normal; }
 .chipLbl { font-size: var(--fs-micro); font-family: monospace; letter-spacing: .12em; color: var(--dim); text-transform: uppercase; margin-top: 1px; }
-.copper, .copper b { color: #d08a3e !important; }
-.tickets, .tickets b { color: #7aa4d4 !important; }
+.copper, .copper b { color: var(--copper) !important; }
+.tickets, .tickets b { color: var(--risk) !important; }
 #gmPanel .gmRow {
   display: flex;
   align-items: center;
@@ -211,12 +211,12 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   font-family: monospace;
   font-size: var(--fs-small);
   padding: 3px 0;
-  border-top: 1px solid #1b1b22;
+  border-top: 1px solid var(--line-soft);
 }
 #gmPanel .gmRow .tl { flex: 1; }
 #gmPanel button { min-width: 90px; }
 #gmPanel h3 { border-top: none; padding-top: 0; margin-top: 4px; }
-#tierAtk, #tierSpeed { background: #22222a; color: var(--bone); border: 1px solid var(--line); font-family: monospace; font-size: var(--fs-small); }
+#tierAtk, #tierSpeed { background: var(--field); color: var(--bone); border: 1px solid var(--line); font-family: monospace; font-size: var(--fs-small); }
 
 section.game {
   border: 1px solid var(--line);
@@ -236,12 +236,12 @@ section.game h3 {
   font-size: var(--fs-small);
   font-variant: small-caps;
   letter-spacing: .1em;
-  color: #9a8a5a;
+  color: var(--gold-dim);
   border-top: 1px solid var(--line);
   padding-top: 8px;
 }
 section.game button {
-  background: #22222a;
+  background: var(--field);
   color: var(--bone);
   border: 1px solid var(--line);
   font-family: monospace;
@@ -250,11 +250,11 @@ section.game button {
   cursor: pointer;
 }
 section.game button:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
-section.game button:disabled { color: #55555e; cursor: default; }
+section.game button:disabled { color: var(--faint); cursor: default; }
 
 .rig { display: flex; gap: 8px; flex-wrap: wrap; }
 .assignLine { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: var(--fs-small); font-family: monospace; margin-bottom: 6px; }
-.barTrack { height: 8px; background: #22222a; margin-top: 4px; }
+.barTrack { height: 8px; background: var(--field); margin-top: 4px; }
 .barFill { height: 100%; background: var(--gold); width: 0; }
 
 /* row lists — the one component for selectable/purchasable line items */
@@ -265,7 +265,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
   gap: 8px;
   align-items: center;
   padding: 6px 4px;
-  border-bottom: 1px solid #1b1b22;
+  border-bottom: 1px solid var(--line-soft);
   font-family: monospace;
   font-size: var(--fs-small);
   position: relative;
@@ -273,7 +273,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
 .allocMini { display: inline-flex; align-items: center; gap: 3px; }
 /* alloc controls recede (dim, quiet) so the numbers they feed read louder;
    roomier tap targets for mobile */
-.allocMini button { padding: 4px 8px; font-size: var(--fs-small); color: #6e6e78; border-color: #1b1b22; }
+.allocMini button { padding: 4px 8px; font-size: var(--fs-small); color: var(--recede); border-color: var(--line-soft); }
 /* power controls (cap/max/0) collapse behind ⋯ until tapped — the row's
    default state is just −/value/+ */
 .allocMore { display: none; align-items: center; gap: 3px; }
@@ -281,7 +281,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
 .allocMini.expanded .allocX { color: var(--gold); border-color: var(--line); }
 .allocMini input {
   width: 44px;
-  background: #17171c;
+  background: var(--inset);
   color: var(--gold);
   border: 1px solid var(--line);
   font-family: monospace;
@@ -290,7 +290,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
 }
 /* row hierarchy: live OUTPUT is the hero (bone), reference recedes (dim) */
 .rowlist .row .rowName { color: var(--bone); }
-.rowlist .row .rowGain { color: #55555e; }
+.rowlist .row .rowGain { color: var(--faint); }
 .rowlist .row .rowStat { color: var(--bone); text-align: right; }
 .rowlist .row.active { border-left: 3px solid var(--gold); padding-left: 8px; }
 .rowlist .row.active .rowName { color: var(--gold); }
@@ -308,7 +308,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
 .popTrack .barFill { background: #5a7a5a; }
 .assign input[type="number"] {
   width: 52px;
-  background: #22222a;
+  background: var(--field);
   color: var(--gold);
   border: 1px solid var(--line);
   font-family: monospace;
@@ -320,18 +320,18 @@ section.game button:disabled { color: #55555e; cursor: default; }
 /* dense zone table (ITRTG-style: numbers in columns) */
 .ztable { width: 100%; border-collapse: collapse; font-family: monospace; font-size: var(--fs-small); }
 .ztable th {
-  color: #6e6e78;
+  color: var(--recede);
   font-weight: normal;
   text-align: right;
   padding: 2px 6px;
   border-bottom: 1px solid var(--line);
 }
-.ztable td { text-align: right; padding: 4px 6px; border-bottom: 1px solid #1b1b22; color: var(--bone); }
+.ztable td { text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--line-soft); color: var(--bone); }
 .ztable .tl { text-align: left; }
 /* the server's flavor/help voice — mono italic, never small-caps serif, so
    sentence-length header text stops being all-caps-serif soup */
 .ztable .sub, .sub {
-  color: #6e6e78;
+  color: var(--recede);
   font-size: var(--fs-label);
   font-family: monospace;
   font-style: italic;
@@ -339,7 +339,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
   text-transform: none;
   letter-spacing: 0;
 }
-.ztable tr.locked td { color: #4a4a52; }
+.ztable tr.locked td { color: var(--faintest); }
 .ztable tr.active td:first-child { color: var(--gold); }
 .ztable button { padding: 1px 8px; }
 
@@ -364,12 +364,12 @@ section.game button:disabled { color: #55555e; cursor: default; }
   border-top: 1px solid var(--line);
   padding: 8px 10px;
   margin-top: 6px;
-  background: #17171c;
+  background: var(--inset);
 }
 .slot:first-child { margin-top: 0; }
-.slotName { font-variant: small-caps; color: #6e6e78; font-size: var(--fs-small); letter-spacing: 0.5px; }
+.slotName { font-variant: small-caps; color: var(--recede); font-size: var(--fs-small); letter-spacing: 0.5px; }
 .slotItem { font-size: var(--fs-small); font-family: monospace; }
-.enhInfo { font-size: var(--fs-label); font-family: monospace; color: #6e6e78; }
+.enhInfo { font-size: var(--fs-label); font-family: monospace; color: var(--recede); }
 #stashHead { margin-top: 8px; }
 /* stash — scannable grid: ▲ upgrade marker · name · actions / info line */
 #stashList { font-family: monospace; font-size: var(--fs-small); margin-top: 6px; }
@@ -380,19 +380,19 @@ section.game button:disabled { color: #55555e; cursor: default; }
   align-items: center;
   padding: 3px 6px;
   border-left: 3px solid var(--line);
-  border-bottom: 1px solid #1b1b22;
+  border-bottom: 1px solid var(--line-soft);
 }
 .stashRow.upgrade { background: rgba(201, 169, 75, .07); }
 .sMark { grid-column: 1; grid-row: 1; text-align: center; color: var(--gold); font-weight: bold; }
-.stashRow.locked .sMark { color: #6e6e78; font-weight: normal; }
+.stashRow.locked .sMark { color: var(--recede); font-weight: normal; }
 .sName { grid-column: 2; grid-row: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sAct { grid-column: 3; grid-row: 1; display: inline-flex; gap: 3px; }
-.sInfo { grid-column: 2 / -1; grid-row: 2; color: #6e6e78; font-size: var(--fs-label); overflow-wrap: anywhere; }
+.sInfo { grid-column: 2 / -1; grid-row: 2; color: var(--recede); font-size: var(--fs-label); overflow-wrap: anywhere; }
 .stashRow button { padding: 3px 7px; font-size: var(--fs-label); }
 
 #devPanel {
   border: 1px dashed #6e3a32;
-  color: #b06a5a;
+  color: var(--warn);
   font-family: monospace;
   font-size: var(--fs-small);
   padding: 6px;
@@ -403,8 +403,8 @@ section.game button:disabled { color: #55555e; cursor: default; }
   flex-wrap: wrap;
 }
 #devPanel button {
-  background: #22222a;
-  color: #b06a5a;
+  background: var(--field);
+  color: var(--warn);
   border: 1px solid #6e3a32;
   font-family: monospace;
   font-size: var(--fs-small);
@@ -433,7 +433,7 @@ footer { text-align: center; margin-top: 18px; }
 #wipeBtn {
   background: none;
   border: none;
-  color: #55555e;
+  color: var(--faint);
   font-size: var(--fs-label);
   font-family: monospace;
   cursor: pointer;
@@ -464,7 +464,7 @@ footer { text-align: center; margin-top: 18px; }
   margin-bottom: 4px;
 }
 .filterLabel { font-size: var(--fs-small); color: var(--dim); }
-.filterHint { font-size: var(--fs-label); color: #55555e; }
+.filterHint { font-size: var(--fs-label); color: var(--faint); }
 .ipDial { width: 72px; }
 
 /* --- v9 reforge bench candidate --- */
@@ -489,7 +489,7 @@ footer { text-align: center; margin-top: 18px; }
 .itemMeta { margin-left: auto; color: var(--dim); font-size: var(--fs-small); }
 .affixList { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 3px; }
 .affixItem { font-size: var(--fs-small); color: var(--dim); }
-.affixList.muted, .muted { color: #55555e; font-style: italic; }
+.affixList.muted, .muted { color: var(--faint); font-style: italic; }
 .slotControls { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; align-items: center; }
 .ctlGroup { display: inline-flex; align-items: center; gap: 6px; }
 .scrapPill {
@@ -502,11 +502,11 @@ footer { text-align: center; margin-top: 18px; }
 }
 
 /* --- Ban Wave (rebirth) --- */
-.scripts, .scripts b { color: #6bbf7a !important; }
+.scripts, .scripts b { color: var(--live) !important; }
 #banWave { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 #banWaveInfo { font-size: var(--fs-small); font-family: monospace; flex: 1; min-width: 180px; }
-#banWaveInfo .warn { color: #d08a3e; }
-#banWaveBtn.armed { border-color: #d0553e; color: #d0553e; }
+#banWaveInfo .warn { color: var(--copper); }
+#banWaveBtn.armed { border-color: var(--alert); color: var(--alert); }
 
 /* --- Help modal + button --- */
 .helpBtn {
@@ -557,7 +557,7 @@ footer { text-align: center; margin-top: 18px; }
 .modalClose:hover { color: var(--gold); }
 .helpTopic { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
 .helpTopic:first-child { border-top: none; padding-top: 0; margin-top: 0; }
-.helpTopic h3 { color: #9a8a5a; font-variant: small-caps; letter-spacing: .08em; margin: 0 0 6px; font-size: var(--fs-body); }
+.helpTopic h3 { color: var(--gold-dim); font-variant: small-caps; letter-spacing: .08em; margin: 0 0 6px; font-size: var(--fs-body); }
 .helpTopic p { font-size: var(--fs-small); line-height: 1.5; margin: 0 0 8px; color: var(--bone); }
 .helpTopic b { color: var(--gold); font-weight: normal; }
 
@@ -584,7 +584,7 @@ footer { text-align: center; margin-top: 18px; }
 .trophySet {
   padding: 6px 10px;
   border-left: 3px solid var(--line);
-  background: #17171c;
+  background: var(--inset);
 }
 .trophySet.complete { border-left-color: var(--gold); }
 .trophySetHead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
@@ -601,12 +601,12 @@ footer { text-align: center; margin-top: 18px; }
   cursor: help;
 }
 .pip.own { color: var(--gold); border-color: var(--gold); }
-.pip.miss { color: #4a4a52; }
+.pip.miss { color: var(--faintest); }
 
 /* --- Dungeon delve --- */
 #delveState { font-family: monospace; font-size: var(--fs-body); margin-bottom: 4px; }
 #delveState b { color: var(--gold); }
-#delveHaul { color: #d08a3e; min-height: 14px; margin-bottom: 8px; }
+#delveHaul { color: var(--copper); min-height: 14px; margin-bottom: 8px; }
 #delveControls { margin: 6px 0; }
 #descendBtn2 {
   background: var(--gold); color: #0d0d10; border: none;
@@ -627,14 +627,14 @@ footer { text-align: center; margin-top: 18px; }
   cursor: pointer;
 }
 .wallBtn:hover { color: var(--gold); border-color: var(--gold); }
-.wallBtn.active { color: var(--gold); border-color: var(--gold); background: #1b1b22; }
+.wallBtn.active { color: var(--gold); border-color: var(--gold); background: var(--line-soft); }
 .pip b { font-weight: normal; }
-.pip.miss b { color: #6e6e78; }
+.pip.miss b { color: var(--recede); }
 .exportBox {
   width: 100%;
   height: 160px;
   margin-top: 8px;
-  background: #101014;
+  background: var(--well);
   color: var(--dim);
   border: 1px solid var(--line);
   font-family: monospace;
@@ -643,8 +643,8 @@ footer { text-align: center; margin-top: 18px; }
 }
 
 /* --- locked (???) tabs — the visible ladder --- */
-#tabs button.locked { color: #45454d; border-color: #1b1b22; cursor: default; letter-spacing: .2em; }
-#tabs button.locked:hover { color: #45454d; border-color: #1b1b22; }
+#tabs button.locked { color: #45454d; border-color: var(--line-soft); cursor: default; letter-spacing: .2em; }
+#tabs button.locked:hover { color: #45454d; border-color: var(--line-soft); }
 
 /* --- state-in-form: affordable purchases read live; capped training reads done --- */
 section.game button.affordable { border-color: var(--gold); color: var(--gold); }
