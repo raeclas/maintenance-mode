@@ -3,7 +3,7 @@
 // GM terms are a separate, DISPLAYED lane (era-priced flags); the trained
 // speed cap stays a training-lane identity — haste multiplies past it.
 import { contribution, SLOTS } from "./gear.js";
-import { AFFIXES } from "./affixes.js";
+import { AFFIXES, liveValue } from "./affixes.js";
 import { gmDmgMult, gmHasteMult } from "./gm.js";
 import { scriptMult } from "./rebirth.js";
 import { trophyMods } from "./trophies.js";
@@ -35,11 +35,12 @@ export function derive(state) {
     for (const af of it.affixes || []) {
       const a = AFFIXES[af.id];
       if (!a) continue;
-      if (a.lane === "atk" && a.kind === "flat") gearAtk += af.value;
-      else if (a.lane === "atk") atkPct += af.value;
-      else if (a.lane === "speed" && a.kind === "flat") hitsFlat += af.value;
-      else if (a.lane === "speed") hastePct += af.value;
-      else if (a.lane === "farm") copperPct += af.value;
+      const val = liveValue(af, state); // static affixes return af.value; live ones compute from state
+      if (a.lane === "atk" && a.kind === "flat") gearAtk += val;
+      else if (a.lane === "atk") atkPct += val;
+      else if (a.lane === "speed" && a.kind === "flat") hitsFlat += val;
+      else if (a.lane === "speed") hastePct += val;
+      else if (a.lane === "farm") copperPct += val;
     }
   }
   const tm = trophyMods(state); // boss Trophy set: per-piece boosts + set bonus

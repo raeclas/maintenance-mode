@@ -336,6 +336,19 @@ const enh = await import("../enhance.js");
     assert.ok(["atk", "speed", "farm"].includes(affixes.AFFIXES[id].lane));
   }
 
+  // LIVE affixes: contribution = rolled rate × state quantity, hard-capped
+  const sl = newState();
+  sl.gear.weapon = { slot: "weapon", ip: 100, plus: 0, rarity: "rare",
+    affixes: [{ id: "botsync", tier: 1, value: 0.4 }], name: "t" }; // +0.4% ATK / 100 bots
+  sl.bots.pop = 0;
+  const atk0 = derive(sl).atk;
+  sl.bots.pop = 5000;                                   // 0.4 × 50 = +20% ATK
+  assert.ok(derive(sl).atk > atk0);                    // scales with the swarm
+  assert.equal(affixes.liveValue({ id: "botsync", value: 0.4 }, sl), 20);
+  sl.bots.pop = 1e9;                                    // way over
+  assert.equal(affixes.liveValue({ id: "botsync", value: 0.4 }, sl), 40); // capped (law 1)
+  assert.equal(affixes.liveValue({ id: "atkPct", value: 12 }, sl), 12);   // static affix unchanged
+
   // Reforge bench: spends OWN-rarity scrap, rerolls affixes, ip/rarity fixed,
   // preview-then-commit (candidate does NOT mutate the item)
   const sr = newState();

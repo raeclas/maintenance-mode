@@ -520,7 +520,7 @@ function renderStash() {
   sorted.forEach(item => {
     const idx = state.gear.stash.indexOf(item);
     const rar = RARITY_BY_ID[item.rarity] || RARITIES[0];
-    const affixes = (item.affixes || []).map(a => affixLabel(a)).join(" · ") || "—";
+    const affixes = (item.affixes || []).map(a => affixLabel(a, state)).join(" · ") || "—";
     const row = document.createElement("div");
     row.className = "stashRow";
     row.style.borderLeftColor = rar.color;
@@ -902,7 +902,7 @@ function render() {
     const si = $(`si_${slot}`);
     if (item) {
       const rar = RARITY_BY_ID[item.rarity] || RARITIES[0];
-      const lines = (item.affixes || []).map(a => `<div class="affixItem">${affixLabel(a)}</div>`).join("");
+      const lines = (item.affixes || []).map(a => `<div class="affixItem">${affixLabel(a, state)}</div>`).join("");
       si.innerHTML =
         `<div class="itemHeader">` +
           `<span class="itemName" style="color:${rar.color}">${item.name}</span>` +
@@ -939,7 +939,7 @@ function render() {
     const rfc = $(`rfc_${slot}`);
     if (item && cand) {
       rfc.style.display = "";
-      $(`rfcl_${slot}`).innerHTML = `→ ${cand.map(a => affixLabel(a)).join(" · ")}`;
+      $(`rfcl_${slot}`).innerHTML = `→ ${cand.map(a => affixLabel(a, state)).join(" · ")}`;
       $(`rfr_${slot}`).disabled = !afford;
     } else rfc.style.display = "none";
   }

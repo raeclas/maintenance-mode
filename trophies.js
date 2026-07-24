@@ -34,6 +34,13 @@ export function pieceOf(wall, idx) {
     lane: p.lane, pct: Math.max(1, Math.round(p.pct * b.set.mult)) };
 }
 
+// How many boss sets are fully complete (feeds the Warden's Echo live affix).
+export function completedSetCount(state) {
+  let n = 0;
+  for (const w of Object.keys(state.setPieces || {})) if (setComplete(state, Number(w))) n++;
+  return n;
+}
+
 export function ownedIdxs(state, wall) { return state.setPieces?.[wall] || []; }
 export function ownsPiece(state, wall, idx) { return ownedIdxs(state, wall).includes(idx); }
 export function setCount(state, wall) { return ownedIdxs(state, wall).length; }

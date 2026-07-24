@@ -504,6 +504,7 @@ mobs, gear, boss fight, enhance verbs, titles.
 | charms by zone | Cracked Bead · Weaver-Eye Charm · Salt Talisman · Ember Sigil · Door Sentry Sigil |
 | boss verbs/nouns | Attempt · enrage · depth · scars · break · title · safeguard |
 | gear rarities (2026-07-22) | Common · Uncommon · Rare · Epic · Legendary · Mythic · Origin |
+| live affixes (2026-07-24) | value reads account state, shown as "value — source": Botnet Sync (per 100 bots) · Warden's Echo (per set) · Failstack Bleed (per stack) · Ban Counter (per 1k bans, never resets) · Delver's Momentum (while delving). Each hard-capped |
 | gear verbs/nouns (2026-07-22) | affix · Reforge · Scrap (tiered salvage material) · Salvage · Loot filter (keep ≥ rarity/ip) |
 | boss Trophy sets (2026-07-22) | one 7-piece set per Warden (door parts: Hinge · Bolt · Latch · Keyward · Lintel · Threshold · Frame) · set names "The First/Second Door" · Farm status (re-Attempt a broken boss for pieces) |
 | dungeon (2026-07-23) | Delve · floor · descend · extract · wipe · haul · safe depth. The character's active push-your-luck verb + their copper/gear source (salvage = scrap only) |

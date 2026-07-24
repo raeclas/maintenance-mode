@@ -13,13 +13,36 @@
 // `ipFrac` affixes scale with the item's ip (stay relevant at any tier — flat
 // ATK on a huge item is no longer a rounding error). The rest are % or small
 // flats (speed lane) that don't relate to ip.
+import { completedSetCount } from "./trophies.js";
+
+const r0 = n => Math.round(n);
 export const AFFIXES = {
   atkFlat: { lane: "atk",   kind: "flat", ipFrac: 0.08,             round: true,  label: v => `+${v} ATK` },
   atkPct:  { lane: "atk",   kind: "pct",  base: 4,    per: 2.5,     round: true,  label: v => `+${v}% ATK` },
   hits:    { lane: "speed", kind: "flat", base: 0.12, per: 0.12,    round: false, label: v => `+${v} hits/s` },
   haste:   { lane: "speed", kind: "pct",  base: 3,    per: 2,       round: true,  label: v => `+${v}% haste` },
   copper:  { lane: "farm",  kind: "pct",  base: 8,    per: 7,       round: true,  label: v => `+${v}% copper` },
+  // LIVE affixes — value computed from account state (the flywheel: pushing a
+  // system moves a gear number). Rolled `value` is the per-unit RATE; the live
+  // contribution = rate × unit(state), hard-capped so it can't run away (law 1).
+  botsync:  { lane: "atk",   kind: "pct", dyn: true, base: 0.4, per: 0.12, round: false, cap: 40,
+    unit: s => (s.bots?.pop || 0) / 100,        src: s => `${r0(s.bots?.pop || 0)} bots`,   label: v => `+${v}% ATK` },
+  echo:     { lane: "atk",   kind: "pct", dyn: true, base: 4,   per: 1.2,  round: false, cap: 30,
+    unit: s => completedSetCount(s),            src: s => `${completedSetCount(s)} sets`,   label: v => `+${v}% ATK` },
+  bleed:    { lane: "atk",   kind: "pct", dyn: true, base: 1.2, per: 0.4,  round: false, cap: 25,
+    unit: s => s.failstacks || 0,               src: s => `${s.failstacks || 0} stacks`,    label: v => `+${v}% ATK` },
+  bancount: { lane: "atk",   kind: "pct", dyn: true, base: 1.5, per: 0.4,  round: false, cap: 50,
+    unit: s => (s.bots?.banned || 0) / 1000,    src: s => `${r0(s.bots?.banned || 0)} bans`, label: v => `+${v}% ATK` },
+  momentum: { lane: "speed", kind: "pct", dyn: true, base: 8,   per: 2.5,  round: false, cap: 20,
+    unit: s => (s.dungeon?.active ? 1 : 0),     src: s => s.dungeon?.active ? "delving" : "idle", label: v => `+${v}% haste` },
 };
+
+// A live affix's current contribution: rolled rate × the state quantity, capped.
+export function liveValue(af, state) {
+  const a = AFFIXES[af.id];
+  if (!a?.dyn) return af.value;
+  return Math.min(a.cap, af.value * a.unit(state));
+}
 
 export const AFFIX_IDS = Object.keys(AFFIXES);
 
@@ -57,8 +80,11 @@ export function rollAffixes(ip, n, rng = Math.random) {
     .map(id => ({ id, tier, value: affixValue(AFFIXES[id], tier, ip, rng) }));
 }
 
-// Human line for an affix instance — used by the card and log.
-export function affixLabel(af) {
+// Human line for an affix instance. Live affixes show the resolved value AND
+// its source ("+37% ATK — 4,900 bots") — provenance = the flywheel made visible.
+export function affixLabel(af, state) {
   const a = AFFIXES[af.id];
-  return a ? a.label(af.value) : af.id;
+  if (!a) return af.id;
+  if (a.dyn && state) return `${a.label(+liveValue(af, state).toFixed(1))} — ${a.src(state)}`;
+  return a.label(af.value);
 }
