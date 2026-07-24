@@ -777,7 +777,9 @@ function render() {
   for (const type of Object.keys(bots.PRIV)) {
     const cost = bots.privCost(state.bots, type);
     $(`gmpr_${type}`).textContent = `rank ${bots.privRank(state.bots, type)}`;
-    buyState($(`gmpb_${type}`), state.tickets >= cost);
+    const btn = $(`gmpb_${type}`);
+    btn.textContent = `${fmt(cost)} tickets`;
+    buyState(btn, state.tickets >= cost);
   }
 
   // encounter scheduler line (Boss screen)
