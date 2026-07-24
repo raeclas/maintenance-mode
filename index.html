@@ -145,16 +145,11 @@
   </section>
 
   <section id="dungeonSec" class="game hidden tabpane" style="display:none">
-    <h3>Delve <span class="sub">— descend for loot; bank before your build gives out</span></h3>
+    <h3>Delve <span class="sub">— the character mines the dead server's deep strata; depth follows your build, deeper = more Cache</span></h3>
     <div id="delveState"></div>
-    <div id="delveHaul" class="sub"></div>
-    <div class="controls" id="delveControls">
-      <button id="descendBtn2">Descend</button>
-      <button id="extractBtn">Extract</button>
-      <span id="delveCd" class="sub"></span>
-    </div>
-    <label class="toggleLine"><input type="checkbox" id="autoDelve"> auto-delve (safe depth only — runs while you're away)</label>
-    <div id="delveLog" class="sub"></div>
+    <div id="delveCache"></div>
+    <h3>Cache tree <span class="sub">— every node feeds a system</span></h3>
+    <div class="rowlist" id="delveTree"></div>
   </section>
 
   <section id="gmSec" class="game hidden tabpane" style="display:none">

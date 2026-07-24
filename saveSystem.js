@@ -142,7 +142,8 @@ export function load(state) {
   state.gear = { ...d.gear, ...(s.gear || {}) };
   if (!Array.isArray(state.gear.stash)) state.gear.stash = [];
   state.scrap = { ...d.scrap, ...(s.scrap || {}) }; // v9 tiered scrap wallet
-  state.dungeon = { ...d.dungeon, ...(s.dungeon || {}), haul: { copper: s.dungeon?.haul?.copper || 0 } };
+  state.dungeon = { cache: s.dungeon?.cache || 0, depthBest: s.dungeon?.depthBest || 0,
+    ranks: { ...d.dungeon.ranks, ...(s.dungeon?.ranks || {}) } };
   delete state.farm; // v8: zones are bot-only, player parking is gone
   return s;
 }

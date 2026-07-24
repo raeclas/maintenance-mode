@@ -508,39 +508,32 @@ const enh = await import("../enhance.js");
   assert.ok(trophies.setComplete(s, 1));
 }
 
-// Dungeon delve: push-your-luck — safe floors always clear, deep floors gamble,
-// wipe loses the haul, extract banks copper, deeper = exponentially more loot
+// Delve: idle depth engine — depth follows build DPS (+ Reach); deeper = more
+// Cache; the tree feeds every system (delveBonus); costs rise per rank
 {
   const s = newState();
   const dps = 1000;
-  // within power = certain; beyond = a coin-flip that drops off
-  assert.equal(dungeon.clearChance(1, dps), 1);
-  assert.ok(dungeon.diff(2) > dungeon.diff(1));                 // difficulty climbs
-  const sd = dungeon.safeDepth(dps);
-  assert.ok(sd >= 1 && dungeon.clearChance(sd, dps) === 1 && dungeon.clearChance(sd + 1, dps) < 1);
-  assert.ok(dungeon.floorCopper(5) > dungeon.floorCopper(1));   // deeper pays more
+  // depth = deepest certain-clear floor, driven by DPS
+  const d = dungeon.reachDepth(s, dps);
+  assert.ok(d >= 1 && dungeon.clearChance(d, dps) === 1 && dungeon.clearChance(d + 1, dps) < 1);
+  assert.ok(dungeon.reachDepth(s, 10 * dps) > d);              // stronger build → deeper
+  assert.ok(dungeon.cachePerSec(s, 10 * dps) > dungeon.cachePerSec(s, dps)); // deeper → more Cache
 
-  // descend a safe floor: haul grows, no bank yet
-  const r = dungeon.descend(s, dps, () => 0.999);
-  assert.ok(r.cleared && s.dungeon.floor === 1 && s.dungeon.haul.copper > 0);
-  assert.equal(s.copper, 0);                                    // haul is un-banked
+  // Reach upgrade digs past raw power; every node has a rising Cache cost
+  s.dungeon.cache = 1e6;
+  const c0 = dungeon.cost(s, "reach");
+  assert.ok(dungeon.buy(s, "reach"));
+  assert.equal(dungeon.reachDepth(s, dps), d + 1);            // +1 depth
+  assert.ok(dungeon.cost(s, "reach") > c0);                   // next rank costs more
+  assert.ok(s.dungeon.cache < 1e6);                           // Cache spent
 
-  // extract banks the haul and resets the run
-  const before = s.dungeon.haul.copper;
-  const out = dungeon.extract(s);
-  assert.equal(s.copper, before);
-  assert.equal(out.copper, before);
-  assert.equal(s.dungeon.active, false);
-  assert.equal(s.dungeon.floor, 0);
-
-  // WIPE: forced failure loses the un-banked haul
-  const s2 = newState();
-  dungeon.descend(s2, dps, () => 0.999); // floor 1, some haul
-  const w = dungeon.descend(s2, 1, () => 0.999); // dps 1 vs deep diff → chance ~0 → wipe
-  assert.ok(!w.cleared && w.wipedAt);
-  assert.equal(s2.dungeon.floor, 0);
-  assert.equal(s2.dungeon.haul.copper, 0);       // haul lost
-  assert.equal(s2.copper, 0);                    // nothing banked
+  // system-feeding nodes contribute a multiplier (delveBonus); rank 0 = 1×
+  const fresh = newState();
+  for (const key of ["overclock", "loot", "drill", "ticket"]) assert.equal(dungeon.delveBonus(fresh, key), 1);
+  s.dungeon.cache = 1e9;
+  dungeon.buy(s, "overclock");
+  assert.ok(dungeon.delveBonus(s, "overclock") > 1);         // overclock now lifts ATK
+  assert.equal(dungeon.buy(newState(), "reach"), false);     // no Cache → can't buy
 }
 
 // Enhance: zones, checkpoint falls, failstacks, safeguard, cost gating

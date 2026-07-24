@@ -4,6 +4,7 @@
 import { getBoss } from "./bosses.js";
 import { derive } from "./stats.js";
 import { ticketYield, BREAK_TICKETS } from "./gm.js";
+import { delveBonus } from "./dungeon.js";
 
 // Starting values (Numbers Policy). Test plan: W1 should feel like a siege —
 // ~5-6 pulls, scars visibly chipping. If walls "fall over", lower SCAR_CAP;
@@ -106,7 +107,7 @@ export function pullDone(state, now) {
 export function resolveFarm(state, now) {
   state.pull = null;
   state.boss.pulls++;
-  const y = ticketYield(1); // a full "kill" of the (already-broken) boss
+  const y = Math.round(ticketYield(1) * delveBonus(state, "ticket")); // a full "kill" of the broken boss
   state.tickets += y;
   state.cooldownUntil = now + cooldownMs(state);
   return y;
@@ -124,7 +125,7 @@ export function processIdleAttempts(state, dtS, rng = Math.random) {
     state.cooldownUntil = 0;
     if (!startPull(state, 0, rng)) break;
     const depth = resolvePull(state, boss.windowS * 1000);
-    const y = ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0);
+    const y = Math.round((ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0)) * delveBonus(state, "ticket"));
     state.tickets += y;
     out.tickets += y;
     out.attempts++;

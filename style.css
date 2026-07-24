@@ -615,3 +615,9 @@ section.game button.affordable { border-color: var(--gold); color: var(--gold); 
 
 /* Overkill Saturation — the coupling's payoff, made visible on the zone */
 .sat { color: var(--gold); }
+
+/* --- Delve: idle depth engine --- */
+#delveState { font-family: monospace; font-size: var(--fs-body); color: var(--bone); margin-bottom: 2px; }
+#delveState b { color: var(--gold); }
+#delveCache { font-family: monospace; font-size: var(--fs-body); color: var(--bone); margin-bottom: 8px; }
+#delveCache b { color: var(--gold); }

@@ -6,6 +6,7 @@
 // Live tick and offline batch are the SAME function (clamp law).
 // Starting values throughout — sim-gated; test plans in REMAKE-DESIGN §7.
 import { zones, DROP_CHANCE, zoneUnlocked, saturation, lootBias } from "./farm.js";
+import { delveBonus } from "./dungeon.js";
 import { rollItem } from "./gear.js";
 import { attempt as enhAttempt } from "./enhance.js";
 import { derive } from "./stats.js";
@@ -220,6 +221,7 @@ function tickChunk(state, dtS, onEvent, rng) {
   // training (private lobbies — safe): every unlocked tier runs in
   // parallel with its own squad; each bar caps at 50 fills/s
   const quality = botPower(b) * botSpeed(b);
+  const drill = delveBonus(state, "drill"); // Delve "buried scripts" → +train output
   const scale = effScale(b);
   for (const bar of ["atk", "speed"]) {
     const B = b.bars[bar];
@@ -232,8 +234,8 @@ function tickChunk(state, dtS, onEvent, rng) {
       while (B.prog[i] >= t.cost) {
         B.prog[i] -= t.cost;
         B.fills[i] = (B.fills[i] || 0) + 1;
-        if (bar === "atk") b.trained.atk += t.gain;
-        else b.trained.hits += t.gain; // no hard cap — speed's returns soft-cap in stats.js
+        if (bar === "atk") b.trained.atk += t.gain * drill;
+        else b.trained.hits += t.gain * drill; // no hard cap — speed's returns soft-cap in stats.js
         if (i === B.unlocked - 1 && B.unlocked < TRAININGS[bar].length && B.fills[i] >= unlockFills(i)) {
           B.unlocked++;
         }
@@ -251,7 +253,7 @@ function tickChunk(state, dtS, onEvent, rng) {
     const r = botZoneRates(b, zi, n, player);
     if (!r.held) continue;
     state.copper += r.copperPerSec * dtS * (player.copperMult || 1); // +copper affixes
-    const np = r.kps * dtS * DROP_CHANCE;
+    const np = r.kps * dtS * DROP_CHANCE * delveBonus(state, "loot"); // Delve "salvage beacon" → +drops
     let drops = Math.floor(np) + (rng() < np - Math.floor(np) ? 1 : 0);
     const bias = lootBias(saturation(r.squadDps, zones[zi].mobHp)); // over-farm → richer loot
     while (drops-- > 0) onEvent("drop", rollItem(zones[zi], zi, rng, bias));

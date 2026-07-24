@@ -100,6 +100,10 @@ function log(msg) {
 // disabled+dim. Glanceable "what can I buy right now" across every panel.
 function buyState(btn, ok) { btn.disabled = !ok; btn.classList.toggle("affordable", ok); }
 
+// the character's raw DPS — drives the Delve's reach depth (hoisted: the
+// offline batch calls it before the render helpers run)
+function charDps() { const dd = derive(state); return dd.atk * dd.hitsPerSec; }
+
 let stashDirty = true;
 let lastWallSel = ""; // wall-selector rebuild cache
 let lastRenderNow = Date.now();  // for per-frame dt (kill-cycle bar integrator)
@@ -147,19 +151,11 @@ if (loaded && state.unlocked && state.lastSeen) {
     // enh feedback stays silent offline (slot rows aren't built yet)
     bots.tick(state, dt, (kind, item) => { if (kind === "drop") { drops++; onDrop(item); } });
     log(`offline ${fmt(dt / 3600)}h: +${fmt(state.copper - c0)}c · ${drops} drops`);
-    if (state.dungeon.auto) { // away-safe delving — copper only (gear is a live reward)
-      const dps = derive(state).atk * derive(state).hitsPerSec;
-      const sd = dungeon.safeDepth(dps);
-      if (sd > 0) {
-        const d0 = state.copper;
-        let steps = Math.min(Math.floor(dt / dungeon.CLEAR_S), 200000); // clamp like live
-        while (steps-- > 0) {
-          if (dungeon.clearChance(state.dungeon.floor + 1, dps) >= 1) dungeon.descend(state, dps, () => 0.999);
-          else dungeon.extract(state); // banks copper; gear discarded offline
-        }
-        if (state.dungeon.active) dungeon.extract(state);
-        if (state.copper - d0 > 0) log(`offline delve (safe depth ${sd}): +${fmt(state.copper - d0)}c`);
-      }
+    { // the Delve mines Cache idle — same rate as live, clamped by dt
+      const gained = dungeon.cachePerSec(state, charDps()) * dt;
+      state.dungeon.cache += gained;
+      state.dungeon.depthBest = Math.max(state.dungeon.depthBest, dungeon.reachDepth(state, charDps()));
+      if (gained > 0) log(`offline delve: +${fmt(gained)} Cache`);
     }
     if (state.gm.idleProc && !state.boss.broken) {
       const r = processIdleAttempts(state, dt);
@@ -468,24 +464,15 @@ $("exportBtn").addEventListener("click", () => {
   $("helpModal").style.display = "";
 });
 
-// ---- Dungeon delve: the character's active push-your-luck verb ----
-let dungeonCdUntil = 0;
-const charDps = () => { const dd = derive(state); return dd.atk * dd.hitsPerSec; };
-$("descendBtn2").addEventListener("click", () => {
-  if (Date.now() < dungeonCdUntil) return;
-  const r = dungeon.descend(state, charDps());
-  dungeonCdUntil = Date.now() + dungeon.CLEAR_S * 1000;
-  if (r.cleared) log(`delve: floor ${r.floor} cleared · +${fmt(r.copper)}c`);
-  else log(`delve: WIPED on floor ${r.wipedAt} — lost ${fmt(r.lost.copper)}c haul`);
-  save(state);
-});
-$("extractBtn").addEventListener("click", () => {
-  if (!state.dungeon.active) return;
-  const out = dungeon.extract(state);
-  log(`delve: extracted floor ${out.floor} · banked +${fmt(out.copper)}c`);
-  save(state);
-});
-$("autoDelve").addEventListener("change", () => { state.dungeon.auto = $("autoDelve").checked; });
+// ---- Delve: idle depth engine — Cache upgrade tree buttons (built once) ----
+for (const key of Object.keys(dungeon.UPGRADES)) {
+  const u = dungeon.UPGRADES[key];
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<span class="rowName">${u.label}</span><span class="rowGain">${u.gain}/rank</span><span class="rowStat" id="dur_${key}"></span><button id="dub_${key}"></button>`;
+  $("delveTree").appendChild(row);
+  row.querySelector("button").addEventListener("click", () => { dungeon.buy(state, key); });
+}
 
 $("stashToggle").addEventListener("click", () => {
   const l = $("stashList");
@@ -577,7 +564,7 @@ function tick() {
     } else {
       const depth = resolvePull(state, now);
       notifyResult(depth, state.boss.broken);
-      const yieldT = ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0);
+      const yieldT = Math.round((ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0)) * dungeon.delveBonus(state, "ticket"));
       state.tickets += yieldT;
       if (state.boss.broken) {
         say("break");
@@ -597,17 +584,10 @@ function tick() {
       save(state);
     }
   }
-  { // auto-delve: safe-depth farming on the descend cadence (live)
-    const dg = state.dungeon;
-    if (dg.auto && now >= dungeonCdUntil) {
-      const dps = charDps();
-      if (dungeon.clearChance(dg.floor + 1, dps) >= 1 && dungeon.safeDepth(dps) > 0) {
-        dungeon.descend(state, dps);
-        dungeonCdUntil = now + dungeon.CLEAR_S * 1000;
-      } else if (dg.active) {
-        dungeon.extract(state); // hit the safe ceiling → bank copper, loop next tick
-      }
-    }
+  { // the Delve mines Cache idle — reach depth tracks the build's power
+    const g = charDps();
+    state.dungeon.cache += dungeon.cachePerSec(state, g) * dt;
+    state.dungeon.depthBest = Math.max(state.dungeon.depthBest, dungeon.reachDepth(state, g));
   }
   if (state.unlocked) checkUnlocks();
   if (now - lastSave > 5000) { lastSave = now; save(state); }
@@ -966,21 +946,17 @@ function render() {
     $("trophyCabinet").innerHTML = html;
   }
 
-  { // delve panel
-    const dg = state.dungeon, dps = charDps();
-    const nextN = dg.floor + 1, chance = dungeon.clearChance(nextN, dps);
-    $("delveState").innerHTML = dg.active
-      ? `on floor <b>${dg.floor}</b> · descend to ${nextN}: <b>${(chance * 100).toFixed(0)}%</b> clear (diff ${fmt(dungeon.diff(nextN))} vs your ${fmt(Math.round(dps))} DPS)`
-      : `idle · safe depth <b>${dungeon.safeDepth(dps)}</b> · deepest ever <b>${dg.best || 0}</b>`;
-    $("delveHaul").textContent = dg.active
-      ? `haul: ${fmt(dg.haul.copper)}c — extract to keep it`
-      : "";
-    const cd = Math.max(0, dungeonCdUntil - now);
-    $("descendBtn2").disabled = cd > 0;
-    $("descendBtn2").textContent = dg.active ? "Descend" : "Enter";
-    $("extractBtn").disabled = !dg.active;
-    $("delveCd").textContent = cd > 0 ? `${(cd / 1000).toFixed(1)}s` : "";
-    if (document.activeElement !== $("autoDelve")) $("autoDelve").checked = dg.auto;
+  { // delve panel — idle depth engine + the Cache upgrade tree
+    const dps = charDps(), depth = dungeon.reachDepth(state, dps);
+    $("delveState").innerHTML = `depth <b>${fmt(depth)}</b> · deepest <b>${fmt(state.dungeon.depthBest)}</b> · <span class="sat">${fmt(dungeon.cachePerSec(state, dps))} Cache/s</span>`;
+    $("delveCache").innerHTML = `<b>${fmt(state.dungeon.cache)}</b> Cache banked`;
+    for (const key of Object.keys(dungeon.UPGRADES)) {
+      const c = dungeon.cost(state, key);
+      $(`dur_${key}`).textContent = `rank ${dungeon.rank(state, key)}`;
+      const btn = $(`dub_${key}`);
+      btn.textContent = `${fmt(c)} Cache`;
+      buyState(btn, state.dungeon.cache >= c);
+    }
   }
 
   if (stashDirty) renderStash();

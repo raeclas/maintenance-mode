@@ -507,7 +507,7 @@ mobs, gear, boss fight, enhance verbs, titles.
 | live affixes (2026-07-24) | value reads account state, shown as "value — source": Botnet Sync (per 100 bots) · Warden's Echo (per set) · Failstack Bleed (per stack) · Ban Counter (per 1k bans, never resets) · Delver's Momentum (while delving). Each hard-capped |
 | gear verbs/nouns (2026-07-22) | affix · Reforge · Scrap (tiered salvage material) · Salvage · Loot filter (keep ≥ rarity/ip) |
 | boss Trophy sets (2026-07-22) | one 7-piece set per Warden (door parts: Hinge · Bolt · Latch · Keyward · Lintel · Threshold · Frame) · set names "The First/Second Door" · Farm status (re-Attempt a broken boss for pieces) |
-| dungeon (2026-07-23) | Delve · floor · descend · extract · wipe · haul · safe depth. The character's active push-your-luck verb + their copper/gear source (salvage = scrap only) |
+| dungeon / Delve (REWORKED 2026-07-24) | idle DEPTH ENGINE + synergy hub. Depth follows build DPS; deeper = more Cache (buried server data). Cache tree feeds EVERY system: deeper bore (depth) · cache sifter (yield) · recovered overclock (ATK) · salvage beacon (drops) · buried scripts (train) · support backlog (tickets). No more descend/extract/gamble (was −EV) |
 | zone saturation (2026-07-24) | Saturation / SAT (over-farming a zone past the 50/s cap) · loot "+N bands" (ip band it lifts toward). Surplus squad DPS → richer loot; the coupling's visible payoff |
 | W1 | Vess, Warden of the First Door |
 | W2–W10 Wardens (2026-07-24, rough curve) | Maren · Korrin · Osei · Thale · Ilva · Domar · Sef · Yara · The Last Warden — Wardens of the 2nd–10th Doors. Each door = a year the dead server outlived its players; W10 break reveals PLAYERS ONLINE: 1 was always you |
