@@ -1,16 +1,28 @@
-/* dead-server theme */
+/* dead-server theme — COLD neutrals (cooling server metal), gold = the last
+   warmth left in the machine; bone = live output (still alive) */
 :root {
   --gold: #c9a94b;
-  --dim: #8a8a92;
-  --bg: #0d0d10;
-  --panel: #14141a;
-  --line: #26262e;
+  --bone: #bcb2a2;      /* live output — kept warm on purpose */
+  --dim: #838a97;       /* cool blue-grey reference */
+  --bg: #0b0c10;
+  --panel: #13141a;
+  --line: #262a34;      /* blue-grey hairline */
+  /* type scale — every element picks ONE role */
+  --fs-masthead: 20px;
+  --fs-display: 16px;
+  --fs-body: 13px;
+  --fs-small: 11px;
+  --fs-label: 10px;
+  --fs-micro: 9px;
 }
 * { box-sizing: border-box; }
 body {
   background: var(--bg);
   color: var(--dim);
   font-family: Georgia, serif;
+  font-size: var(--fs-body);
+  /* live numbers tick in place, no width jitter — the idle-game essential */
+  font-variant-numeric: tabular-nums;
   margin: 0;
   display: flex;
   justify-content: center;
@@ -19,7 +31,7 @@ body {
 main { width: 600px; max-width: 96vw; padding: 18px 0 40px; }
 
 .bossPanel { text-align: center; margin: 10px 0 6px; }
-#bossName { color: var(--gold); font-size: 20px; font-variant: small-caps; }
+#bossName { color: var(--gold); font-size: var(--fs-masthead); font-variant: small-caps; }
 #bossTitle { font-size: 12px; font-style: italic; }
 #record { font-size: 11px; font-family: monospace; margin-top: 2px; }
 
@@ -140,9 +152,9 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   border-left: 1px solid var(--line);
 }
 .chip:first-child { border-left: none; }
-.chipVal { font-family: monospace; font-size: 16px; color: #b9b2a0; }
+.chipVal { font-family: monospace; font-size: var(--fs-display); color: var(--bone); }
 .chipVal b { color: var(--gold); font-weight: normal; }
-.chipLbl { font-size: 9px; font-family: monospace; letter-spacing: .12em; color: #6e6e78; text-transform: uppercase; margin-top: 1px; }
+.chipLbl { font-size: var(--fs-micro); font-family: monospace; letter-spacing: .12em; color: var(--dim); text-transform: uppercase; margin-top: 1px; }
 .copper, .copper b { color: #d08a3e !important; }
 .tickets, .tickets b { color: #7aa4d4 !important; }
 #gmPanel .gmRow {
@@ -160,10 +172,11 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
 #tierAtk, #tierSpeed { background: #22222a; color: #b9b2a0; border: 1px solid var(--line); font-family: monospace; font-size: 11px; }
 #playerStats {
   font-family: monospace;
-  font-size: 13px;
+  font-size: var(--fs-body);
+  color: var(--bone);
   margin-bottom: 8px;
 }
-#playerStats b { color: var(--gold); font-size: 15px; }
+#playerStats b { color: var(--gold); font-size: var(--fs-display); font-weight: normal; }
 
 section.game {
   border: 1px solid var(--line);
@@ -214,7 +227,7 @@ section.game button:disabled { color: #55555e; cursor: default; }
   padding: 6px 4px;
   border-bottom: 1px solid #1b1b22;
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--fs-small);
   position: relative;
 }
 .allocMini { display: inline-flex; align-items: center; gap: 3px; }
