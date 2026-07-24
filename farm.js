@@ -8,6 +8,13 @@ export const KILL_CAP = 50;
 // GM offline perk extends the clamp (rank-capped at +6h in gm.js)
 export function offlineCapS(state) { return OFFLINE_CAP_S + (state.gm?.offline || 0) * 3600; }
 
+// Zones unlock by BOSS progress, not squad DPS — the coupling made every DPS
+// gate trivial (one bot ≈ 1% of your huge player DPS). Each region opens as
+// you break Wardens: region 1 from start, region 2 after W1, region 3 after
+// W4. This is the boss↔grind synergy — clearing walls deepens the farm.
+export function zoneUnlockClears(zi) { return zi < 5 ? 0 : zi < 10 ? 1 : 4; }
+export function zoneUnlocked(clearedCount, zi) { return (clearedCount || 0) >= zoneUnlockClears(zi); }
+
 // gate = minimum SQUAD DPS to hold the zone (starting values, sim-gated).
 // detection: anti-cheat bans per farming bot per hour in this zone.
 // Zone names speak the DEAD GAME register (feature-pass gate 3): the old

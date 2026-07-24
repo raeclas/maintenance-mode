@@ -232,6 +232,16 @@ const enh = await import("../enhance.js");
   assert.ok(bots.effScale(s.bots) === 0.5);
 }
 
+// Zone gating: unlocked by BOSS progress, not squad DPS (coupling killed the
+// DPS gate). Region 1 always; region 2 after W1; region 3 after W4.
+{
+  assert.ok(farm.zoneUnlocked(0, 0));    // z1 open from the start
+  assert.ok(!farm.zoneUnlocked(0, 5));   // z6 locked until a wall falls
+  assert.ok(farm.zoneUnlocked(1, 5));    // z6 opens after W1
+  assert.ok(!farm.zoneUnlocked(3, 10));  // z11 needs 4 clears
+  assert.ok(farm.zoneUnlocked(4, 14));   // z15 opens after W4
+}
+
 // Farm: zones are bot-only data now — no player kill functions (v8)
 
 // Gear v9: rarity + affixes on roll; loot filter (never auto-equips);

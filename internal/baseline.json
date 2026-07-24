@@ -33,55 +33,11 @@
   },
   {
     "t": 5400,
-    "desc": "z6 held (The Threshold)"
-  },
-  {
-    "t": 5400,
-    "desc": "z7 held (Ashen Nave)"
-  },
-  {
-    "t": 5400,
-    "desc": "z8 held (Flooded Undercroft)"
-  },
-  {
-    "t": 5400,
-    "desc": "z9 held (The Long Dark)"
-  },
-  {
-    "t": 6000,
-    "desc": "z10 held (The Second Door)"
-  },
-  {
-    "t": 6000,
-    "desc": "z11 held (Frostbound Wastes)"
-  },
-  {
-    "t": 6000,
-    "desc": "z12 held (The Sunken Archive)"
-  },
-  {
-    "t": 6000,
-    "desc": "z13 held (Obsidian Reach)"
-  },
-  {
-    "t": 6000,
-    "desc": "z14 held (The Hollow Spire)"
-  },
-  {
-    "t": 6000,
-    "desc": "z15 held (World's Edge)"
-  },
-  {
-    "t": 6600,
     "desc": "z3 held (Salt Flats)"
   },
   {
-    "t": 6600,
+    "t": 5400,
     "desc": "z4 held (Cinder Steppe)"
-  },
-  {
-    "t": 7200,
-    "desc": "W1 broken (EV)"
   },
   {
     "t": 7200,
@@ -96,7 +52,15 @@
     "desc": "depth 10%"
   },
   {
-    "t": 7200,
+    "t": 10800,
     "desc": "depth 50%"
+  },
+  {
+    "t": 11400,
+    "desc": "scars capped"
+  },
+  {
+    "t": 12600,
+    "desc": "W1 broken (EV)"
   }
 ]

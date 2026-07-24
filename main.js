@@ -845,15 +845,18 @@ function render() {
     : tItem.plus >= b.enhTarget.plus ? `done: +${tItem.plus}`
     : `try every ${iv === Infinity ? "—" : fmt(iv)}s · ${fmt(enh.cost(tItem))}c/try`;
 
-  // zones — bot squads only; stat shows the squad's ACTUAL kill rate
+  // zones — unlocked by boss progress; stat shows the squad's ACTUAL kill rate
   farm.zones.forEach((z, i) => {
+    const unlocked = farm.zoneUnlocked(state.cleared.length, i);
     const n = (state.bots.alloc.zones[i] || 0) * scale;
-    const zr = bots.botZoneRates(state.bots, i, n, d);
-    zoneRows[i].classList.toggle("active", n > 0 && zr.held);
-    zoneRows[i].classList.toggle("locked", n > 0 && !zr.held);
+    const zr = unlocked ? bots.botZoneRates(state.bots, i, n, d) : { held: false, kps: 0 };
+    zoneRows[i].classList.toggle("active", unlocked && n > 0 && zr.held);
+    zoneRows[i].classList.toggle("locked", !unlocked || (n > 0 && !zr.held));
     const stat = $(`zs${i}`);
-    if (n <= 0) {
-      stat.textContent = z.gate > 0 ? `needs squad DPS ${fmt(z.gate)} (${bots.gateNeeded(state.bots, i, d)} bots)` : "unmanned";
+    if (!unlocked) {
+      stat.textContent = `🔒 break W${farm.zoneUnlockClears(i)} to open this region`;
+    } else if (n <= 0) {
+      stat.textContent = "unmanned";
     } else if (!zr.held) {
       stat.textContent = `squad DPS ${fmt(zr.squadDps)} / ${fmt(z.gate)} — can't hold`;
     } else {

@@ -94,6 +94,7 @@ while (t < MAX_S && !broken) {
     B.alloc.zones.fill(0);
     const zOrder = farm.zones
       .map((z, i) => ({ i, per: (bots.botDps(B, P) / z.mobHp) * z.copper }))
+      .filter(o => farm.zoneUnlocked(S.cleared?.length, o.i)) // only boss-unlocked zones
       .sort((x, y) => y.per - x.per);
     for (const o of zOrder) {
       const need = bots.gateNeeded(B, o.i, P);
@@ -132,7 +133,7 @@ while (t < MAX_S && !broken) {
   let income = 0;
   farm.zones.forEach((z, i) => {
     const n = S.bots.alloc.zones[i];
-    if (n <= 0) return;
+    if (n <= 0 || !farm.zoneUnlocked(S.cleared?.length, i)) return;
     const zr = bots.botZoneRates(S.bots, i, n, derive(S));
     income += zr.copperPerSec;
     const dropsNow = zr.kps * STEP * farm.DROP_CHANCE;

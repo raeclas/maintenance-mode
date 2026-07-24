@@ -5,7 +5,7 @@
 // loved ever dies (attachment law holds by construction).
 // Live tick and offline batch are the SAME function (clamp law).
 // Starting values throughout — sim-gated; test plans in REMAKE-DESIGN §7.
-import { zones, DROP_CHANCE } from "./farm.js";
+import { zones, DROP_CHANCE, zoneUnlocked } from "./farm.js";
 import { rollItem } from "./gear.js";
 import { attempt as enhAttempt } from "./enhance.js";
 import { derive } from "./stats.js";
@@ -247,7 +247,7 @@ function tickChunk(state, dtS, onEvent, rng) {
   // exact per-kill odds at live tick sizes, EV at offline batch sizes)
   for (let zi = 0; zi < zones.length; zi++) {
     const n = (b.alloc.zones[zi] || 0) * scale;
-    if (n <= 0) continue;
+    if (n <= 0 || !zoneUnlocked(state.cleared?.length, zi)) continue; // locked by boss progress
     const r = botZoneRates(b, zi, n, player);
     if (!r.held) continue;
     state.copper += r.copperPerSec * dtS * (player.copperMult || 1); // +copper affixes
