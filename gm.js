@@ -25,7 +25,7 @@ export const UTILITY = {
   cap: { label: "session cap +2", base: 20, mult: 1.6, max: 10 },
   offline: { label: "idle timeout +1h", base: 50, mult: 2.0, max: 6 },
   cooldown: { label: "encounter lockout −5s", base: 40, mult: 1.8, max: 6 },
-  scar: { label: "repair scripts off +1% scar cap", base: 200, mult: 2.5, max: 3 },
+  scar: { label: "scar cap +1%", base: 200, mult: 2.5, max: 3 },
 };
 
 export function flagCost(type, rank) {

@@ -517,8 +517,8 @@ training, automation.
 | swarm resource | bots (free / capacity) |
 | rig upgrades | multiclient (capacity) · account creator (generation) · script version (power) · overclock (speed) |
 | rig stats line | script × · clock × · banned |
-| ATK trainings | swing macro → combo macro → cancel-weave script → frame-perfect script |
-| SPEED trainings | autoclicker → turbo clicker → no-delay hack |
+| ATK trainings | swing macro → combo macro → cancel-weave script → frame-perfect script → packet-replay script → netcode desync → tick-rate exploit |
+| SPEED trainings | autoclicker → turbo clicker → no-delay hack → input injector → kernel clicker → hypervisor clock |
 | verbs | park · farm · mail(ed) · spoofing (reserved) |
 | rebirth (2026-07-22) | Ban Wave (the reset event) · scripts (prestige currency, permanent +damage) |
 

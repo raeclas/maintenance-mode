@@ -43,7 +43,7 @@ export const TRAININGS = {
     { name: "combo macro", cost: 12, gain: 0.005 },      // caps at 600
     { name: "cancel-weave script", cost: 120, gain: 0.045 },
     { name: "frame-perfect script", cost: 1000, gain: 0.35 },
-    { name: "packet-replay macro", cost: 8000, gain: 2.8 },
+    { name: "packet-replay script", cost: 8000, gain: 2.8 },
     { name: "netcode desync", cost: 64000, gain: 22 },
     { name: "tick-rate exploit", cost: 500000, gain: 175 },
   ],
@@ -53,7 +53,7 @@ export const TRAININGS = {
     { name: "no-delay hack", cost: 240, gain: 0.0009 },
     { name: "input injector", cost: 2000, gain: 0.007 },
     { name: "kernel clicker", cost: 18000, gain: 0.055 },
-    { name: "hypervisor spoof", cost: 150000, gain: 0.42 },
+    { name: "hypervisor clock", cost: 150000, gain: 0.42 },
   ],
 };
 
