@@ -24,6 +24,7 @@ const rebirth = await import("../rebirth.js");
 const trophies = await import("../trophies.js");
 const dungeon = await import("../dungeon.js");
 const enh = await import("../enhance.js");
+const armory = await import("../armory.js");
 
 // Stats: formula lock at starting values (the intro beat number)
 {
@@ -810,6 +811,78 @@ const enh = await import("../enhance.js");
   s.copper = 0;
   bots.tick(s, 600, () => {}, () => 0);
   assert.equal(s.gear.weapon.plus, 5);
+}
+
+// Armory: merge accrues points; a common ranks up on the 3rd copy (rank1 = 3pts)
+{
+  const s = newState();
+  const item = { slot: "weapon", zone: 1, rarity: "common", ip: 40, plus: 0, name: "t", affixes: [] };
+  assert.equal(armory.merge(s, item), null); // 1pt → rank 0
+  assert.equal(armory.merge(s, item), null); // 2pt → rank 0
+  const up = armory.merge(s, item);           // 3pt → rank 1
+  assert.ok(up && up.rankedUp && up.from === 0 && up.to === 1);
+  assert.equal(up.lane, "atk"); // weapon lane
+  assert.equal(s.armory["weapon:1"], 3);
+}
+
+// Armory: rarer copies weigh more — one epic (weight 4 ≥ 3) ranks up immediately
+{
+  const s = newState();
+  const up = armory.merge(s, { slot: "charm", zone: 2, rarity: "epic", ip: 200, plus: 0, name: "c", affixes: [] });
+  assert.ok(up && up.to === 1 && up.lane === "farm"); // charm → farm lane
+  assert.equal(s.armory["charm:2"], armory.MERGE_WEIGHT[rarity.RARITY_IDX.epic]);
+}
+
+// Armory: rank is band-capped at RMAX (law 1 — bounded guarantee)
+{
+  assert.equal(armory.rankOf(1e12), armory.RMAX);
+  assert.equal(armory.rankOf(armory.pointsForRank(2)), 2); // rankOf inverts pointsForRank
+}
+
+// Armory: armoryMods aggregates each entry into its slot's lane, displayed
+{
+  const s = newState();
+  s.armory["weapon:1"] = armory.pointsForRank(2);  // atk lane
+  s.armory["armor:3"] = armory.pointsForRank(1);   // speed lane
+  s.armory["charm:1"] = armory.pointsForRank(1);   // farm lane
+  const m = armory.armoryMods(s);
+  assert.ok(Math.abs(m.atkPct - armory.entryPct("weapon", 1, 2)) < 1e-9);
+  assert.ok(Math.abs(m.hastePct - armory.entryPct("armor", 3, 1)) < 1e-9);
+  assert.ok(Math.abs(m.copperPct - armory.entryPct("charm", 1, 1)) < 1e-9);
+}
+
+// Armory: derive() folds the atk-lane passive in (feeds combat power)
+{
+  const s = newState();
+  const base = derive(s).atk;
+  s.armory["weapon:1"] = armory.pointsForRank(4); // rank 4 atk passive
+  assert.ok(derive(s).atk > base);
+}
+
+// Armory: routeDrop merges every drop (even auto-salvaged junk) + attaches result
+{
+  const s = newState();
+  s.gear.autoFilter = true; s.gear.keepRarity = "legendary"; s.gear.keepIp = 9e9; // filter salvages this common
+  const item = { slot: "weapon", zone: 1, rarity: "common", ip: 40, plus: 0, name: "t", affixes: [] };
+  const r = gear.routeDrop(s, item);
+  assert.equal(r.kept, false);              // junk → salvaged
+  assert.ok("merge" in r);                  // …but still merged into the Armory
+  assert.equal(s.armory["weapon:1"], 1);
+}
+
+// Armory: old saves backfill an empty map; a populated map round-trips
+{
+  const s = newState();
+  const raw = { v: 9, boss: { pulls: 3 }, unlocked: true }; // pre-v10, no armory field
+  localStorage.setItem("mm_save", JSON.stringify(raw));
+  saves.load(s);
+  assert.deepEqual(s.armory, {});
+  s.armory["weapon:1"] = 12;
+  saves.save(s);
+  const s2 = newState();
+  saves.load(s2);
+  assert.equal(s2.armory["weapon:1"], 12);
+  localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
 }
 
 console.log("all checks passed");

@@ -4,11 +4,12 @@
 // replaced or filtered gear goes to stash or salvages into Scrap.
 import { RARITIES, RARITY_BY_ID, RARITY_IDX, rollRarity } from "./rarity.js";
 import { AFFIXES, rollAffixes, affixTier } from "./affixes.js";
+import { merge } from "./armory.js";
 
 export const SLOTS = ["weapon", "armor", "charm"];
 
 // Dead-game register; names follow the zone that drops them.
-const NAMES = {
+export const NAMES = {
   weapon: ["Rusty Shortsword", "Ravine Pike", "Salt-Etched Saber", "Cinder Warblade", "Sentry Halberd",
     "Threshold Cleaver", "Nave Censer", "Undercroft Trident", "Long Dark Reaver", "Second Door Greatblade",
     "Frost Reaver", "Archive Halberd", "Obsidian Cleaver", "Spire Lance", "World-Edge Blade"],
@@ -95,15 +96,19 @@ export function isUpgrade(state, item) {
 // junk→scrap. With the auto-filter OFF, every drop is kept.
 export function routeDrop(state, item) {
   const g = state.gear;
+  const merged = merge(state, item); // Armory: every drop merges into its entry (before disposal)
+  let res;
   if (state.gm?.autoequip && g.autoEquip !== false && isUpgrade(state, item)) {
     const cur = g[item.slot];
     g[item.slot] = item;
-    return { equipped: true, overflow: cur ? stashPush(state, cur) : null };
+    res = { equipped: true, overflow: cur ? stashPush(state, cur) : null };
+  } else if (g.autoFilter === false || meetsKeep(item, g.keepRarity, g.keepIp)) {
+    res = { kept: true, overflow: stashPush(state, item) };
+  } else {
+    res = { kept: false, scrap: salvage(state, item) };
   }
-  if (g.autoFilter === false || meetsKeep(item, g.keepRarity, g.keepIp)) {
-    return { kept: true, overflow: stashPush(state, item) };
-  }
-  return { kept: false, scrap: salvage(state, item) };
+  res.merge = merged;
+  return res;
 }
 
 // Manual bulk sweep: salvage every UNLOCKED stash item at/below BOTH maxRarity

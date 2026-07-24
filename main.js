@@ -9,7 +9,8 @@ import { initBattle, renderBattle, notifyResult, notifyEnhance } from "./battle.
 import { derive } from "./stats.js";
 import * as bots from "./bots.js";
 import * as farm from "./farm.js";
-import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, canReforge, reforgeCost, reforge, isUpgrade, SLOTS, STASH_CAP } from "./gear.js";
+import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, canReforge, reforgeCost, reforge, isUpgrade, SLOTS, STASH_CAP, NAMES } from "./gear.js";
+import * as armory from "./armory.js";
 import { RARITIES, RARITY_BY_ID } from "./rarity.js";
 import { affixLabel } from "./affixes.js";
 import { banWave, pendingScripts, scriptMult, totalFills } from "./rebirth.js";
@@ -105,6 +106,7 @@ function buyState(btn, ok) { btn.disabled = !ok; btn.classList.toggle("affordabl
 function charDps() { const dd = derive(state); return dd.atk * dd.hitsPerSec; }
 
 let stashDirty = true;
+let armoryDirty = true;
 let lastWallSel = ""; // wall-selector rebuild cache
 let lastRenderNow = Date.now();  // for per-frame dt (kill-cycle bar integrator)
 let cpSample = null, cpSampleT = 0, cpRate = 0;  // Combat Power rate sampler (~1s window)
@@ -114,9 +116,13 @@ function onDrop(item) {
   state.everDropped = true; // gates the Player tab
   const rar = RARITY_BY_ID[item.rarity]?.name || item.rarity;
   const r = routeDrop(state, item); // filter: keep→stash, else→scrap (never auto-equip)
-  stashDirty = true;
+  stashDirty = true; armoryDirty = true;
   const fate = r.equipped ? "equipped" : r.kept ? "stashed" : `salvaged +${r.scrap.n} ${item.rarity} scrap`;
   log(`drop: ${rar} ${item.name} ${fmt(item.ip)}IP · ${fate}`);
+  if (r.merge?.rankedUp) { // the Armory rank-up spike — every drop advances an entry, this crosses a threshold
+    const m = r.merge;
+    log(`ARMORY — ${m.name} rank ${m.from}→${m.to}, +${m.pct.toFixed(2)}% ${laneWord(m.lane)}`);
+  }
   if (r.overflow) log(`stash full: salvaged ${r.overflow.item.name} +${r.overflow.scrap.n} ${r.overflow.scrap.rarity} scrap`);
 }
 
@@ -540,6 +546,35 @@ function renderStash() {
     more.textContent = `…and ${state.gear.stash.length - 24} more (salvage to clear)`;
     el.appendChild(more);
   }
+}
+
+// The Armory grid: zone rows × 3 slot cells. Each cell shows the entry's rank,
+// its lane passive, and a fill bar to the next rank. Dim at rank 0. Lane totals
+// (the displayed law-5 terms) ride in the header. Re-rendered only on drops.
+function renderArmory() {
+  armoryDirty = false;
+  const mods = armory.armoryMods(state);
+  const st = armory.armoryStats(state);
+  $("armorySub").innerHTML = `— <b>${st.totalRank}</b> total rank · ${st.logged} entries · ` +
+    `<span class="sat">+${mods.atkPct.toFixed(1)}% ATK · +${mods.hastePct.toFixed(1)}% haste · +${mods.copperPct.toFixed(1)}% copper</span>`;
+  let html = "";
+  for (let z = 1; z <= farm.zones.length; z++) {
+    let cells = "";
+    for (const slot of SLOTS) {
+      const pts = state.armory[`${slot}:${z}`] || 0;
+      const rank = armory.rankOf(pts);
+      const cur = armory.pointsForRank(rank), next = armory.pointsForRank(rank + 1);
+      const fill = rank >= armory.RMAX ? 1 : (pts - cur) / (next - cur);
+      const pct = armory.entryPct(slot, z, rank);
+      const name = NAMES[slot][z - 1];
+      cells += `<div class="amCell${rank > 0 ? "" : " dim"}${rank >= armory.RMAX ? " max" : ""}" title="${name}">` +
+        `<span class="amName">${name}</span>` +
+        `<span class="amRank">R${rank}${rank >= armory.RMAX ? " ✦" : ""} · +${pct.toFixed(2)}% ${laneWord(armory.LANE[slot])}</span>` +
+        `<span class="amBar"><span style="width:${(fill * 100).toFixed(0)}%"></span></span></div>`;
+    }
+    html += `<div class="amRow"><span class="amZone">z${z}</span>${cells}</div>`;
+  }
+  $("armoryGrid").innerHTML = html;
 }
 
 // ---- loop ----
@@ -974,6 +1009,7 @@ function render() {
   }
 
   if (stashDirty) renderStash();
+  if (armoryDirty) renderArmory();
 }
 
 if (DEV) {

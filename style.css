@@ -391,6 +391,24 @@ section.game button:disabled { color: var(--faint); cursor: default; }
 .sInfo { grid-column: 2 / -1; grid-row: 2; color: var(--recede); font-size: var(--fs-label); overflow-wrap: anywhere; }
 .stashRow button { padding: 3px 7px; font-size: var(--fs-label); }
 
+/* the Armory grid — zone rows × 3 slot cells (weapon/armor/charm) */
+#armoryGrid { display: flex; flex-direction: column; gap: 3px; }
+.amRow { display: grid; grid-template-columns: 26px repeat(3, 1fr); gap: 4px; align-items: stretch; }
+.amZone { font-family: monospace; font-size: var(--fs-label); color: var(--recede); align-self: center; text-align: right; }
+.amCell {
+  border: 1px solid var(--line); border-left: 2px solid var(--gold-dim);
+  background: var(--panel); padding: 4px 6px 5px;
+  display: flex; flex-direction: column; gap: 2px; overflow: hidden;
+}
+.amCell.dim { border-left-color: var(--line); opacity: .5; }
+.amCell.max { border-left-color: var(--gold); background: rgba(201, 169, 75, .07); }
+.amName { font-size: var(--fs-label); color: var(--bone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.amRank { font-family: monospace; font-size: var(--fs-micro); color: var(--dim); }
+.amCell.max .amRank { color: var(--gold); }
+.amBar { height: 3px; background: var(--line-soft); overflow: hidden; }
+.amBar > span { display: block; height: 100%; background: var(--gold-dim); }
+.amCell.max .amBar > span { background: var(--gold); }
+
 #devPanel {
   border: 1px dashed #6e3a32;
   color: var(--warn);

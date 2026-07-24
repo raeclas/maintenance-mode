@@ -81,6 +81,7 @@ export function load(state) {
   state.titles = Array.isArray(s.titles) ? s.titles : [];
   state.cleared = Array.isArray(s.cleared) ? s.cleared : []; // v9 wall monuments
   state.setPieces = (s.setPieces && typeof s.setPieces === "object" && !Array.isArray(s.setPieces)) ? s.setPieces : {}; // v9 boss Trophy sets
+  state.armory = (s.armory && typeof s.armory === "object" && !Array.isArray(s.armory)) ? s.armory : {}; // v10 the Armory
   // wall model: maxWall = frontier; walls below it are farmable. Only the
   // frontier keeps fight-progress (frontierBoss); cleared walls are broken
   // farm records synthesized on switch. Old saves: maxWall = wall.

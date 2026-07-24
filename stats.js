@@ -7,6 +7,7 @@ import { AFFIXES, liveValue } from "./affixes.js";
 import { gmDmgMult, gmHasteMult } from "./gm.js";
 import { scriptMult } from "./rebirth.js";
 import { trophyMods } from "./trophies.js";
+import { armoryMods } from "./armory.js";
 import { delveBonus } from "./dungeon.js";
 import { getBoss } from "./bosses.js";
 
@@ -45,6 +46,8 @@ export function derive(state) {
     }
   }
   const tm = trophyMods(state); // boss Trophy set: per-piece boosts + set bonus
+  const am = armoryMods(state);  // the Armory: gear-collection rank passives (displayed lane terms)
+  atkPct += am.atkPct; hastePct += am.hastePct; copperPct += am.copperPct;
   const atk = (BASE_ATK + state.bots.trained.atk + gearAtk) * (1 + atkPct / 100) * (1 + tm.atkPct / 100) * gmDmgMult(state) * scriptMult(state) * tm.dmgMult * delveBonus(state, "overclock");
   const knee = getBoss(state.wall)?.speedKnee ?? SPEED_KNEE;
   const hitsPerSec = softHits(BASE_HPS + state.bots.trained.hits + hitsFlat, knee) * (1 + hastePct / 100) * (1 + tm.hastePct / 100) * gmHasteMult(state);

@@ -2,7 +2,7 @@
 // saveSystem normalizes over these defaults; the sim imports it too.
 export function newState() {
   return {
-    v: 9,
+    v: 10,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     // progressive feature unlocks (NGU/ITRTG-style ??? tabs). Boss is always
@@ -19,6 +19,7 @@ export function newState() {
     titles: [],    // earned forever (attachment law): "+18" etc.
     cleared: [],   // broken walls, permanent monument (attachment): "W1 Vess" …
     setPieces: {}, // boss Trophy sets: { [wall]: [owned part indices] } (permanent)
+    armory: {},    // the Armory: { "slot:zone": mergePoints } — gear collection ranks (permanent)
     wall: 1,       // the wall you're currently AT (fight the frontier, or farm a cleared one)
     maxWall: 1,    // deepest wall unlocked — you can switch among walls 1..maxWall
     boss: { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false }, // active wall's record
