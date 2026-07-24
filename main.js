@@ -264,10 +264,11 @@ function getAlloc(key) {
 function allocMini(key, withCap = true) {
   const span = document.createElement("span");
   span.className = "allocMini";
-  // default shows −/value/+ only; the power controls (cap/max/0) hide behind ⋯
+  // shows −/value/+ and cap inline; max/0 hide behind ⋯
   span.innerHTML = `<button data-d="-1">−</button><input type="number" min="0" step="1"><button data-d="1">+</button>` +
+    `${withCap ? `<button data-c>cap</button>` : ""}` +
     `<button data-x class="allocX" title="more">⋯</button>` +
-    `<span class="allocMore">${withCap ? `<button data-c>cap</button>` : ""}<button data-m>max</button><button data-z>0</button></span>`;
+    `<span class="allocMore"><button data-m>max</button><button data-z>0</button></span>`;
   span.addEventListener("click", e => {
     const btn = e.target.closest("button");
     if (!btn) return;
