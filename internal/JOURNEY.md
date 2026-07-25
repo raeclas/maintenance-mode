@@ -230,7 +230,7 @@ explicitly so Phase 2 doesn't let it grow its own breakdown.
 | Fact | State | Rendered at | Guideline-5 term? | Duplication |
 |---|---|---|---|---|
 | Rig buttons (multiclient/capacity, account creator/generation, script version/power, overclock/speed) + cost | live, afford-gated | `.rig` buttons | no | — |
-| Rig stats line: `script ×P · clock ×S · lost to bans N` | live | `#rigStats` | `botPower`/`botSpeed` feed `botDps`, a parallel (non-CP) product | "lost to bans" is **permanently 0 and vestigial** — Grind zones stopped banning bots (`4d41da7`); only the Dungeon bans now. State: `dormant` (structurally, forever, until this line is retired or repointed — flagged for Phase 5 copy work, not fixed here per this phase's OUT-of-scope boundary). |
+| Rig stats line: `script ×P · clock ×S · lost to bans N` | live | `#rigStats` | `botPower`/`botSpeed` feed `botDps`, a parallel (non-CP) product | ~~"lost to bans" is permanently 0 and vestigial~~ — **CORRECTED in Phase 5 (defect A5): the counter is LIVE.** `state.bots.banned` is incremented every floor by `instance.js:147`. The original note was right that Grind zones stopped banning (`4d41da7`) but wrong to conclude the figure is dead — the Dungeon feeds it. It is a real Dungeon stat mislabelled on the Training tab, so the fix is a relabel (`lost in the Dungeon {n}`), not a retirement. State: **live**, not dormant. |
 | Population bar (`pop/capacity`) | live | `#popFill` | no | Related family to the resbar's `free/capacity`, but a different numerator (pop vs free) — not an exact duplicate. |
 | ATK training tiers (×7: swing macro → tick-rate exploit) | 1 live, 6 `locked` at game start (`state.js:51` `bars.atk.unlocked:1` — verified against source, not inferred; unlock count grows with fills) | `#atkTiers` rows | trainedATK — **owned here**, the raw stat the CP product consumes | **DUP** (seeded from UI-AUDIT) — every locked row prints `locked · X/Y fills of {predecessor's name}`, naming the row directly above it, so the list reads as a back-reference chain. |
 | ATK trained total (`trained +X ATK (+rate/s)`) | live | `#barAtkInfo` | **yes** — this line IS the trainedATK term's display | Owning render for the term; the CP formula (`derive()`) is a reference consumer, not a duplicate render. |
@@ -424,6 +424,48 @@ exists); otherwise switch which wall is displayed via the wall selector.
 keep raising Combat Power). Descend is an internal state transition (new
 Warden loads into the same tab), not an exit.
 
+**Microcopy (Phase 5):**
+
+*Explained-once register (DW-5.2) — one owner per mechanic on this tab:*
+
+| Mechanic taught here | The ONE element that explains it | Elements that carry the value but do NOT re-explain |
+|---|---|---|
+| The siege (HP drains at Combat Power, no input) | `#cooldown` time-to-breach line | canvas bar, `#depth`, `#record` — all render the value, none explain the loop |
+| Crits (rate → tier → expected multiplier) | `#projection` | canvas `*` / `**` floaters (visual instance of the same roll) |
+| Farm status (what a broken door pays, and how often) | `#cooldown`, broken state | `#record` broken state carries flavor only; the SET side is explained on Player |
+| What a Trophy set does | **not taught here — POINTER** to Player | `#cooldown` names the count `{n}/7` only |
+
+| Block / state | Element | Final copy | Number source |
+|---|---|---|---|
+| 1 Boss identity | `#bossName` | `{boss.name}` — e.g. `Vess` | `bosses.js:8` — story canon, unchanged (attachment law 8) |
+| 1 Boss identity | `#bossTitle` | `{boss.title}` — e.g. `Warden of the First Door` | `bosses.js:9` — unchanged |
+| 2 Wall selector | group label (NEW — has none today) | `Doors you've opened` | — |
+| 2 Wall selector | cleared-wall buttons (the `⚑` today) / frontier button | cleared: `W{n} {name} · cleared` · frontier: `W{n} {name} · fighting` | `main.js:748` — today the `⚑` glyph marks **cleared** walls (`w < state.maxWall`) and the frontier button carries no marker at all. Both get a word: the glyph is unexplained, and the frontier's unmarked state is unreadable as a state. |
+| 2 Wall selector | cleared button | `W{n} {name} · farming` | as above |
+| 3 Arena (canvas) | HP bar label | `{pct}%` — bare, no words | `battle.js:139`. Phase 1 `DUP 1` against `#depth` is a component-ownership call carried to Phase 4/6 — NOT resolved by copy |
+| 3 Arena (canvas) | broken bar label | `BREACHED` | `battle.js:135` — unchanged |
+| 3 Arena (canvas) | break reveal + subtitle | `BREACHED` / `THE DOOR OPENS` | `battle.js:68` — unchanged; the journey's per-wall peak, deliberately not flattened |
+| 3 Arena (canvas) | damage floaters | `{dmg}`, `{dmg}*`, `{dmg}**` | `battle.js:44` — unchanged; `*`/`**` are decoded by block 4's crit line |
+| 4 Siege readout | `#depth`, fighting | `{pct}%` | `main.js:725` |
+| 4 Siege readout | `#depth`, broken | `BREACHED` | `main.js:718` |
+| 4 Siege readout | `#cooldown`, fighting | `At this rate the door breaks in {ttk}.` | `pull.js:34` `timeToKill = hp / combatPower`. **`— overwhelming` is CUT** (`main.js:99`): flavor on the teaching line; the absurd number carries the gag alone |
+| 4 Siege readout | `#cooldown`, broken, boss has a set | `The door is open. Keep fighting it for set pieces: one roll every 30s, 25% chance each of a piece you don't own yet. {n} of 7 recovered — see the set on the Player tab.` | `pull.js:49` `FARM_INTERVAL = 30`; `trophies.js:24` `FARM_DROP_CHANCE = 0.25`; `trophies.js:14-22` `PARTS.length = 7`. POINTER to the Player-owned set bonus |
+| 4 Siege readout | `#cooldown`, broken, no set | `The door is open. Nothing left to farm here.` | `trophies.js:26` `bossHasSet` |
+| 4 Siege readout | `#projection` | `Crits ×{factor} average damage — {rate}% of hits crit for ×{critMult}, and {superRate}% of those crit again for ×{superMult}.` | `crits.js:30-32` `critFactor`; `crits.js:10` `BASE = {rate 0.10, superRate 0.20, critMult 2, superMult 5}`. **Surfaces `superRate`, which had no displayed home anywhere** (defect A6) |
+| 4 Siege readout | `#record`, fighting | `{hp} of {maxHp} health left · Combat Power {cp}/s — full breakdown on the Player tab` | `main.js:727`; `stats.js:52-55`. POINTER, not a second breakdown (resolves DW-1.2) |
+| 4 Siege readout | `#record`, broken | `The door stands open.` | flavor, permitted — teaches nothing, sits beside a line that does |
+| 5 Progress | `#monument` | `Doors you've broken: {list}` | `main.js:736` |
+| 5 Progress | `#monument`, final wall | `Doors you've broken: … · W10 The Last Warden — final` | `main.js:734` |
+| 5 Progress | `#descendBtn` | `Descend to the next door →` | `index.html:76` — already labels the outcome, unchanged |
+| 6 Story | `#dialogue` | `{boss.name}: "{line}"` | `main.js:36`; lines from `bosses.js` `dialogue.{greet,fail_hopeless,fail_near,break}` — story canon, unchanged |
+| state `empty`/pre-reveal | — | No new strings. `state.unlocked` flips on the first tick (`main.js:627`), so this state lasts one frame; it renders the `greet` line plus `—` placeholders. Named honestly rather than given copy no player can read. | `main.js:627`, `index.html:66` |
+| state `locked` | — | N/A — Boss is the one tab with no unlock gate | `main.js:206` `TAB_FEATURE` has no `battleSec` key |
+| state `active` (frontier, unbroken) | — | blocks 1/2/3/4 above, `#descendBtn` hidden | `main.js:732` |
+| state `active` (frontier, broken) | — | broken strings above + `#descendBtn` shown | `main.js:732` |
+| state `active` (farming a cleared wall) | — | same broken strings, for the selected wall | `main.js:60` |
+| state `in-progress` | — | N/A — the siege is continuous, never started or stopped by the player | `pull.js:22` |
+| state `error` | — | N/A — no player input on this tab. Corrupt-save recovery happens once, globally, before any tab renders | `saveSystem.js` |
+
 ### Training
 
 **Purpose:** Spend copper on the bot rig and ATK/SPEED scripts that grow
@@ -460,8 +502,9 @@ already first; only states below are new to this phase.
   sub-rows at game start (per Phase 1's reconciliation, 11 total); Enhance
   squad is dormant/idle until a squad is assigned; Ban Wave section is
   hidden until `features.rebirth`; the rig stats line's "lost to bans"
-  figure is permanently 0 (vestigial, flagged for Phase 5 copy — not a
-  structural state, noted so it isn't mistaken for a bug in Phase 6).
+  figure is ~~permanently 0 (vestigial)~~ **live and rising — corrected in
+  Phase 5 (defect A5), `instance.js:147` increments it every Dungeon floor.
+  It is relabelled `lost in the Dungeon {n}`, not retired.**
 - `active`: rig affordable-highlighted, at least one tier live, squad
   assigned.
 - `in-progress`: N/A — Training has no discrete run; scripts/rig apply
@@ -473,6 +516,64 @@ already first; only states below are new to this phase.
 
 **Exit:** Tab switch (typically to Grind to deploy the swarm just grown, or
 Player once a squad starts dropping gear).
+
+**Microcopy (Phase 5):**
+
+*Explained-once register (DW-5.2) — one owner per mechanic on this tab:*
+
+| Mechanic taught here | The ONE element that explains it | Elements that carry the value but do NOT re-explain |
+|---|---|---|
+| What a rig lever buys | each rig button's own label (one line, one lever) | `#rigStats` prints the resulting multipliers only |
+| How a training script works (fill → gain → 50/s cap → unlock rule) | the `ATK scripts` `h3` sub | all 13 tier rows — they print counts and rates only. **The unlock rule moving here is what lets locked rows stop naming their predecessor** |
+| Speed's soft cap | the `SPEED scripts` `h3` sub | `#barSpeedInfo` prints the raw trained figure only |
+| What the enhance squad does | the `Enhance squad` `h3` sub | `#botEnhInfo` prints interval + cost, or a state |
+| Ban Wave: what resets, what survives, what you get | `#banWaveInfo`, idle state | the button is a verb; the armed state is a confirmation, not a second explanation |
+| When to Ban Wave (the √ judgement) | the help modal — the only fact the inline section does not carry | `#banWaveInfo` does not restate it |
+| Enhance odds / cost / fallout | **not taught here — POINTER** to Player | `#botEnhInfo` names the copper-per-try only |
+
+| Block / state | Element | Final copy | Number source |
+|---|---|---|---|
+| 1 Rig | `h3` | `Rig` | unchanged |
+| 1 Rig | `#buyCap` | `multiclient · {cap} → {nextCap} bot slots · {cost}c` | `bots.js:65-67` `capacity = round(40 × 1.2^rank)` (rank 0 → 40, rank 1 → 48); `bots.js:80` `capCost = round(800 × 1.65^rank)`. **Replaces `multiclient +4`, which was wrong** — the live function is multiplicative and step 1 is +8 (defect A1, `main.js:766`) |
+| 1 Rig | `#buyCreate` | `account creator · {rate} → {nextRate} bots per hour · {cost}c` | `bots.js:14,19,68` `createRate = 60 × (1 + 0.5×rank)` (60 → 90); `bots.js:81` `createCost = round(500 × 1.7^rank)` |
+| 1 Rig | `#buyPower` | `script version · bot strength ×{p} → ×{nextP} · {cost}c` | `bots.js:17,61` `botPower = 1 + 0.25×rank`; `bots.js:82` `powerCost = round(200 × 1.6^rank)`. Also the Dungeon duty gate — the pointer lives on the Dungeon side, not repeated here |
+| 1 Rig | `#buySpeed` | `overclock · bot speed ×{s} → ×{nextS} · {cost}c` | `bots.js:18,62` `botSpeed = 1 + 0.20×rank`; `bots.js:83` `speedCost = round(300 × 1.7^rank)` |
+| 1 Rig | `#rigStats` | `bot strength ×{p} · bot speed ×{s} · lost in the Dungeon {n}` | `main.js:771-772`. **Relabelled, not retired**: `state.bots.banned` is incremented live by `instance.js:147`, so the counter is a real Dungeon stat mislabelled on this tab, not a vestigial zero (defect A5 — corrects this document's own Fact-ownership note) |
+| 1 Rig | `#rigStats`, over-allocated (error) | `… · over-assigned by {n}% — you've put more bots on jobs than you own, so every job runs at {100−n}% until you free some or the swarm grows` | `bots.js:124-127` `effScale = pop / allocTotal` when over. **State D2: had no explanation at all** (`main.js:770` printed a bare `· short {n}%`) |
+| 1 Rig | `#popFill` caption (NEW) | `{pop} of {cap} slots filled — this bar is every bot you own; the counter at the top of the screen is the ones not assigned to anything.` | `main.js:773` `pop/capacity`; `main.js:699` resbar shows `freeBots/capacity`. Different numerators — the one sentence that keeps the two bars from reading as the same fact |
+| 2 ATK scripts | `h3` sub (the tab's teaching line) | `ATK scripts — put bots on a script to run it. Every fill it completes adds its ATK permanently. Any one script tops out at 50 fills per second, and the next script down unlocks once the one above it has enough fills.` | `bots.js:38` `MAX_FILLS_PER_S = 50`; `bots.js:205-214` fill loop and unlock check |
+| 2 ATK scripts | `#barAtkInfo` | `+{atk} ATK trained so far · +{rate}/s right now` | `main.js:811` |
+| 2 ATK scripts | row name | `{t.name}` — `swing macro` … `tick-rate exploit` | `bots.js:42-50`, §16 botter register — names only |
+| 2 ATK scripts | row gain | `+{gain} ATK per fill` | `main.js:321`, `bots.js:42-50` |
+| 2 ATK scripts | row stat, `locked` | `locked · {fills} / {needed} fills` | `main.js:797`; `bots.js:35-37` `unlockFills(i) = 10,000 × 3^i`. **The predecessor's name is CUT** — the header owns the rule, so the list stops reading as a chain of back-references (audit B6) |
+| 2 ATK scripts | row stat, unmanned | `{fills} fills · no bots on it` | `main.js:801` |
+| 2 ATK scripts | row stat, running | `{fills} fills · {rate} fills/s` | `main.js:799` |
+| 2 ATK scripts | row stat, at cap | `{fills} fills · at the 50/s cap — more bots here do nothing, move them to another script` | `main.js:790,799`; `bots.js:38`. Replaces the bare `RATE MAX`; names the condition and the way out |
+| 3 SPEED scripts | `h3` sub | `SPEED scripts — same as ATK, for hits per second. Past {knee} hits/s on this door the returns shrink: every point still counts, just less. Each deeper Warden raises that number.` | `stats.js:22,25-27` `softHits`, `SPEED_KNEE = 5.0`; `bosses.js` `speedKnee` 5.0 (W1) → 70.0 (W10). **Surfaces a term the UI applied but never displayed** (defect A8). "same as ATK" is the explicit non-repeat of block 2's rule |
+| 3 SPEED scripts | `#barSpeedInfo` | `+{hits} hits/s trained so far · +{rate}/s right now` | `main.js:812` |
+| 3 SPEED scripts | row gain | `+{gain} hits/s per fill` | `main.js:321`, `bots.js:51-58` |
+| 3 SPEED scripts | row stats | identical strings to block 2 | `main.js:797-801` |
+| 4 Enhance squad | `h3` sub (NEW) | `Enhance squad — bots that keep pressing enhance on one item for you. Same odds and the same copper cost as doing it yourself; they just never stop. Pick the slot and the plus to stop at. The odds and the fallout are on the Player tab.` | `bots.js:236-249` calls the same `enhance.attempt`; POINTER to the Player-owned odds table |
+| 4 Enhance squad | slot picker | `weapon` · `armor` · `charm` | `gear.js:9` |
+| 4 Enhance squad | target input label | `stop at +` | `index.html:103`; `enhance.js:10` `MAX_PLUS = 20` bounds it |
+| 4 Enhance squad | `#botEnhInfo`, no bots (empty) | `no bots assigned — set a number on the left to start` | `main.js:830` |
+| 4 Enhance squad | `#botEnhInfo`, empty slot (error) | `nothing equipped in that slot — equip something on the Player tab first` | `main.js:831`. POINTER + way out |
+| 4 Enhance squad | `#botEnhInfo`, target reached | `stopped at +{plus} — raise the target to keep going` | `main.js:832` |
+| 4 Enhance squad | `#botEnhInfo`, running | `one try every {interval}s · {cost}c each` | `bots.js:166-173` `interval = 30 × 1.3^plus / squad`; `enhance.js:43-46` `cost = round(0.5 × ip × 1.6^plus)` |
+| 5 Ban Wave | `h3` + sub | `Ban Wave` `— the anti-cheat notices the farm` | `index.html:108` — flavor kept: it names the event and teaches nothing, so the teaching line below is unaffected |
+| 5 Ban Wave | teaching line (NEW, sits above `#banWaveInfo`) | `Banking a Ban Wave resets your bots, your training and your copper to the start. Everything your character owns stays: gear, plusses, scrap, trophies, Armory ranks, titles and door progress. In exchange you bank √(training fills) as Scripts, and every Script permanently adds +1% damage. Scripts never reset.` | `rebirth.js:36-51` (`banWave` resets `pop`/`bars`/`trained`/`alloc`/`copper` only); `rebirth.js:20-22` `pendingScripts = floor(√totalFills)`; `rebirth.js:11` `SCRIPT_DMG = 0.01` |
+| 5 Ban Wave | `#banWaveInfo`, idle | `+{n} Scripts ready, from {fills} training fills · {r} Ban Waves so far` | `main.js:708-709` |
+| 5 Ban Wave | `#banWaveInfo`, nothing to bank (empty) | `No Scripts to bank yet — one training fill is worth one Script.` | `rebirth.js:20-22`: `floor(√1) = 1`. Names the condition and the way out |
+| 5 Ban Wave | `#banWaveInfo`, armed (destructive confirm) | `Bank {n} Scripts and reset the farm? Tap again to confirm. This clears itself after 4 seconds.` | `main.js:410` `setTimeout(..., 4000)`. Yifrah destructive formula: specific consequence + permanence, no "Are you sure?" |
+| 5 Ban Wave | `#banWaveBtn` | idle `Ban Wave` · armed `Confirm Ban Wave` | `main.js:711` |
+| 5 Ban Wave | help modal (`HELP[banwave]`) — **rescoped, not duplicated** | `Bank when the payout is worth the reset. Scripts are the square root of your training fills, so pushing twice as long pays well under twice the Scripts.` / `Your bots borrow your power — each one hits at 10% of your ATK and 10% of your hits per second. So more damage means a faster farm too, and every Ban Wave rebuilds quicker than the one before.` | `rebirth.js:20`; `bots.js:24-25,71-75` `BOT_ATK_FRAC`/`BOT_SPD_FRAC = 0.10`. The four facts the current modal shares verbatim with the inline section (`main.js:431-435`) are **cut** — DW-5.2 |
+| state `locked` (whole tab) | `#tabs` button `title` | `Unlocks as soon as the game starts.` | `main.js:241` `training: s.unlocked`; `main.js:627` flips on the first tick |
+| state `empty`/dormant | tier rows | `locked · {fills} / {needed} fills` — 6 of 7 ATK + 5 of 6 SPEED at game start | `state.js:51-52` `unlocked: 1` |
+| state `empty`/dormant | enhance squad | `no bots assigned — set a number on the left to start` | as block 4 |
+| state `empty`/dormant | Ban Wave | section hidden entirely until `features.rebirth` | `main.js:702` |
+| state `active` | — | affordable rig buttons, ≥1 tier running, squad assigned — strings as above | `main.js:126` `buyState` |
+| state `in-progress` | — | N/A — scripts and rig apply continuously, no started/stopped mode | `bots.js:181` |
+| state `error` | — | two real paths, both written above: over-allocation (`#rigStats`) and empty enhance slot (`#botEnhInfo`). Ban Wave's arm/confirm is a confirmation, not an error | `bots.js:124`, `main.js:831` |
 
 ### Grind
 
@@ -509,6 +610,40 @@ copper/DPS return right now.
 
 **Exit:** Tab switch (typically to Player once drops accumulate, or back to
 Training to grow the swarm further).
+
+**Microcopy (Phase 5):**
+
+*Explained-once register (DW-5.2) — one owner per mechanic on this tab:*
+
+| Mechanic taught here | The ONE element that explains it | Elements that carry the value but do NOT re-explain |
+|---|---|---|
+| Hold a zone (combined damage vs the zone's gate) | the `Zones` `h3` sub | all 15 rows — the failing row states its two numbers, not the rule |
+| Kill cap and copper per kill | the `Zones` `h3` sub | row gain column prints `{n}c/kill`; row stat prints the live rate |
+| Drop chance | the `Zones` `h3` sub | no row repeats `1 in 400` |
+| What IP means for a drop | the `Zones` `h3` sub, one clause | row sub prints the band `IP {lo}–{hi}` only. The gear-side meaning of IP is owned by Player's Stash — a different half, not a repeat |
+| Overkill Saturation | the row stat that shows it (it only ever appears on a saturated row) | not in the header — it would be a rule for a state most rows never reach |
+| Region unlock condition | the locked row stat | not in the header — it is per-region data, not a rule |
+
+| Block / state | Element | Final copy | Number source |
+|---|---|---|---|
+| 1 Zones | `h3` sub (the tab's single teaching line) | `Zones — put bots on a zone. Their combined damage has to clear the zone's hold number or they earn nothing at all. A zone they can hold kills up to 50 mobs a second; every kill pays copper and has a 1-in-400 chance to drop a piece of gear. IP is the power band those drops roll in — deeper zones drop higher.` | `bots.js:145-156` `held = squadDps >= z.gate`; `farm.js:7` `KILL_CAP = 50`; `farm.js:5` `DROP_CHANCE = 1/400`; `farm.js:31-48` per-zone `ipLo`/`ipHi`. Replaces `index.html:117`'s `squads need enough combined DPS…` — same facts, no jargon, with the two numbers it was missing |
+| 1 Zones | row name | `{z.name}` — `Novice Meadow` … `World's Edge` | `farm.js:31-48`, §16 dead-game register — names only |
+| 1 Zones | row name sub | `{z.mob} · {hp} HP` | `main.js:346` |
+| 1 Zones | row gain | `{n}c per kill` | `main.js:347` |
+| 1 Zones | row gain sub | `IP {lo}–{hi}` | `main.js:347` |
+| 1 Zones | row stat, `locked` | `locked · needs {n} doors open, you have {m}` | `farm.js:14` `zoneUnlockClears` returns a CLEAR COUNT (0 / 1 / 4), not a wall number. **Replaces `[LOCKED] break W1`, which reads as "break Wall 1" and means "have 1 door open"** (defect A4, `main.js:844`). Names the condition and the way out |
+| 1 Zones | row stat, unmanned (empty) | `no bots here` | `main.js:846` |
+| 1 Zones | row stat, can't hold (error) | `too weak to hold — {have} damage/s of the {need} this zone needs` | `main.js:848`; `bots.js:148`. Condition + way out (add bots, or raise Combat Power). DESIGN.md flags that this state is currently *styled* identically to `locked`; the copy distinguishes them in words regardless of how Phase 6 styles it |
+| 1 Zones | row stat, held | `{k} kills/s · {c}c/s (×{mult} from gear, trophies and Armory)` | `main.js:852`; `bots.js:228` applies `player.copperMult`; `stats.js:55` `copperMult = 1 + (copperPct + tm.copperPct)/100`. **Closes the copper-multiplier legibility gap Phase 1 handed forward** — the multiplier was applied and never displayed |
+| 1 Zones | row stat, held at cap | `{k} kills/s · at the 50/s cap · {c}c/s (×{mult} …)` | `farm.js:7`. Replaces the bare `· CAP` |
+| 1 Zones | row stat, saturated | `… · overkill ×{sat} → drops roll {n} band{s} higher (up to 3)` | `farm.js:21-22` `saturation = squadDps / (50 × mobHp)`, `lootBias = clamp(floor(log2(sat)), 0, 3)`. Replaces `SAT ×{n} → +{m} bands`; states the cap |
+| 1 Zones | allocation control | `−` `+` `cap` `⋯` `max` `0`, `cap` tooltip `Exactly enough bots to hit this zone's 50 kills/s cap.` | `main.js:292-295`; `bots.js:130-139` `capNeeded`. The `cap` button is the one control whose label does not say what it does |
+| state `locked` (whole tab) | `#tabs` button `title` | `Unlocks with Training.` | `main.js:242` `grind: f.training` |
+| state `empty`/dormant | 10 of 15 zones | `locked · needs {n} doors open, you have {m}` — 5 rows at 1 door, 5 rows at 4 | `farm.js:14`; matches UI-AUDIT's `10 of 15 locked`. The ten rows still carry one of two facts — collapsing them into a group boundary is a Phase 4/6 component call, NOT a copy edit; the string is corrected here, the repetition is carried forward named |
+| state `empty`/dormant | unlocked, unmanned zone | `no bots here` | `main.js:846` |
+| state `active` | — | at least one zone held; strings as above | `main.js:840` |
+| state `in-progress` | — | N/A — zones run continuously once manned; no start/stop run mode (contrast Dungeon) | `bots.js:223-233` |
+| state `error` | — | one real path, written above: a manned zone below its gate (`too weak to hold`). Allocation clamps at capacity, so there is no invalid-input path | `bots.js:116-122` |
 
 ### Player
 
@@ -573,6 +708,85 @@ Decisions):**
 **Exit:** Tab switch (typically to Boss to watch the Combat Power change
 land, or back to Grind/Dungeon to farm more drops).
 
+**Microcopy (Phase 5):**
+
+*Explained-once register (DW-5.2) — one owner per mechanic on this tab. This
+is the densest tab in the game, so the register is the load-bearing device:*
+
+| Mechanic taught here | The ONE element that explains it | Elements that carry the value but do NOT re-explain |
+|---|---|---|
+| What Combat Power is (ATK × hits/s) | the `Combat Power` `h3` sub | the three chips are labels; every section below feeds it and none says so again |
+| What "haste" means | the `Combat Power` `h3` sub, one clause | trophy pips, Armory cells and gear affixes all print `+{n}% haste` and none define it |
+| Enhance: plus → power, failstacks | the `Gear` `h3` sub | `#stacksHud` prints the bank; each `#sei_*` prints that attempt's three numbers |
+| Enhance odds and fallout per attempt | each slot's `#sei_*` (per-attempt data, not a rule) | the `Gear` sub does not list the odds table |
+| Safeguard | the `safeguard` toggle's own label | `#sei_*` prints `(safeguard)` on the fallout clause only |
+| Reforge | the `Reforge` line under the `Gear` `h3` | each `#rfi_*` prints its price; each `#rfc_*` prints the candidate |
+| Rarity → affix count, IP → affix strength, locking, salvage | the `Stash` `h3` sub | stash rows print rarity, IP and affixes; no row defines them |
+| What a Trophy set does | the `Trophies` `h3` sub | 70 pips print `{part} +{n}% {lane}` and nothing else |
+| How trophy pieces are obtained | **not taught here — POINTER** to Boss | the `Trophies` sub says "farm that Warden on the Boss tab"; the roll RATE lives on Boss |
+| Armory: merging, rank cost, lane per slot, the cap | the `Armory` `h3` sub | 45 cells print `R{n} · +{pct}% {lane}` and nothing else |
+
+| Block / state | Element | Final copy | Number source |
+|---|---|---|---|
+| 1 Combat Power | `h3` + sub | `Combat Power` `— your damage per second against the door: ATK multiplied by hits per second. "Haste" anywhere on this tab is a percentage added to hits per second. Everything below feeds these two numbers.` | `stats.js:52-55` `atk`, `hitsPerSec`; `pull.js:15-18` `combatPower = atk × hitsPerSec`. Replaces `index.html:124`'s `— the factors your gear moves`. The last sentence is the anti-duplication device: no section below repeats "this raises ATK" |
+| 1 Combat Power | chips | `combat power` · `ATK` · `hits/s` | `index.html:126-128` |
+| 2 Titles | `#titles` | `Titles earned: {list}` | `main.js:916`; granted at `plus >= 18` (`main.js:169-173`) |
+| 2 Titles | empty | hidden — `main.js:915` shows the block only at ≥1 title. No empty string, deliberately: the header would be the only content and the way to earn one is already stated by the enhance readout | `main.js:915` |
+| 3 Gear | `h3` | `Gear` | unchanged |
+| 3 Gear | `h3` sub (NEW — the enhance teaching line) | `Three slots. Enhancing raises an item's plus, and every plus multiplies its base power by 1.12. A failed attempt anywhere banks a failstack worth +1 percentage point on your next attempt, up to +15; a success spends the whole bank.` | `gear.js:26-28` `contribution = ip × 1.12^plus`; `enhance.js:11` `STACK_CAP_PTS = 15`; `enhance.js:25-27` `chance = base + min(stacks,15)/100`; `enhance.js:58` success zeroes `failstacks` |
+| 3 Gear | `#stacksHud` | `· {n} failstacks, +{m}% on your next attempt` | `main.js:866-867` |
+| 3 Gear | `#stacksHud` at 0 | hidden — the `h3` sub already states how the bank builds. Showing `0 failstacks` on every Player visit would be the exact per-row restatement DW-5.2 forbids | `main.js:866` |
+| 3 Gear | `#safeguard` label | `safeguard · 3× the copper, but a failure doesn't cost you a plus. Only works while the item is +5 to +14 — it can't protect a push past +15.` | `enhance.js:40` `canSafeguard = k >= 5 && k < 15` — true for the attempts made FROM +5 through +14, i.e. the last one it covers is the attempt that reaches +15. Cost `enhance.js:45` `safeguard ? c * 3 : c`. Replaces `index.html:135`'s `up to +15 only`, which reads as though the attempt from +15 is covered |
+| 3 Gear | slot label | `weapon` · `armor` · `charm` | `gear.js:9` |
+| 3 Gear | `#si_*`, filled | `{item.name}` · `{Rarity}` · `IP {ip} +{plus} · {n} ATK` | `main.js:876-879` |
+| 3 Gear | `#si_*`, empty | `empty — equip something from the Stash below` | `main.js:884`. **State D4: `—` was a dead end.** Condition + way out |
+| 3 Gear | affix lines | `{affix.label({value})}` — e.g. `+42 ATK`, `+3.2% haste`; live affixes `+12.4% ATK — 1,240 bots` | `affixes.js:19-41,88-93`. Unchanged — already states value and provenance |
+| 3 Gear | affix list, none | `no affixes — Common items roll none` | `main.js:881`; `rarity.js:7` `common.affixes = 0`. Teaches the rarity→affix link at the one place it bites |
+| 3 Gear | `#se_*` button | `enhance` | `index.html`/`main.js:365` |
+| 3 Gear | `#sei_*`, safe band | `+{k} → +{k+1} · {cost}c · {chance}% · a fail costs nothing` | `enhance.js:14,18-27,43-46`; `SAFE` = 100/90/80/70/60% for +0→+4 |
+| 3 Gear | `#sei_*`, risk band | `+{k} → +{k+1} · {cost}c · {chance}% · a fail drops you back to +{k−1}` | `enhance.js:15` `RISK` = 45/40/35/30/25/20/20% for +5→+11; `enhance.js:64` `item.plus--`. Replaces `fail −1` with the number it lands on |
+| 3 Gear | `#sei_*`, nightmare band | `+{k} → +{k+1} · {cost}c · {chance}% · a fail drops you to +{checkpoint}` | `enhance.js:16` `NIGHTMARE` = 15/12/9/7/5/3.5/2.5/1.5% for +12→+19; `enhance.js:36-38` `checkpointOf` = 15 / 10 / 0 |
+| 3 Gear | `#sei_*`, safeguard on | `+{k} → +{k+1} · {cost}c · {chance}% · a fail costs nothing (safeguard)` | `main.js:892` |
+| 3 Gear | `#sei_*`, at max (empty) | `+20 is as high as this goes.` | `enhance.js:10` `MAX_PLUS = 20`. **State D6: the string blanked with no explanation** |
+| 3 Gear | `#sei_*`, no item | `equip an item to enhance it` | `main.js:889` |
+| 3 Gear | enhance attempt fails on copper (error) | `not enough copper — this attempt costs {cost}c` | `enhance.js:53-54` returns `"poor"`; `main.js:378` returns silently today. **State D1: a real error path with no message at all.** Condition + way out |
+| 3 Gear | Reforge teaching line (NEW, one per tab not per slot) | `Reforge rerolls an item's affixes for scrap of its own rarity. It can't change the rarity or the IP — only which affixes it has and what they roll. You see the result before you decide whether to keep it.` | `gear.js:132-155`; `reforge` returns a candidate without mutating the item |
+| 3 Gear | `#rf_*` button | `reforge` | `main.js:366` |
+| 3 Gear | `#rfi_*` | `{n} {rarity} scrap per roll` | `gear.js:142-144` `n = 2 × affixTier(ip)`; `affixes.js:55-61` |
+| 3 Gear | `#rfi_*`, no affixes | `Common items have no affixes to reforge` | `gear.js:136-138`; `rarity.js:7` |
+| 3 Gear | `#rfi_*`, can't afford (error) | `not enough {rarity} scrap — you need {n}, salvage {rarity} items to get it` | `main.js:904-905`. Condition + way out; replaces the silent disabled button and the log-only `reforge: not enough scrap` (`main.js:385`) |
+| 3 Gear | `#rfc_*` candidate + buttons | `→ {affix} · {affix}` and `Keep these` · `Roll again` · `Discard` | `main.js:911`, `index.html`-built at `main.js:370`. Buttons label the outcome, not the mechanism |
+| 4 Stash | `h3` + sub (NEW) | `Stash` `— where kept drops land, up to 50. An item's rarity is how many affixes it rolled (Common 0, Origin 6) and its IP is how strong those affixes roll. Salvaging turns an item into scrap of its own rarity. Locking one protects it from auto-salvage, the bulk sweep and the stash-full clear-out.` | `gear.js:47` `STASH_CAP = 50`; `rarity.js:6-14` affix counts 0→6; `affixes.js:57-61` `affixTier(ip)`; `gear.js:51-63` `scrapYield`; `gear.js:66-78,105,122` all three paths honour `lock` |
+| 4 Stash | `#scrapWallet` pills | `{n} {rarity}` | `main.js:822` |
+| 4 Stash | `#scrapWallet` empty | `no scrap yet — salvage a drop to get some` | `main.js:823`. Condition + way out |
+| 4 Stash | `#autoEquip` label | `auto-equip a drop when it beats what's in the slot — the old item goes to the stash` | `gear.js:101-104`; `index.html:141`. `isUpgrade` is a strict `>` on base power (`gear.js:88-91`) |
+| 4 Stash | `#autoFilter` label + dials | `auto-salvage drops below both floors — keep anything {rarity} or better AND at least {n} IP; everything else becomes scrap` | `gear.js:83-85` `meetsKeep` requires BOTH; `state.js:83-84` defaults `rare` / `0` |
+| 4 Stash | `#stashToggle` | `stash ({n}/50)` | `main.js:554`; `gear.js:47` |
+| 4 Stash | bulk-sweep row | `salvage every unlocked stash item at or below both — {rarity} or worse AND {n} IP or less. Leave IP at 0 to ignore it.` | `gear.js:117-130`; `main.js:541` passes `Infinity` when the IP dial is 0 — a real behaviour with no copy today |
+| 4 Stash | `#salvageMatch` button | `Salvage matching items` | `index.html:154` |
+| 4 Stash | stash row | `{mark} {name}` · `equip` `lock`/`unlock` `salvage +{n}` · `{slot} · IP {ip} +{plus} · {affixes}` | `main.js:566-569`. **`×{n}` becomes `salvage +{n}`** — the bare `×3` never said what it did |
+| 4 Stash | row mark | `▲` upgrade over what's equipped · `L` locked | `main.js:566`. Decoded by the `h3` sub's lock clause and by `auto-equip`'s "beats what's in the slot" |
+| 4 Stash | `#stashList` empty | `stash empty — drops land here` | `main.js:580`. Unchanged; already condition + way out |
+| 4 Stash | overflow line | `…and {n} more (salvage to clear)` | `main.js:585`. Unchanged |
+| 4 Stash | stash-full log (error) | `Stash full at 50 — salvaged your weakest unlocked item, {name}, for +{n} {rarity} scrap.` | `gear.js:66-78`; `main.js:150` |
+| 5 Trophies | `h3` + sub | `Trophies` `— each Warden has a 7-piece set. Breaking its door gives you the first piece; the rest come from farming that Warden on the Boss tab. A complete set multiplies your damage by 1.5.` | `trophies.js:14-23` `PARTS.length = 7`, `SET_BONUS = 0.5` → ×1.5; `trophies.js:65-69` guaranteed break piece. POINTER to the Boss-owned farm roll (Boss states the rate, this states the reward — different halves, no overlap) |
+| 5 Trophies | `#trophySet` | `{n}/10 sets complete` | `main.js:934` |
+| 5 Trophies | set header | `{set.name}` `{have}/7` · complete adds `· ×1.50 damage` | `main.js:930-931`; `bosses.js` `set.name` per wall |
+| 5 Trophies | pip, owned | `✓ {part} +{n}% {lane}` | `main.js:927`; `trophies.js:29-35` `pct = round(basePct × boss.set.mult)`, W1 mult 1.0 → W10 13.6 |
+| 5 Trophies | pip, unowned | `◈ {part} +{n}% {lane}` | `main.js:927` — shows what it would be worth, so an unearned pip is still information |
+| 5 Trophies | pip `title` (NEW) | owned `Recovered.` · unowned `Not recovered yet — farm {boss.name} for it.` | closes DESIGN.md required-change 3: `.pip` has `cursor: help` promising a tooltip that does not exist |
+| 6 Armory | `h3` + sub | `Armory` `— every drop is logged here against its own entry, one per item name, whether you keep it or scrap it. Rarer copies count for more: a Common is worth 1 point, an Origin 13. The first rank costs 3 points and each rank after costs 60% more, up to rank 12. Weapons rank ATK, armor ranks haste, charms rank copper — and the ranks survive every Ban Wave.` | `armory.js:16` `MERGE_WEIGHT = [1, 1.5, 2.5, 4, 6, 9, 13]`; `armory.js:17,26-30` `pointsForRank`, `COST_BASE 3`, `COST_GROWTH 1.6`; `armory.js:15` `RMAX = 12`; `armory.js:20` `LANE`; `armory.js:47-58` merges before disposal; `rebirth.js:36-51` never touches `state.armory` |
+| 6 Armory | `#armorySub` aggregate | `rank {n} across {m} entries · +{a}% ATK · +{h}% haste · +{c}% copper` | `main.js:597-598`; `armory.js:61-87` |
+| 6 Armory | grid cell | `{item name}` · `R{n} · +{pct}% {lane}` | `main.js:609-612`; `armory.js:41-43` `entryPct = 0.25 × rank × (1 + 0.15 × (zone−1))` |
+| 6 Armory | grid cell at rank 0 (dormant) | `R0 · +0.00% {lane}` — no per-cell sentence. 45 cells × an explanation is the exact anti-pattern this phase exists to kill; the `h3` sub carries it once | `main.js:609` |
+| 6 Armory | grid cell at cap | `R12 ✦ · +{pct}% {lane}`, with the `h3` sub's `up to rank 12` decoding `✦` | `main.js:611`; `armory.js:15` |
+| 6 Armory | row label | `z{n}` — terse by design; the rows are zones in the Grind tab's own order | `main.js:614` |
+| state `locked` (whole tab) | `#tabs` button `title` | `Unlocks when your bots find their first piece of gear.` | `main.js:243` `player: f.grind && s.everDropped`; no content spoiler |
+| state `empty`/dormant | — | three empty slots, empty stash, empty scrap wallet, 70 unearned pips, 45 rank-0 cells, hidden titles, hidden failstacks, dormant reforge bench — every one written above. This is 115 of the audit's 136 dormant items, concentrated here | `main.js:884,580,823,927,609,915,866` |
+| state `active` | — | at least one slot filled; strings as above | `main.js:872` |
+| state `in-progress` | — | N/A — enhance and reforge resolve instantly, no tracked run (hard veto: no ceremony) | `enhance.js:50-67` |
+| state `error` | — | three real paths, all written above: enhance without copper (`#sei_*`), reforge without scrap (`#rfi_*`), stash overflow (log). The safeguard toggle is a setting, not an error path | `enhance.js:53`, `gear.js:151`, `gear.js:68` |
+
 ### Delve
 
 **Purpose:** Spend the character's own passive depth-mining run on
@@ -612,6 +826,38 @@ others should follow": one list, no dormant padding, everything actionable.
 
 **Exit:** Tab switch (typically to Boss to see the overclock bonus land, or
 Dungeon once bots.pop ≥ 10 unlocks it).
+
+**Microcopy (Phase 5):**
+
+*Explained-once register (DW-5.2) — one owner per mechanic on this tab:*
+
+| Mechanic taught here | The ONE element that explains it | Elements that carry the value but do NOT re-explain |
+|---|---|---|
+| The delve runs itself, and depth follows Combat Power | the `Delve` `h3` sub | `#delveState` prints depth and deepest; no row repeats the rule |
+| What Cache is and how fast it accrues | the `Delve` `h3` sub | `#delveCache` prints the balance; the sifter row prints its own per-rank gain |
+| Prices rise per rank | the `Cache tree` `h3` sub | each button prints its own next price |
+| What each node does | that node's own gain string, once | the rank readout prints the resulting total, not a second description |
+
+| Block / state | Element | Final copy | Number source |
+|---|---|---|---|
+| 1 Delve state | `h3` + sub | `Delve` `— your character digs on their own down here, no input needed. Depth is however deep your Combat Power clears: floor 1 needs 10 damage per second and each floor after needs 70% more. Every extra floor pays 35% more Cache per second, and Cache is the buried server data you spend below.` | `dungeon.js:8` `DIFF_BASE = 10`, `DIFF_GROWTH = 1.7`; `dungeon.js:11-17` `diff`/`clearChance`/`safeDepth`; `dungeon.js:9,45-48` `CACHE_GROWTH = 1.35`. Replaces `index.html:164` — same premise, now with the three numbers it never stated |
+| 1 Delve state | `#delveState` | `depth {n} · deepest ever {m} · {c} Cache/s` | `main.js:940`; `dungeon.js:43` `reachDepth = safeDepth(dps) + rank("reach")` |
+| 2 Cache banked | `#delveCache` | `{n} Cache banked` | `main.js:941` |
+| 3 Cache tree | `h3` + sub | `Cache tree` `— each row buys one rank. Every rank you buy raises that row's next price.` | `dungeon.js:30` `cost = round(base × mult^rank)`; the multiplier differs per row (1.7–2.0), so the copy states that prices rise without inventing a single shared figure |
+| 3 Cache tree | `deeper bore` | `deeper bore · +1 depth per rank` | `dungeon.js:22` |
+| 3 Cache tree | `cache sifter` | `cache sifter · +20% Cache per second per rank` | `dungeon.js:23`, `per: 0.20`; applied at `dungeon.js:47` |
+| 3 Cache tree | `recovered overclock` | `recovered overclock · +3% ATK per rank` | `dungeon.js:24`, `per: 0.03`; applied at `stats.js:52` `delveBonus(state, "overclock")` |
+| 3 Cache tree | `salvage beacon` | `salvage beacon · +4% chance of a gear drop per rank` | `dungeon.js:25`, `per: 0.04`; applied at `bots.js:229` on the drop count |
+| 3 Cache tree | `buried scripts` | `buried scripts · +5% ATK and hits per training fill, per rank` | `dungeon.js:26`, `per: 0.05`; applied at `bots.js:210-211` `t.gain * drill`. **Replaces `+5% train rate`, which was wrong** — the node multiplies the gain per fill, not the fill rate (defect A2) |
+| 3 Cache tree | rank readout | `rank {n} · ×{total} now` — e.g. `rank 4 · ×1.12 ATK now` | `dungeon.js:40` `delveBonus = 1 + per × rank`. **Closes the legibility gap Phase 1 handed forward**: the overclock row showed rank and per-rank gain but never the multiplier actually folded into Combat Power |
+| 3 Cache tree | rank readout at 0 | `rank 0` — no `×1.00 now` clause; a multiplier of 1 is not information | `dungeon.js:29` |
+| 3 Cache tree | buy button | `Buy · {n} Cache` | `main.js:946`. Adds the verb the price-only label was missing (audit G5 named the width; this names the action) |
+| 3 Cache tree | buy button, unaffordable | same label, disabled and dimmed. No error string: this is an afford-gate, not an error, and the Cache balance sits two blocks above it in the same view | `main.js:947`, `main.js:126` `buyState` |
+| state `locked` (whole tab) | `#tabs` button `title` | `Unlocks at 100 Combat Power.` | `main.js:244` `delve: f.player && dps >= 100`; names the milestone, not the Cache tree behind it |
+| state `empty`/dormant | — | N/A in the audit's sense — no bulk unearned block. Cache simply reads `0 Cache banked` and climbs; `depth 0 · deepest ever 0` is a numeric floor, not a distinct empty UI | `state.js:58` |
+| state `active` | — | default and only steady state once unlocked; strings as above | `main.js:938-949` |
+| state `in-progress` | — | N/A — the delve accrues continuously, never started or stopped (contrast Dungeon) | `main.js:644-648` |
+| state `error` | — | N/A — every button is afford-gated and there is no player input to validate | `dungeon.js:31-38` |
 
 ### Dungeon
 
@@ -683,3 +929,191 @@ loot)."
 
 **Exit:** Tab switch. A run resolves on its own (wipe or manual pull-out)
 back to the idle state on the same tab — not a forced exit.
+
+**Microcopy (Phase 5):**
+
+This is the tab the audit named as the three-statement problem, so the
+register below is the phase's primary evidence: **three teaching locations,
+each owning exactly one mechanic, and no row anywhere restating one.**
+
+*Explained-once register (DW-5.2):*
+
+| Mechanic taught here | The ONE element that explains it | What used to repeat it, and no longer does |
+|---|---|---|
+| The run loop: floors, attrition, the wipe, the 40% | the `How it works` block (3 lines) | nothing else mentions floors or the wipe rule |
+| Blocking: a duty needs N bots, unblocked cuts damage, damage floor ends the run | the `Assign bots` block sub | **duty row subs drop `Blocked by {duty} bots.`** — they keep only their own penalty number. **Journal rows drop the whole sentence** (audit B2) |
+| How many bots an ability needs right now | the duty row's gain column, once per row | **the stat column drops `, {need} needed`** — it keeps only the verdict (audit B3) |
+| What difficulty changes | the `#instKeyInfo` helper, once | the input is the control; the state line is the consequence at the current value. Three renders, three different jobs (audit B4) |
+| Pull-out floor | the `Pull out at floor` input's own helper | **the running state line drops `pulling out at floor {n}`** — the live input is inches away showing the same number (the `DUP` this document found in Phase 1) |
+| What the journal is for | the `Boss abilities` block sub | journal rows carry status only, never effects |
+| Where script version is bought | the gated duty row's own string, as a POINTER to Training | Training does not mention the Dungeon gate |
+| Enhance / gear / copper | not taught here at all | — |
+
+| Block / state | Element | Final copy | Number source |
+|---|---|---|---|
+| idle 1 · running 1 | `#instState`, idle | `At difficulty {key}: {n} ability/abilities to block, {m} bots needed on each. Deepest floor so far: {best}.` | `main.js:973-974`; `instance.js:34-35` `liveMechanics = MECHANICS.slice(0, min(key,3))`, `needPerMechanic = ceil(key/2)`. The consequence readout — not a second explanation of difficulty |
+| idle 1 · running 1 | `#instState`, running | `Floor {n} · {haul} items so far · dealing {pct}% damage.` | `main.js:967-968`. **`· pulling out at floor {n}` is CUT** — restates the live input directly below it |
+| idle 2 · running 2 | `#instProject`, idle, bots assigned | `Sending {n} bots. They should reach about floor {f} before too many are banned.` | `main.js:976`; `instance.js:72-84` `projectDepth` runs the same `resolveFloor` the live run does, so the projection cannot lie |
+| idle 2 · running 2 | `#instProject`, idle, none assigned (empty) | `Assign bots to a duty below, then send them in.` | `main.js:977`. Condition + way out |
+| idle 2 · running 2 | `#instProject`, idle, party larger than the swarm (error) | `You've assigned {n} bots but only have {m} — lower a duty, or wait for the swarm to grow.` | `instance.js:89-92` `canStart` needs `floor(pop) >= partyCost`. **State D3: rendered as a silent disabled button.** Condition + way out |
+| idle 2 · running 2 | `#instProject`, running | `{n} bots still alive · about {pct}% of them get banned on the next floor.` | `main.js:969-970`; `instance.js:39-42` `banRate = min(0.5, 0.02 × key × 1.15^(floor−1) × (proxy ? 0.75 : 1))` |
+| idle 3 · running 3 | `h3` `Assign bots` + sub (the block's single teaching line) | `Assign bots` `— each ability needs a set number of bots on it to be blocked. An ability you leave unblocked cuts your damage every floor it fires, and when your damage falls below 25% of normal the party dies. Bots you send are spent — you get back whoever survives.` | `instance.js:49-67` `resolveFloor`; `instance.js:148` `inst.mult *= r.mult` **per floor** (the penalty compounds — defect A7); `instance.js:13` `WIPE_AT = 0.25` (`:22` is `WIPE_KEEP = 0.4`); `instance.js:101,126` bots leave the pool and survivors rejoin. Replaces `index.html:182`'s one-line sub and absorbs what the duty rows used to repeat |
+| idle 3 · running 3 | duty row name | `Sunder` · `Mass Dispel` · `Summon Adds` | `instance.js:26-30`, §16 dungeon register — names only |
+| idle 3 · running 3 | duty row sub | `−{pen}% damage every floor it's unblocked` | `main.js:479`; `instance.js:27-29` `pen` = 0.12 / 0.10 / 0.15. **`Blocked by {duty} bots.` is CUT** — the block sub owns it |
+| idle 3 · running 3 | duty row gain, live | `needs {n} bots` | `main.js:993`; `instance.js:35`. The ONLY place the need renders |
+| idle 3 · running 3 | duty row gain, not live at this difficulty | `appears at difficulty {n} and up` | `instance.js:34` — mechanic at index `i` goes live at `key >= i+1`, so Sunder 1, Mass Dispel 2, Summon Adds 3. Replaces `doesn't appear at difficulty {key}`, which named the current value instead of the threshold |
+| idle 3 · running 3 | duty row gain, script-gated (locked) | `needs script version {n} — buy it on the Training tab` | `main.js:994`; `instance.js:37` `dutyUnlocked = bots.powerRank >= m.gate`, gates 0 / 3 / 5. POINTER + way out; the current string names the requirement with no route to it |
+| idle 3 · running 3 | duty row stat, idle | `{n} assigned — blocked` / `{n} assigned — NOT BLOCKED` | `main.js:995-997`. **`, {need} needed` is CUT** — killing the audit's finding #3 |
+| idle 3 · running 3 | duty row stat, running | `{n} still alive — blocked` / `{n} still alive — NOT BLOCKED` | `main.js:996`; `instance.js:57` counts whole bodies only |
+| idle 3 · running 3 | duty row stat, not live / gated | `{n} assigned` | `main.js:997` |
+| idle 3 · running 3 | duty allocation, running | inputs disabled — `the party is locked once they're inside` as the control's `title` | `main.js:485,991` |
+| idle 4 · running 4 | `#instKey` label | `Difficulty` | `index.html:187`. The control |
+| idle 4 · running 4 | `#instKeyInfo` (the concept, once) | `Higher difficulty means more abilities to block, more bots on each, better loot — and bots banned faster. You set it; it never drops on its own. If the party dies you keep 40% of what they found.` | `instance.js:34-35,39-42`; `instance.js:120` loot bias `min(3, floor(key/3))`; `instance.js:22` `WIPE_KEEP = 0.4`. Replaces `main.js:979-980` |
+| idle 4 · running 4 | `#instBank` label | `Pull out at floor` | `index.html:188` |
+| idle 4 · running 4 | `#instBank` helper (NEW) | `Your bots come home with everything the moment they clear this floor. You can change it mid-run.` | `instance.js:159` `finish(state, 1)` keeps the whole haul; `main.js:509-511` writes on change while running |
+| idle 4 · running 4 | `#instProxy` label | `Buy proxies · 250c per run, 25% fewer bots banned` | `instance.js:17-18` `PROXY_COST = 250`, `PROXY_CUT = 0.25`. Already exact — unchanged |
+| idle 4 · running 4 | `#instStart` | `Send bots in` | `index.html:193`. Unchanged — labels the action |
+| idle 4 · running 4 | `#instBankNow` | `Pull out now — keep all {haul} items` | `index.html:194`; `instance.js:113-131`. Replaces `Pull out now (keep loot)` with the count |
+| idle 5 · running 5 | `h3` `How it works` + body (**replaces the 6-line intro**) | `Your bots fight down through the floors on their own, and each floor takes longer than the last.` / `Some of them get banned on every floor, faster the deeper they go. When too many abilities go unblocked, the party dies.` / `If they die you keep 40% of what they found. Pull out early and you keep all of it.` | `instance.js:11-12` `FLOOR_SECONDS = 6`, `FLOOR_GROWTH = 1.15`; `instance.js:14-16,39-42` ban rate grows 15% per floor; `instance.js:22` `WIPE_KEEP = 0.4`. 6 lines → 3; it owns the run loop and nothing else (audit B1) |
+| idle 6 · running 6 | `h3` `Boss abilities` + sub | `Boss abilities` `— there's no wiki and nobody to ask. You find out what an ability does by running into it. What you learn here is permanent: it survives a Ban Wave.` | `instance.js:153-156` writes the journal on contact and marks it solved on a block; `rebirth.js:36-51` never touches `state.instance`. Flavor line kept — it teaches nothing, and the line under it does |
+| idle 6 · running 6 | journal row, unseen (empty) | `Unknown — you haven't met this one yet` | `main.js:1002`. Honest: three unknowns IS the first-visit state. The block sub above now says what they will become |
+| idle 6 · running 6 | journal row, seen, never blocked | `{label} — met on a run, never blocked` | `main.js:1005`. **The entire effect sentence is CUT** (`main.js:1001` currently reprints `Assign {duty} bots to block it. Unblocked it costs you {pen}% damage.`, near-verbatim the duty row's sub) — audit B2 and the plan's own edge case |
+| idle 6 · running 6 | journal row, solved | `{label} — met and blocked` | `main.js:1004` |
+| state `locked` (whole tab) | `#tabs` button `title` | `Unlocks once you have 10 bots.` | `main.js:245` `dungeon: f.delve && s.bots.pop >= 10`; names the milestone, not the mechanics behind it |
+| state `empty`/first-visit idle | — | three `Unknown` journal rows, `Deepest floor so far: 0`, `Assign bots to a duty below, then send them in.` — all written above | `state.js:62-72` |
+| state `idle` | — | idle block set above | `main.js:971-978` |
+| state `in-progress`/`running` | — | running block set above | `main.js:966-970` |
+| state `error` | — | two real paths, both written above: nothing assigned, and party larger than the swarm. A wipe is a game-rule outcome with its own log line, not a UI error | `instance.js:89-92` |
+
+**Dungeon log lines (in scope — `main.js` tick):**
+
+| Trigger | Final copy | Number source |
+|---|---|---|
+| run starts | `Sent {n} bots in at difficulty {key}.` | `main.js:515` |
+| ability unanswered | `{label} went unblocked on floor {n} — another {pen}% off your damage.` | `main.js:651`; `instance.js:148` compounds per floor. **Replaces "you're dealing {pen}% less damage"**, which implied one flat hit (defect A7) |
+| bots banned | `{n} bots banned on floor {f}.` | `main.js:652`; `instance.js:146` |
+| wipe | `The party died on floor {n}. You kept {k} of {haul} items — 40% of the haul.` | `main.js:653`; `instance.js:158` `kept = floor(haul × 0.4)` |
+| pull-out | `Pulled out at floor {n} with all {k} items.` | `main.js:654,520`; `instance.js:159` |
+
+---
+
+### Shared chrome, log lines and locked-tab copy
+
+Produced by Phase 5 alongside the six specs. These strings are NOT owned by
+any single tab — they are the global chrome and the activity log, which
+`## Fact ownership` lists as POINTER echoes or as event history rather than
+tab content. They sit here so no spec has to duplicate them, and so the
+Phase 5 scope line "log lines, for all six tabs" has a home.
+
+**Resource bar (POINTER echoes — a headline value each, never a breakdown):**
+
+| Element | Final copy | Number source |
+|---|---|---|
+| `#cpEl` / `#cpRate` | `{n}` · `combat power · +{r}/s` | `main.js:668,676`. Breakdown is owned by Player |
+| `#resBots` / `#resRate` | `{free} / {cap}` · `bots free · +{n}/h` | `main.js:699-700`; `bots.js:110-112` `freeBots = pop − allocTotal`. **`free` added to the label** — it is a different numerator from Training's population bar, and the two were indistinguishable |
+| `#copperEl` / `#copperRate` | `{n}c` · `copper · +{r}/s` | `main.js:680,696` |
+| `#scriptsEl` / `#scriptMultEl` | `{n}` · `scripts · ×{m} damage` | `main.js:685-686`; `rebirth.js:25-27` `scriptMult = 1 + 0.01 × scripts`. Hidden until the first Ban Wave (`main.js:682`) |
+| `#helpBtn` | `?`, `title` = `Help` | `index.html:32` |
+
+**Locked tab buttons (DW-5.3, and the plan's "no spoilers" edge case).**
+`showTab` returns early for a locked tab (`main.js:220`), so pane copy would
+never render — the unlock condition goes on the button's `title`. Each names
+the milestone and nothing about the content behind it:
+
+| Tab | Button label | `title` | Condition in source |
+|---|---|---|---|
+| Boss | `Boss` | — | always open (`main.js:206` has no `battleSec` key) |
+| Training | `???` | `Unlocks as soon as the game starts.` | `main.js:241` |
+| Grind | `???` | `Unlocks with Training.` | `main.js:242` |
+| Player | `???` | `Unlocks when your bots find their first piece of gear.` | `main.js:243` |
+| Delve | `???` | `Unlocks at 100 Combat Power.` | `main.js:244` |
+| Dungeon | `???` | `Unlocks once you have 10 bots.` | `main.js:245` |
+
+**Unlock announcements (`UNLOCK_MSG`, `main.js:208-215`).** Each is the
+discovery trigger `## Page specs` names above, so each states what the new
+tab lets you DO — register name first, plain consequence second:
+
+| Key | Final copy | Note |
+|---|---|---|
+| `training` | `NEW: Training — run scripts on your bots to raise their ATK and speed.` | — |
+| `grind` | `NEW: Grind — put bots on zones to earn copper and roll for gear.` | — |
+| `player` | `NEW: Player — your character. Equip, enhance and reforge gear here.` | — |
+| `delve` | `NEW: Delve — your character digs on their own for Cache. Spend it on upgrades that feed every other system.` | **Replaces `descend for copper; bank before you wipe`, which describes the RETIRED Delve** — the live one pays Cache and has no descend, bank or wipe (defect A3; `dungeon.js:1-7`) |
+| `dungeon` | `NEW: Dungeon — send bots in for gear. They don't all come back.` | — |
+| `rebirth` | `NEW: Ban Wave — reset your bots and training for permanent Scripts.` | — |
+
+**Other global log lines:**
+
+| Trigger | Final copy | Number source |
+|---|---|---|
+| offline catch-up | `While you were away ({h}h): +{c} copper, {n} drops.` | `main.js:184` |
+| offline at the clamp | `While you were away ({h}h): +{c} copper, {n} drops. Offline progress caps at 12 hours.` | `farm.js:6` `OFFLINE_CAP_S = 12 × 3600`. **The cap was never stated anywhere** (state D7) |
+| offline delve | `While you were away: +{n} Cache.` | `main.js:189` |
+| offline siege | `While you were away: {n} health off {boss.name}.` | `main.js:195` |
+| wall breaks | `★ W{n} BREACHED — {boss.name}` | `main.js:86`. Unchanged |
+| break piece | `◆ {piece.name} recovered · +{pct}% {lane} — farm the door for the rest` | `main.js:88` |
+| farm piece | `◆ {piece.name} dropped · +{pct}% {lane}` | `main.js:638` |
+| set completes | `★ {set.name} SET COMPLETE — ×1.50 damage` | `main.js:639`; `trophies.js:23` |
+| a drop lands | `drop: {Rarity} {name} {ip}IP · {equipped\|stashed\|salvaged +{n} {rarity} scrap}` | `main.js:144-145`. Unchanged |
+| Armory rank-up | `ARMORY — {name} rank {from}→{to}, +{pct}% {lane}` | `main.js:148` |
+| bulk salvage | `Salvaged {n} items → {tally} scrap.` | `main.js:545` |
+| enhance milestone | `[Server] a player has reached +{plus}. Players online: 1.` | `main.js:168` at `plus >= 16`. Unchanged — this is the shell register at its one intended edge, and it is the game's whole premise in one line |
+| title earned | `★ title: +{plus}` | `main.js:172` at `plus >= 18` |
+| Ban Wave | `! Ban Wave #{n} — farm reset · banked +{s} Scripts (×{m} damage)` | `main.js:417`; `rebirth.js:25` |
+| log header | `maintenance@dead-server:~$ ▮` | `index.html:204`. Unchanged — DESIGN.md confines the shell register to exactly here |
+
+**Footer / meta:**
+
+| Element | Final copy | Note |
+|---|---|---|
+| `#exportBtn` | `export save` | unchanged |
+| export modal body | `Copied to clipboard — or select all below and copy:` | `main.js:458`. Unchanged |
+| `#wipeBtn` | `wipe save (dev)` | unchanged |
+| wipe confirm (destructive) | `Wipe this save? Your character, gear, trophies and door progress are all deleted permanently. This can't be undone.` | `main.js:266`. Yifrah destructive formula — specific loss + permanence, replacing `Wipe this character's save? (dev button)` |
+
+---
+
+### Lexicon audit (DW-5.4)
+
+Every `REMAKE-DESIGN.md` §16 register name that survives into the copy
+above, with the plain-English clause that defines it and where that clause
+lives. The test (`content-design.md` §C4): could a reader with no visual
+context act from the words alone? A name whose meaning is not on the same
+line, or one stated pointer away, is a fail.
+
+| Register name | Where the plain-English definition lives | The clause |
+|---|---|---|
+| multiclient | its own button | `{cap} → {nextCap} bot slots` |
+| account creator | its own button | `{rate} → {nextRate} bots per hour` |
+| script version | its own button | `bot strength ×{p} → ×{nextP}` |
+| overclock (rig) | its own button | `bot speed ×{s} → ×{nextS}` |
+| swing macro … tick-rate exploit | `ATK scripts` `h3` sub | `put bots on a script to run it; every fill it completes adds its ATK permanently` |
+| autoclicker … hypervisor clock | `SPEED scripts` `h3` sub | `same as ATK, for hits per second` |
+| Ban Wave | its section's teaching line | `resets your bots, your training and your copper… you bank √(training fills) as Scripts` |
+| Scripts | same line | `every Script permanently adds +1% damage` |
+| zone names, mob names | `Zones` `h3` sub | `put bots on a zone… every kill pays copper` |
+| IP | `Zones` `h3` sub (band) + `Stash` `h3` sub (item) | `the power band those drops roll in` / `how strong those affixes roll` — two different halves, neither a repeat |
+| plus | `Gear` `h3` sub | `every plus multiplies its base power by 1.12` |
+| failstack | `Gear` `h3` sub | `worth +1 percentage point on your next attempt, up to +15` |
+| safeguard | its own toggle label | `3× the copper, but a failure doesn't cost you a plus` |
+| affix | `Stash` `h3` sub | `rarity is how many affixes it rolled (Common 0, Origin 6)` |
+| scrap | `Stash` `h3` sub | `salvaging turns an item into scrap of its own rarity` |
+| Reforge | its own teaching line | `rerolls an item's affixes for scrap of its own rarity` |
+| Trophy / set / door parts | `Trophies` `h3` sub | `each Warden has a 7-piece set… a complete set multiplies your damage by 1.5` |
+| Armory / entry / rank | `Armory` `h3` sub | `every drop is logged here against its own entry… each rank is a permanent bonus` |
+| haste | `Combat Power` `h3` sub | `a percentage added to hits per second` |
+| Delve / Cache | `Delve` `h3` sub | `your character digs on their own down here` / `the buried server data you spend below` |
+| deeper bore, cache sifter, recovered overclock, salvage beacon, buried scripts | each row's own gain string | `+1 depth per rank`, `+20% Cache per second per rank`, … |
+| instance / floor / haul | `How it works` block | `fight down through the floors… each floor takes longer than the last` |
+| duty / blocked | `Assign bots` `h3` sub | `each ability needs a set number of bots on it to be blocked` |
+| Sunder / Mass Dispel / Summon Adds | each row's own sub | `−{pen}% damage every floor it's unblocked` |
+| key (difficulty) | the input is labelled `Difficulty` in plain English; `key` never reaches the player | the register name is deliberately not surfaced |
+| wipe | `How it works` block | `when too many abilities go unblocked, the party dies` |
+| journal | `Boss abilities` `h3` sub | `what you learn here is permanent` |
+| proxy | its own toggle label | `250c per run, 25% fewer bots banned` |
+| Warden / door / breach | boss title + the break log line | `Warden of the First Door` · `★ W1 BREACHED` |
+| `maintenance@dead-server:~$` · `Players online: 1` | not defined, deliberately | the shell register at its two intended edges (DESIGN.md `## Direction`) — atmosphere, never an instruction. No control depends on reading it |
+
+**Result:** every name that governs a control is defined on its own line or
+one stated pointer away. The only undefined strings are the two shell-register
+lines, which carry no instruction and gate no action.
