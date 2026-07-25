@@ -98,7 +98,7 @@ export function routeDrop(state, item) {
   const g = state.gear;
   const merged = merge(state, item); // Armory: every drop merges into its entry (before disposal)
   let res;
-  if (state.gm?.autoequip && g.autoEquip !== false && isUpgrade(state, item)) {
+  if (g.autoEquip === true && isUpgrade(state, item)) {
     const cur = g[item.slot];
     g[item.slot] = item;
     res = { equipped: true, overflow: cur ? stashPush(state, cur) : null };

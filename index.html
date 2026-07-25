@@ -24,10 +24,6 @@
         <div class="chipVal copper"><b id="copperEl">0</b>c</div>
         <div class="chipLbl">copper · <span id="copperRate">—</span></div>
       </div>
-      <div class="chip">
-        <div class="chipVal tickets"><b id="ticketsEl">0</b></div>
-        <div class="chipLbl">tickets</div>
-      </div>
       <div class="chip" id="scriptChip" style="display:none">
         <div class="chipVal scripts"><b id="scriptsEl">0</b></div>
         <div class="chipLbl">scripts · ×<span id="scriptMultEl">1.00</span> dmg</div>
@@ -51,7 +47,6 @@
     <button data-tab="gearSec">Player</button>
     <button data-tab="dungeonSec">Delve</button>
     <button data-tab="instanceSec">Dungeon</button>
-    <button data-tab="gmSec">GM</button>
   </nav>
 
   <section id="battleSec" class="tabpane">
@@ -70,12 +65,8 @@
       <div class="controls">
         <span id="depth">—</span>
         <span id="cooldown" class="caption"></span>
-        <span id="ticketGain"></span>
       </div>
       <div id="projection" class="caption"></div>
-      <label id="schedLine" class="toggleLine" style="display:none">
-        <input type="checkbox" id="schedToggle"> encounter scheduler <span id="schedInfo" class="sub"></span>
-      </label>
     </div>
 
     <!-- progress -->
@@ -135,7 +126,6 @@
       <div class="chip"><div class="chipVal"><b id="cpElP">—</b></div><div class="chipLbl">combat power</div></div>
       <div class="chip"><div class="chipVal"><b id="atkEl">—</b></div><div class="chipLbl">atk</div></div>
       <div class="chip"><div class="chipVal"><b id="hpsEl">—</b></div><div class="chipLbl">hits/s</div></div>
-      <div class="chip"><div class="chipVal">×<b id="gmEl">1.00</b></div><div class="chipLbl">gm mult</div></div>
     </div>
 
     <h3>Trophies <span class="sub" id="trophySet"></span></h3>
@@ -209,17 +199,6 @@
     <p class="sub">There's no wiki and nobody to ask. You find out what an ability does by
     running into it.</p>
     <div class="rowlist" id="instJournal"></div>
-  </section>
-
-  <section id="gmSec" class="game hidden tabpane" style="display:none">
-    <h3>Account flags</h3>
-    <div class="rowlist" id="gmFlags"></div>
-
-    <h3>Admin tools</h3>
-    <div class="rowlist" id="gmTools"></div>
-
-    <h3>Server privileges <span class="sub">— tickets buy admin leverage the farm's copper can't</span></h3>
-    <div class="rowlist" id="gmPriv"></div>
   </section>
 
   <div id="logHead">maintenance@dead-server:~$ <span class="cursor">▮</span></div>

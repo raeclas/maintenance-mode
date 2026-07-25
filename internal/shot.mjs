@@ -32,7 +32,6 @@ const WIDTH = 375, HEIGHT = 812, DSF = 2; // the width the design plan specs aga
 const TABS = [
   ["boss", "battleSec"], ["training", "botSec"], ["grind", "farmSec"],
   ["player", "gearSec"], ["delve", "dungeonSec"], ["dungeon", "instanceSec"],
-  ["gm", "gmSec"],
 ];
 
 // Seed enough state that every tab renders populated rather than as an empty
@@ -40,9 +39,9 @@ const TABS = [
 const SEED = `(() => {
   const s = window.__mm.state;
   s.unlocked = true;
-  Object.assign(s.features, {training:1, grind:1, player:1, gm:1, delve:1, dungeon:1});
+  Object.assign(s.features, {training:1, grind:1, player:1, delve:1, dungeon:1});
   s.bots.pop = 40; s.bots.powerRank = 5; s.bots.capRank = 4; s.bots.createRank = 3;
-  s.copper = 50000; s.tickets = 40; s.scrap.common = 120; s.scrap.rare = 30;
+  s.copper = 50000; s.scrap.common = 120; s.scrap.rare = 30;
   s.bots.alloc.zones[0] = 6; s.bots.alloc.atk[0] = 4; s.bots.alloc.speed[0] = 3;
   s.dungeon.cache = 900;
   s.instance.key = 3; s.instance.party = {interrupt:4, dispel:4, adds:4}; s.instance.bankAt = 8;

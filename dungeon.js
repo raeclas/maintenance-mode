@@ -24,7 +24,6 @@ export const UPGRADES = {
   overclock: { label: "recovered overclock", gain: "+3% ATK",        per: 0.03, base: 30, mult: 1.7 },
   loot:      { label: "salvage beacon",      gain: "+4% drops",      per: 0.04, base: 40, mult: 1.9 },
   drill:     { label: "buried scripts",      gain: "+5% train rate", per: 0.05, base: 25, mult: 1.7 },
-  ticket:    { label: "support backlog",     gain: "+5% tickets",    per: 0.05, base: 55, mult: 1.9 },
 };
 
 export function rank(state, key) { return state.dungeon.ranks?.[key] || 0; }
@@ -37,7 +36,7 @@ export function buy(state, key) {
   state.dungeon.ranks[key] = rank(state, key) + 1;
   return true;
 }
-// Multiplier a system-feeding node contributes (overclock/loot/drill/ticket).
+// Multiplier a system-feeding node contributes (overclock/loot/drill).
 export function delveBonus(state, key) { return 1 + UPGRADES[key].per * rank(state, key); }
 
 // How deep the delve sits: build DPS clears + Reach upgrades.

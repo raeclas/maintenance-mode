@@ -68,18 +68,22 @@ export function load(state) {
   // progressive unlocks. Old saves (no features) that were already unlocked
   // keep everything open — don't re-hide tabs a player already had.
   if (s.features && typeof s.features === "object") {
-    state.features = { ...d.features, ...s.features };
+    const { gm, ...feats } = s.features;   // v13: the GM tab is retired
+    state.features = { ...d.features, ...feats };
   } else if (state.unlocked) {
-    state.features = { training: true, grind: true, player: true, gm: true,
+    state.features = { training: true, grind: true, player: true,
       delve: (s.dungeon?.best || 0) > 0 || (s.cleared?.length || 0) > 0,
       rebirth: (s.cleared?.length || 0) > 0 || (s.rebirths || 0) > 0 };
   }
   state.everDropped = s.everDropped ?? state.unlocked;
   state.copper = s.copper ?? 0;
-  state.tickets = s.tickets ?? 0;
   state.scripts = s.scripts ?? 0;   // v9 Ban Wave prestige currency
   state.rebirths = s.rebirths ?? 0;
-  state.gm = { ...d.gm, ...(s.gm || {}) };
+  // v13: s.tickets and s.gm are deliberately NOT restored. Tickets had no sink
+  // outside the GM tab, and the GM tab's own state (flags/unlocks/utility) is
+  // meaningless without it. Both are dropped on load; the meta currency gets
+  // redesigned from scratch. Nothing a player OWNS is affected — gear, scrap,
+  // scripts, trophies, Armory, titles and wall progress all survive.
   state.failstacks = s.failstacks ?? 0;
   state.titles = Array.isArray(s.titles) ? s.titles : [];
   state.cleared = Array.isArray(s.cleared) ? s.cleared : []; // v9 wall monuments
@@ -161,8 +165,12 @@ export function load(state) {
     if (it?.affixes) it.affixes = it.affixes.filter(af => AFFIXES[af.id]);
   }
   state.scrap = { ...d.scrap, ...(s.scrap || {}) }; // v9 tiered scrap wallet
-  state.dungeon = { cache: s.dungeon?.cache || 0, depthBest: s.dungeon?.depthBest || 0,
-    ranks: { ...d.dungeon.ranks, ...(s.dungeon?.ranks || {}) } };
+  // v13: the "support backlog" (+% tickets) node went with the ticket economy —
+  // only ranks that still exist in the tree are carried over.
+  const savedRanks = s.dungeon?.ranks || {};
+  const ranks = { ...d.dungeon.ranks };
+  for (const k of Object.keys(ranks)) if (savedRanks[k] != null) ranks[k] = savedRanks[k];
+  state.dungeon = { cache: s.dungeon?.cache || 0, depthBest: s.dungeon?.depthBest || 0, ranks };
   // v12 Dungeons. The journal is permanent knowledge and must survive anything
   // (attachment law). A run in progress does NOT survive a reload — POC has no
   // offline instance model, so hand the staffed bots back rather than eat them.

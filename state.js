@@ -3,19 +3,19 @@
 import { getBoss } from "./bosses.js";
 export function newState() {
   return {
-    v: 12,
+    v: 13,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     // progressive feature unlocks (NGU/ITRTG-style ??? tabs). Boss is always
     // open; the rest light up on milestones — the game's visible ladder.
-    features: { training: false, grind: false, player: false, gm: false, delve: false, dungeon: false, rebirth: false },
+    features: { training: false, grind: false, player: false, delve: false, dungeon: false, rebirth: false },
     everDropped: false, // a gear drop has happened (gates the Player tab)
     copper: 0,
-    tickets: 0,    // meta currency: damaging Content files support tickets nobody handles
+    // v13: tickets + the GM tab are RETIRED pending a meta-currency redesign.
+    // The old GM sold four upgrades for mechanics the idle-battler rework had
+    // already deleted, and tickets had no sink outside that tab.
     scripts: 0,    // Ban Wave prestige currency — permanent +damage, survives rebirth
     rebirths: 0,   // lifetime Ban Waves (log/flavor)
-    // GM tab: flags (uncapped, era-priced), unlocks (booleans), utility (rank-capped)
-    gm: { dmg: 0, haste: 0, autoequip: false, scheduler: false, idleProc: false, schedulerOn: true, cap: 0, offline: 0, cooldown: 0, scar: 0 },
     failstacks: 0, // Luck's mechanical body — every fail banks +1%, success spends the bank
     titles: [],    // earned forever (attachment law): "+18" etc.
     cleared: [],   // broken walls, permanent monument (attachment): "W1 Vess" …
@@ -36,8 +36,6 @@ export function newState() {
       createRank: 0,  // generator: 2/h × (1 + 0.5×rank)
       powerRank: 0,   // script quality: power = 1 + 0.25×rank
       speedRank: 0,   // hardware: speed = 1 + 0.20×rank
-      // ticket-bought server privileges (GM tab) — stack on the copper ranks
-      tPower: 0, tSpeed: 0, tGen: 0, tCap: 0,
       // NGU model: every bar takes its OWN allocation and all bars run in
       // parallel. Max a bar's rate → surplus belongs on the next bar.
       alloc: {
@@ -57,7 +55,7 @@ export function newState() {
     // v9: gear = rarity + rolled affixes. Salvage → tiered Scrap (reforge fuel).
     scrap: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, origin: 0 },
     // Delve — idle depth engine + Cache upgrade tree (feeds every system)
-    dungeon: { cache: 0, depthBest: 0, ranks: { reach: 0, yield: 0, overclock: 0, loot: 0, drill: 0, ticket: 0 } },
+    dungeon: { cache: 0, depthBest: 0, ranks: { reach: 0, yield: 0, overclock: 0, loot: 0, drill: 0 } },
     // v12: Dungeons (POC) — bots are SPENT to answer boss mechanics; the run
     // ends when attrition leaves a mechanic unanswered. journal is permanent
     // knowledge (survives Ban Wave — attachment law).
@@ -76,7 +74,11 @@ export function newState() {
     gear: {
       weapon: null, armor: null, charm: null,
       stash: [],            // item = {slot, ip, plus, rarity, affixes[], zone, name, lock?}
-      autoEquip: true,      // once the GM module is unlocked: auto-equip strict upgrades
+      // v13: the GM module that used to gate auto-equip is retired, so this is
+      // now a plain opt-in toggle in the gear filter. Defaults OFF — building
+      // the character by hand is the locked design decision; auto-equip is
+      // relief you choose, never the default.
+      autoEquip: false,
       autoFilter: true,     // loot filter on: auto-salvage drops below the floors
       keepRarity: "rare",   // loot filter: keep drops at/above this rarity AND
       keepIp: 0,            //   at/above this ip; everything else auto-salvages

@@ -8,7 +8,6 @@
 // earned power over time now, not lucky pulls. REWORK-IDLE-BATTLER.md.)
 import { getBoss } from "./bosses.js";
 import { derive } from "./stats.js";
-import { ticketYield } from "./gm.js";
 import { delveBonus } from "./dungeon.js";
 import { rollFarmDrop } from "./trophies.js";
 
@@ -45,23 +44,21 @@ export function hpFrac(state) {
   return Math.min(1, 1 - (state.boss.hp || 0) / boss.hp);
 }
 
-// Farm status: a broken Warden yields a set-piece roll + tickets every
-// FARM_INTERVAL seconds of farming. Carry lives on state.boss.farmCarry.
+// Farm status: a broken Warden yields a set-piece roll every FARM_INTERVAL
+// seconds of farming. Carry lives on state.boss.farmCarry.
 export const FARM_INTERVAL = 30; // seconds per farm "kill"
 
 export function farmTick(state, dtS) {
-  const out = { rolls: 0, tickets: 0, pieces: [] };
+  const out = { rolls: 0, pieces: [] };
   if (!state.boss.broken || dtS <= 0) return out;
   let carry = (state.boss.farmCarry || 0) + dtS;
   while (carry >= FARM_INTERVAL) {
     carry -= FARM_INTERVAL;
     out.rolls++;
-    out.tickets += Math.round(ticketYield(1) * delveBonus(state, "ticket"));
     const piece = rollFarmDrop(state, state.wall);
     if (piece) out.pieces.push(piece);
   }
   state.boss.farmCarry = carry;
-  state.tickets += out.tickets;
   return out;
 }
 

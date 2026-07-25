@@ -4,7 +4,6 @@ import { load, save, wipe, exportSave } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { bosses, getBoss } from "./bosses.js";
 import { drain, farmTick, timeToKill } from "./pull.js";
-import { FLAGS, UNLOCKS, UTILITY, flagCost, utilityCost, buyFlag, buyUnlock, buyUtility, gmDmgMult, gmHasteMult, ticketYield, BREAK_TICKETS } from "./gm.js";
 import { initBattle, renderBattle, notifyBreak, notifyEnhance } from "./battle.js";
 import { derive } from "./stats.js";
 import { critFactor } from "./crits.js";
@@ -79,14 +78,12 @@ function advanceWall() {
   save(state);
 }
 
-// Warden breaks: dialogue, tickets, the guaranteed first set piece, the reveal.
+// Warden breaks: dialogue, the guaranteed first set piece, the reveal.
 // Shared by the live tick and the offline batch (function decl — hoisted).
 function handleBreak() {
   const b = getBoss(state.wall);
   say("break");
-  const y = Math.round(BREAK_TICKETS * dungeon.delveBonus(state, "ticket"));
-  state.tickets += y;
-  log(`★ W${state.wall} BREACHED — ${b.name} · +${fmt(y)} tickets`);
+  log(`★ W${state.wall} BREACHED — ${b.name}`);
   const piece = grantBreakPiece(state, state.wall); // guaranteed first set piece
   if (piece) log(`🏆 ${piece.name} recovered · +${piece.pct}% ${laneWord(piece.lane)} — farm for the rest`);
   notifyBreak();
@@ -198,7 +195,7 @@ if (loaded && state.unlocked && state.lastSeen) {
         else if (r.dealt > 0) log(`offline: ${fmt(r.dealt)} health off ${getBoss(state.wall).name}`);
       } else if (state.boss.broken) {
         const fr = farmTick(state, dt);
-        if (fr.rolls) log(`offline farm: ${fr.pieces.length} piece(s) · +${fmt(fr.tickets)} tickets`);
+        if (fr.rolls) log(`offline farm: ${fr.pieces.length} piece(s)`);
       }
     }
     save(state);
@@ -206,13 +203,12 @@ if (loaded && state.unlocked && state.lastSeen) {
 }
 
 // ---- tabs + progressive feature unlocks ----
-const TAB_FEATURE = { botSec: "training", farmSec: "grind", gearSec: "player", dungeonSec: "delve", instanceSec: "dungeon", gmSec: "gm" };
-const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", instanceSec: "Dungeon", gmSec: "GM" };
+const TAB_FEATURE = { botSec: "training", farmSec: "grind", gearSec: "player", dungeonSec: "delve", instanceSec: "dungeon" };
+const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", instanceSec: "Dungeon" };
 const UNLOCK_MSG = {
   training: "TRAINING — the old bot farms. Run scripts, build a swarm.",
   grind: "GRIND — deploy the swarm on the leveling zones for copper + gear.",
   player: "PLAYER — your character. Manage gear, enhance, reforge, trophies.",
-  gm: "GM — leftover admin tools. Spend the support tickets nobody answers.",
   delve: "DELVE — the character's own run. Descend for copper; bank before you wipe.",
   dungeon: "DUNGEON — send bots in to fight down through floors. They don't all come back.",
   rebirth: "BAN WAVE — the anti-cheat notices the farm. Reset it for permanent Scripts.",
@@ -245,7 +241,6 @@ function checkUnlocks() {
     training: s.unlocked,
     grind: f.training, // the bot-farm layer (train + deploy) opens together
     player: f.grind && s.everDropped,
-    gm: f.training && s.tickets >= 30,
     delve: f.player && dps >= 100,
     dungeon: f.delve && s.bots.pop >= 10, // needs a swarm you can afford to burn
     rebirth: s.cleared.length >= 1 || s.rebirths >= 1,
@@ -342,39 +337,6 @@ for (const slot of SLOTS) {
   $("enhSeg").appendChild(btn);
 }
 
-// ---- GM tab: account flags / admin tools ----
-for (const type of Object.keys(FLAGS)) {
-  const row = document.createElement("div");
-  row.className = "row";
-  row.innerHTML = `<span class="rowName">${FLAGS[type].label}</span><span class="rowGain">${FLAGS[type].gain}/rank</span><span class="rowStat" id="gmfr_${type}"></span><button id="gmfb_${type}"></button>`;
-  $("gmFlags").appendChild(row);
-  row.querySelector("button").addEventListener("click", e => { e.stopPropagation(); buyFlag(state, type); });
-}
-for (const type of Object.keys(UNLOCKS)) {
-  const row = document.createElement("div");
-  row.className = "row";
-  row.innerHTML = `<span class="rowName">${UNLOCKS[type].label}</span><span class="rowGain">${UNLOCKS[type].desc}</span><span class="rowStat"></span><button id="gmub_${type}"></button>`;
-  $("gmTools").appendChild(row);
-  row.querySelector("button").addEventListener("click", e => { e.stopPropagation(); buyUnlock(state, type); });
-}
-for (const type of Object.keys(UTILITY)) {
-  const row = document.createElement("div");
-  row.className = "row";
-  row.innerHTML = `<span class="rowName">${UTILITY[type].label}</span><span class="rowGain"></span><span class="rowStat" id="gmur_${type}"></span><button id="gmub2_${type}"></button>`;
-  $("gmTools").appendChild(row);
-  row.querySelector("button").addEventListener("click", e => { e.stopPropagation(); buyUtility(state, type); });
-}
-for (const type of Object.keys(bots.PRIV)) {
-  const row = document.createElement("div");
-  row.className = "row";
-  row.innerHTML = `<span class="rowName">${bots.PRIV[type].label}</span><span class="rowGain">${bots.PRIV[type].gain}/rank</span><span class="rowStat" id="gmpr_${type}"></span><button id="gmpb_${type}"></button>`;
-  $("gmPriv").appendChild(row);
-  row.querySelector("button").addEventListener("click", e => { e.stopPropagation(); bots.buyPriv(state, type); });
-}
-
-// ---- scheduler toggle ----
-$("schedToggle").addEventListener("change", () => { state.gm.schedulerOn = $("schedToggle").checked; });
-
 // ---- farming: dense zone table, built once, cells updated in render ----
 // ---- zones: bot-only, same row component as training ----
 const zoneRows = farm.zones.map((z, i) => {
@@ -468,7 +430,7 @@ const HELP = [
     body: [
       "The anti-cheat finally notices your farm and bans the bots.",
       "You LOSE the disposable bot layer — bots, training progress and copper reset to a fresh start.",
-      "You KEEP everything your character owns: gear, plusses, scrap, tickets, GM perks, scars, titles and boss progress. None of it ever resets.",
+      "You KEEP everything your character owns: gear, plusses, scrap, trophies, Armory ranks, titles and boss progress. None of it ever resets.",
       "In return you bank <b>Scripts</b> = √(training fills this run). Every Script permanently adds <b>+1% damage</b>, and Scripts never reset.",
       "Because your bots borrow your power, more damage means a faster farm too — so each Ban Wave you rebuild quicker and climb higher than before.",
       "Bank when the √ payout is worth the reset: pushing twice as long pays less than twice the Scripts.",
@@ -676,7 +638,7 @@ function tick() {
       log(`🏆 ${piece.name} dropped! +${piece.pct}% ${laneWord(piece.lane)}`);
       if (setComplete(state, state.wall)) log(`★ ${boss.set.name} SET COMPLETE — ×${(1 + SET_BONUS).toFixed(2)} damage`);
     }
-    if (f.rolls && !f.pieces.length) log(`farmed ${boss.name}: +${fmt(f.tickets)} tickets`);
+    if (f.rolls && !f.pieces.length) log(`farmed ${boss.name}`);
     if (f.rolls) save(state);
   }
   { // the Delve mines Cache idle — reach depth tracks the build's power
@@ -715,9 +677,7 @@ function render() {
   $("cpElP").textContent = fmt(dps); // Player-tab breakdown: total + its factors (law 5)
   $("atkEl").textContent = fmt(d.atk);
   $("hpsEl").textContent = d.hitsPerSec.toFixed(2);
-  $("gmEl").textContent = (gmDmgMult(state) * gmHasteMult(state)).toFixed(2);
   $("copperEl").textContent = fmt(state.copper);
-  $("ticketsEl").textContent = fmt(state.tickets);
   { // scripts chip appears once the first Ban Wave has been earned
     const show = (state.scripts || 0) > 0 || (state.rebirths || 0) > 0;
     $("scriptChip").style.display = show ? "" : "none";
@@ -736,7 +696,7 @@ function render() {
     $("copperRate").textContent = cps > 0 ? `+${fmt(cps)}/s` : "—";
   }
   { // NGU-style ticker: FREE bots (unallocated) vs capacity — allocation drains it
-    $("resBots").textContent = `${bots.freeBots(state.bots).toFixed(1)} / ${bots.capacity(state.bots, state.gm.cap)}`;
+    $("resBots").textContent = `${bots.freeBots(state.bots).toFixed(1)} / ${bots.capacity(state.bots)}`;
     $("resRate").textContent = `+${bots.createRate(state.bots).toFixed(1)}`;
   }
   $("banWaveSection").style.display = state.features.rebirth ? "" : "none";
@@ -744,7 +704,7 @@ function render() {
     const pend = pendingScripts(state);
     const btn = $("banWaveBtn");
     $("banWaveInfo").innerHTML = banArmed
-      ? `<span class="warn">wipes bots · training · copper. Keeps gear, scrap, tickets, scripts, story. Bank <b>+${fmt(pend)}</b> scripts?</span>`
+      ? `<span class="warn">wipes bots · training · copper. Keeps gear, scrap, scripts, story. Bank <b>+${fmt(pend)}</b> scripts?</span>`
       : `<b>+${fmt(pend)}</b> scripts ready (from ${fmt(totalFills(state))} training fills)` +
         ` · <b>${fmt(state.rebirths || 0)}</b> done`;
     btn.disabled = pend <= 0 && !banArmed;
@@ -754,12 +714,11 @@ function render() {
 
   // Siege readout: health remaining + time-to-breach estimate + CP/s
   {
-    $("ticketGain").textContent = "";
     if (state.boss.broken) {
       $("depth").textContent = "BREACHED";
       $("cooldown").textContent = bossHasSet(state.wall)
         ? `set ${setCount(state, state.wall)}/${PARTS.length} · farming for pieces`
-        : "farming for tickets";
+        : "farming for set pieces";
       $("record").textContent = "the door stands open";
     } else {
       const remain = boss.hp ? (state.boss.hp || 0) / boss.hp : 1;
@@ -799,42 +758,11 @@ function render() {
       `crit ×${cf.toFixed(2)} — ${(d.crit.rate * 100).toFixed(0)}% ×${d.crit.critMult.toFixed(1)}, super ×${d.crit.superMult.toFixed(1)}`;
   }
 
-  // GM tab
-  for (const type of Object.keys(FLAGS)) {
-    $(`gmfr_${type}`).textContent = `rank ${state.gm[type]}`;
-    const btn = $(`gmfb_${type}`);
-    btn.textContent = `${fmt(flagCost(type, state.gm[type]))} tickets`;
-    buyState(btn, state.tickets >= flagCost(type, state.gm[type]));
-  }
-  for (const type of Object.keys(UNLOCKS)) {
-    const btn = $(`gmub_${type}`);
-    const owned = !!state.gm[type];
-    btn.textContent = owned ? "INSTALLED" : `${fmt(UNLOCKS[type].cost)} tickets`;
-    buyState(btn, !owned && state.tickets >= UNLOCKS[type].cost);
-  }
-  for (const type of Object.keys(UTILITY)) {
-    const rank = state.gm[type];
-    const maxed = rank >= UTILITY[type].max;
-    $(`gmur_${type}`).textContent = `${rank}/${UTILITY[type].max}`;
-    const btn = $(`gmub2_${type}`);
-    btn.textContent = maxed ? "MAX" : `${fmt(utilityCost(type, rank))} tickets`;
-    buyState(btn, !maxed && state.tickets >= utilityCost(type, rank));
-  }
-  for (const type of Object.keys(bots.PRIV)) {
-    const cost = bots.privCost(state.bots, type);
-    $(`gmpr_${type}`).textContent = `rank ${bots.privRank(state.bots, type)}`;
-    const btn = $(`gmpb_${type}`);
-    btn.textContent = `${fmt(cost)} tickets`;
-    buyState(btn, state.tickets >= cost);
-  }
-
-  $("schedLine").style.display = "none"; // scheduler retired — the fight is always live
-
   if (!state.unlocked) return;
 
   // bot farm
   const b = state.bots;
-  // rig labels speak the BOTTER register; "session" stays the GM panel's word
+  // rig labels speak the BOTTER register
   const rig = [["buyCap", `multiclient +${4}`, bots.capCost(b)], ["buyCreate", "account creator +", bots.createCost(b)],
     ["buyPower", "script version +", bots.powerCost(b)], ["buySpeed", "overclock +", bots.speedCost(b)]];
   for (const [id, label, cost] of rig) { $(id).textContent = buyLabel(label, cost); buyState($(id), state.copper >= cost); }
@@ -842,7 +770,7 @@ function render() {
   const scaled = scale < 0.995 ? ` · short ${((1 - scale) * 100).toFixed(0)}%` : "";
   $("rigStats").textContent =
     `script ×${bots.botPower(b).toFixed(2)} · clock ×${bots.botSpeed(b).toFixed(2)} · lost to bans ${Math.floor(b.banned)}${scaled}`;
-  $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b, state.gm.cap)) * 100)}%`;
+  $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
 
   // allocation inputs: sync every bar's number unless being edited
@@ -884,7 +812,7 @@ function render() {
       : `trained +${b.trained.hits.toFixed(4)} hits/s (+${laneRate.toFixed(5)}/s)`;
     $(`bar${el}Info`).textContent = trained;
   }
-  $("autoEquipLine").style.display = state.gm.autoequip ? "" : "none"; // appears once the module is unlocked
+  $("autoEquipLine").style.display = ""; // v13: auto-equip is always available (its GM gate is retired)
   $("autoEquip").checked = state.gear.autoEquip !== false;
   $("autoFilter").checked = state.gear.autoFilter !== false;
   if (document.activeElement !== $("keepRarity")) $("keepRarity").value = state.gear.keepRarity;

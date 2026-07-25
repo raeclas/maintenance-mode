@@ -17,7 +17,6 @@
 import fs from "node:fs";
 import { newState } from "../state.js";
 import { getBoss } from "../bosses.js";
-import { buyFlag, buyUnlock, buyUtility, flagCost, BREAK_TICKETS } from "../gm.js";
 import { derive, SPEED_KNEE, BASE_HPS } from "../stats.js";
 import * as bots from "../bots.js";
 import * as farm from "../farm.js";
@@ -186,19 +185,11 @@ while (t < MAX_S && !broken) {
   S.boss.hp = Math.max(0, S.boss.hp - dps() * STEP);
   const gone = 1 - S.boss.hp / boss.hp;
   for (const pct of [0.1, 0.5, 0.9]) if (gone >= pct) mark(t, `W1 ${pct * 100}% gone`);
-  if (S.boss.hp <= 0) { broken = true; S.tickets += BREAK_TICKETS; mark(t, "W1 broken (EV)"); }
-  // GM spends: unlocks first (verbs), then scar cap + session cap, then flags
-  buyUnlock(S, "scheduler");
-  buyUnlock(S, "idleProc");
-  for (;;) { if (!buyUtility(S, "scar") && !buyUtility(S, "cap")) break; }
-  for (;;) {
-    const next = flagCost("dmg", S.gm.dmg) <= flagCost("haste", S.gm.haste) ? "dmg" : "haste";
-    if (!buyFlag(S, next)) break;
-  }
+  if (S.boss.hp <= 0) { broken = true; mark(t, "W1 broken (EV)"); }
 
   if (process.env.SIMDBG && t % 21600 < STEP) {
     const d = derive(S);
-    console.error(`t=${(t / 3600).toFixed(0)}h dps=${Math.round(dps())} atk=${Math.round(d.atk)} hits=${d.hitsPerSec.toFixed(2)} pop=${S.bots.pop.toFixed(1)} trainedAtk=${Math.round(S.bots.trained.atk)} gearIp=${SLOTS.map(sl => S.gear[sl] ? `${S.gear[sl].ip}+${S.gear[sl].plus}` : "-").join(",")} cu=${Math.round(S.copper)} tix=${Math.round(S.tickets)} hp%gone=${(100 * (1 - S.boss.hp / boss.hp)).toFixed(1)}`);
+    console.error(`t=${(t / 3600).toFixed(0)}h dps=${Math.round(dps())} atk=${Math.round(d.atk)} hits=${d.hitsPerSec.toFixed(2)} pop=${S.bots.pop.toFixed(1)} trainedAtk=${Math.round(S.bots.trained.atk)} gearIp=${SLOTS.map(sl => S.gear[sl] ? `${S.gear[sl].ip}+${S.gear[sl].plus}` : "-").join(",")} cu=${Math.round(S.copper)} hp%gone=${(100 * (1 - S.boss.hp / boss.hp)).toFixed(1)}`);
   }
 
   // --- observation milestones ---

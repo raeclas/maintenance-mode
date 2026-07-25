@@ -88,14 +88,13 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.ok(Math.abs(r2.dealt - cp * 5) < 1e-3); // only what remained
 }
 
-// Broken Warden: no drain; farmTick rolls on the interval + tickets
+// Broken Warden: no drain; farmTick rolls set pieces on the interval
 {
   const s = newState();
   s.boss.broken = true;
   assert.equal(pull.drain(s, 100).dealt, 0);
   const f = pull.farmTick(s, pull.FARM_INTERVAL * 3 + 1); // 3 farm kills
   assert.equal(f.rolls, 3);
-  assert.ok(s.tickets > 0);
 }
 
 // timeToKill: hp / CP; null when broken
@@ -307,9 +306,14 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.equal(s.gear.stash.length, 2);
   s.gear.autoFilter = true;
 
-  // auto-equip module: strict upgrades equip, replaced gear → stash (attachment)
+  // auto-equip is opt-in (v13: GM gate retired, defaults OFF — agency by default)
+  const off = newState();
+  assert.equal(off.gear.autoEquip, false);
+  assert.ok(!gear.routeDrop(off, { slot: "weapon", ip: 100, plus: 0, rarity: "common", affixes: [], name: "x" }).equipped);
+
+  // toggled ON: strict upgrades equip, replaced gear → stash (attachment)
   const ae = newState();
-  ae.gm.autoequip = true;
+  ae.gear.autoEquip = true;
   assert.ok(gear.routeDrop(ae, { slot: "weapon", ip: 100, plus: 0, rarity: "common", affixes: [], name: "a" }).equipped);
   const up = gear.routeDrop(ae, { slot: "weapon", ip: 200, plus: 0, rarity: "common", affixes: [], name: "b" });
   assert.ok(up.equipped && ae.gear.weapon.name === "b");        // higher ip equips
@@ -405,7 +409,7 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
 }
 
 // Ban Wave (rebirth): √ payout, player-damage mult, disposable-stratum reset,
-// attachment (gear/tickets/rig ranks survive), allocation strategy persists
+// attachment (gear/rig ranks survive), allocation strategy persists
 {
   const s = newState();
   s.bots.bars.atk.fills = [100, 0, 0, 0];
@@ -427,8 +431,8 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
 
   // set up things that MUST survive, and a farm that must reset
   s.scripts = 0; // fresh count for the bank math
-  s.tickets = 999; s.copper = 5000;
-  s.gm.dmg = 3; s.bots.powerRank = 7;           // GM perk + rig rank persist
+  s.copper = 5000;
+  s.bots.powerRank = 7;                         // rig rank persists
   s.bots.pop = 40; s.bots.trained.atk = 500; s.bots.trained.hits = 2;
   s.bots.alloc.atk = [10, 5, 0, 0]; s.bots.alloc.zones = [3, 2, 0, 0, 0]; s.bots.alloc.enh = 4;
   s.gear.stash = [{ slot: "charm", ip: 9, plus: 0, rarity: "rare", affixes: [], name: "keep" }];
@@ -442,9 +446,7 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.equal(s.bots.pop, newState().bots.pop);
   assert.equal(s.bots.trained.atk, 0);
   assert.equal(s.bots.bars.atk.fills.reduce((a, b) => a + b, 0), 0);
-  // attachment: gear, tickets, GM perks, rig ranks all survive
-  assert.equal(s.tickets, 999);
-  assert.equal(s.gm.dmg, 3);
+  // attachment: gear + rig ranks survive
   assert.equal(s.bots.powerRank, 7);
   assert.equal(s.gear.stash.length, 1);
   // allocation resets to a fresh character's seed — NOT the persisted over-
@@ -558,7 +560,7 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
 
   // system-feeding nodes contribute a multiplier (delveBonus); rank 0 = 1×
   const fresh = newState();
-  for (const key of ["overclock", "loot", "drill", "ticket"]) assert.equal(dungeon.delveBonus(fresh, key), 1);
+  for (const key of ["overclock", "loot", "drill"]) assert.equal(dungeon.delveBonus(fresh, key), 1);
   s.dungeon.cache = 1e9;
   dungeon.buy(s, "overclock");
   assert.ok(dungeon.delveBonus(s, "overclock") > 1);         // overclock now lifts ATK
@@ -648,8 +650,6 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   s.bots.bars.atk = { fills: [50, 3, 0, 0], prog: [11, 4, 0, 0], unlocked: 2 };
   s.bots.alloc.atk = [2, 1, 0, 0];
   s.bots.alloc.zones = [0, 1, 0, 0, 0];
-  s.tickets = 77;
-  s.gm.scar = 2;
   s.gear.weapon = { slot: "weapon", ip: 55, plus: 3, zone: 1, name: "t" };
   s.gear.stash = [{ slot: "charm", ip: 5, plus: 0, zone: 1, name: "u" }];
   s.boss = { hp: 123_000_000, broken: false, nearSaid: false, farmCarry: 0 };
@@ -662,8 +662,6 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.deepEqual(s2.bots.alloc.atk, [2, 1, 0, 0, 0, 0, 0]);
   assert.deepEqual(s2.bots.alloc.zones, [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   assert.equal(s2.bots.trained.atk, 56);
-  assert.equal(s2.tickets, 77);
-  assert.equal(s2.gm.scar, 2);
   assert.equal(s2.bots.pop, 4.5);
   assert.equal(s2.bots.capRank, 1);
   assert.equal(s2.copper, 1234);
@@ -731,56 +729,6 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.equal(localStorage.getItem("mm_save_corrupt"), null);
   assert.equal(saves.validSave(null), false);
   assert.equal(saves.importSave("not json"), false);
-}
-
-// GM tab: flags (era-priced, uncapped), unlocks (one-time), utility (rank caps)
-{
-  const gm = await import("../gm.js");
-  const s = newState();
-  s.tickets = 1e9;
-
-  // utility: hard rank caps (law 1) — scar/cooldown are vestigial post-drain,
-  // but buyUtility + its rank caps still hold
-  while (gm.buyUtility(s, "scar"));
-  assert.equal(s.gm.scar, gm.UTILITY.scar.max);
-  while (gm.buyUtility(s, "cooldown"));
-  while (gm.buyUtility(s, "offline"));
-  assert.equal(farm.offlineCapS(s), (12 + 6) * 3600);
-  while (gm.buyUtility(s, "cap"));
-  assert.equal(bots.capacity(s.bots, s.gm.cap), bots.CAP_BASE + 20); // +2 × 10 GM ranks
-
-  // flags: uncapped, era-priced, multipliers displayed in derive
-  assert.ok(gm.buyFlag(s, "dmg") && s.gm.dmg === 1);
-  assert.equal(gm.flagCost("dmg", 10), Math.round(gm.FLAGS.dmg.base * Math.pow(gm.FLAGS.dmg.mult, 10)));
-  s.gm.dmg = 5; s.gm.haste = 5;
-  assert.ok(Math.abs(gm.gmDmgMult(s) - 1.2) < 1e-12);
-  assert.ok(Math.abs(gm.gmHasteMult(s) - 1.1) < 1e-12);
-  const base = newState();
-  const withGm = newState();
-  withGm.gm.dmg = 5; withGm.gm.haste = 5;
-  assert.ok(Math.abs(derive(withGm).atk - derive(base).atk * 1.2) < 1e-9);
-  assert.ok(Math.abs(derive(withGm).hitsPerSec - derive(base).hitsPerSec * 1.1) < 1e-9);
-
-  // unlocks: one-time
-  assert.ok(gm.buyUnlock(s, "scheduler"));
-  assert.equal(gm.buyUnlock(s, "scheduler"), false); // already installed
-  assert.ok(gm.buyUnlock(s, "idleProc"));
-
-  const poor = newState();
-  assert.equal(gm.buyFlag(poor, "dmg"), false);
-  assert.equal(gm.buyUnlock(poor, "scheduler"), false);
-  assert.equal(gm.ticketYield(0.0000001), 1); // hopeless attempts still pay 1
-  assert.equal(gm.ticketYield(0.25), 75);     // 150 × √0.25
-
-  // server privileges: ticket-bought, stack ON TOP of copper ranks
-  const sp = newState();
-  const p0 = bots.botPower(sp.bots);
-  sp.tickets = bots.privCost(sp.bots, "power");
-  assert.ok(bots.buyPriv(sp, "power"));
-  assert.equal(sp.tickets, 0);                          // tickets deducted
-  assert.equal(sp.bots.tPower, 1);
-  assert.ok(Math.abs(bots.botPower(sp.bots) - (p0 + bots.T_POWER_PER_RANK)) < 1e-9); // stacks
-  assert.equal(bots.buyPriv(sp, "cap"), false);          // no tickets left
 }
 
 // Offline: the Warden whittles at CP (clamped by dt); broken walls farm

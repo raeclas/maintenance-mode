@@ -58,21 +58,14 @@ export const TRAININGS = {
   ],
 };
 
-// Server privileges: ticket-bought admin leverage that STACKS on top of the
-// copper rig ranks (|| 0 keeps old saves safe). See PRIV below.
-export const T_POWER_PER_RANK = 0.5;
-export const T_SPEED_PER_RANK = 0.4;
-export const T_CREATE_PER_RANK = 0.5;
-export const T_CAP_PER_RANK = 8;
-
-export function botPower(b) { return 1 + POWER_PER_RANK * b.powerRank + T_POWER_PER_RANK * (b.tPower || 0); }
-export function botSpeed(b) { return 1 + SPEED_PER_RANK * b.speedRank + T_SPEED_PER_RANK * (b.tSpeed || 0); }
-// Multiplicative: each capRank multiplies the swarm ceiling (flat priv/GM
-// bonuses ride inside the multiply). rank 28 → ~13k slots instead of 348.
-export function capacity(b, gmCap = 0) {
-  return Math.round((CAP_BASE + T_CAP_PER_RANK * (b.tCap || 0) + 2 * gmCap) * Math.pow(CAP_GROWTH, b.capRank));
+export function botPower(b) { return 1 + POWER_PER_RANK * b.powerRank; }
+export function botSpeed(b) { return 1 + SPEED_PER_RANK * b.speedRank; }
+// Multiplicative: each capRank multiplies the swarm ceiling.
+// rank 28 → ~13k slots instead of 348.
+export function capacity(b) {
+  return Math.round(CAP_BASE * Math.pow(CAP_GROWTH, b.capRank));
 }
-export function createRate(b) { return CREATE_PER_H * (1 + CREATE_PER_RANK * b.createRank + T_CREATE_PER_RANK * (b.tGen || 0)); } // per hour
+export function createRate(b) { return CREATE_PER_H * (1 + CREATE_PER_RANK * b.createRank); } // per hour
 // One bot's zone DPS. player = derived stats {atk, hitsPerSec}. Squad DPS is
 // n × this — each bot ≈ 1% of player DPS (0.1 atk × 0.1 speed) before ranks.
 export function botDps(b, player) {
@@ -97,27 +90,6 @@ export function buy(state, what) {
   if (state.copper < cost) return false;
   state.copper -= cost;
   b[what + "Rank"]++;
-  return true;
-}
-
-// Server privileges — the TICKET-bought bot lane (admin leverage the grubby
-// copper can't buy). Rendered in the GM tab; dying-server/admin register.
-// Uncapped, era-priced (exponential) so the boss→tickets→farm loop stays
-// bounded (law 1). Ranks live on state.bots (effect reads b directly).
-// Starting values, playtest-tuned.
-export const PRIV = {
-  power: { label: "priority execution", gain: "+50% bot power", field: "tPower", base: 40, mult: 1.6 },
-  speed: { label: "rate-limit lift", gain: "+40% bot speed", field: "tSpeed", base: 50, mult: 1.6 },
-  gen: { label: "auto-provisioning", gain: "+50% generation", field: "tGen", base: 80, mult: 1.7 },
-  cap: { label: "reserved sessions", gain: "+8 capacity", field: "tCap", base: 60, mult: 1.7 },
-};
-export function privRank(b, what) { return b[PRIV[what].field] || 0; }
-export function privCost(b, what) { return Math.round(PRIV[what].base * Math.pow(PRIV[what].mult, privRank(b, what))); }
-export function buyPriv(state, what) {
-  const cost = privCost(state.bots, what);
-  if (state.tickets < cost) return false;
-  state.tickets -= cost;
-  state.bots[PRIV[what].field] = privRank(state.bots, what) + 1;
   return true;
 }
 
@@ -217,7 +189,7 @@ function tickChunk(state, dtS, onEvent, rng) {
   const player = derive(state); // zone squad DPS borrows player power
 
   // creation toward capacity
-  b.pop = Math.min(capacity(b, state.gm?.cap || 0), b.pop + createRate(b) * dtH);
+  b.pop = Math.min(capacity(b), b.pop + createRate(b) * dtH);
 
   // training (private lobbies — safe): every unlocked tier runs in
   // parallel with its own squad; each bar caps at 50 fills/s

@@ -5,8 +5,7 @@
 export const DROP_CHANCE = 1 / 400;  // per kill
 export const OFFLINE_CAP_S = 12 * 3600;
 export const KILL_CAP = 50;
-// GM offline perk extends the clamp (rank-capped at +6h in gm.js)
-export function offlineCapS(state) { return OFFLINE_CAP_S + (state.gm?.offline || 0) * 3600; }
+export function offlineCapS() { return OFFLINE_CAP_S; }
 
 // Zones unlock by BOSS progress, not squad DPS — the coupling made every DPS
 // gate trivial (one bot ≈ 1% of your huge player DPS). Each region opens as
