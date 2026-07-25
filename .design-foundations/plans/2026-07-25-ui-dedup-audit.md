@@ -5,7 +5,7 @@
 **Entry stage:** Discover (neither DESIGN.md nor JOURNEY.md exists)
 **Created:** 2026-07-25
 **Started:** 2026-07-25
-**Current Phase:** 5
+**Current Phase:** 6
 
 **Pacing:** user-requested pause between every phase (context-size check
 before continuing or clearing to resume next session). Resume with
@@ -462,6 +462,32 @@ explicitly exempt and noted rather than silently passed.
 ---
 
 ## Execution log
+
+### Phase 5: Words (Gate: Standard)
+- [x] BUILD: Discovery + design + production complete (model upgraded to
+      `opus` on user instruction)
+- [x] REVIEW: PASS first time. ~150 cited numbers/formulas independently
+      re-derived against 15 source modules — no invented values, no
+      arithmetic mismatches. Two citation slips fixed by the orchestrator
+      before commit (`WIPE_AT` line pointer; the `⚑` glyph marks CLEARED
+      walls, not the frontier), plus a stale Phase 1 note the review was not
+      scoped to catch — see below.
+- [x] Committed
+Commit: f1120ed
+Cross-phase correction: Phase 1's map recorded the rig line's "lost to bans"
+as permanently 0 and vestigial. It is LIVE (`instance.js:147` increments it
+every Dungeon floor). Phase 1's note is amended IN PLACE rather than left to
+contradict Phase 5 — the same stale-claim failure mode Phase 4's reviews hit
+four times. Phase 1's `## Fact ownership` therefore has 3 corrected lines;
+everything else in the diff is additive.
+Summary: Phase 5 delivered final microcopy for all six page specs. The
+device that closes DW-5.2 across every tab: section headers own the mechanic,
+rows own only their own numbers. Reading source rather than the audit found
+EIGHT places where shipped copy is wrong about its own mechanic — a `+4`
+label for a `×1.2` multiplicative step, a Delve blurb describing the retired
+Delve's verbs, a compounding penalty written as a single hit, a soft cap
+applied but never shown, and a guideline-5 term (super-crit rate) with no
+displayed home anywhere. Seven states that had no copy at all now have it.
 
 ### Phase 4: Design system — components + meters (Gate: Full)
 - [x] BUILD: Discovery + design + production complete
