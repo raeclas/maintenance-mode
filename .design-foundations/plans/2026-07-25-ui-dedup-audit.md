@@ -5,7 +5,16 @@
 **Entry stage:** Discover (neither DESIGN.md nor JOURNEY.md exists)
 **Created:** 2026-07-25
 **Started:** 2026-07-25
-**Current Phase:** 2
+**Current Phase:** 3
+
+**Pacing:** user-requested pause between every phase (context-size check
+before continuing or clearing to resume next session). Resume with
+`/design-for-ai:build .design-foundations/plans/2026-07-25-ui-dedup-audit.md`
+— the execution log below is the resume point.
+
+**Review-model override (user instruction, 2026-07-25):** REVIEW dispatches
+run at `fable`, not the ladder's one-tier downgrade. Blind isolation
+(requirements + artifact only, no intent framing) is unchanged.
 **Phases:** 6
 
 ---
@@ -448,6 +457,22 @@ explicitly exempt and noted rather than silently passed.
 ---
 
 ## Execution log
+
+### Phase 2: Page specs, six tabs (Gate: Standard)
+- [x] BUILD: Discovery + design + production complete
+- [x] REVIEW: PASS. Two Minors fixed by the orchestrator before commit —
+      the Boss arena's conveyance list had dropped the BREACHED reveal
+      (the journey's per-wall emotional peak), and Boss was the one spec
+      not arguing its own above-fold placement.
+- [x] Committed
+Commit: 7a1ac3d
+Summary: Phase 2 delivered `## Page specs` in `internal/JOURNEY.md` — six
+entries, each built around the one decision its tab owns, with every content
+block citing the Phase 1 ownership row it draws from. Two reorders against
+the shipped DOM target measured audit findings (Player's dormant trophy/armory
+mass moved off the critical path; Dungeon's intro moved below its controls).
+Intra-tab duplicate renders are carried forward to Phase 4 as component-
+ownership calls, named rather than silently patched.
 
 ### Phase 1: Journey, IA + fact ownership (Gate: Standard)
 - [x] BUILD: Discovery + design + production complete
