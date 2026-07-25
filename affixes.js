@@ -36,8 +36,6 @@ export const AFFIXES = {
     unit: s => completedSetCount(s),            src: s => `${completedSetCount(s)} sets`,   label: v => `+${v}% ATK` },
   bleed:    { lane: "atk",   kind: "pct", dyn: true, base: 1.2, per: 0.4,  round: false, cap: 25,
     unit: s => s.failstacks || 0,               src: s => `${s.failstacks || 0} stacks`,    label: v => `+${v}% ATK` },
-  bancount: { lane: "atk",   kind: "pct", dyn: true, base: 1.5, per: 0.4,  round: false, cap: 50,
-    unit: s => (s.bots?.banned || 0) / 1000,    src: s => `${r0(s.bots?.banned || 0)} bans`, label: v => `+${v}% ATK` },
   momentum: { lane: "speed", kind: "pct", dyn: true, base: 8,   per: 2.5,  round: false, cap: 20,
     unit: s => (s.dungeon?.active ? 1 : 0),     src: s => s.dungeon?.active ? "delving" : "idle", label: v => `+${v}% haste` },
 };

@@ -13,11 +13,11 @@
   },
   {
     "t": 3600,
-    "desc": "power ×100"
+    "desc": "z2 held (Webbed Ravine)"
   },
   {
-    "t": 3600,
-    "desc": "z2 held (Webbed Ravine)"
+    "t": 4200,
+    "desc": "power ×100"
   },
   {
     "t": 4200,
@@ -48,7 +48,7 @@
     "desc": "W1 50% gone"
   },
   {
-    "t": 41400,
+    "t": 40800,
     "desc": "W1 90% gone"
   },
   {

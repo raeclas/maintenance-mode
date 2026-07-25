@@ -3,6 +3,8 @@
 // can never clobber it mid-session), _corrupt (quarantine for manual rescue).
 import { newState } from "./state.js";
 import { getBoss } from "./bosses.js";
+import { SLOTS } from "./gear.js";
+import { AFFIXES } from "./affixes.js";
 
 const KEY = "mm_save";
 
@@ -152,9 +154,25 @@ export function load(state) {
   }
   state.gear = { ...d.gear, ...(s.gear || {}) };
   if (!Array.isArray(state.gear.stash)) state.gear.stash = [];
+  // Drop affixes whose row no longer exists (v12 retired Ban Counter with the
+  // Grind ban rate). derive() already skips unknown ids, but the item card
+  // would print the raw id — strip them so old gear reads clean.
+  for (const it of [...SLOTS.map(sl => state.gear[sl]), ...state.gear.stash]) {
+    if (it?.affixes) it.affixes = it.affixes.filter(af => AFFIXES[af.id]);
+  }
   state.scrap = { ...d.scrap, ...(s.scrap || {}) }; // v9 tiered scrap wallet
   state.dungeon = { cache: s.dungeon?.cache || 0, depthBest: s.dungeon?.depthBest || 0,
     ranks: { ...d.dungeon.ranks, ...(s.dungeon?.ranks || {}) } };
+  // v12 Dungeons. The journal is permanent knowledge and must survive anything
+  // (attachment law). A run in progress does NOT survive a reload — POC has no
+  // offline instance model, so hand the staffed bots back rather than eat them.
+  state.instance = { ...d.instance, ...(s.instance || {}) };
+  state.instance.party = { ...d.instance.party, ...(s.instance?.party || {}) };
+  state.instance.journal = (s.instance?.journal && typeof s.instance.journal === "object") ? s.instance.journal : {};
+  if (state.instance.running) {
+    for (const k of Object.keys(d.instance.party)) state.bots.pop += state.instance.staffed?.[k] || 0;
+    Object.assign(state.instance, { running: false, staffed: null, floor: 0, haul: 0, mult: 1, carry: 0 });
+  }
   delete state.farm; // v8: zones are bot-only, player parking is gone
   return s;
 }

@@ -50,6 +50,7 @@
     <button data-tab="farmSec">Grind</button>
     <button data-tab="gearSec">Player</button>
     <button data-tab="dungeonSec">Delve</button>
+    <button data-tab="instanceSec">Dungeon</button>
     <button data-tab="gmSec">GM</button>
   </nav>
 
@@ -175,6 +176,39 @@
     <div id="delveCache"></div>
     <h3>Cache tree <span class="sub">— every node feeds a system</span></h3>
     <div class="rowlist" id="delveTree"></div>
+  </section>
+
+  <section id="instanceSec" class="game hidden tabpane" style="display:none">
+    <h3>Dungeon</h3>
+    <p class="sub">You send bots into a dungeon and they fight down through floors.
+    Each boss ability needs a certain number of bots assigned to block it — if it isn't
+    blocked, you deal less damage for the rest of the run. Bots get banned as you go
+    deeper, so eventually you run out and the party dies. Dying costs you most of the
+    run's loot — pull out early to keep all of it.</p>
+    <div id="instState"></div>
+    <div id="instProject" class="caption"></div>
+
+    <h3>Assign bots</h3>
+    <p class="sub">Bots assigned here are spent — you get back whoever survives.</p>
+    <div class="rowlist" id="instDuties"></div>
+
+    <div class="arena">
+      <div class="controls">
+        <span>Difficulty</span><input type="number" id="instKey" min="1" max="20" step="1" style="width:4em">
+        <span>Pull out at floor</span><input type="number" id="instBank" min="1" max="50" step="1" style="width:4em">
+      </div>
+      <div id="instKeyInfo" class="sub"></div>
+      <label class="toggleLine"><input type="checkbox" id="instProxy"> Buy proxies <span class="sub">— 250c per run, 25% fewer bots banned</span></label>
+      <div class="controls">
+        <button id="instStart">Send bots in</button>
+        <button id="instBankNow" style="display:none">Pull out now (keep loot)</button>
+      </div>
+    </div>
+
+    <h3>Boss abilities</h3>
+    <p class="sub">There's no wiki and nobody to ask. You find out what an ability does by
+    running into it.</p>
+    <div class="rowlist" id="instJournal"></div>
   </section>
 
   <section id="gmSec" class="game hidden tabpane" style="display:none">

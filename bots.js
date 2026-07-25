@@ -167,7 +167,9 @@ export function capNeeded(b, key, player) {
 }
 
 // One zone's bot farm rates for n allocated bots (kills capped at 50/s).
-// A squad below the zone's gate DPS can't hold the zone — no yield, no bans.
+// A squad below the zone's gate DPS can't hold the zone — no yield.
+// Grinding no longer bans anything: the Dungeon is the swarm's only sink, so
+// zone choice is a pure throughput decision and risk lives in one place.
 export function botZoneRates(b, zi, n, player) {
   const z = zones[zi];
   const squadDps = n * botDps(b, player);
@@ -178,7 +180,6 @@ export function botZoneRates(b, zi, n, player) {
     squadDps,
     kps,
     copperPerSec: kps * z.copper,
-    bansPerHour: held ? n * z.detection : 0,
   };
 }
 
@@ -243,10 +244,10 @@ function tickChunk(state, dtS, onEvent, rng) {
     }
   }
 
-  // farming: every held zone runs in parallel; each zone's detection bans
-  // its own squad at a rate; copper mailed in; drops roll CHANCE-BASED
-  // per kill from the zone's IP band (expected count + random remainder —
-  // exact per-kill odds at live tick sizes, EV at offline batch sizes)
+  // farming: every held zone runs in parallel; copper mailed in; drops roll
+  // CHANCE-BASED per kill from the zone's IP band (expected count + random
+  // remainder — exact per-kill odds at live tick sizes, EV at offline batch
+  // sizes). No bans here: grinding is safe, the Dungeon is where bots die.
   for (let zi = 0; zi < zones.length; zi++) {
     const n = (b.alloc.zones[zi] || 0) * scale;
     if (n <= 0 || !zoneUnlocked(state.cleared?.length, zi)) continue; // locked by boss progress
@@ -257,9 +258,6 @@ function tickChunk(state, dtS, onEvent, rng) {
     let drops = Math.floor(np) + (rng() < np - Math.floor(np) ? 1 : 0);
     const bias = lootBias(saturation(r.squadDps, zones[zi].mobHp)); // over-farm → richer loot
     while (drops-- > 0) onEvent("drop", rollItem(zones[zi], zi, rng, bias));
-    const deaths = r.bansPerHour * dtH;
-    b.pop = Math.max(0, b.pop - deaths);
-    b.banned = (b.banned || 0) + deaths; // lifetime counter (log flavor)
   }
 
   // enhancing (real odds, real copper — stops at the target plus)

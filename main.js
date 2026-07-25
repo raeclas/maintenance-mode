@@ -17,6 +17,7 @@ import { affixLabel } from "./affixes.js";
 import { banWave, pendingScripts, scriptMult, totalFills } from "./rebirth.js";
 import { grantBreakPiece, rollFarmDrop, bossHasSet, PARTS, pieceOf, ownedIdxs, ownsPiece, setComplete, setCount, SET_BONUS } from "./trophies.js";
 import * as dungeon from "./dungeon.js";
+import * as inst from "./instance.js";
 import * as enh from "./enhance.js";
 import { fmt, fmtDepth } from "./format.js";
 
@@ -194,7 +195,7 @@ if (loaded && state.unlocked && state.lastSeen) {
       if (!state.boss.broken && state.wall === state.maxWall) {
         const r = drain(state, dt);
         if (r.broke) { log(`★ W${state.wall} BREACHED while you were away`); handleBreak(); }
-        else if (r.dealt > 0) log(`offline: ${fmt(r.dealt)} integrity off ${getBoss(state.wall).name}`);
+        else if (r.dealt > 0) log(`offline: ${fmt(r.dealt)} health off ${getBoss(state.wall).name}`);
       } else if (state.boss.broken) {
         const fr = farmTick(state, dt);
         if (fr.rolls) log(`offline farm: ${fr.pieces.length} piece(s) · +${fmt(fr.tickets)} tickets`);
@@ -205,14 +206,15 @@ if (loaded && state.unlocked && state.lastSeen) {
 }
 
 // ---- tabs + progressive feature unlocks ----
-const TAB_FEATURE = { botSec: "training", farmSec: "grind", gearSec: "player", dungeonSec: "delve", gmSec: "gm" };
-const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", gmSec: "GM" };
+const TAB_FEATURE = { botSec: "training", farmSec: "grind", gearSec: "player", dungeonSec: "delve", instanceSec: "dungeon", gmSec: "gm" };
+const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", instanceSec: "Dungeon", gmSec: "GM" };
 const UNLOCK_MSG = {
   training: "TRAINING — the old bot farms. Run scripts, build a swarm.",
   grind: "GRIND — deploy the swarm on the leveling zones for copper + gear.",
   player: "PLAYER — your character. Manage gear, enhance, reforge, trophies.",
   gm: "GM — leftover admin tools. Spend the support tickets nobody answers.",
   delve: "DELVE — the character's own run. Descend for copper; bank before you wipe.",
+  dungeon: "DUNGEON — send bots in to fight down through floors. They don't all come back.",
   rebirth: "BAN WAVE — the anti-cheat notices the farm. Reset it for permanent Scripts.",
 };
 let tabsDirty = true;
@@ -245,6 +247,7 @@ function checkUnlocks() {
     player: f.grind && s.everDropped,
     gm: f.training && s.tickets >= 30,
     delve: f.player && dps >= 100,
+    dungeon: f.delve && s.bots.pop >= 10, // needs a swarm you can afford to burn
     rebirth: s.cleared.length >= 1 || s.rebirths >= 1,
   };
   for (const feat of Object.keys(cond)) {
@@ -378,7 +381,7 @@ const zoneRows = farm.zones.map((z, i) => {
   const row = document.createElement("div");
   row.className = "row";
   row.innerHTML =
-    `<span class="rowName">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP · det ${z.detection}/h</div></span>` +
+    `<span class="rowName">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP</div></span>` +
     `<span class="rowGain">${fmt(z.copper)}c/kill<div class="sub">IP ${fmt(z.ipLo)}–${fmt(z.ipHi)}</div></span>` +
     `<span class="rowAlloc"></span>` +
     `<span class="rowStat" id="zs${i}"></span>` +
@@ -503,6 +506,57 @@ for (const key of Object.keys(dungeon.UPGRADES)) {
   $("delveTree").appendChild(row);
   row.querySelector("button").addEventListener("click", () => { dungeon.buy(state, key); });
 }
+
+// ---- Dungeon: party board + journal (built once) ----
+const dutyInputs = {}; // mech id → input element, synced in render
+// Duty rows mirror the training/zone row grammar so the board reads as the
+// same instrument, not a new one. Commit is ±/max, not a bar — these bots die.
+for (const m of inst.MECHANICS) {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<span class="rowName">${m.label}<div class="sub">Blocked by ${m.duty} bots. Not blocked = −${Math.round(m.pen * 100)}% damage.</div></span>` +
+    `<span class="rowGain" id="idg_${m.id}"></span>` +
+    `<span class="rowAlloc"><button data-d="-1">−</button><input type="number" min="0" step="1" style="width:4em"><button data-d="1">+</button><button data-m>max</button><button data-z>0</button></span>` +
+    `<span class="rowStat" id="ids_${m.id}"></span>`;
+  const input = row.querySelector("input");
+  const setParty = n => {
+    if (state.instance.running) return; // the party is locked once they're inside
+    const others = inst.DUTIES.reduce((s, d) => s + (d === m.duty ? 0 : state.instance.party[d] || 0), 0);
+    state.instance.party[m.duty] = Math.max(0, Math.min(Math.floor(n) || 0, Math.floor(state.bots.pop) - others));
+  };
+  row.querySelector(".rowAlloc").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.d) setParty((state.instance.party[m.duty] || 0) + Number(b.dataset.d));
+    else if (b.dataset.m !== undefined) setParty(Infinity);
+    else setParty(0);
+  });
+  input.addEventListener("change", () => setParty(Number(input.value)));
+  dutyInputs[m.id] = input;
+  $("instDuties").appendChild(row);
+
+  const jrow = document.createElement("div");
+  jrow.className = "row";
+  jrow.id = `ij_${m.id}`;
+  jrow.innerHTML = `<span class="rowName" id="ijn_${m.id}"></span><span class="rowStat" id="ijs_${m.id}"></span>`;
+  $("instJournal").appendChild(jrow);
+}
+$("instKey").addEventListener("change", () => {
+  state.instance.key = Math.max(1, Math.min(20, Math.floor(Number($("instKey").value)) || 1));
+});
+$("instBank").addEventListener("change", () => {
+  state.instance.bankAt = Math.max(1, Math.min(50, Math.floor(Number($("instBank").value)) || 1));
+});
+$("instProxy").addEventListener("change", () => { state.instance.proxy = $("instProxy").checked; });
+$("instStart").addEventListener("click", () => {
+  if (!inst.start(state)) return;
+  log(`sent ${inst.partyCost(state.instance)} bots into the dungeon at difficulty ${state.instance.key}`);
+});
+$("instBankNow").addEventListener("click", () => {
+  if (!state.instance.running) return;
+  const f = state.instance.floor, items = inst.finish(state, 1);
+  log(`pulled out at floor ${f} — kept ${items.length} item(s)`);
+});
 
 $("stashToggle").addEventListener("click", () => {
   const l = $("stashList");
@@ -630,6 +684,13 @@ function tick() {
     state.dungeon.cache += dungeon.cachePerSec(state, g) * dt;
     state.dungeon.depthBest = Math.max(state.dungeon.depthBest, dungeon.reachDepth(state, g));
   }
+  if (state.instance.running) { // Dungeon: floors resolve, bots burn, journal writes itself
+    const ev = inst.tick(state, charDps(), dt);
+    for (const m of ev?.unanswered || []) log(`${m.label} wasn't blocked — you're dealing ${Math.round(m.pen * 100)}% less damage`);
+    if (ev?.banned >= 1) log(`${Math.floor(ev.banned)} bot(s) got banned in the dungeon`);
+    if (ev?.wiped) { log(`the party died on floor ${state.instance.floor} — dropped ${ev.lost} item(s), salvaged ${ev.items.length}`); save(state); }
+    else if (ev?.banked) { log(`pulled out at floor ${state.instance.floor} — kept ${ev.items.length} item(s)`); save(state); }
+  }
   if (state.unlocked) checkUnlocks();
   if (now - lastSave > 5000) { lastSave = now; save(state); }
 }
@@ -691,7 +752,7 @@ function render() {
     btn.classList.toggle("armed", banArmed);
   }
 
-  // Siege readout: integrity remaining + time-to-breach estimate + CP/s
+  // Siege readout: health remaining + time-to-breach estimate + CP/s
   {
     $("ticketGain").textContent = "";
     if (state.boss.broken) {
@@ -704,7 +765,7 @@ function render() {
       const remain = boss.hp ? (state.boss.hp || 0) / boss.hp : 1;
       $("depth").textContent = `${(remain * 100).toFixed(1)}%`;
       $("cooldown").textContent = `time to breach: ${ttkText(timeToKill(state))}`;
-      $("record").textContent = `integrity ${fmt(state.boss.hp)} / ${fmt(boss.hp)} · CP ${fmt(dps)}/s`;
+      $("record").textContent = `health ${fmt(state.boss.hp)} / ${fmt(boss.hp)} · CP ${fmt(dps)}/s`;
     }
   }
   { // wall progression + wall selector (switch to a cleared wall to farm it)
@@ -778,9 +839,9 @@ function render() {
     ["buyPower", "script version +", bots.powerCost(b)], ["buySpeed", "overclock +", bots.speedCost(b)]];
   for (const [id, label, cost] of rig) { $(id).textContent = buyLabel(label, cost); buyState($(id), state.copper >= cost); }
   const scale = bots.effScale(b);
-  const scaled = scale < 0.995 ? ` · short ${((1 - scale) * 100).toFixed(0)}% (bans)` : "";
+  const scaled = scale < 0.995 ? ` · short ${((1 - scale) * 100).toFixed(0)}%` : "";
   $("rigStats").textContent =
-    `script ×${bots.botPower(b).toFixed(2)} · clock ×${bots.botSpeed(b).toFixed(2)} · banned ${Math.floor(b.banned)}${scaled}`;
+    `script ×${bots.botPower(b).toFixed(2)} · clock ×${bots.botSpeed(b).toFixed(2)} · lost to bans ${Math.floor(b.banned)}${scaled}`;
   $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b, state.gm.cap)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
 
@@ -860,7 +921,7 @@ function render() {
     } else {
       const sat = farm.saturation(zr.squadDps, z.mobHp), bias = farm.lootBias(sat);
       const satTerm = bias > 0 ? ` · <span class="sat">SAT ×${sat.toFixed(1)} → +${bias} bands</span>` : "";
-      stat.innerHTML = `${zr.kps.toFixed(2)} kills/s${zr.kps >= farm.KILL_CAP ? " · CAP" : ""} · ${fmt(zr.copperPerSec)}c/s · ${zr.bansPerHour.toFixed(2)} bans/h${satTerm}`;
+      stat.innerHTML = `${zr.kps.toFixed(2)} kills/s${zr.kps >= farm.KILL_CAP ? " · CAP" : ""} · ${fmt(zr.copperPerSec)}c/s${satTerm}`;
     }
     // kill-cycle bar: integrate phase incrementally (speed = kps, one fill per
     // kill). NOT frac(now×kps) — that spins wildly whenever kps drifts (pop
@@ -959,8 +1020,62 @@ function render() {
     }
   }
 
+  renderInstance();
   if (stashDirty) renderStash();
   if (armoryDirty) renderArmory();
+}
+
+// The party board. Every term the run resolves against is on screen BEFORE the
+// commit — projected depth, coverage need, ban rate. Sacrifice must never be a
+// bet on hidden numbers.
+function renderInstance() {
+  const i = state.instance, need = inst.needPerMechanic(i.key), live = inst.liveMechanics(i.key);
+  const committed = i.running ? i.staffed : i.party;
+  if (document.activeElement !== $("instKey")) $("instKey").value = i.key;
+  if (document.activeElement !== $("instBank")) $("instBank").value = i.bankAt;
+  $("instProxy").checked = i.proxy;
+
+  if (i.running) {
+    $("instState").innerHTML = `On floor <b>${i.floor}</b> · <b>${i.haul}</b> item(s) collected so far · ` +
+      `dealing <span class="${i.mult < 0.6 ? "warn" : "sat"}">${Math.round(i.mult * 100)}% damage</span> · pulling out at floor ${i.bankAt}`;
+    $("instProject").textContent = `${Math.floor(inst.partyCost({ party: committed }))} bots still alive · ` +
+      `losing about ${(inst.banRate(i.key, i.floor + 1, i.proxy) * 100).toFixed(0)}% of them per floor`;
+  } else {
+    const proj = inst.projectDepth(state), cost = inst.partyCost(i);
+    $("instState").innerHTML = `Difficulty <b>${i.key}</b> — <b>${live.length}</b> ${live.length === 1 ? "ability" : "abilities"} to block, ` +
+      `<b>${need}</b> ${need === 1 ? "bot" : "bots"} each. Deepest floor so far: <b>${i.best || 0}</b>`;
+    $("instProject").textContent = cost
+      ? `Sending ${cost} bots. They should reach about floor ${proj} before too many are banned.`
+      : `Assign some bots below to see how deep they'd get.`;
+  }
+  $("instKeyInfo").textContent = `Higher difficulty = more abilities to block and better loot. ` +
+    `If the party dies you keep ${Math.round(inst.WIPE_KEEP * 100)}% of the loot — difficulty never drops.`;
+  const startBtn = $("instStart");
+  startBtn.style.display = i.running ? "none" : "";
+  $("instBankNow").style.display = i.running ? "" : "none";
+  if (!i.running) buyState(startBtn, inst.canStart(state));
+
+  for (const m of inst.MECHANICS) {
+    const n = Math.floor(committed?.[m.duty] || 0); // whole bodies only — same rule the run uses
+    const isLive = live.includes(m), open = inst.dutyUnlocked(state, m);
+    const el = dutyInputs[m.id];
+    if (document.activeElement !== el) el.value = i.party[m.duty] || 0;
+    el.disabled = i.running || !open;
+    $(`idg_${m.id}`).innerHTML = open
+      ? (isLive ? `needs <b>${need}</b> bots` : `<span class="muted">doesn't appear at difficulty ${i.key}</span>`)
+      : `<span class="muted">needs script version ${m.gate}+</span>`;
+    $(`ids_${m.id}`).innerHTML = isLive && open
+      ? `<span class="${n >= need ? "sat" : "warn"}">${n} ${i.running ? "still alive" : "assigned"}, ${need} needed — ${n >= need ? "blocked" : "NOT BLOCKED"}</span>`
+      : `${n} assigned`;
+
+    const j = i.journal[m.id];
+    $(`ijn_${m.id}`).innerHTML = j
+      ? `${m.label}<div class="sub">Assign ${m.duty} bots to block it. Unblocked it costs you ${Math.round(m.pen * 100)}% damage.</div>`
+      : `<span class="muted">Unknown — you haven't run into this one yet</span>`;
+    $(`ijs_${m.id}`).innerHTML = !j ? "" : j.solved
+      ? `<span class="sat">you've blocked this</span>`
+      : `<span class="warn">seen, never blocked</span>`;
+  }
 }
 
 if (DEV) {

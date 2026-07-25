@@ -26,6 +26,7 @@ const dungeon = await import("../dungeon.js");
 const enh = await import("../enhance.js");
 const armory = await import("../armory.js");
 const crits = await import("../crits.js");
+const inst = await import("../instance.js");
 const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripted rng
 
 // Stats: formula lock — base CP folds in the ×1.16 crit factor
@@ -168,7 +169,8 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.ok(s4.bots.bars.speed.fills[0] > 0);  // lane still churns fills
 }
 
-// Bots: per-zone squads, squad-DPS gates, chance drops, per-zone bans
+// Bots: per-zone squads, squad-DPS gates, chance drops. Grinding NEVER bans —
+// the Dungeon is the swarm's only sink.
 {
   const s = newState();
   s.bots.pop = 8;
@@ -181,15 +183,16 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   // z2 gate 120: 3 bots can't clear it (per-bot DPS ≪ gate) → squad can't hold
   const r2 = bots.botZoneRates(s.bots, 1, 3, p);
   assert.ok(3 * perBot < farm.zones[1].gate);
-  assert.ok(!r2.held && r2.kps === 0 && r2.bansPerHour === 0);
+  assert.ok(!r2.held && r2.kps === 0);
   assert.equal(bots.gateNeeded(s.bots, 1, p), Math.ceil(farm.zones[1].gate / perBot));
   const r1 = bots.botZoneRates(s.bots, 0, 5, p); // held: gate 0
   assert.ok(r1.held);
-  const expBans = 5 * z1.detection; // only the held zone burns
+  const pop0 = s.bots.pop;
   const drops = [];
   bots.tick(s, 3600, (kind, item) => { if (kind === "drop") drops.push(item); }, () => 0.99);
   assert.ok(Math.abs(s.copper - r1.copperPerSec * 3600) < r1.copperPerSec * 3600 * 0.02);
-  assert.ok(Math.abs(s.bots.banned - expBans) < expBans * 0.25);
+  assert.equal(s.bots.banned, 0);        // an hour of grinding costs zero accounts
+  assert.ok(s.bots.pop >= pop0);         // the swarm only grows out here
   // rng 0.99: only whole expected drops materialize — np/chunk = 5×60/400 = 0.75 → 0
   assert.equal(drops.length, 0);
   const s2 = newState();
@@ -896,6 +899,157 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   const s2 = newState();
   saves.load(s2);
   assert.equal(s2.armory["weapon:1"], 12);
+  localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
+}
+
+// Dungeon: coverage is the wall — staffed duties answer, short ones don't
+{
+  const need = inst.needPerMechanic(3); // ceil(3/2) = 2
+  assert.equal(need, 2);
+  const covered = inst.resolveFloor({ interrupt: 2, dispel: 2, adds: 2 }, 3, 1, false);
+  assert.equal(covered.unanswered.length, 0);
+  assert.equal(covered.mult, 1);
+  const short = inst.resolveFloor({ interrupt: 2, dispel: 0, adds: 2 }, 3, 1, false);
+  assert.deepEqual(short.unanswered.map(m => m.id), ["dispel"]);
+  assert.ok(Math.abs(short.mult - 0.90) < 1e-9); // one −10% mechanic
+}
+
+// Dungeon: key gates how many mechanics are live at all
+{
+  assert.equal(inst.liveMechanics(1).length, 1);
+  assert.equal(inst.liveMechanics(3).length, 3);
+  assert.equal(inst.liveMechanics(99).length, inst.MECHANICS.length); // never exceeds the pool
+}
+
+// Dungeon: attrition eats the party, proxy shaves the rate, cap holds
+{
+  const r = inst.resolveFloor({ interrupt: 10, dispel: 10, adds: 10 }, 1, 1, false);
+  assert.ok(r.lost.interrupt > 0);                       // bots are SPENT, always
+  assert.ok(inst.banRate(5, 3, true) < inst.banRate(5, 3, false)); // proxy mitigates
+  assert.ok(inst.banRate(20, 40, false) <= inst.BAN_CAP);          // never runaway
+  const empty = inst.resolveFloor({ interrupt: 0, dispel: 0, adds: 0 }, 1, 1, false);
+  assert.equal(empty.lost.interrupt, 0);                 // can't ban what isn't there
+}
+
+// Dungeon: attrition must not strip a WHOLE bot on floor 1 (regression — ceil()
+// rounding made every run collapse to unanswered on the first floor)
+{
+  const s = newState();
+  s.bots.pop = 40;
+  s.instance.key = 3;
+  s.instance.bankAt = 99;
+  s.instance.party = { interrupt: 2, dispel: 2, adds: 2 }; // exactly the need
+  inst.start(s);
+  const ev = inst.tick(s, 1e6, inst.floorTime(1) + 0.01); // resolve floor 1 only
+  assert.equal(ev.unanswered.length, 0, "a fully-staffed party must clear floor 1 answered");
+  assert.ok(s.instance.mult === 1);
+  assert.ok(inst.projectDepth(s) > 1, "and it must reach past floor 1");
+}
+
+// Dungeon: sacrifice buys depth — more bots is deeper, and it's deterministic
+{
+  const s = newState();
+  s.instance.key = 1;
+  s.instance.party = { interrupt: 1, dispel: 0, adds: 0 };
+  const shallow = inst.projectDepth(s);
+  s.instance.party = { interrupt: 12, dispel: 0, adds: 0 };
+  const deep = inst.projectDepth(s);
+  assert.ok(deep > shallow, "burning more accounts must reach deeper");
+  assert.equal(inst.projectDepth(s), deep); // no RNG — the projection can't lie
+}
+
+// Dungeon: the run — bots leave the pool, survivors come back, haul banks
+{
+  const s = newState();
+  s.bots.pop = 20;
+  s.instance.key = 1;
+  s.instance.bankAt = 2;
+  s.instance.party = { interrupt: 6, dispel: 0, adds: 0 };
+  assert.ok(inst.start(s));
+  assert.equal(s.bots.pop, 14);          // committed bots are out of the swarm
+  assert.ok(s.instance.running);
+  const before = s.bots.banned;
+  inst.tick(s, 1e6, 60);                 // huge CP: blows through both floors
+  assert.equal(s.instance.running, false);
+  assert.ok(s.bots.banned > before);     // attrition fed the one ban ledger
+  assert.ok(s.bots.pop > 14 && s.bots.pop < 20); // survivors returned, dead ones didn't
+  assert.equal(s.instance.staffed, null);
+}
+
+// Dungeon: dying is a loot PENALTY, not a wipe-out — you keep WIPE_KEEP of it
+{
+  const s = newState();
+  s.bots.pop = 40;
+  s.instance.key = 3;
+  s.instance.bankAt = 99;                 // never pulls out — this run must die
+  s.instance.party = { interrupt: 3, dispel: 3, adds: 3 };
+  inst.start(s);
+  const ev = inst.tick(s, 1e6, 600);
+  assert.ok(ev.wiped);
+  assert.ok(ev.items.length > 0, "a dead party still comes home with something");
+  assert.ok(ev.lost > 0, "but it drops most of the haul");
+  assert.ok(ev.items.length < ev.items.length + ev.lost);
+  assert.ok(s.instance.best > 0, "depth reached counts even on a loss");
+}
+
+// Grind: the Ban Counter affix is gone, and old items carrying it load clean
+{
+  assert.equal(affixes.AFFIXES.bancount, undefined);
+  assert.ok(!affixes.AFFIX_IDS.includes("bancount"));
+  const s = newState();
+  localStorage.setItem("mm_save", JSON.stringify({
+    v: 11, unlocked: true, boss: { hp: 5 },
+    gear: { weapon: { slot: "weapon", ip: 100, plus: 0, rarity: "rare", zone: 1, name: "x",
+      affixes: [{ id: "bancount", tier: 1, value: 2 }, { id: "atkPct", tier: 1, value: 5 }] }, stash: [] },
+  }));
+  saves.load(s);
+  assert.deepEqual(s.gear.weapon.affixes.map(a => a.id), ["atkPct"]); // retired row stripped
+  localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
+}
+
+// Dungeon: the journal writes itself on a wipe and is permanent knowledge
+{
+  const s = newState();
+  s.bots.pop = 40;
+  s.instance.key = 3;                    // all three live, none staffed
+  s.instance.bankAt = 99;
+  s.instance.party = { interrupt: 1, dispel: 0, adds: 0 };
+  inst.start(s);
+  inst.tick(s, 1e6, 120);
+  assert.ok(s.instance.journal.dispel?.seen, "a wipe teaches the mechanic that beat you");
+  assert.equal(s.instance.journal.dispel.solved, false);
+  assert.equal(s.instance.running, false); // penalty stack wiped the party
+  // knowledge survives a save round-trip (attachment law)
+  saves.save(s);
+  const s2 = newState();
+  saves.load(s2);
+  assert.ok(s2.instance.journal.dispel.seen);
+  localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
+}
+
+// Dungeon: a run in progress never survives a reload with the bots eaten
+{
+  const s = newState();
+  s.bots.pop = 20;
+  s.instance.party = { interrupt: 5, dispel: 0, adds: 0 };
+  inst.start(s);
+  assert.equal(s.bots.pop, 15);
+  saves.save(s);
+  const s2 = newState();
+  saves.load(s2);
+  assert.equal(s2.instance.running, false);
+  assert.equal(s2.bots.pop, 20); // staffed bots handed back, not lost to a reload
+  localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
+}
+
+// Dungeon: old saves backfill the instance block cleanly
+{
+  const s = newState();
+  localStorage.setItem("mm_save", JSON.stringify({ v: 11, boss: { hp: 5 }, unlocked: true }));
+  saves.load(s);
+  assert.equal(s.instance.key, 1);
+  assert.deepEqual(s.instance.journal, {});
+  assert.equal(s.instance.running, false);
   localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
 }
 
