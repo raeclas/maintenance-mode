@@ -5,28 +5,37 @@ Captured from the live game at **375px / 2× DPI, full page**, via
 `npm run shots` (`internal/shot.mjs` — headless Edge over CDP, zero deps).
 Re-run it after any UI change; the PNGs are gitignored.
 
-Build audited: `bcf4ecc` on `staging`.
+Audited at `bcf4ecc`; **reconciled at `82d2d99`** after the GM tab and the
+ticket economy were retired (see below).
 
 ---
 
-## The plan said six tabs. There are seven.
+## What the audit changed before the design work even started
 
-`GM` was omitted from the plan's surface list. It is a full tab with three
-sections and fourteen purchasable rows, and it has the worst layout
-inconsistency of any surface. The plan's Phase 2 and Phase 6 counts must be
-seven, not six.
+The capture found a seventh tab the plan had omitted — `GM` — and reading it
+surfaced four purchases selling upgrades for mechanics the idle-battler rework
+had already deleted. That escalated past a design finding, and `82d2d99`
+retired the GM tab and the whole ticket economy outright, pending a
+meta-currency redesign.
+
+**So the surface count went six → seven → back to six.** Boss, Training, Grind,
+Player, Delve, Dungeon. The GM findings below are kept as a record of why the
+tab was cut, marked RETIRED — they are not work items.
+
+A new surface will arrive when the meta currency is redesigned. Expect to add
+one page spec then rather than re-running the whole plan.
 
 ---
 
 ## Global
 
-### G1. Horizontal overflow on every tab — 459px at a 375px viewport
+### G1. Horizontal overflow on every tab — 414px at a 375px viewport
 
-Measured by the capture script on all seven tabs: `scrollWidth 459px > 375px`.
-84px of overflow, so the whole page pans sideways on a phone. Cause is the
-seven-button tab nav, which neither wraps nor scrolls; **`GM` is clipped at the
-right edge on every screen**. The current build fails the plan's DW-6.3 before
-any redesign work starts.
+Measured by the capture script on every tab. It was `459px` with seven tabs;
+retiring GM brought it to **`414px`, still 39px over**. So this was never a
+"one tab too many" problem — the tab nav neither wraps nor scrolls, and six
+buttons don't fit either. The whole page pans sideways on a phone, and the
+build fails the plan's DW-6.3 before any redesign work starts.
 
 ### G2. Dormant content renders at the same weight as live content
 
@@ -39,10 +48,10 @@ captures:
 | Player → Armory | 45 cells (15 zones × 3 slots) | all rank 0, all "+0.00%" |
 | Grind → zones | 10 of 15 | `[LOCKED]` |
 | Training → tiers | 11 of 13 | `locked` |
-| GM → rows | 10 of 14 | unaffordable at 40 tickets |
 
 ~136 items drawn at full detail to communicate nothing yet. Nothing in the
 visual language separates "you have this" from "this exists and you don't".
+(GM contributed 10 more before it was retired; the 136 above excludes it.)
 
 ### G3. 21 dead allocation controls
 
@@ -57,14 +66,15 @@ repetition is what makes those two tabs read as noise.
 the gain text floats right at a different vertical offset than the row name, the
 allocation control wraps onto its own line, and the status line lands
 left-aligned below it. One row becomes four misaligned fragments. Worst on
-Dungeon, visible on Training, Grind and GM.
+Dungeon, visible on Training and Grind.
 
-### G5. Buy buttons are the loudest element on every spend surface
+### G5. Buy buttons are the loudest element on a spend surface
 
-Delve and GM stretch their cost buttons to ~470px for a two-word label
-("20 Cache", "60 tickets"), so **price outshouts what you are buying**. Widths
-are content-sized, so the column edge is ragged. GM then uses three different
-button sizes for the same action across its three sections.
+Delve stretches its cost buttons to ~470px for a two-word label ("20 Cache"),
+so **price outshouts what you are buying**, and content-sized widths leave the
+column edge ragged. Delve is the only spend surface left now that GM is gone —
+but the same component will be reused by whatever the meta currency becomes, so
+the spec matters more than the single current instance.
 
 ### G6. Cross-tab duplication of Combat Power
 
@@ -120,36 +130,28 @@ The three-statement problem, confirmed and worse at phone width:
    `Unknown — you haven't run into this one yet` — four lines of vertical space
    carrying zero information.
 
-### GM
+### GM — RETIRED in `82d2d99`
+Kept as the record of why the tab was cut, not as work.
+
 Three sections, **three different row layouts for the same "buy a thing"
 action**: Account flags (name / gain / rank / full-width button), Admin tools
 (narrow wrapped name / description / small square button), Utility
-(name+delta / progress / full-width button). Name column is too narrow, so
-`idle encounter processing` wraps to three lines. Affordability via button fill
-is the one signal that works well.
+(name+delta / progress / full-width button). Name column too narrow, so
+`idle encounter processing` wrapped to three lines. Affordability via button
+fill was the one signal that worked well — worth carrying into the meta-currency
+redesign.
 
----
+What actually killed it: four purchases sold upgrades for mechanics the
+idle-battler rework (`2aac2d2`) had already deleted — `scheduler` (150 tickets,
+"auto-fires attempts on cooldown"), `idleProc` (400, "attempts resolve while
+away"), `cooldown` ("encounter lockout −5s") and `scar` ("scar cap +1%"). No
+gameplay code read `gm.scheduler`, `gm.idleProc`, `gm.cooldown` or `gm.scar`, so
+tickets spent there bought nothing. Since tickets had no sink outside GM, the
+tab and the currency were retired together.
 
-## Not a design finding: four GM purchases are dead
-
-Surfaced by the audit, but a correctness bug, not a layout one. The idle-battler
-rework (`2aac2d2`) deleted attempts, cooldowns and scars. Four GM rows still
-sell upgrades for them:
-
-| Row | Cost | Sells |
-|---|---|---|
-| `scheduler` | 150 tickets | "auto-fires attempts on cooldown while online" |
-| `idleProc` | 400 tickets | "attempts resolve while away (offline-clamped)" |
-| `cooldown` | 40 base ×1.8, max 6 | "encounter lockout −5s" |
-| `scar` | 200 base ×2.5, max 3 | "scar cap +1%" |
-
-Verified: no gameplay code reads `gm.scheduler`, `gm.idleProc`, `gm.cooldown` or
-`gm.scar`. The only reference outside `gm.js` is `main.js:376`, a toggle writing
-`state.gm.schedulerOn`, which nothing consumes. Tickets spent here buy nothing.
-
-Fix is a separate change from this audit — either retire the rows or repoint
-them at the idle-battler (e.g. offline drain rate, farm cadence). Flagged, not
-fixed.
+**Carry into the redesign:** affordability-by-button-fill worked; one row
+grammar per action, not three; and the currency needs a sink that exists before
+the faucet ships.
 
 ---
 
@@ -157,7 +159,7 @@ fixed.
 
 `npm run shots` → `internal/shots/` (gitignored):
 `boss-375` · `training-375` · `grind-375` · `player-375` · `delve-375` ·
-`dungeon-375` · `gm-375` · `dungeon-running-375`
+`dungeon-375` · `dungeon-running-375`
 
 The script seeds state before capturing so no tab renders as an empty shell, and
 reports `scrollWidth` per tab so overflow is measured rather than eyeballed.

@@ -10,20 +10,40 @@ slightly under the 12h–2d target — deep Wardens stretch far longer.
 All on `staging` (Pages serves it); **`main` lags 57 commits** pending user
 approval — fast-forward main once the current staging build is approved.
 
-Tabs, in unlock order: **Boss · Training · Grind · Player · Delve · Dungeon
-· GM**.
+Tabs, in unlock order: **Boss · Training · Grind · Player · Delve · Dungeon**.
+(GM retired in `82d2d99` — see below.)
 
-**Next session: the UI de-duplication audit.** The design plan is written and
-CHECK-passed at `.design-foundations/plans/2026-07-25-ui-dedup-audit.md`
-(6 phases, Standard track, `design-for-ai` plugin). Resume with:
+### RETIRED in `82d2d99`: the GM tab + the whole ticket economy
+The UI audit found four GM purchases selling upgrades for mechanics the
+idle-battler rework had already deleted (`scheduler`, `idleProc`, encounter
+lockout, scar cap) — tickets spent on them bought nothing. Tickets had no sink
+outside GM, so both went together. **The meta currency is being redesigned from
+scratch; that work is unstarted.**
 
-```
-/design-for-ai:mock .design-foundations/plans/2026-07-25-ui-dedup-audit.md
-```
+Consequences now live in the build:
+- Wall breaks and farm ticks no longer pay tickets. Farming a broken Warden is
+  purely a set-piece roll.
+- `gm.cap` no longer widens bot capacity; `gm.offline` no longer extends the
+  offline clamp. Server privileges (`tPower/tSpeed/tGen/tCap`) are gone.
+- **Auto-equip lost its GM gate and now defaults OFF** — a plain opt-in toggle
+  in the gear filter. Deliberate: "no auto-equip, agency to build" is a locked
+  decision, and inheriting it for free would have silently reversed it.
+- The Delve's "support backlog" node (+% tickets) is gone; save migration
+  carries over only ranks the tree still has.
+- Sim unaffected: W1 still 11.8h, `baseline.json` unchanged.
 
-That renders a cheap prototype and gates on user sign-off before
-`/design-for-ai:build` executes the phases. Do NOT run `build` first — it
-needs the mock's go/no-go.
+**Next session: execute Phase 1 of the UI de-duplication plan.** The plan is
+written, CHECK-passed and reconciled at
+`.design-foundations/plans/2026-07-25-ui-dedup-audit.md` (6 phases, Standard
+track, `design-for-ai` plugin). The current state is already MEASURED — see
+`internal/UI-AUDIT.md`; Phase 1 starts from it rather than re-deriving it.
+
+Phase 1 produces `internal/JOURNEY.md`: Job, Journey, IA, and the fact-ownership
+map (every displayed fact → exactly one owning tab, plus each row's STATE —
+live / dormant / locked, which is DW-1.5 and the audit's biggest finding).
+
+`npm run shots` re-captures all six tabs + the Dungeon mid-run at 375px
+whenever you need current pixels.
 
 Three deviations from the plugin's defaults are recorded in the plan and must
 be honored by every dispatch:
@@ -128,11 +148,18 @@ comes from absence, not decay. No glitch, corruption, or broken frames.
 
 ## Next-session queue (in rough priority; each runs feature-pass first)
 
-0. **UI visual audit with the `design-for-ai` plugin** — the user's stated
-   next step. Do this before more feature work.
+0. **UI de-dup plan, Phase 1** (see above). Audit is DONE; the plan is
+   reconciled and ready to execute.
+0b. **Meta-currency redesign** — GM and tickets are retired and nothing replaces
+   them yet. Boss breaks currently pay no meta reward at all, so this is a real
+   hole in the reward loop, not just a missing tab. Carry forward from the dead
+   GM: affordability signalled by button fill, ONE row grammar per action, and
+   a sink that exists before the faucet ships.
 1. **Playtest the Dungeon POC**, then iterate or cut. Everything below assumes
    it survives.
-2. **Approve/iterate current staging build** → ff main (57 commits waiting).
+2. **Approve/iterate current staging build** → ff main (60+ commits waiting,
+   none of it playtested — Armory, design-system stages, the idle-battler
+   rework, the Dungeon POC, ban-free Grind, and now the GM/ticket removal).
 3. **Dungeon 2a-2: named boss loot.** Per-boss Armory entries so running THAT
    boss means something ("I'm running the Nave for a charm"). The single
    biggest missing piece — right now dungeon loot is generic rolls.
@@ -167,7 +194,14 @@ consumable, which is where ban mitigation finally has a reason to exist.)
   the Delve idle rework deleted. It always resolves to +0% haste and always
   displays "idle", while still occupying a roll slot. Either repoint it at the
   Dungeon (`state.instance.running` is the obvious target) or retire the row
-  like Ban Counter was.
+  like Ban Counter was. **Still outstanding.**
+- **Stale element references are the recurring failure mode.** Removing markup
+  while leaving a `$("id")` lookup in the render throws, and the guard in
+  gameLoop swallows it — so everything below that line silently stops updating.
+  It happened again in `82d2d99` (`ticketGain` blanked the whole Boss readout).
+  After any markup removal, run this cross-check:
+  `python` over `index.html` ids vs every `$("...")` in `main.js`. Zero
+  mismatches is the bar.
 - At ×600 dev speed the Dungeon's log lines (ability unblocked, bots banned,
   party died) get flushed out of the log by Grind drop spam. Suggests the
   Dungeon wants its own feedback surface rather than sharing the log — judge
