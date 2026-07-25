@@ -5,7 +5,7 @@
 **Entry stage:** Discover (neither DESIGN.md nor JOURNEY.md exists)
 **Created:** 2026-07-25
 **Started:** 2026-07-25
-**Current Phase:** 3
+**Current Phase:** 4
 
 **Pacing:** user-requested pause between every phase (context-size check
 before continuing or clearing to resume next session). Resume with
@@ -457,6 +457,34 @@ explicitly exempt and noted rather than silently passed.
 ---
 
 ## Execution log
+
+### Phase 3: Design DNA + tokens + type + color (Gate: Full)
+- [x] BUILD: Discovery + design + production complete
+- [x] REVIEW: fail -> PASS (4 attempts). R1: the AA fixes, applied per-token
+      in isolation, collapsed the live/dormant/locked ladder into one band —
+      the build agent argued this down with evidence (the tokens flagged were
+      a secondary-text hierarchy; the real ladder is row opacity) and was
+      right. R2: `--faintest` at 3.04:1 carrying real 10px Trophy-pip text
+      (1.4.11 floor cited where 1.4.3 applies); two claims the source
+      contradicted. R3: `#logHead`'s hardcoded `#4e7a5e` at 3.97:1, missed by
+      a sweep that claimed to be exhaustive; a dead selector cited as the gold
+      CTA. R4: PASS, 2 Minors fixed by the orchestrator before commit.
+- [x] User confirmed direction (DW-3.1) — DESIGN.md LOCKED 2026-07-25.
+- [x] Committed
+Commit: 3aff88d
+Decision: the 5 required code changes are deferred by user decision to ONE
+integration pass AFTER Phase 6, not applied mid-plan. Phase 6's mocks are
+therefore the first place these tokens render.
+Summary: Phase 3 delivered `internal/DESIGN.md`, LOCKED — DNA "Last Warmth"
+documented from the shipped look rather than invented, the semantic token
+block, type scale, state-change-only motion budget, and a `theme.js` bridge
+giving the canvas the same tokens as CSS. Seven hexes adjusted to clear AA on
+the dark ramp, all lightness-only (hue deltas <0.4°). The state ladder is now
+evidenced in both directions (each tier vs its background AND vs its
+neighbours) — the check whose absence let R1's collapse through. Five live
+code defects were found and specified: the boss HP label at 1.23:1, locked
+rows accepting and silently wasting input, and Grind showing two different
+states identically.
 
 ### Phase 2: Page specs, six tabs (Gate: Standard)
 - [x] BUILD: Discovery + design + production complete
