@@ -13,11 +13,37 @@ approval — fast-forward main once the current staging build is approved.
 Tabs, in unlock order: **Boss · Training · Grind · Player · Delve · Dungeon
 · GM**.
 
-**Next session starts with a UI visual audit** — the user installed a
-`design-for-ai` plugin for exactly this and wants to run it against the
-current UI before more feature work. The Dungeon tab is the newest and least
-styled surface; it uses the existing row/rowlist/arena primitives but has had
-no design pass.
+**Next session: the UI de-duplication audit.** The design plan is written and
+CHECK-passed at `.design-foundations/plans/2026-07-25-ui-dedup-audit.md`
+(6 phases, Standard track, `design-for-ai` plugin). Resume with:
+
+```
+/design-for-ai:mock .design-foundations/plans/2026-07-25-ui-dedup-audit.md
+```
+
+That renders a cheap prototype and gates on user sign-off before
+`/design-for-ai:build` executes the phases. Do NOT run `build` first — it
+needs the mock's go/no-go.
+
+Three deviations from the plugin's defaults are recorded in the plan and must
+be honored by every dispatch:
+1. **Artifacts live in `internal/`**, not the project root (repo rule: the root
+   is the Pages web root). The plugin's agents check root by default — if one
+   finds no DESIGN.md there it drops to greyscale wireframe mode while the real
+   locked token file sits in `internal/`. Pass the paths explicitly.
+2. **Dark ramp only** — the light-ramp contrast requirement is deliberately
+   waived; the game ships dark-only.
+3. **The canvas arena is spec-only** — it cannot be CSS-styled, HTML-mocked, or
+   seen by a DOM-based reviewer. OPEN DECISION: whether Phase 6 also screenshots
+   the real running game and hands that PNG to the review agent, so the arena
+   gets critiqued on actual pixels instead of a stub. Needs the browser MCP.
+
+**Visual brief — two corrections the user made during planning, both now in
+memory and in the plan's Constraints:** the UI is a **working 2000s MMO game
+client**, NOT a terminal (shell chrome is one register, living at the edges in
+the log and meta surfaces), and NOT a ruin (the server runs fine and is
+competently maintained — the only thing missing is other players). The feeling
+comes from absence, not decay. No glitch, corruption, or broken frames.
 
 ### Systems live
 - **Boss (idle battler, reworked `2aac2d2`):** the Warden is a persistent HP
