@@ -1,0 +1,20 @@
+{
+  "detector": "detect.mjs",
+  "version": 1,
+  "attribution": "Rule subset ported from Impeccable (pbakaus/impeccable), Apache-2.0, with modifications — see file header. Catalog: references/visual/ai-tells.md.",
+  "status": "ran",
+  "sources": [
+    "internal/mocks/boss.html",
+    "internal/mocks/training.html",
+    "internal/mocks/grind.html",
+    "internal/mocks/player.html",
+    "internal/mocks/delve.html",
+    "internal/mocks/dungeon.html"
+  ],
+  "rules": 16,
+  "findings": [],
+  "counts": {
+    "total": 0,
+    "byRule": {}
+  }
+}
