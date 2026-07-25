@@ -1,0 +1,14 @@
+{
+  "detector": "detect.mjs",
+  "version": 1,
+  "attribution": "Rule subset ported from Impeccable (pbakaus/impeccable), Apache-2.0, with modifications — see file header. Catalog: references/visual/ai-tells.md.",
+  "status": "na",
+  "naReason": "no html artifact supplied — nothing rendered yet (research/plan-only phase?)",
+  "sources": [],
+  "rules": 16,
+  "findings": [],
+  "counts": {
+    "total": 0,
+    "byRule": {}
+  }
+}
