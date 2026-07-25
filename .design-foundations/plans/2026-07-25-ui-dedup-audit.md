@@ -5,7 +5,7 @@
 **Entry stage:** Discover (neither DESIGN.md nor JOURNEY.md exists)
 **Created:** 2026-07-25
 **Started:** 2026-07-25
-**Current Phase:** 4
+**Current Phase:** 5
 
 **Pacing:** user-requested pause between every phase (context-size check
 before continuing or clearing to resume next session). Resume with
@@ -397,7 +397,12 @@ in-progress states, since they differ structurally.
 **Done when:**
 - [ ] DW-6.1: Six mocks render as self-contained `.html` with no missing deps.
 - [ ] DW-6.2: No hard-coded hex/rgb in any mock; all color via tokens from
-      `internal/DESIGN.md`.
+      `internal/DESIGN.md`. **Extended 2026-07-26 (user-authorised):** this
+      also covers untokenized `px` — spacing, padding, grid columns and track
+      heights must resolve through Phase 4's dimension scale, or be named as
+      an honest one-off. Rationale: Phase 4's token sweep could not prove its
+      own exhaustiveness, and six independently-composed mocks are exactly
+      where spacing drift would enter unnoticed.
 - [ ] DW-6.3: No mock scrolls horizontally at 375px width.
 - [ ] DW-6.4: No fact appears twice within a single mock — verified against the
       Phase 1 ownership map.
@@ -457,6 +462,34 @@ explicitly exempt and noted rather than silently passed.
 ---
 
 ## Execution log
+
+### Phase 4: Design system — components + meters (Gate: Full)
+- [x] BUILD: Discovery + design + production complete
+- [x] REVIEW: fail -> PASS (6 attempts). DW-4.2/4.3/4.4 passed early and held
+      throughout. DW-4.1 failed four times, each on a narrower miss of one
+      claim — that the token sweep was exhaustive: (R1) no dimension tier at
+      all + a raw hex in the component tier; (R2) values outside the shape
+      being looked for; (R3) an entire CSS property (`margin-top`); (R4) a
+      composed selector — `.barTrack`'s `margin-top` never renders because
+      `.popTrack` wins the cascade, so the token named a value that never
+      paints.
+- [x] Committed
+Commit: b34fc60
+Protocol deviation (user-authorised): after the 3-retry limit was reached the
+orchestrator applied the final DW-4.1 fix directly, then dispatched a
+scope-restricted CONFIRM review to verify it — because an orchestrator fix to
+a BLOCKING item is otherwise the one change in the plan with no independent
+check. That confirm review FAILED first (a stale table cell still asserted the
+corrected-away claim), was fixed, and passed on the second pass. The user also
+authorised extending Phase 6's DW-6.2 to cover untokenized px, not just hex.
+Summary: Phase 4 delivered `## Component specs` + token tiers in
+`internal/DESIGN.md` — a dimension scale derived from the px values
+`style.css` actually uses, and specs for the eight repeated shapes with their
+interaction states. Meter encoding is the real design work: Cycle (animates
+per-kill), Progress (fills monotonically) and Level (gauges a moving ceiling)
+are distinguished by FORM, not by assertion. The exhaustiveness claim is now
+scoped honestly — a manual re-read cannot establish that property about
+itself, since each sweep is bounded by the blind spot it is unaware of.
 
 ### Phase 3: Design DNA + tokens + type + color (Gate: Full)
 - [x] BUILD: Discovery + design + production complete
