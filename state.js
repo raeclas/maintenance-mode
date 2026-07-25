@@ -1,8 +1,9 @@
 // state.js — single source of truth for the save shape.
 // saveSystem normalizes over these defaults; the sim imports it too.
+import { getBoss } from "./bosses.js";
 export function newState() {
   return {
-    v: 10,
+    v: 11,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     // progressive feature unlocks (NGU/ITRTG-style ??? tabs). Boss is always
@@ -22,10 +23,10 @@ export function newState() {
     armory: {},    // the Armory: { "slot:zone": mergePoints } — gear collection ranks (permanent)
     wall: 1,       // the wall you're currently AT (fight the frontier, or farm a cleared one)
     maxWall: 1,    // deepest wall unlocked — you can switch among walls 1..maxWall
-    boss: { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false }, // active wall's record
-    frontierBoss: { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false }, // maxWall's persisted progress
-    cooldownUntil: 0, // epoch ms — survives reload
-    pull: null,       // transient {startedAt, endsAt, rolledFresh} — never serialized
+    // Siege: the Warden is an HP pool drained at Combat Power. hp = remaining;
+    // broken → Farm status (timed set-piece rolls). No pulls/scars/cooldown.
+    boss: { hp: getBoss(1).hp, broken: false, nearSaid: false, farmCarry: 0 }, // active wall's fight
+    frontierBoss: { hp: getBoss(1).hp, broken: false, nearSaid: false, farmCarry: 0 }, // maxWall's persisted fight
     // Bot Farm: population FLOW. Generator fills toward server capacity;
     // farming bots get banned at zone detection rates. Alloc = % of pop.
     bots: {

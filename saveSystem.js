@@ -2,6 +2,7 @@
 // primary, _bak (last-known-good, written once at startup so the autosave
 // can never clobber it mid-session), _corrupt (quarantine for manual rescue).
 import { newState } from "./state.js";
+import { getBoss } from "./bosses.js";
 
 const KEY = "mm_save";
 
@@ -85,14 +86,23 @@ export function load(state) {
   // wall model: maxWall = frontier; walls below it are farmable. Only the
   // frontier keeps fight-progress (frontierBoss); cleared walls are broken
   // farm records synthesized on switch. Old saves: maxWall = wall.
+  // Siege model (v11): frontier is an HP pool. Old saves (scars/pulls) reset
+  // the FIGHT only — hp seeds to the wall's full HP; walls already cleared stay
+  // cleared, gear/story/trophies untouched (attachment guideline 8). A broken
+  // frontier stays broken (hp 0). New saves carry hp/farmCarry through.
   state.maxWall = s.maxWall ?? s.wall ?? d.wall;
-  state.frontierBoss = { ...d.frontierBoss, ...(s.frontierBoss ?? s.boss ?? {}) };
+  const fullHp = getBoss(state.maxWall)?.hp ?? d.frontierBoss.hp;
+  const sf = s.frontierBoss ?? s.boss ?? {};
+  state.frontierBoss = {
+    hp: sf.hp ?? (sf.broken ? 0 : fullHp),
+    broken: !!sf.broken,
+    nearSaid: sf.nearSaid ?? false,
+    farmCarry: sf.farmCarry ?? 0,
+  };
   state.wall = Math.min(s.wall ?? state.maxWall, state.maxWall);
   state.boss = state.wall === state.maxWall
     ? state.frontierBoss
-    : { pulls: 0, bestDepth: 1, scars: 1, broken: true, nearSaid: true }; // farm a cleared wall
-  state.cooldownUntil = s.cooldownUntil ?? 0;
-  state.pull = null; // reload mid-pull drops the pull — nothing gained until resolve
+    : { hp: 0, broken: true, nearSaid: true, farmCarry: 0 }; // farm a cleared wall
   const { assign, count, farmZone, ...sBots } = s.bots || {}; // pre-v7 fields handled below
   const oldBars = s.bots?.bars; // v≤4 bars were {lvl, prog}
   const v4Bars = oldBars?.atk?.lvl !== undefined;

@@ -8,21 +8,28 @@ read it before designing or building anything.**
 Premise: a dead MMO still running in maintenance mode; you are the only
 player. Satire shell, sincere boss stories inside.
 
-## Non-negotiable laws (from the old build's post-mortem)
+## Design guidelines (from the old build's post-mortem)
 
-**Hard vetoes (user-stated, never re-propose):**
+These are heuristics that saved the old build, not rules. Default to them;
+override any one when fun demands it — it's a game made for fun, not a
+constitution. The **hard vetoes** below are the exception: they're the user's
+taste, so keep them unless the user says otherwise.
+
+**Hard vetoes (user taste — don't re-propose unprompted):**
 - NO sound. NO enhance ceremony / slow ritual animations.
 - NO AI-generated skill icons (gold letter glyphs or hand-made only).
 - NO obligation mechanics: dailies, streaks, FOMO, calendar events, lockouts.
 
-**Design laws:**
+**Design heuristics (defaults, not mandates — bend when it serves the game):**
 1. Every guarantee is an abuse vector — band-cap or era-price anything that
    bypasses RNG.
 2. Model every faucet in the sim OR gate it (cooldown/cap). New faucet =
    sim re-run in the same commit.
 3. Batch/offline paths clamp exactly like live paths.
 4. Never couple XP (or any pacing stat) to currency.
-5. No multiplier soup — per-boss math displayed, no hidden terms.
+5. Stacked multipliers are fine — but every term is DISPLAYED. The sin isn't
+   many buckets (crit tiers, boss-dmg%, etc. are welcome); it's HIDDEN terms
+   the player can't see or trace. Show the whole product.
 6. Stat lanes keep identities; twists re-value lanes, never merge them.
 7. Depth = meaningful overlap of few systems. **Nine-system budget: adding a
    tenth requires deleting one.** (2026-07-21: Levels deleted, Bot Farm in.)

@@ -17,8 +17,7 @@
 import fs from "node:fs";
 import { newState } from "../state.js";
 import { getBoss } from "../bosses.js";
-import { expectedDepth, scarCap, cooldownMs, SCAR_RATE } from "../pull.js";
-import { ticketYield, buyFlag, buyUnlock, buyUtility, flagCost } from "../gm.js";
+import { buyFlag, buyUnlock, buyUtility, flagCost, BREAK_TICKETS } from "../gm.js";
 import { derive, SPEED_KNEE, BASE_HPS } from "../stats.js";
 import * as bots from "../bots.js";
 import * as farm from "../farm.js";
@@ -61,8 +60,7 @@ const rolls = farm.zones.map(() => 0);
 
 let t = 0;
 let broken = false;
-let attemptCarry = 0;
-mark(30, `first attempt ${(expectedDepth(derive(S), boss) * 100).toFixed(4)}% (intro beat)`);
+mark(30, `arrival TTK ${fmtT(Math.round(S.boss.hp / dps()))} (intro beat — overwhelming)`);
 mark(35, "systems unlock");
 S.unlocked = true;
 
@@ -183,28 +181,12 @@ while (t < MAX_S && !broken) {
     best.it.plus++;
   }
 
-  // --- attempts: hourly by hand; on cooldown once the scheduler is
-  // installed (waking 16h/day); idleProc extends to sleep hours ---
-  const waking = t % 86400 < 16 * 3600;
-  const cycleS = cooldownMs(S) / 1000 + boss.windowS;
-  let attempts = 0;
-  if (waking) attempts = S.gm.scheduler ? attemptCarry + STEP / cycleS : (t % 3600 < STEP ? 1 : 0);
-  else if (S.gm.idleProc) attempts = attemptCarry + STEP / cycleS;
-  attemptCarry = attempts % 1;
-  attempts = Math.floor(attempts);
-  while (attempts-- > 0 && !broken) {
-    const fresh = expectedDepth(derive(S), boss);
-    const total = S.boss.scars + fresh;
-    S.boss.bestDepth = Math.max(S.boss.bestDepth, Math.min(total, 1));
-    S.tickets += ticketYield(Math.min(total, 1));
-    if (total >= 1) {
-      broken = true;
-      mark(t, "W1 broken (EV)");
-    } else {
-      S.boss.scars = Math.min(scarCap(S), S.boss.scars + fresh * SCAR_RATE);
-      if (S.boss.scars >= scarCap(S)) mark(t, "scars capped");
-    }
-  }
+  // --- continuous drain: the Warden's HP falls at Combat Power (crits folded
+  // in via derive). No pulls, no scars — earned power over time.
+  S.boss.hp = Math.max(0, S.boss.hp - dps() * STEP);
+  const gone = 1 - S.boss.hp / boss.hp;
+  for (const pct of [0.1, 0.5, 0.9]) if (gone >= pct) mark(t, `W1 ${pct * 100}% gone`);
+  if (S.boss.hp <= 0) { broken = true; S.tickets += BREAK_TICKETS; mark(t, "W1 broken (EV)"); }
   // GM spends: unlocks first (verbs), then scar cap + session cap, then flags
   buyUnlock(S, "scheduler");
   buyUnlock(S, "idleProc");
@@ -216,7 +198,7 @@ while (t < MAX_S && !broken) {
 
   if (process.env.SIMDBG && t % 21600 < STEP) {
     const d = derive(S);
-    console.error(`t=${(t / 3600).toFixed(0)}h dps=${Math.round(dps())} atk=${Math.round(d.atk)} hits=${d.hitsPerSec.toFixed(2)} pop=${S.bots.pop.toFixed(1)} trainedAtk=${Math.round(S.bots.trained.atk)} gearIp=${SLOTS.map(sl => S.gear[sl] ? `${S.gear[sl].ip}+${S.gear[sl].plus}` : "-").join(",")} cu=${Math.round(S.copper)} tix=${Math.round(S.tickets)} scars=${S.boss.scars.toFixed(2)}`);
+    console.error(`t=${(t / 3600).toFixed(0)}h dps=${Math.round(dps())} atk=${Math.round(d.atk)} hits=${d.hitsPerSec.toFixed(2)} pop=${S.bots.pop.toFixed(1)} trainedAtk=${Math.round(S.bots.trained.atk)} gearIp=${SLOTS.map(sl => S.gear[sl] ? `${S.gear[sl].ip}+${S.gear[sl].plus}` : "-").join(",")} cu=${Math.round(S.copper)} tix=${Math.round(S.tickets)} hp%gone=${(100 * (1 - S.boss.hp / boss.hp)).toFixed(1)}`);
   }
 
   // --- observation milestones ---
@@ -227,9 +209,6 @@ while (t < MAX_S && !broken) {
       mark(t, `${zz.id} held (${zz.name})`);
     }
   });
-  for (const pct of [0.001, 0.01, 0.1, 0.5]) {
-    if (S.boss.bestDepth >= pct) mark(t, `depth ${pct * 100}%`);
-  }
 }
 
 milestones.sort((a, b) => a.t - b.t);
@@ -245,11 +224,11 @@ function fmtT(t) {
 const gates = [];
 const breakM = milestones.find(m => m.desc === "W1 broken (EV)");
 if (!breakM) gates.push("PACING NOTE: W1 never breaks within 10d");
-else if (breakM.t < 4 * 86400 || breakM.t > 7 * 86400) gates.push(`PACING NOTE: W1 breaks at ${fmtT(breakM.t)} (target 4d–7d)`);
+else if (breakM.t < 0.5 * 86400 || breakM.t > 2 * 86400) gates.push(`PACING NOTE: W1 breaks at ${fmtT(breakM.t)} (target 12h–2d — early wall is short, deep wardens stretch)`);
 const x10 = milestones.find(m => m.desc === "power ×10");
 if (!x10 || x10.t > 3600) gates.push(`PACING NOTE: power ×10 at ${x10 ? fmtT(x10.t) : "never"} (target ≤1h)`);
-const d1 = milestones.find(m => m.desc === "depth 1%");
-if (!d1 || d1.t > 86400) gates.push(`PACING NOTE: depth 1% at ${d1 ? fmtT(d1.t) : "never"} (target ≤1d)`);
+const d1 = milestones.find(m => m.desc === "W1 10% gone");
+if (!d1 || d1.t > 43200) gates.push(`PACING NOTE: W1 10% gone at ${d1 ? fmtT(d1.t) : "never"} (target ≤12h)`);
 // (main-character income gate retired 2026-07-22: zones are bot-only by
 // design — the player's verb is the Boss, the swarm IS the economy)
 

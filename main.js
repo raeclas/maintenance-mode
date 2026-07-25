@@ -3,10 +3,11 @@ import { newState } from "./state.js";
 import { load, save, wipe, exportSave } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { bosses, getBoss } from "./bosses.js";
-import { startPull, resolvePull, resolveFarm, pullDone, currentDepth, canPull, band, pullsToBreakEV, scarCap, cooldownMs, processIdleAttempts } from "./pull.js";
+import { drain, farmTick, timeToKill } from "./pull.js";
 import { FLAGS, UNLOCKS, UTILITY, flagCost, utilityCost, buyFlag, buyUnlock, buyUtility, gmDmgMult, gmHasteMult, ticketYield, BREAK_TICKETS } from "./gm.js";
-import { initBattle, renderBattle, notifyResult, notifyEnhance } from "./battle.js";
+import { initBattle, renderBattle, notifyBreak, notifyEnhance } from "./battle.js";
 import { derive } from "./stats.js";
+import { critFactor } from "./crits.js";
 import * as bots from "./bots.js";
 import * as farm from "./farm.js";
 import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, canReforge, reforgeCost, reforge, isUpgrade, SLOTS, STASH_CAP, NAMES } from "./gear.js";
@@ -40,7 +41,7 @@ function say(event) {
 // power language, §9). Boss record resets for the new wall; `boss` reassigns
 // so every reader (say, band, pacing) picks up the new data.
 // A cleared wall you're farming needs no fight-progress — it's just broken.
-function farmRecord() { return { pulls: 0, bestDepth: 1, scars: 1, broken: true, nearSaid: true }; }
+function farmRecord() { return { hp: 0, broken: true, nearSaid: true, farmCarry: 0 }; }
 
 function refreshBoss() {
   boss = getBoss(state.wall);
@@ -57,7 +58,6 @@ function switchWall(w) {
   if (state.wall === state.maxWall) state.frontierBoss = state.boss; // stash frontier progress
   state.wall = w;
   state.boss = w === state.maxWall ? state.frontierBoss : farmRecord();
-  state.cooldownUntil = 0;
   refreshBoss();
   save(state);
 }
@@ -71,12 +71,38 @@ function advanceWall() {
   if (!state.cleared.includes(rec)) state.cleared.push(rec);
   state.maxWall = next.wall;
   state.wall = next.wall;
-  state.frontierBoss = { pulls: 0, bestDepth: 0, scars: 0, broken: false, nearSaid: false };
+  state.frontierBoss = { hp: next.hp, broken: false, nearSaid: false, farmCarry: 0 };
   state.boss = state.frontierBoss;
-  state.cooldownUntil = 0;
   refreshBoss();
   log(`— descending to ${next.name}, ${next.title}`);
   save(state);
+}
+
+// Warden breaks: dialogue, tickets, the guaranteed first set piece, the reveal.
+// Shared by the live tick and the offline batch (function decl — hoisted).
+function handleBreak() {
+  const b = getBoss(state.wall);
+  say("break");
+  const y = Math.round(BREAK_TICKETS * dungeon.delveBonus(state, "ticket"));
+  state.tickets += y;
+  log(`★ W${state.wall} BREACHED — ${b.name} · +${fmt(y)} tickets`);
+  const piece = grantBreakPiece(state, state.wall); // guaranteed first set piece
+  if (piece) log(`🏆 ${piece.name} recovered · +${piece.pct}% ${laneWord(piece.lane)} — farm for the rest`);
+  notifyBreak();
+  save(state);
+}
+
+// Time-to-breach estimate: reads absurdly huge on arrival (the overwhelming
+// gag), cascades down as Combat Power climbs. Capped so it reads "overwhelming"
+// not "broken".
+function ttkText(s) {
+  if (s == null || !isFinite(s)) return "∞";
+  const yr = 86400 * 365;
+  if (s > yr) return `~${fmt(s / yr)}y — overwhelming`;
+  if (s >= 86400) return `~${(s / 86400).toFixed(1)}d`;
+  if (s >= 3600) return `~${(s / 3600).toFixed(1)}h`;
+  if (s >= 60) return `~${(s / 60).toFixed(1)}m`;
+  return `~${s.toFixed(0)}s`;
 }
 
 const laneWord = lane => lane === "atk" ? "ATK" : lane === "speed" ? "haste" : "copper";
@@ -164,13 +190,14 @@ if (loaded && state.unlocked && state.lastSeen) {
       state.dungeon.depthBest = Math.max(state.dungeon.depthBest, dungeon.reachDepth(state, charDps()));
       if (gained > 0) log(`offline delve: +${fmt(gained)} Cache`);
     }
-    if (state.gm.idleProc && !state.boss.broken) {
-      const r = processIdleAttempts(state, dt);
-      if (r.attempts) log(`idle processing: ${r.attempts} attempts · best ${fmtDepth(r.best)} · +${fmt(r.tickets)} tickets`);
-      if (r.broke) {
-        log(`★ W${state.wall} BROKEN while you were away`);
-        const piece = grantBreakPiece(state, state.wall);
-        if (piece) log(`🏆 ${piece.name} recovered`);
+    { // the Warden whittles offline too (clamped by dt); broken walls farm
+      if (!state.boss.broken && state.wall === state.maxWall) {
+        const r = drain(state, dt);
+        if (r.broke) { log(`★ W${state.wall} BREACHED while you were away`); handleBreak(); }
+        else if (r.dealt > 0) log(`offline: ${fmt(r.dealt)} integrity off ${getBoss(state.wall).name}`);
+      } else if (state.boss.broken) {
+        const fr = farmTick(state, dt);
+        if (fr.rolls) log(`offline farm: ${fr.pieces.length} piece(s) · +${fmt(fr.tickets)} tickets`);
       }
     }
     save(state);
@@ -213,7 +240,7 @@ function checkUnlocks() {
   const dps = charDps();
   const s = state, f = s.features;
   const cond = {
-    training: s.boss.pulls >= 1,
+    training: s.unlocked,
     grind: f.training, // the bot-farm layer (train + deploy) opens together
     player: f.grind && s.everDropped,
     gm: f.training && s.tickets >= 30,
@@ -235,11 +262,7 @@ function reveal() {
 }
 if (state.unlocked) reveal();
 
-// ---- pull ----
-$("pullBtn").addEventListener("click", () => {
-  if (!startPull(state, Date.now())) return;
-  log(`attempt ${state.boss.pulls + 1} — enrage ${boss.windowS}s`);
-});
+// ---- fight is automatic now (idle battler) — no Attempt button ----
 
 $("wipeBtn").addEventListener("click", () => {
   if (confirm("Wipe this character's save? (dev button)")) { wipe(); location.reload(); }
@@ -584,48 +607,23 @@ function tick() {
   const now = Date.now();
   const dt = Math.min((now - lastTick) / 1000, farm.offlineCapS(state)) * devScale; // same clamp as offline
   lastTick = now;
+  // intro beat: the first login flips systems on + drops the bot-farm hint
+  if (!state.unlocked) { state.unlocked = true; reveal(); say("fail_hopeless"); }
   if (state.unlocked) {
     bots.tick(state, dt, (kind, item) => kind === "drop" ? onDrop(item) : enhMilestones(item, kind));
   }
-  // encounter scheduler: auto-fire attempts on cooldown while online
-  if (state.gm.scheduler && state.gm.schedulerOn && !state.boss.broken && !state.pull && canPull(state, now)) {
-    startPull(state, now);
-  }
-  if (state.pull && pullDone(state, now)) {
-    if (state.pull.farm) {
-      // Farm status: re-fought a broken boss for its set. Kill = tickets +
-      // a chance at a not-yet-owned piece; completing the set lights the bonus.
-      const y = resolveFarm(state, now);
-      const piece = rollFarmDrop(state, state.wall);
-      if (piece) {
-        log(`🏆 ${piece.name} dropped! +${piece.pct}% ${laneWord(piece.lane)} · +${fmt(y)} tickets`);
-        if (setComplete(state, state.wall)) log(`★ ${boss.set.name} SET COMPLETE — ×${(1 + SET_BONUS).toFixed(2)} damage`);
-      } else {
-        log(`farmed ${boss.name}: no drop · +${fmt(y)} tickets`);
-      }
-      save(state);
-    } else {
-      const depth = resolvePull(state, now);
-      notifyResult(depth, state.boss.broken);
-      const yieldT = Math.round((ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0)) * dungeon.delveBonus(state, "ticket"));
-      state.tickets += yieldT;
-      if (state.boss.broken) {
-        say("break");
-        log(`★ W${state.wall} BROKEN — ${boss.name} · attempt ${state.boss.pulls} · +${fmt(yieldT)} tickets`);
-        const piece = grantBreakPiece(state, state.wall); // guaranteed first set piece
-        if (piece) log(`🏆 ${piece.name} recovered · +${piece.pct}% ${laneWord(piece.lane)} — re-Attempt to farm the rest`);
-      } else {
-        // milestone-only dialogue: intro fail, first near-miss. Silence otherwise.
-        if (state.boss.pulls === 1) say("fail_hopeless");
-        else if (depth >= 0.95 && !state.boss.nearSaid) { state.boss.nearSaid = true; say("fail_near"); }
-        log(`attempt ${state.boss.pulls}: ${fmtDepth(depth)} · scars ${fmtDepth(state.boss.scars)} · +${yieldT} tickets`);
-        if (!state.unlocked) {
-          state.unlocked = true;
-          reveal(); // tabs appear; checkUnlocks lights each one on its milestone
-        }
-      }
-      save(state);
+  // Siege: the frontier Warden whittles at Combat Power; broken walls farm set
+  // pieces on a timer (Farm status). No pulls, no cooldown — the fight is live.
+  if (!state.boss.broken && state.wall === state.maxWall) {
+    if (drain(state, dt).broke) handleBreak();
+  } else if (state.boss.broken) {
+    const f = farmTick(state, dt);
+    for (const piece of f.pieces) {
+      log(`🏆 ${piece.name} dropped! +${piece.pct}% ${laneWord(piece.lane)}`);
+      if (setComplete(state, state.wall)) log(`★ ${boss.set.name} SET COMPLETE — ×${(1 + SET_BONUS).toFixed(2)} damage`);
     }
+    if (f.rolls && !f.pieces.length) log(`farmed ${boss.name}: +${fmt(f.tickets)} tickets`);
+    if (f.rolls) save(state);
   }
   { // the Delve mines Cache idle — reach depth tracks the build's power
     const g = charDps();
@@ -693,54 +691,22 @@ function render() {
     btn.classList.toggle("armed", banArmed);
   }
 
-  // pull row
-  const pb = $("pullBtn");
-  pb.textContent = "Attempt"; // farm states relabel to "Farm" below
-  $("ticketGain").textContent = "";
-  if (state.pull && state.pull.farm) {
-    $("depth").textContent = "OPEN";
-    pb.disabled = true;
-    pb.textContent = "Farm";
-    $("cooldown").textContent = `farming ${boss.name}… ${Math.max(0, (state.pull.endsAt - now) / 1000).toFixed(0)}s`;
-  } else if (state.pull) {
-    const dCur = Math.min(1, currentDepth(state, now));
-    $("depth").textContent = fmtDepth(dCur);
-    pb.disabled = true;
-    $("cooldown").textContent = `enrage in ${Math.max(0, (state.pull.endsAt - now) / 1000).toFixed(0)}s`;
-    // live incident payout: base = tickets at current depth, (+bonus) = the
-    // rest filling as depth climbs to this attempt's pre-rolled final depth
-    const dEnd = Math.min(1, state.boss.scars + state.pull.rolledFresh);
-    const base = ticketYield(dCur);
-    const total = ticketYield(dEnd) + (dEnd >= 1 ? BREAK_TICKETS : 0);
-    const bonus = Math.max(0, total - base);
-    $("ticketGain").textContent = `tickets ${fmt(base)}${bonus > 0 ? ` (+${fmt(bonus)})` : ""}`;
-  } else if (state.boss.broken && !canPull(state, now)) {
-    // farming, on cooldown between attempts
-    $("depth").textContent = "OPEN";
-    pb.disabled = true;
-    pb.textContent = "Farm";
-    $("cooldown").textContent = `farm again in ${Math.ceil((state.cooldownUntil - now) / 1000)}s`;
-  } else if (state.boss.broken) {
-    // Farm status: the door stands open — re-Attempt for set pieces
-    $("depth").textContent = "OPEN";
-    pb.disabled = false;
-    pb.textContent = "Farm";
-    $("cooldown").textContent = bossHasSet(state.wall)
-      ? `set ${setCount(state, state.wall)}/${PARTS.length} · farm for pieces`
-      : "farm for tickets";
-  } else if (!canPull(state, now)) {
-    $("depth").textContent = fmtDepth(state.boss.bestDepth);
-    pb.disabled = true;
-    $("cooldown").textContent = `retry in ${Math.ceil((state.cooldownUntil - now) / 1000)}s`;
-  } else {
-    $("depth").textContent = state.boss.pulls ? fmtDepth(state.boss.bestDepth) : "—";
-    pb.disabled = false;
-    $("cooldown").textContent = state.boss.pulls ? "ready" : "";
+  // Siege readout: integrity remaining + time-to-breach estimate + CP/s
+  {
+    $("ticketGain").textContent = "";
+    if (state.boss.broken) {
+      $("depth").textContent = "BREACHED";
+      $("cooldown").textContent = bossHasSet(state.wall)
+        ? `set ${setCount(state, state.wall)}/${PARTS.length} · farming for pieces`
+        : "farming for tickets";
+      $("record").textContent = "the door stands open";
+    } else {
+      const remain = boss.hp ? (state.boss.hp || 0) / boss.hp : 1;
+      $("depth").textContent = `${(remain * 100).toFixed(1)}%`;
+      $("cooldown").textContent = `time to breach: ${ttkText(timeToKill(state))}`;
+      $("record").textContent = `integrity ${fmt(state.boss.hp)} / ${fmt(boss.hp)} · CP ${fmt(dps)}/s`;
+    }
   }
-
-  $("record").textContent = state.boss.pulls
-    ? `attempts ${state.boss.pulls} · best ${fmtDepth(state.boss.bestDepth)} · scars ${fmtDepth(state.boss.scars)}`
-    : "no attempts recorded";
   { // wall progression + wall selector (switch to a cleared wall to farm it)
     const next = getBoss(state.maxWall + 1);
     $("descendBtn").style.display = (state.wall === state.maxWall && state.boss.broken && next) ? "" : "none";
@@ -766,18 +732,10 @@ function render() {
     } else { $("wallSelect").style.display = "none"; lastWallSel = ""; }
   }
 
-  if (state.boss.broken || state.pull) {
-    $("projection").textContent = "";
-  } else {
-    const cap = scarCap(state);
-    const { lo, hi } = band(d, boss, state.boss.scars);
-    const n = pullsToBreakEV(d, boss, state.boss.scars, cap);
-    if (n === Infinity) {
-      const reqDps = ((1 - Math.max(state.boss.scars, cap)) * boss.hp) / boss.windowS;
-      $("projection").textContent = `projection: ${fmtDepth(lo)}–${fmtDepth(hi)} · required power: ~×${fmt(reqDps / dps)} current`;
-    } else {
-      $("projection").textContent = `projection: ${fmtDepth(lo)}–${fmtDepth(hi)} · breaks in ~${n} attempt${n > 1 ? "s" : ""}`;
-    }
+  { // Combat Power crit breakdown — a displayed term (guideline 5)
+    const cf = critFactor(d.crit);
+    $("projection").textContent = state.boss.broken ? "" :
+      `crit ×${cf.toFixed(2)} — ${(d.crit.rate * 100).toFixed(0)}% ×${d.crit.critMult.toFixed(1)}, super ×${d.crit.superMult.toFixed(1)}`;
   }
 
   // GM tab
@@ -809,14 +767,7 @@ function render() {
     buyState(btn, state.tickets >= cost);
   }
 
-  // encounter scheduler line (Boss screen)
-  $("schedLine").style.display = state.gm.scheduler ? "" : "none";
-  if (state.gm.scheduler) {
-    $("schedToggle").checked = state.gm.schedulerOn;
-    $("schedInfo").textContent = state.gm.schedulerOn && !state.boss.broken
-      ? (state.pull ? "running" : `next in ${Math.max(0, Math.ceil((state.cooldownUntil - now) / 1000))}s`)
-      : "";
-  }
+  $("schedLine").style.display = "none"; // scheduler retired — the fight is always live
 
   if (!state.unlocked) return;
 
@@ -1029,8 +980,8 @@ if (DEV) {
     });
   }
   panel.querySelector("#devCopper").addEventListener("click", () => { state.copper += 10_000; });
-  panel.querySelector("#devFinish").addEventListener("click", () => { if (state.pull) state.pull.endsAt = Date.now(); });
-  panel.querySelector("#devCd").addEventListener("click", () => { state.cooldownUntil = 0; });
+  panel.querySelector("#devFinish").addEventListener("click", () => { state.boss.hp = 0; }); // instabreach
+  panel.querySelector("#devCd").addEventListener("click", () => { if (!state.boss.broken) state.boss.hp = Math.max(0, state.boss.hp - getBoss(state.wall).hp * 0.1); }); // chip 10%
 }
 
 $("bossName").textContent = boss.name;

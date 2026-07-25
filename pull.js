@@ -1,154 +1,78 @@
-// pull.js — the Pull + scars + projection, pure logic. No DOM; imported by
-// the game AND the sim. depth = scars + DPS×window/bossHP, break at 100%
-// (REMAKE-DESIGN §3).
+// pull.js — the Siege: an idle battler. The Warden is a persistent HP pool that
+// drains continuously at Combat Power (derive().atk × hits/s, crit factor
+// folded in). No pulls, no scars, no cooldown, no luck — the bar IS your
+// progress and never regenerates. Break at hp ≤ 0. A broken Warden switches to
+// Farm status: a timed set-piece roll (Trophy sets, guideline 8).
+//
+// (Old pull/scars/window/EV-projection model retired 2026-07-25 — the fight is
+// earned power over time now, not lucky pulls. REWORK-IDLE-BATTLER.md.)
 import { getBoss } from "./bosses.js";
 import { derive } from "./stats.js";
-import { ticketYield, BREAK_TICKETS } from "./gm.js";
+import { ticketYield } from "./gm.js";
 import { delveBonus } from "./dungeon.js";
+import { rollFarmDrop } from "./trophies.js";
 
-// Starting values (Numbers Policy). Test plan: W1 should feel like a siege —
-// ~5-6 pulls, scars visibly chipping. If walls "fall over", lower SCAR_CAP;
-// if rage-quits, raise it (§3). Variance is the projection band's width —
-// tight enough that progress is real, wide enough for hope.
-export const VARIANCE = 0.08;
-export const COOLDOWN_MS = 60_000;
-export const SCAR_CAP = 0.27;  // §3: pity capped at 25–30% of boss HP
-export const SCAR_RATE = 0.10; // fraction of a failed pull's damage that persists
-
-// GM-panel perks (rank-capped in gm.js) modify these per state:
-export function cooldownMs(state) { return COOLDOWN_MS - (state.gm?.cooldown || 0) * 5_000; }
-export function scarCap(state) { return SCAR_CAP + (state.gm?.scar || 0) * 0.01; }
-
-export function dps(player) {
-  return player.atk * player.hitsPerSec;
+// The one number that damages Wardens: character DPS with crits folded in.
+export function combatPower(state) {
+  const d = derive(state);
+  return d.atk * d.hitsPerSec;
 }
 
-// Fresh damage a single pull deals at EV, as a fraction of boss HP.
-export function expectedDepth(player, boss) {
-  return (dps(player) * boss.windowS) / boss.hp;
+// Live drain: chip the frontier Warden's HP by CP over dtS seconds. No-op on a
+// broken Warden (that path farms). Returns { dealt, broke, cp }.
+export function drain(state, dtS) {
+  if (state.boss.broken || dtS <= 0) return { dealt: 0, broke: false, cp: 0 };
+  const cp = combatPower(state);
+  const dealt = Math.min(state.boss.hp, cp * dtS);
+  state.boss.hp = Math.max(0, state.boss.hp - dealt);
+  const broke = state.boss.hp <= 0;
+  if (broke) state.boss.broken = true; // caller grants rewards + dialogue + descend
+  return { dealt, broke, cp };
 }
 
-// Projection band: what the next pull's TOTAL depth (scars included) lands in.
-export function band(player, boss, scars) {
-  const ev = expectedDepth(player, boss);
-  return { lo: scars + ev * (1 - VARIANCE), hi: scars + ev * (1 + VARIANCE) };
+// Estimated seconds to kill at current CP — the readout that reads huge on
+// arrival and drops as you scale. null when there's nothing to kill.
+export function timeToKill(state) {
+  if (state.boss.broken) return null;
+  const cp = combatPower(state);
+  return cp > 0 ? state.boss.hp / cp : Infinity;
 }
 
-// P(total depth ≥ 100%) — analytic, uniform band.
-export function breakChance(player, boss, scars = 0) {
-  const { lo, hi } = band(player, boss, scars);
-  if (hi <= 1) return 0;
-  if (lo >= 1) return 1;
-  return (hi - 1) / (hi - lo);
-}
-
-// EV forecast: pulls until the wall breaks, assuming every pull rolls EV.
-// The countable daydream (§3 projection). Infinity = power can't break it.
-export function pullsToBreakEV(player, boss, scars, cap = SCAR_CAP) {
-  const ev = expectedDepth(player, boss);
-  let s = scars;
-  for (let n = 1; n <= 1000; n++) {
-    if (s + ev >= 1) return n;
-    const grown = Math.min(cap, s + ev * SCAR_RATE);
-    if (grown === s) return Infinity; // scars capped, EV still short
-    s = grown;
-  }
-  return Infinity;
-}
-
-export function rollDepth(player, boss, rng = Math.random) {
-  const ev = expectedDepth(player, boss);
-  return ev * (1 - VARIANCE + 2 * VARIANCE * rng());
-}
-
-// A broken boss stays Attempt-able — Farm status (§9): re-fight it for set-
-// piece drops instead of depth. Only the cooldown gates farm attempts.
-export function canPull(state, now) {
-  return !state.pull && now >= state.cooldownUntil;
-}
-
-export function startPull(state, now, rng = Math.random) {
-  if (!canPull(state, now)) return false;
+// Fraction of the Warden's HP already gone (for the bar).
+export function hpFrac(state) {
   const boss = getBoss(state.wall);
-  const farm = state.boss.broken; // broken → farming for loot, not depth
-  state.pull = {
-    startedAt: now,
-    endsAt: now + boss.windowS * 1000,
-    rolledFresh: farm ? 0 : rollDepth(derive(state), boss, rng),
-    farm,
-  };
-  return true;
+  if (!boss?.hp) return state.boss.broken ? 1 : 0;
+  return Math.min(1, 1 - (state.boss.hp || 0) / boss.hp);
 }
 
-// Fraction of the enrage window elapsed, 0..1.
-export function pullFrac(state, now) {
-  const p = state.pull;
-  if (!p) return 0;
-  return Math.min(1, (now - p.startedAt) / (p.endsAt - p.startedAt));
-}
+// Farm status: a broken Warden yields a set-piece roll + tickets every
+// FARM_INTERVAL seconds of farming. Carry lives on state.boss.farmCarry.
+export const FARM_INTERVAL = 30; // seconds per farm "kill"
 
-// Total depth right now: permanent scars + fresh damage accruing linearly.
-export function currentDepth(state, now) {
-  const p = state.pull;
-  if (!p) return state.boss.scars;
-  return state.boss.scars + p.rolledFresh * pullFrac(state, now);
-}
-
-// True once the pull is over: window elapsed, or 100% reached early. Farm
-// attempts resolve purely on the window (no depth to reach).
-export function pullDone(state, now) {
-  if (!state.pull) return false;
-  if (state.pull.farm) return now >= state.pull.endsAt;
-  return now >= state.pull.endsAt || currentDepth(state, now) >= 1;
-}
-
-// Resolve a FARM attempt on a broken boss: a kill for tickets. The caller
-// rolls the set-piece drop (trophies.rollFarmDrop). Returns tickets earned.
-export function resolveFarm(state, now) {
-  state.pull = null;
-  state.boss.pulls++;
-  const y = Math.round(ticketYield(1) * delveBonus(state, "ticket")); // a full "kill" of the broken boss
-  state.tickets += y;
-  state.cooldownUntil = now + cooldownMs(state);
-  return y;
-}
-
-// Idle encounter processing (GM unlock): resolve the attempts that would
-// have fired while away. Same rolls, same scars, same faucets; count is
-// clamped by the caller's already-clamped dt. Returns a summary.
-export function processIdleAttempts(state, dtS, rng = Math.random) {
-  const boss = getBoss(state.wall);
-  const cycleS = cooldownMs(state) / 1000 + boss.windowS;
-  let n = Math.floor(dtS / cycleS);
-  const out = { attempts: 0, tickets: 0, best: 0, broke: false };
-  while (n-- > 0 && !state.boss.broken) {
-    state.cooldownUntil = 0;
-    if (!startPull(state, 0, rng)) break;
-    const depth = resolvePull(state, boss.windowS * 1000);
-    const y = Math.round((ticketYield(depth) + (state.boss.broken ? BREAK_TICKETS : 0)) * delveBonus(state, "ticket"));
-    state.tickets += y;
-    out.tickets += y;
-    out.attempts++;
-    out.best = Math.max(out.best, depth);
-    if (state.boss.broken) out.broke = true;
+export function farmTick(state, dtS) {
+  const out = { rolls: 0, tickets: 0, pieces: [] };
+  if (!state.boss.broken || dtS <= 0) return out;
+  let carry = (state.boss.farmCarry || 0) + dtS;
+  while (carry >= FARM_INTERVAL) {
+    carry -= FARM_INTERVAL;
+    out.rolls++;
+    out.tickets += Math.round(ticketYield(1) * delveBonus(state, "ticket"));
+    const piece = rollFarmDrop(state, state.wall);
+    if (piece) out.pieces.push(piece);
   }
-  state.cooldownUntil = Date.now() + (out.attempts ? cooldownMs(state) : 0);
+  state.boss.farmCarry = carry;
+  state.tickets += out.tickets;
   return out;
 }
 
-// Returns final total depth (capped at 100%). Break needs no cooldown;
-// fail deepens scars (capped) and starts one.
-export function resolvePull(state, now) {
-  const fresh = state.pull.rolledFresh;
-  const depth = Math.min(state.boss.scars + fresh, 1);
-  state.pull = null;
-  state.boss.pulls++;
-  state.boss.bestDepth = Math.max(state.boss.bestDepth, depth);
-  if (depth >= 1) {
-    state.boss.broken = true;
-  } else {
-    state.boss.scars = Math.min(scarCap(state), state.boss.scars + fresh * SCAR_RATE);
-    state.cooldownUntil = now + cooldownMs(state);
+// Offline: same drain/farm as live, dtS already clamped by the caller. One
+// linear drain call (CP constant across the batch — a slight over-credit
+// bounded by the offline cap). Returns a summary for the log.
+export function processIdle(state, dtS) {
+  if (state.boss.broken) {
+    const f = farmTick(state, dtS);
+    return { broke: false, dealt: 0, farm: f };
   }
-  return depth;
+  const r = drain(state, dtS);
+  return { broke: r.broke, dealt: r.dealt, farm: null };
 }

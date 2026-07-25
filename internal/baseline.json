@@ -1,7 +1,7 @@
 [
   {
     "t": 30,
-    "desc": "first attempt 0.0008% (intro beat)"
+    "desc": "arrival TTK 149664.8d (intro beat — overwhelming)"
   },
   {
     "t": 35,
@@ -12,55 +12,47 @@
     "desc": "power ×10"
   },
   {
-    "t": 4200,
+    "t": 3600,
     "desc": "power ×100"
   },
   {
-    "t": 4200,
+    "t": 3600,
     "desc": "z2 held (Webbed Ravine)"
   },
   {
-    "t": 4800,
+    "t": 4200,
     "desc": "power ×1000"
   },
   {
-    "t": 4800,
+    "t": 4200,
     "desc": "power ×10000"
   },
   {
-    "t": 4800,
+    "t": 4200,
     "desc": "z5 held (The Doorstep)"
   },
   {
-    "t": 5400,
+    "t": 4800,
     "desc": "z3 held (Salt Flats)"
   },
   {
-    "t": 5400,
+    "t": 4800,
     "desc": "z4 held (Cinder Steppe)"
   },
   {
-    "t": 7200,
-    "desc": "depth 0.1%"
+    "t": 19200,
+    "desc": "W1 10% gone"
   },
   {
-    "t": 7200,
-    "desc": "depth 1%"
+    "t": 33600,
+    "desc": "W1 50% gone"
   },
   {
-    "t": 7200,
-    "desc": "depth 10%"
+    "t": 41400,
+    "desc": "W1 90% gone"
   },
   {
-    "t": 10800,
-    "desc": "depth 50%"
-  },
-  {
-    "t": 11400,
-    "desc": "scars capped"
-  },
-  {
-    "t": 12600,
+    "t": 42600,
     "desc": "W1 broken (EV)"
   }
 ]

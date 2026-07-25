@@ -25,15 +25,17 @@ const trophies = await import("../trophies.js");
 const dungeon = await import("../dungeon.js");
 const enh = await import("../enhance.js");
 const armory = await import("../armory.js");
+const crits = await import("../crits.js");
+const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripted rng
 
-// Stats: formula lock at starting values (the intro beat number)
+// Stats: formula lock — base CP folds in the ×1.16 crit factor
 {
   const s = newState();
   const d = derive(s);
-  assert.equal(d.atk, 10);
+  assert.ok(Math.abs(d.atk - 10 * crits.critFactor(crits.BASE)) < 1e-9); // 11.6
   assert.equal(d.hitsPerSec, 2.0);
-  const b = getBoss(1);
-  assert.equal(pull.expectedDepth(d, b), 20 * 30 / 80_000_000); // 0.00075% exactly
+  // arrival is overwhelming: time-to-breach is enormous at base CP
+  assert.ok(pull.timeToKill(s) > 86400 * 100); // > 100 days
 }
 
 // Stats: gear + bars feed the one-line formula; speed SOFT cap (no hard cap)
@@ -43,54 +45,64 @@ const armory = await import("../armory.js");
   s.bots.trained.hits = 99; // raw 101 hits — soft cap, NOT clamped to 5.0
   s.gear.weapon = { slot: "weapon", ip: 100, plus: 10, zone: 1, name: "t" }; // 100×1.12^10
   const d = derive(s);
-  assert.ok(Math.abs(d.atk - (10 + 80 + 100 * Math.pow(1.12, 10))) < 1e-9);
+  assert.ok(Math.abs(d.atk - (10 + 80 + 100 * Math.pow(1.12, 10)) * crits.critFactor(crits.critStats(s))) < 1e-6);
   // above the knee (5.0), diminishing but well past the old 5.0 wall
   assert.ok(Math.abs(d.hitsPerSec - softHits(2.0 + 99)) < 1e-9);
   assert.ok(d.hitsPerSec > 5.0); // the point: never hard-capped
 }
 
-// Pull math: band endpoints + break chance edges (constants retuned)
+// Crits: two-tier cascade folds into the CP factor; rollHit tiers
 {
-  const s = newState();
-  const b = getBoss(1);
-  const d = derive(s);
-  const ev = pull.expectedDepth(d, b);
-  assert.ok(Math.abs(pull.rollDepth(d, b, () => 0) - ev * (1 - pull.VARIANCE)) < 1e-15);
-  assert.ok(Math.abs(pull.rollDepth(d, b, () => 1) - ev * (1 + pull.VARIANCE)) < 1e-15);
-  assert.equal(pull.breakChance(d, b, 0), 0);
-  assert.equal(pull.breakChance({ atk: 1e9, hitsPerSec: 5 }, b, 0), 1);
-  assert.equal(pull.pullsToBreakEV(d, b, 0), Infinity); // hopeless by design at start
+  const cs = { rate: 0.10, superRate: 0.20, critMult: 2, superMult: 5 };
+  assert.ok(Math.abs(crits.critFactor(cs) - 1.16) < 1e-12);
+  assert.equal(crits.rollHit(100, cs, () => 0.99).tier, 0);        // no crit
+  assert.equal(crits.rollHit(100, cs, seq(0.05, 0.99)).tier, 1);   // crit, no super
+  assert.equal(crits.rollHit(100, cs, seq(0.05, 0.05)).tier, 2);   // crit + super
 }
 
-// Resolve: hopeless pull → scars grow, cooldown; scars never exceed cap
+// Crit affixes raise critStats (the improvable stat behind the chase)
 {
   const s = newState();
-  const t0 = 1_000_000;
-  assert.ok(pull.startPull(s, t0, () => 0.5));
-  const end = s.pull.endsAt;
-  const fresh = s.pull.rolledFresh;
-  const d = pull.resolvePull(s, end);
-  assert.ok(d < 0.001 && !s.boss.broken);
-  assert.ok(Math.abs(s.boss.scars - fresh * pull.SCAR_RATE) < 1e-15);
-  assert.equal(s.cooldownUntil, end + pull.COOLDOWN_MS);
-  s.boss.scars = pull.SCAR_CAP - 1e-9;
-  s.cooldownUntil = 0;
-  pull.startPull(s, end + 100_000, () => 0.5);
-  pull.resolvePull(s, s.pull.endsAt);
-  assert.equal(s.boss.scars, pull.SCAR_CAP);
+  s.gear.weapon = { slot: "weapon", ip: 100, plus: 0, zone: 1, name: "t",
+    affixes: [{ id: "critRate", tier: 1, value: 15 }, { id: "critDmg", tier: 1, value: 50 }] };
+  const cs = crits.critStats(s);
+  assert.ok(Math.abs(cs.rate - 0.25) < 1e-9);     // 0.10 + 0.15
+  assert.ok(Math.abs(cs.critMult - 2.5) < 1e-9);  // 2 + 0.50
+  assert.ok(Math.abs(cs.superMult - 5.5) < 1e-9);
 }
 
-// Resolve: overwhelming stats → break, no cooldown
+// Drain: HP falls at Combat Power; break at 0, clamped
 {
   const s = newState();
-  s.gear.weapon = { slot: "weapon", ip: 4_000_000, plus: 0, zone: 5, name: "t" };
-  pull.startPull(s, 1_000_000, () => 0.5);
-  assert.ok(!pull.pullDone(s, s.pull.startedAt + 5_000)); // rolled 2.0× → 100% mid-window
-  assert.ok(pull.pullDone(s, s.pull.endsAt - 14_000));    // breaks early at 100%
-  const d = pull.resolvePull(s, 1_005_000);
-  assert.equal(d, 1);
-  assert.ok(s.boss.broken);
-  assert.equal(s.cooldownUntil, 0);
+  const cp = pull.combatPower(s);
+  const before = s.boss.hp;
+  const r = pull.drain(s, 10);
+  assert.ok(Math.abs(r.dealt - cp * 10) < 1e-3);
+  assert.ok(Math.abs(s.boss.hp - (before - cp * 10)) < 1e-3);
+  assert.ok(!r.broke && !s.boss.broken);
+  s.boss.hp = cp * 5;                       // enough time → break
+  const r2 = pull.drain(s, 100);
+  assert.equal(s.boss.hp, 0);
+  assert.ok(r2.broke && s.boss.broken);
+  assert.ok(Math.abs(r2.dealt - cp * 5) < 1e-3); // only what remained
+}
+
+// Broken Warden: no drain; farmTick rolls on the interval + tickets
+{
+  const s = newState();
+  s.boss.broken = true;
+  assert.equal(pull.drain(s, 100).dealt, 0);
+  const f = pull.farmTick(s, pull.FARM_INTERVAL * 3 + 1); // 3 farm kills
+  assert.equal(f.rolls, 3);
+  assert.ok(s.tickets > 0);
+}
+
+// timeToKill: hp / CP; null when broken
+{
+  const s = newState();
+  assert.ok(Math.abs(pull.timeToKill(s) - s.boss.hp / pull.combatPower(s)) < 1e-3);
+  s.boss.broken = true;
+  assert.equal(pull.timeToKill(s), null);
 }
 
 // Bots: population flow — creation toward server capacity
@@ -343,9 +355,10 @@ const armory = await import("../armory.js");
   assert.equal(s.gear.stash.length, gear.STASH_CAP);
   assert.ok(s.gear.stash.some(it => it.name === "worst")); // locked ip-1 survives the cull
 
-  // affix registry maps every affix to a known lane (data/code boundary)
+  // affix registry maps every affix to a known lane (data/code boundary).
+  // "crit" is read by crits.js, not derive()'s atk/speed/farm loop.
   for (const id of affixes.AFFIX_IDS) {
-    assert.ok(["atk", "speed", "farm"].includes(affixes.AFFIXES[id].lane));
+    assert.ok(["atk", "speed", "farm", "crit"].includes(affixes.AFFIXES[id].lane));
   }
 
   // LIVE affixes: contribution = rolled rate × state quantity, hard-capped
@@ -467,9 +480,10 @@ const armory = await import("../armory.js");
   const s = newState();
   saves.load(s);
   assert.equal(s.maxWall, 2);
-  assert.equal(s.wall, 1);                 // viewing the cleared wall
-  assert.equal(s.boss.broken, true);       // W1 is a broken farm target
-  assert.equal(s.frontierBoss.pulls, 7);   // W2's fight-progress preserved
+  assert.equal(s.wall, 1);                          // viewing the cleared wall
+  assert.equal(s.boss.broken, true);                // W1 is a broken farm target
+  assert.equal(s.frontierBoss.hp, getBoss(2).hp);   // W2 fight reset to full (old scars discarded)
+  assert.equal(s.frontierBoss.broken, false);
   // at the frontier, boss IS the frontier record
   localStorage.setItem("mm_save", JSON.stringify({
     v: 9, unlocked: true, wall: 2, maxWall: 2,
@@ -477,7 +491,7 @@ const armory = await import("../armory.js");
   }));
   const s2 = newState();
   saves.load(s2);
-  assert.equal(s2.boss.pulls, 7);
+  assert.equal(s2.boss.hp, getBoss(2).hp);
   assert.equal(s2.boss.broken, false);
 }
 
@@ -635,7 +649,7 @@ const armory = await import("../armory.js");
   s.gm.scar = 2;
   s.gear.weapon = { slot: "weapon", ip: 55, plus: 3, zone: 1, name: "t" };
   s.gear.stash = [{ slot: "charm", ip: 5, plus: 0, zone: 1, name: "u" }];
-  s.boss = { pulls: 3, bestDepth: 0.01, scars: 0.005, broken: false, nearSaid: false };
+  s.boss = { hp: 123_000_000, broken: false, nearSaid: false, farmCarry: 0 };
   s.frontierBoss = s.boss; // invariant: at the frontier, boss IS frontierBoss
   saves.save(s);
   assert.equal(JSON.parse(localStorage.getItem("mm_save")).pull, undefined);
@@ -659,7 +673,8 @@ const armory = await import("../armory.js");
   const s3 = newState();
   saves.load(s3);
   assert.equal(s3.bots.pop, newState().bots.pop); // backfills to the current seed pop
-  assert.equal(s3.boss.scars, 0.2);
+  assert.equal(s3.boss.hp, getBoss(1).hp); // old scars discarded, fight reset to full
+  assert.equal(s3.boss.broken, false);
   assert.equal(s3.unlocked, true); // mid-siege v1 save keeps systems open
 
   // v2 save (discrete accounts): count → pop; alloc falls back to defaults
@@ -721,12 +736,11 @@ const armory = await import("../armory.js");
   const s = newState();
   s.tickets = 1e9;
 
-  // utility: hard rank caps (law 1)
+  // utility: hard rank caps (law 1) — scar/cooldown are vestigial post-drain,
+  // but buyUtility + its rank caps still hold
   while (gm.buyUtility(s, "scar"));
   assert.equal(s.gm.scar, gm.UTILITY.scar.max);
-  assert.ok(Math.abs(pull.scarCap(s) - (pull.SCAR_CAP + 0.03)) < 1e-12);
   while (gm.buyUtility(s, "cooldown"));
-  assert.equal(pull.cooldownMs(s), 30_000); // 60s − 6×5s
   while (gm.buyUtility(s, "offline"));
   assert.equal(farm.offlineCapS(s), (12 + 6) * 3600);
   while (gm.buyUtility(s, "cap"));
@@ -766,17 +780,17 @@ const armory = await import("../armory.js");
   assert.equal(bots.buyPriv(sp, "cap"), false);          // no tickets left
 }
 
-// Idle encounter processing: clamped attempts, real rolls, tickets flow
+// Offline: the Warden whittles at CP (clamped by dt); broken walls farm
 {
   const s = newState();
-  s.gm.idleProc = true;
-  s.gear.weapon = { slot: "weapon", ip: 500, plus: 0, zone: 1, name: "t" };
-  const t0 = s.tickets;
-  const r = pull.processIdleAttempts(s, 4 * 3600, () => 0.5); // 4h, EV rolls
-  assert.ok(r.attempts >= 1 && r.attempts <= Math.floor(4 * 3600 / (60 + 30)));
-  assert.equal(s.boss.pulls, r.attempts);
-  assert.ok(s.tickets > t0);
-  assert.ok(s.boss.scars > 0);
+  const cp = pull.combatPower(s);
+  const r = pull.processIdle(s, 100);
+  assert.ok(!r.broke && Math.abs(r.dealt - cp * 100) < 1e-3);
+  assert.ok(s.boss.hp < getBoss(1).hp);
+  s.boss.broken = true; // broken → farm branch, no drain
+  const r2 = pull.processIdle(s, pull.FARM_INTERVAL + 1);
+  assert.equal(r2.dealt, 0);
+  assert.ok(r2.farm.rolls >= 1);
 }
 
 // Dialogue completeness: every event key the UI emits has ≥1 non-empty line

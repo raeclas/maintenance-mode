@@ -22,6 +22,11 @@ export const AFFIXES = {
   hits:    { lane: "speed", kind: "flat", base: 0.12, per: 0.12,    round: false, label: v => `+${v} hits/s` },
   haste:   { lane: "speed", kind: "pct",  base: 3,    per: 2,       round: true,  label: v => `+${v}% haste` },
   copper:  { lane: "farm",  kind: "pct",  base: 8,    per: 7,       round: true,  label: v => `+${v}% copper` },
+  // crit lane — read by crits.js (critStats), safely ignored by derive()'s
+  // atk/speed/farm loop. critRate adds probability points; critDmg adds to the
+  // crit/super multipliers. The improvable stat behind the crit chase.
+  critRate: { lane: "crit", kind: "pct", base: 3,  per: 1.5, round: true, label: v => `+${v}% crit rate` },
+  critDmg:  { lane: "crit", kind: "pct", base: 12, per: 6,   round: true, label: v => `+${v}% crit dmg` },
   // LIVE affixes — value computed from account state (the flywheel: pushing a
   // system moves a gear number). Rolled `value` is the per-unit RATE; the live
   // contribution = rate × unit(state), hard-capped so it can't run away (law 1).
