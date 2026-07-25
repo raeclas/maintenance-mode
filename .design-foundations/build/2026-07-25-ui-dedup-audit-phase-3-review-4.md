@@ -1,0 +1,80 @@
+# Design Review: Phase 3 - UI de-dup audit (round 4)
+
+## Rendered Evidence (Step 0)
+- Screenshot: none — this phase's artifact is `internal/DESIGN.md`, a token specification, not a page. No `.html`/mock was produced.
+- Surface reviewed: `internal/DESIGN.md` ("Last Warmth") cross-checked line-by-line against the shipped source it claims to systematize: `style.css`, `index.html`, `main.js`, `bots.js`, `battle.js`, `rarity.js`, `trophies.js`, `farm.js`, `bosses.js`, and `internal/JOURNEY.md`/`internal/REMAKE-DESIGN.md`.
+
+## Assessment B — Deterministic Detector
+- Command: not run.
+- Exit: N/A (no rendered artifact this phase — the dispatch prompt states this explicitly and the no-artifact carve-out applies).
+- Findings: N/A — no rendered `.html` exists to feed `detect.mjs`.
+- Opened only after Assessment A findings were frozen: N/A (nothing to open).
+
+## Triage
+- Baseline (always-on): visual (design-dna, foundations, archetypes, fonts, color, ai-tells — all named in the dispatch `## Doctrine` and read) + usability (not separately re-read; this artifact is a token spec, not an operable surface — no new interaction pattern to evaluate beyond what DW-3.3/central-constraint already cover).
+- Dispatched: color (chapter-08-color-science.md) for the entire contrast/hue-preservation section; fonts (chapter-03-typography.md) for the Georgia/monospace medium-fit claim; ai-tells.md for the distinctiveness/CHECKER-mode pass; archetypes.md for the Ruler+Sage legality check; design-dna.md for the DNA-schema/gate compliance and the "why this isn't diverge/critique/converge" justification.
+- Not applicable: data-viz (no charts), content-design (no new player-facing copy authored this phase — copy citations are quotes of existing shipped strings), journey (JOURNEY.md is consumed as a contract, not authored here), behavioral/deceptive-patterns (no persuasion/conversion surface).
+- Deferred: none — the artifact is a single markdown file; no cap was needed.
+
+## Method note
+This is round 4 of a document that has self-corrected through three prior review rounds (visible in its own inline "corrected per review" annotations). Per the reviewer stance, I did not accept those self-corrections on trust: every contrast ratio was independently recomputed from raw hex (relative-luminance/WCAG formula, not `palette.mjs`, since that script only generates fresh ramps and has no two-hex-comparison mode — same limitation the artifact itself notes), every cited selector/line number/function name was grepped against the actual files, every count claim (70/45/10/11) was re-derived from `trophies.js` × `bosses.js`, `farm.js` × the Armory's 3-slot grid, `farm.js` zone-unlock thresholds, and `bots.js` `TRAININGS`, and every "hue-preserving" claim was independently converted to HSL to check the hue delta.
+
+## Cross-Pillar Findings (ONE ranked report)
+
+| Severity | Pillar | Problem | Principle | Fix |
+|----------|--------|---------|-----------|-----|
+| Minor | color / process | The `rarity.js` `mythic` hex fix (`#d64a4a`→`#d85454`) is computed and asserted correct in the "Rarity ramp" prose, but is the only proposed fix **not** enumerated in the "Required behavior changes" numbered list (1–4) or in the closing "Why no code was touched this phase" summary paragraph, both of which are the document's own tracking mechanism for what Phase 4/6 must pick up. | Foundations §7 (constraints/decisions must be traceable, not merely stated once in prose) | Add a 5th numbered item pointing at `rarity.js`'s `mythic` weight-table hex, or fold it into the existing selector-fix list, so it isn't silently dropped when a future phase applies "the required fixes" by re-reading that list. |
+| Minor | color | The "Contrast evidence" section's "verified against every background they actually render on (`--bg`/`--panel`/`--inset`)" sentence is attached to the *already-passing, unchanged* token group (dim/bone/gold/gold-dim/risk/copper/live) but not to the *before→after* fixed group (recede/faint/faintest/warn/alert/mythic/locked-tab), which only cites `--panel`/`--inset`. `--faint` (new value `#808086`) is in fact rendered directly against `--bg` at `#wipeBtn` (footer, no enclosing panel) — independently recomputed at 4.98:1, which still clears AA, so this is not a contrast failure, only an incompleteness in the stated coverage relative to the document's own "exhaustive" framing. | WCAG 1.4.3 (verification completeness, not the ratio itself) | Add the `--faint` vs `--bg` pair (4.98:1) to the evidence list so the "every background" claim is actually exhaustive rather than accidentally true. |
+| Note | fonts / register | `section.game button`'s base rule sets `font-family: monospace`, which the document's own "Minor 2" correction (already self-caught in a prior round) confirms cascades to essentially every interactive button across Training/Grind/Player/Delve/Dungeon — a much larger mono footprint than "stat rows, chip values, log, canvas." The binding constraint's reference class ("a 2000s MMO UI... Terminal/shell chrome belongs to ONE register at the EDGES only") is in tension with mono covering most of the UI's actionable surface. The document's counter-argument — that this is the diegetically-justified "botter's-toolkit" register (bot/script/macro content, a second of REMAKE-DESIGN.md §16's three canonical registers, not an invented terminal skin), separate from the literal shell-prompt copy register (`maintenance@dead-server:~$`) that genuinely does stay at the edges — is plausible and traceable to the project's own lexicon (confirmed: REMAKE-DESIGN.md §16 names three registers — "the dead game," "the botter's toolkit," "the dying server" — and the botter's-toolkit register legitimately owns bots/rig/training/automation, i.e. exactly the mono-styled panels). Not escalated to a finding; flagged as a watch item for the phase that next touches composition, since the *font family* alone is doing a lot of the register-separation work that the constraint asks composition/color/chrome to carry. | ai-tells.md (Terminal/Mono-Core family fit) + Design for Hackers ch03 (medium-form) | No action required this phase (token-only scope); worth re-checking on real pixels once Phase 6 renders the composed page. |
+
+## Requirement Fulfillment
+
+### DW-3.1
+PREMISE:  `internal/DESIGN.md` exists with a token block present. (User-confirmation half handled outside this review.)
+EVIDENCE: File read in full; contains a corrected `:root { ... }` block (`--gold` through `--fs-micro`, ~44 declarations) under "### Corrected `:root` block (paste-ready for `style.css`)".
+VERDICT:  PASS
+
+### DW-3.2
+PREMISE:  All text/background pairs pass WCAG AA on the DARK ramp (≥4.5:1 body, ≥3:1 large/non-text), verified by computed ratio; must cover hardcoded color literals in `style.css` outside `:root`, sweep verified exhaustive.
+EVIDENCE: Independently recomputed every claimed ratio from raw hex using the WCAG relative-luminance formula (not taken from `palette.mjs` or the document's own numbers): `recede` 3.64→5.16 (panel) / 5.01 (inset); `faint` 2.49→4.68 (panel) / 4.55 (inset) / 4.98 (bg, not explicitly listed by the doc — see Minor finding above); `faintest` 2.09→3.13 (panel, non-text floor); `warn` 4.42→4.67; `alert` 4.42→4.66; `mythic` 4.20/4.32→4.52/4.65; `#logHead` 3.97 (fail) → `--logline` 4.53 (pass, on `--bg`, confirmed `#logHead` sits directly in `<main>` with no panel wrapper in `index.html`). All matched the document's stated numbers to the hundredth. Independently grepped every `#`-hex literal in `style.css` outside the `:root` block (lines 4–23): found exactly the 10 hits the document's "Hardcoded-color audit" table lists (lines 77, 86, 133, 309, 413, 427, 494, 598, 660–661) — the sweep is genuinely exhaustive, not spot-checked. Independently grepped every `rgba()` literal: found exactly the 6 the document names (`.tier-nightmare`, `flashOk`/`flashFail`, `.stashRow.upgrade`, `.amCell.max`, `.modal` scrim), all decorative/non-text.
+VERDICT:  PASS
+
+### DW-3.3
+PREMISE:  Interactive elements pass WCAG AA non-text (≥3:1) — gold CTA and `.locked` tab state; cited selectors must actually exist.
+EVIDENCE: `#descendBtn` confirmed live in `index.html:76` (`<button id="descendBtn" ...>Descend to the next door →</button>`); gold-fill vs panel = 8.10:1, `--on-gold` on solid gold = 8.56:1 — both independently recomputed and matching. `#tabs button.locked` confirmed applied via `main.js:232` (`btn.classList.toggle("locked", !open)`) and the CSS rule at `style.css:660` — hardcoded `#45454d` (1.94:1, fails even the 3:1 floor) is proposed to redirect to `--faintest` (`#64646a`, 3.13:1, clears the floor) — recomputed and confirmed. `#pullBtn` (the only other CTA-shaped selector) independently grepped across `index.html` and `main.js`: zero matches in both — confirmed genuinely dead, so it correctly carries no live obligation.
+VERDICT:  PASS
+
+### DW-3.4
+PREMISE:  Semantic aliases resolved (background, surface, text, accent) and a type scale defined covering every size currently in use in the shipped `style.css`.
+EVIDENCE: Color tokens table resolves background/surface(×4 sub-roles)/border/text(×6 tiers)/accent roles against existing primitives. Independently grepped every `font-size:` declaration in `style.css` (62 occurrences): every one resolves to a `var(--fs-*)` token except a single literal, `.modalClose { font-size: 22px; }` (`style.css:572`) — which the document names explicitly as a deliberate icon-glyph exception, not an omission. Coverage is complete.
+VERDICT:  PASS
+
+### DW-3.5
+PREMISE:  Canvas colors exist as named tokens readable from JS; must specify a working mechanism, not just names.
+EVIDENCE: `theme.js` does not yet exist in the repo (confirmed via `ls`/grep — correctly labeled as new, not a shipped-fact overclaim). The specified mechanism (`getComputedStyle(document.documentElement)` read once, cached, called from inside `initBattle()` after the canvas + stylesheet exist) is a real, working technique for exactly the stated reason (canvas 2D has no custom-property cascade context). The four canvas tokens it proposes (`--gold-bright #ffd700`, `--crit-gold #ffd54a`, `--super-crit #ff9a3c`, `--dmg-text #e8dcc0`) were independently grepped against `battle.js` and found at the exact state-tier usages claimed: tier-2 crit `#ff9a3c` (`battle.js:45`), tier-1/nightmare-plus `#ffd54a`, tier-0/normal `#e8dcc0`, BREACHED/nightmare-enhance `#ffd700` (`battle.js:62,68,71`).
+VERDICT:  PASS
+
+### DW-3.6
+PREMISE:  Motion budget stated and contains no ritual/ceremony animation.
+EVIDENCE: Every duration in the motion table was independently checked against source: `.flash-ok`/`.flash-fail` (`style.css:357-358`, 0.7s/0.45s — matches); shake 120/220/500/600ms and flash 90/120/160ms (`battle.js:49-71` — matches); BREACHED reveal 6000ms one-time (`battle.js:68` — matches); the single `@media (prefers-reduced-motion: reduce)` query (`style.css:152`) covers only `.cursor`/`.logline` — confirmed no `matchMedia`/`reduced-motion` reference anywhere in the JS, so the stated "not checked" gaps on the 4 canvas effects + 2 CSS keyframes are accurate, not hidden. No effect gates the next input; enhance resolves instantly per the hard veto (unchanged from prior rounds' verification).
+VERDICT:  PASS
+
+**All requirements met:** YES
+
+## Central constraint — live/dormant/locked weight ladder
+PREMISE: the visual language must express live/dormant/locked as distinguishable weights, both AA-floor-legible and neighbor-distinguishable, across the measured ~136-item breakdown (Trophies 70, Armory 45, Grind 10, Training 11).
+EVIDENCE: Independently re-derived every count from source rather than accepting the document's arithmetic: `trophies.js PARTS` = 7 parts/set × 10 bosses with `set:` declared in `bosses.js` (grepped, 10 occurrences) = 70. Armory = 15 zones (`farm.js zones` array, counted) × 3 slots = 45. Training = `bots.js TRAININGS`: 7 ATK tiers + 6 SPEED tiers = 13, minus 2 unlocked-at-start = 11 locked. Grind zones locked at start = `farm.js zoneUnlockClears`: zones 0–4 unlock at 0 clears (5 unlocked), zones 5–14 require 1 or 4 clears (10 locked) — matches exactly. The document's central claim — color/lightness on this background reliably carries exactly one strong split (live vs. not-live), and dormant-vs-locked separation is carried by the text-label channel, not color — was checked against the actual render code: Armory dormant cells print a real `R0 · +0.00%` value with no "locked" word (`main.js:607-612`, confirmed); Training locked rows print `locked · N/M fills of {predecessor}` (`main.js:797`, confirmed); Grind locked zones print `[LOCKED] break W#` (`main.js:844`, confirmed). The two items marked "REQUIRED — not yet shipped" (alloc-control gating on locked rows; Grind's struggling-vs-locked class split) were verified to be genuinely absent from source: `bots.js:116-122 setAlloc` and the `allocMini` click wiring (`main.js:296-309`) have no lock-state check of any kind; `main.js:841` does exactly the single-condition toggle the document quotes verbatim (`toggle("locked", !unlocked || (n>0 && !zr.held))`), with no separate `struggling` class anywhere in `main.js` or `style.css`. Both "REQUIRED" labels are accurate — the document does not overclaim these as shipped.
+VERDICT:  PASS (evidenced, correctly labeled VERIFIED vs REQUIRED throughout)
+
+## Other binding constraints
+- **MMO client, not a terminal/ruin:** PASS with the Note above (mono footprint tension, self-flagged, register-traceable to REMAKE-DESIGN.md §16, not escalated).
+- **No decay:** PASS — no glitch/corruption/decay signifiers found anywhere in `style.css`/`index.html`/the canvas code; the document's "Never" section states this explicitly and matches what's shipped.
+- **Systematization, not invention:** PASS — the document explicitly declines the diverge/critique/converge pipeline with a stated, doctrine-aware rationale (design-dna.md's process assumes a design that doesn't exist yet; this one does), and every axis claim traces to a shipped hex/selector rather than a fresh generation.
+- **Hex adjustments preserve character:** PASS — independently converted all 7 adjusted hex pairs to HSL; every pair shows a hue delta of ≤2° (recede/faint/faintest exactly 240.0°→240.0°; warn 11.2°→11.6°; alert 9.5°→9.7°; mythic 0.0°→0.0°; logline 141.8°→141.4°) — lightness-only nudges, no new hue introduced, confirming the document's own claim rather than accepting it on trust.
+- **Distinctiveness (ai-tells.md CHECKER mode):** PASS — "Last Warmth" names a specific, non-generic direction (warm-gold/bone identity split against cool blue-grey neutrals, MMO-serif chrome over botter's-toolkit mono data), not "clean and modern." No purple-triplet, no Inter/Roboto, no cyan-on-dark, no cream+serif+terracotta, no pure black/white. The gold/bone-exclusive-to-identity-roles rule (functional accents warn/alert/copper are hue-adjacent to gold but deliberately barred from identity roles) is a genuine signature move a generic system would not produce.
+
+## Notes (non-blocking)
+- The two Minor findings above are documentation-completeness/traceability gaps in an already very thoroughly self-corrected document (round 4 after 3 prior rounds); neither corresponds to an actual unmet contrast requirement — both underlying color values, once independently recomputed, pass AA.
+- The `battle.js drawBars()` HP%-label defect the document surfaces on its own initiative (fixed `#0d0d10` text drawn over the empty track at `1.23:1` for any HP below ~99%) was independently verified: `battle.js:132-139` draws the label in `#0d0d10` right-aligned at `W-24`, over a fill area that only reaches `(W-40)*remain` from the left — for any `remain < ~0.988` the label sits on the `#22222a` track, not the gold fill. This is real and correctly surfaced as "not on the DW list," not fixed this phase (correct scope discipline), with a concrete, low-risk fix named (reuse the existing stroke-outline technique from the damage floaters).
+
+**Verdict: PASS**
