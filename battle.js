@@ -1,5 +1,5 @@
 // battle.js — canvas battle scene, render-only. No sound (hard veto). The
-// fight is now an idle whittle: the Warden's INTEGRITY bar drains at Combat
+// fight is now an idle whittle: the Warden's health bar drains at Combat
 // Power and the character auto-hits, streaming damage numbers. Crits pop as
 // `*` / `**` in a MapleStory-style skin (outlined digits, pop + drift + fade).
 import { hpFrac } from "./pull.js";
@@ -119,7 +119,8 @@ function drawHero(now, fighting) {
   ctx.fillRect(x + 12, HERO.y - 66, 5, 44);
 }
 
-// The Warden's INTEGRITY bar — remaining HP, draining at Combat Power.
+// The Warden's health bar — remaining HP, draining at Combat Power. Unlabelled
+// while alive (a bar under a boss reads as health); only BREACHED is spelled out.
 function drawBars(state) {
   const boss = getBoss(state.wall);
   const full = boss?.hp || 1;
@@ -131,7 +132,7 @@ function drawBars(state) {
   ctx.fillStyle = "#0d0d10";
   ctx.font = "bold 10px monospace";
   ctx.textAlign = "left";
-  ctx.fillText(state.boss.broken ? "BREACHED" : "INTEGRITY", 24, H - 19);
+  if (state.boss.broken) ctx.fillText("BREACHED", 24, H - 19);
   if (!state.boss.broken) {
     ctx.fillStyle = "#0d0d10";
     ctx.textAlign = "right";
