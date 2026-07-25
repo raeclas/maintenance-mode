@@ -1,9 +1,11 @@
 # Design Plan: UI de-duplication audit — all six tabs
 
-**Status:** ready
+**Status:** in-progress
 **Track:** Standard
 **Entry stage:** Discover (neither DESIGN.md nor JOURNEY.md exists)
 **Created:** 2026-07-25
+**Started:** 2026-07-25
+**Current Phase:** 1
 **Phases:** 6
 
 ---
