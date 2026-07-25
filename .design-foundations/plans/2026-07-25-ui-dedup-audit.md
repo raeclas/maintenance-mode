@@ -1,4 +1,4 @@
-# Design Plan: UI de-duplication audit — all six tabs
+# Design Plan: UI de-duplication audit — all seven tabs
 
 **Status:** ready
 **Track:** Standard
@@ -12,17 +12,24 @@
 
 Maintenance Mode is a boss-progression idle game. The premise: a dead MMO is
 still running in maintenance mode and you are the only player left. The UI is
-that MMO's client. Six tab surfaces (Boss,
-Training, Grind, Player, Delve, Dungeon) print the same information more than
-once and render nearly everything at one visual weight, so each screen reads as
-a dense undifferentiated block. The Dungeon tab states every boss ability three
-times (assign rows, journal rows, intro paragraph); "needs 2 bots" appears twice
-per row; difficulty appears three times.
+that MMO's client. **Seven** tab surfaces (Boss, Training, Grind, Player, Delve,
+Dungeon, GM) print the same information more than once and render nearly
+everything at one visual weight, so each screen reads as a dense
+undifferentiated block.
 
-The root cause is not styling. No document says which surface owns which fact,
-so the same number is printed wherever it seems relevant. This plan produces the
-missing contract — journey, IA, fact ownership, page specs, then design DNA,
-tokens, component specs and microcopy — and composes all six tabs against it.
+**The current state has been measured, not assumed** — see `internal/UI-AUDIT.md`,
+captured at 375px from build `bcf4ecc` via `npm run shots`. Headlines: every tab
+overflows horizontally (459px at a 375px viewport); ~136 dormant items render at
+full weight (70 unearned trophy rows, 45 rank-0 Armory cells, 21 locked
+rows with inert allocation controls); the Player tab is ~8 phone screens tall
+with its live controls at 60% scroll depth.
+
+The audit also reframed the problem. Duplication is the SMALLER half: the larger
+half is that nothing in the visual language separates live content from dormant
+content. Both causes trace to the same gap — no document says which surface owns
+which fact, or which state a row is in. This plan produces the missing contract
+— journey, IA, fact ownership, page specs, then design DNA, tokens, component
+specs and microcopy — and composes all seven tabs against it.
 
 ## Constraints
 
@@ -49,7 +56,10 @@ tokens, component specs and microcopy — and composes all six tabs against it.
   scroll at phone width; wide content scrolls inside its own container.
 - The boss arena (health bar + streaming damage numbers) is CANVAS-drawn. It can
   be specced and its colors tokenized for the canvas code to read, but it cannot
-  be styled by CSS, mock-rendered as HTML, or verified by a DOM-based reviewer.
+  be styled by CSS or mock-rendered as HTML. It CAN now be reviewed on real
+  pixels: `npm run shots` (`internal/shot.mjs`) captures the live game headless
+  at 375px and renders the canvas correctly, so the "canvas is unreviewable" gap
+  is closed — use the real capture, not a stub, wherever the arena matters.
 - UI copy is plain English that explains the mechanic. The project's three-
   register lexicon (`internal/REMAKE-DESIGN.md` §16) governs NAMES only, never
   instructions.
@@ -70,14 +80,14 @@ Fix the contract before the pixels. Phase 1 assigns every displayed fact to
 exactly one owning surface — that map is what every later phase enforces, and it
 is the only phase that addresses the actual cause. Phases 2–5 build the spec
 layers (page structure, locked visual DNA, component machine, words) in
-dependency order. Phase 6 composes all six tabs at once so the result is
-consistent rather than six separately-drifting screens.
+dependency order. Phase 6 composes all seven tabs at once so the result is
+consistent rather than seven separately-drifting screens.
 
 ## Rejected approaches
 
 - **Style-only pass.** Retokenizing and restyling without a fact-ownership map
   leaves the duplication intact — it would repaint the same repeated text.
-- **Dungeon-only fix.** Cheapest, and it was offered, but the user chose all six
+- **Dungeon-only fix.** Cheapest, and it was offered, but the user chose all seven
   in one pass; a per-tab fix also cannot produce a cross-tab ownership rule,
   which is where the duplication comes from.
 - **Inventing a new visual identity.** The existing look is deliberate satire and
@@ -119,12 +129,18 @@ exactly one owning surface.
 **Scope:**
 - IN: JTBD job story for the game loop; the tab ladder as IA (progressive
   unlock order is the navigation model); a complete inventory of every fact
-  each tab currently displays; the ownership map assigning each fact one home.
+  each of the SEVEN tabs currently displays; the ownership map assigning each
+  fact one home.
 - OUT: page-level structure (Phase 2); any visual decision (Phase 3+).
 
 **Constraints:** The tab unlock ladder is a designed progression system, not
 arbitrary nav — treat unlock order as part of the IA, not a bug to normalize.
 Inventory must read the live markup and render code, not assume.
+**`internal/UI-AUDIT.md` already carries the measured current state** (captured
+at 375px from `bcf4ecc`): the duplication list, the dormant-content counts, the
+overflow measurement and the per-tab findings. Start from it — do not re-derive
+what has been measured. Extend it where the ownership map needs facts it does
+not yet enumerate.
 
 **Edge cases:** Facts that legitimately belong on two surfaces (Combat Power
 drives both the Boss fight and the Player build) — the map must name ONE owner
@@ -138,17 +154,22 @@ Canvas-drawn facts are inventoried too, flagged as canvas-only.
 **Done when:**
 - [ ] DW-1.1: `internal/JOURNEY.md` exists with `## Job`, `## Journey` and `## IA`
       sections populated; JTBD school named and not mixed.
-- [ ] DW-1.2: `## Fact ownership` lists every fact displayed across all six tabs,
-      each with exactly one owning tab; no fact has two owners.
+- [ ] DW-1.2: `## Fact ownership` lists every fact displayed across all SEVEN
+      tabs, each with exactly one owning tab; no fact has two owners. Combat
+      Power (currently on both the resource bar and the Player tab) is resolved.
 - [ ] DW-1.3: Every currently-displayed guideline-5 term (each multiplier/term in
       the Combat Power product) appears in the ownership table — the map proves
       nothing gets hidden by later cuts.
-- [ ] DW-1.4: Every duplication in the current UI is listed with its locations,
-      including the three known Dungeon cases.
+- [ ] DW-1.4: Every duplication in the current UI is listed with its locations
+      (seeded from `internal/UI-AUDIT.md`, extended where that audit is silent).
+- [ ] DW-1.5: Every row/cell has a declared STATE in the map — live, dormant
+      (unlocked but idle), or locked. The audit found ~136 dormant items drawn
+      at live weight; the ownership map must record state, not just ownership,
+      or Phase 2 has nothing to differentiate on.
 
 ---
 
-## Phase 2: Page specs, six tabs
+## Phase 2: Page specs, seven tabs
 
 **Stage:** Discover
 **Model:** sonnet
@@ -159,7 +180,7 @@ Canvas-drawn facts are inventoried too, flagged as canvas-only.
 phone-first.
 
 **Scope:**
-- IN: one page spec per tab — purpose, entry points, content blocks in order,
+- IN: one page spec per tab (seven) — purpose, entry points, content blocks in order,
   states (empty / locked / active / error), primary action, exit.
 - OUT: copy wording (Phase 5); token values (Phase 3).
 
@@ -180,11 +201,11 @@ and needs a spec. The Boss tab contains the canvas arena: its spec names the
 region and what it must convey, without HTML structure. Tabs with a live run in
 progress (Dungeon) have a distinct in-progress state from their idle state.
 
-**Produces:** `internal/JOURNEY.md` `## Page specs` — six complete entries.
+**Produces:** `internal/JOURNEY.md` `## Page specs` — seven complete entries.
 **Depends on:** Phase 1 | **Unlocks:** Phase 3
 
 **Done when:**
-- [ ] DW-2.1: `## Page specs` has six complete entries (one per tab), each with
+- [ ] DW-2.1: `## Page specs` has seven complete entries (one per tab), each with
       purpose, entry points, ordered content blocks, states, primary action, exit.
 - [ ] DW-2.2: Every content block in every spec traces to a fact this tab OWNS in
       the Phase 1 map; no spec reproduces a fact owned elsewhere.
@@ -297,7 +318,7 @@ teaches its own mechanic without repeating itself.
 
 **Scope:**
 - IN: labels, helper text, empty/locked/error states, button copy, log lines,
-  for all six tabs.
+  for all seven tabs.
 - OUT: layout and tokens.
 
 **Constraints:** Plain English that says what you do and what happens. The
@@ -314,7 +335,7 @@ unlocks the tab without spoiling the content.
 **Depends on:** Phase 3 | **Unlocks:** Phase 6
 
 **Done when:**
-- [ ] DW-5.1: Every content block in all six page specs has final copy.
+- [ ] DW-5.1: Every content block in all seven page specs has final copy.
 - [ ] DW-5.2: No mechanic is explained more than once within a single tab.
 - [ ] DW-5.3: Every empty, locked and error state has copy naming the condition
       and the way out.
@@ -323,17 +344,17 @@ unlocks the tab without spoiling the content.
 
 ---
 
-## Phase 6: Compose six tab mocks
+## Phase 6: Compose seven tab mocks
 
 **Stage:** Design
 **Model:** sonnet
 **Doctrine:** `usability`, `responsive`, `checklists`
 **Gate:** Full
 
-**Goal:** Render all six tab surfaces against the specs, tokens and copy.
+**Goal:** Render all seven tab surfaces against the specs, tokens and copy.
 
 **Scope:**
-- IN: six self-contained mock HTML files at phone and desktop width.
+- IN: seven self-contained mock HTML files at phone and desktop width.
 - OUT: production integration into `main.js` / `style.css` (a separate build
   task once the direction is signed off).
 
@@ -345,11 +366,11 @@ and a note; those pixels cannot be verified by the reviewer.
 scroll inside their own container. The Dungeon mock must show both idle and
 in-progress states, since they differ structurally.
 
-**Produces:** `internal/mocks/{boss,training,grind,player,delve,dungeon}.html`
+**Produces:** `internal/mocks/{boss,training,grind,player,delve,dungeon,gm}.html`
 **Depends on:** Phases 4, 5 | **Unlocks:** — (final phase)
 
 **Done when:**
-- [ ] DW-6.1: Six mocks render as self-contained `.html` with no missing deps.
+- [ ] DW-6.1: Seven mocks render as self-contained `.html` with no missing deps.
 - [ ] DW-6.2: No hard-coded hex/rgb in any mock; all color via tokens from
       `internal/DESIGN.md`.
 - [ ] DW-6.3: No mock scrolls horizontally at 375px width.
@@ -369,7 +390,7 @@ in-progress states, since they differ structurally.
 | 1 | JOURNEY.md Job/Journey/IA populated | 1 | artifact presence |
 | 2 | Every fact has exactly one owner | 1 | artifact presence |
 | 3 | **Dirty:** a fact assigned two owners → rejected, one named owner + pointer | 1 | boundary |
-| 4 | Six complete page specs | 2 | artifact presence |
+| 4 | Seven complete page specs | 2 | artifact presence |
 | 5 | **Dirty:** a spec reproduces a fact owned by another tab → flagged | 2 | boundary |
 | 6 | DESIGN.md locked with token block | 3 | artifact presence |
 | 7 | Dark-ramp contrast AA on all text pairs | 3 | contrast |
@@ -379,7 +400,7 @@ in-progress states, since they differ structurally.
 | 11 | **Dirty:** a component spec using a raw value → rejected | 4 | token coverage |
 | 12 | Microcopy complete for all blocks and states | 5 | artifact presence |
 | 13 | **Dirty:** a mechanic explained twice in one tab → flagged | 5 | heuristic |
-| 14 | Six mocks render | 6 | artifact presence |
+| 14 | Seven mocks render | 6 | artifact presence |
 | 15 | No hard-coded hex in mocks | 6 | token coverage |
 | 16 | No horizontal scroll at 375px | 6 | responsive |
 | 17 | **Dirty:** DESIGN.md missing at mock time → wireframe mode flagged | 6 | gate violation |
@@ -400,8 +421,11 @@ explicitly exempt and noted rather than silently passed.
 | Merged DNA with type + color into one phase | The palette and type scale already exist and were approved; this is documentation plus verification, not two separate inventions. |
 | Dark ramp only | The game ships dark-only. Verifying a light ramp nobody will use is theater. |
 | Canvas is spec-only | It cannot be styled by CSS or reviewed from the DOM. Named now so the reviewer does not pass it silently. |
-| All six tabs in one pass | User's explicit choice over a Dungeon-first rollout. |
+| All seven tabs in one pass | User's explicit choice over a Dungeon-first rollout. |
 | Full visual pass | User's explicit choice, made with the caveat that it revisits the recently-shipped design-system stages. |
+| Corrected six tabs → seven | The GM tab was omitted from the original plan. The audit capture found it, and it has the worst layout inconsistency of any surface (three row grammars for one action). |
+| Audit measured before Phase 1 runs | `internal/shot.mjs` made real captures cheap, so the current state is measured (overflow, dormant-item counts, per-tab findings) instead of assumed. Phase 1 starts from evidence. |
+| DW-1.5 added (row STATE, not just ownership) | The audit's biggest finding was dormant content at live weight — ~136 items. Ownership alone would not have given Phase 2 anything to differentiate on. |
 | Phase 4 raised to Full gate / fable | CHECK finding: it defines the cross-tab component seams every later phase consumes, which the plan command classes as a multi-surface Design phase introducing new seams. |
 | `surface` kept on Phase 2 with an override note | CHECK finding: it is a Design-stage doctrine on a Discover phase. Kept because block ORDER is the device-class decision on a phone-only product, and justified in-phase rather than silently. |
 

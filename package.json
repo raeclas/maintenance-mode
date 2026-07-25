@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node internal/test.js",
-    "sim": "node internal/sim.js"
+    "sim": "node internal/sim.js",
+    "shots": "node internal/shot.mjs"
   }
 }
