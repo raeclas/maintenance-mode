@@ -5,7 +5,7 @@
 **Entry stage:** Discover (neither DESIGN.md nor JOURNEY.md exists)
 **Created:** 2026-07-25
 **Started:** 2026-07-25
-**Current Phase:** 1
+**Current Phase:** 2
 **Phases:** 6
 
 ---
@@ -449,4 +449,23 @@ explicitly exempt and noted rather than silently passed.
 
 ## Execution log
 
-_(populated by `/design-for-ai:build`)_
+### Phase 1: Journey, IA + fact ownership (Gate: Standard)
+- [x] BUILD: Discovery + design + production complete
+- [x] REVIEW: fail -> PASS (2 attempts). First pass returned 2 Critical:
+      the Dungeon `#instBank` fact + its duplication were missing from the
+      map, and the Training tier state counts contradicted `state.js:51-52`.
+      Both fixed; re-review spot-checked every quantitative claim against
+      live source and passed all 5 DW items. One Minor (wall-selector prose
+      contradicted its own table row) fixed by the orchestrator before commit.
+- [x] Committed
+Commit: dd4e1da
+Deviation: the re-review ran without the `sonnet` model override (Sonnet was
+unavailable upstream, blocking all dispatch), so it inherited Opus. This
+upgrades reviewer capability rather than weakening it; blind-reviewer
+isolation was preserved — the reviewer got requirements + artifact only.
+Summary: Phase 1 delivered `internal/JOURNEY.md` — JTBD job story, journey,
+the tab-unlock ladder as IA, and a fact-ownership table where every displayed
+fact across the six tabs has exactly one owner, a state (live/dormant/locked)
+and pointers instead of copies. Combat Power resolved to the Player tab (it
+rendered in three places, not two). Dormant count reconciled to exactly 136.
+The design now has the contract Phases 2-6 enforce.

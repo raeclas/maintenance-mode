@@ -320,3 +320,366 @@ passes) is satisfied. The two flagged gaps (Delve overclock's un-multiplied
 rank display; Grind's un-broken-out copper multiplier) are legibility
 improvements for later phases, not ownership violations — noted here so
 Phase 2/5 inherit them rather than rediscover them.
+
+---
+
+## Page specs
+
+Produced by Phase 2 of `.design-foundations/plans/2026-07-25-ui-dedup-audit.md`.
+Doctrine: `journey` (page-spec altitude, phone-first ordering), `usability`
+(Fitts/Hick citations for placement decisions), `surface` (device-class block
+order — loaded here for ORDER only, per the plan's override note; no pixel
+values below, those are Phases 3/4/6).
+
+**Scope discipline for this section:** every content block below names the
+exact `## Fact ownership` row it traces to (tab + row text). A block marked
+**POINTER** displays a fact owned by another tab (per Phase 1) and is not a
+second copy — this mirrors the Global-chrome table's own POINTER convention.
+No token values, no copy wording, no component pixel spec appear here —
+those are Phases 3, 5, and 4/6 respectively. Two specs (Player, Dungeon)
+reorder blocks versus the current DOM order; the rationale is in this
+build's Design Decisions, not repeated per-spec.
+
+Navigation shared by all six: global tab bar only (`## IA` — hub-and-spoke,
+no breadcrumbs). Every tab's **entry point** is a tap on its nav button
+(always available once unlocked); the moment a tab first unlocks, the
+activity log also announces it (`UNLOCK_MSG`, `main.js`), which is the
+actual discovery trigger per `## Journey` Phase 2 (Bootstrapping) — named
+once here, not repeated per spec unless a tab needs a second entry path.
+Every tab's **exit** is a tap to a different nav button — hub-and-spoke has
+no forced "next page"; where a tab has an internal state transition instead
+(Boss's Descend, Dungeon's run→idle), it is named as such, not as an exit.
+
+### Boss
+
+**Purpose:** Show the siege against the current Warden (or the farm status
+of a cleared one) and let the player descend once it breaks.
+
+**Entry points:** Default active tab on load (always open — `## IA`
+sitemap, "always open — entry point"); also the only visible surface during
+Arrival (`## Journey` Phase 1) before `state.unlocked` flips and the rest of
+the chrome (resbar, tab nav) reveals — so for the very first pull, Boss IS
+the entire app, not one tab among six.
+
+**Primary decision:** Which wall to watch, and whether to descend once the
+frontier is broken. Mostly observational (idle siege, not click-to-attempt)
+with two real actions: switch to a cleared wall, or descend.
+
+**Placement argument (375px):** both actions are nav-adjacent, not readout-
+adjacent, so they sit in the top block group with the boss identity — above
+the arena, which is the tallest element on the tab and would otherwise push
+them off-screen. Descend is the higher-value and rarer action (once per wall)
+and takes the larger target; the wall selector is a horizontal scroller in
+its own container so an eventual ten walls cannot widen the page (Fitts's
+law, 1954 — target size scaled to action value; the audit measured this tab
+at 414px content on a 375px viewport, so anything that grows with progression
+must scroll inside itself).
+
+**Content blocks (in order):**
+1. Boss identity — name + title. *Owns: Boss tab, "Boss name + title."*
+2. Wall selector — local nav, appears once a wall has been cleared. *Owns:
+   Boss tab, "Wall selector (per cleared wall)."*
+3. Arena (canvas-only, cannot be styled by CSS) — must convey four things:
+   the boss HP bar draining as a proportion, the hero/boss sprites with the
+   boss's progressive damage cracks, streaming crit-tier damage numbers
+   (`*`/`**`), and the BREACHED reveal at the moment the wall falls. *Owns:
+   Boss tab, "Canvas arena: boss HP bar..." and "Canvas: damage-number
+   floaters...".* No HTML structure specified — canvas-drawn, reviewable only
+   via `npm run shots`. The BREACHED reveal is the journey's per-wall peak
+   (see the emotion curve above) — de-duplication must not flatten it.
+4. Siege readout — remaining %/BREACHED state, time-to-breach or farm
+   status, the crit-factor breakdown line. *Owns: Boss tab, "Depth /
+   remaining % (DOM)," "Time-to-breach text," "Crit breakdown line."* The
+   Record line's HP figures are the SAME owning row but flagged by Phase 1
+   as `DUP 1` against block 3's canvas label — carried forward unresolved
+   (component-ownership call, Phase 4), not fixed by this reorder. The
+   Record line's Combat Power figure is a **POINTER** to the Player-owned
+   Combat Power total, not a second breakdown.
+5. Progress — cleared-wall monument list, Descend button. *Owns: Boss tab,
+   "Cleared-wall monument list," "Descend button."*
+6. Story — boss dialogue line, milestone-triggered. *Owns: Boss tab, "Boss
+   dialogue line."*
+
+**States:**
+- `locked`: N/A — Boss is always open, the one tab with no unlock gate.
+- `empty`/pre-reveal: before `state.unlocked` flips (the Arrival phase),
+  blocks 5 (monument/descend, both empty/hidden) and 6 read as absent; only
+  1/3/4 render, and the surrounding chrome (resbar, tab nav) is itself
+  hidden — this is a real, distinct first-contact state, not a bug.
+  Wall selector (block 2) is absent until `maxWall > 1`.
+- `active` (frontier, unbroken): full readout, no descend button.
+- `active` (frontier, broken): depth reads "BREACHED," farm-status text
+  replaces time-to-breach, descend button appears if a next wall exists.
+- `active` (farming a cleared wall via wall selector): same as broken-farm
+  above, for the selected wall instead of the frontier.
+- `in-progress`: N/A — Boss has no discrete run mode; the siege is
+  continuous, not started/stopped by the player.
+- `error`: N/A — no player input on this tab; corrupted-save recovery
+  happens once, globally, before any tab renders.
+
+**Primary action:** Descend to the next door (when broken and a next wall
+exists); otherwise switch which wall is displayed via the wall selector.
+
+**Exit:** Tab switch (typically to Training/Grind/Player/Delve/Dungeon to
+keep raising Combat Power). Descend is an internal state transition (new
+Warden loads into the same tab), not an exit.
+
+### Training
+
+**Purpose:** Spend copper on the bot rig and ATK/SPEED scripts that grow
+the swarm and its raw stats; manage the enhance squad; eventually cash in
+Ban Wave.
+
+**Entry points:** Tab nav, once `state.unlocked` (first login tick) opens
+the tab — the `UNLOCK_MSG.training` log line ("the old bot farms...") is the
+discovery trigger per `## Journey` Phase 2.
+
+**Primary decision:** Which of the four rig levers (capacity, account
+creator, script version, overclock) to buy next, and which ATK/SPEED tier
+to keep filling.
+
+**Content blocks (in order):**
+1. Rig — buy buttons (×4) + cost, rig stats line, population bar. *Owns:
+   Training tab, "Rig buttons...", "Rig stats line...", "Population bar."*
+2. ATK scripts — trained-total line + tier rowlist (×7). *Owns: Training
+   tab, "ATK trained total," "ATK training tiers (×7...)."*
+3. SPEED scripts — trained-total line + tier rowlist (×6). *Owns: Training
+   tab, "SPEED trained total," "SPEED training tiers (×6)."*
+4. Enhance squad — slot picker, target-plus input, allocation, info line.
+   *Owns: Training tab, "Enhance squad (slot picker...)."*
+5. Ban Wave — payout preview, button, armed state. *Owns: Training tab, "Ban
+   Wave section..."* Last, since it is hidden entirely until
+   `features.rebirth`.
+
+No reorder from current DOM order — the primary decision (block 1) is
+already first; only states below are new to this phase.
+
+**States:**
+- `locked`: whole tab, before `state.unlocked` — nav button renders `???`.
+- `empty`/dormant: 6 of 7 ATK tiers and 5 of 6 SPEED tiers are `locked`
+  sub-rows at game start (per Phase 1's reconciliation, 11 total); Enhance
+  squad is dormant/idle until a squad is assigned; Ban Wave section is
+  hidden until `features.rebirth`; the rig stats line's "lost to bans"
+  figure is permanently 0 (vestigial, flagged for Phase 5 copy — not a
+  structural state, noted so it isn't mistaken for a bug in Phase 6).
+- `active`: rig affordable-highlighted, at least one tier live, squad
+  assigned.
+- `in-progress`: N/A — Training has no discrete run; scripts/rig apply
+  continuously, no started/stopped mode.
+- `error`: N/A — no destructive or validating input on this tab (Ban Wave's
+  confirm step is a two-tap arm/confirm, not an error path).
+
+**Primary action:** Buy the next affordable rig lever or training fill.
+
+**Exit:** Tab switch (typically to Grind to deploy the swarm just grown, or
+Player once a squad starts dropping gear).
+
+### Grind
+
+**Purpose:** Hold zones with bot squads to earn copper and roll gear drops.
+
+**Entry points:** Tab nav, opens with Training (`grind: f.training` —
+`## IA` sitemap). `UNLOCK_MSG.grind` ("deploy the swarm...") is the
+discovery trigger.
+
+**Primary decision:** Which zone(s) to allocate squad bots to.
+
+**Content blocks (in order):**
+1. Zones — rowlist (×15: name, mob, HP, copper/kill, IP band, allocation
+   control, live stat, kill-cycle bar) and the per-zone saturation readout
+   when a held zone is over-farmed. *Owns: Grind tab, "Zones (×15...)" and
+   "Zone squad-DPS / saturation readout."*
+
+Single block, already first (and only) — no reorder.
+
+**States:**
+- `locked`: whole tab, before `features.training`.
+- `empty`/dormant: 10 of 15 zones are `[LOCKED]` at game start (region 2
+  needs 1 clear, region 3 needs 4); an unlocked-but-unmanned zone still
+  renders its mob/HP/copper/IP data in full (flagged by Phase 1/audit as a
+  duplication of the lock-group boundary, not a per-zone state to design
+  around here — that fix is a component-repeat call, Phase 4).
+- `active`: at least one zone manned, squad DPS/saturation visible.
+- `in-progress`: N/A — zones run continuously once manned; no start/stop
+  run mode (contrast with Dungeon).
+- `error`: N/A — allocation controls clamp at capacity, no invalid state.
+
+**Primary action:** Increase allocation on the zone with the best
+copper/DPS return right now.
+
+**Exit:** Tab switch (typically to Player once drops accumulate, or back to
+Training to grow the swarm further).
+
+### Player
+
+**Purpose:** Manage the character's build — gear, enhance, reforge,
+trophies, Armory — the tab that owns Combat Power itself.
+
+**Entry points:** Tab nav, opens on first drop (`player: f.grind &&
+s.everDropped` — `## IA` sitemap). `UNLOCK_MSG.player` ("your character...")
+is the discovery trigger; this is `## Journey` Phase 3, "Build identity,"
+the phase the emotion curve calls out as where engagement should peak and
+where the current UI (8 screens, live controls at 60% depth) most actively
+works against it.
+
+**Primary decision:** What to equip, enhance, or reforge across the three
+gear slots.
+
+**Content blocks (in order — REORDERED vs. current DOM, see Design
+Decisions):**
+1. Combat Power breakdown — total + atk + hits/s chip group. *Owns: Player
+   tab, "Combat Power total + atk + hits/s"* — the canonical owning render;
+   resolves DW-1.2, referenced (not duplicated) by the resbar chip and the
+   Boss-tab record line.
+2. Titles earned — hidden until ≥1. *Owns: Player tab, "Titles earned."*
+   Kept adjacent to block 1 — both are small, non-actionable headline
+   info; no scroll cost either position.
+3. Gear — safeguard toggle, three slots (name/rarity/IP/plus/item-ATK,
+   affix list, enhance button+info, reforge bench), failstacks HUD. *Owns:
+   Player tab, "Gear slots ×3...", "Gear affixes per slot...", "Safeguard
+   toggle," "Enhance button + info...", "Reforge bench...", "Failstacks
+   HUD."* **This is the primary decision — moved ahead of Trophies/Armory.**
+4. Stash — scrap wallet, auto-equip/auto-salvage filters, stash list (up to
+   24 + "N more"). *Owns: Player tab, "Stash: scrap wallet," "Stash:
+   auto-equip / auto-salvage filters," "Stash list...".* Placed immediately
+   after Gear — it's the direct feeder into the gear decision (equip from
+   stash).
+5. Trophies — cabinet (10 sets × 7 pips), set-complete damage multiplier.
+   *Owns: Player tab, "Trophy cabinet...", "Trophy set-complete damage
+   multiplier."* Moved to the tail — a progress display, 70 of 70 pips
+   unearned at game start.
+6. Armory — header aggregate line, grid (15 zones × 3 slots = 45 cells).
+   *Owns: Player tab, "Armory header...", "Armory grid...".* Last — a
+   progress display, all 45 cells rank-0 at game start.
+
+**States:**
+- `locked`: whole tab, before `features.grind && everDropped`.
+- `empty`/dormant: Titles hidden (0 earned); all three gear slots show a
+  `—` placeholder (nothing equipped); scrap wallet reads "no scrap yet";
+  stash reads "stash empty"; reforge bench dormant until a candidate rolls;
+  failstacks HUD dormant at 0; Trophies all-unearned (70/70); Armory all
+  rank-0 (45/45) — this is literally the audit's ~136-dormant-item finding,
+  concentrated on this one tab (70 + 45 of the 136).
+- `active`: at least one slot filled, stash populated, CP breakdown live
+  (always live once the tab is unlocked, since `everDropped` is the unlock
+  gate itself).
+- `in-progress`: N/A — no discrete run mode; gear actions (enhance/reforge)
+  resolve instantly (no ceremony, per the hard veto), not as a tracked run.
+- `error`: N/A — no destructive confirmation beyond the safeguard toggle
+  (a settings checkbox, not an error path).
+
+**Primary action:** Enhance, reforge, or equip-from-stash on a gear slot.
+
+**Exit:** Tab switch (typically to Boss to watch the Combat Power change
+land, or back to Grind/Dungeon to farm more drops).
+
+### Delve
+
+**Purpose:** Spend the character's own passive depth-mining run on
+upgrades that feed Cache and, via one row, the Combat Power product.
+
+**Entry points:** Tab nav, opens once `features.player && Combat Power ≥
+100` (`## IA` sitemap). `UNLOCK_MSG.delve` ("descend for copper...") is the
+discovery trigger.
+
+**Primary decision:** Which Cache-tree upgrade to buy next.
+
+**Content blocks (in order):**
+1. Delve state — depth, deepest, Cache/s. *Owns: Delve tab, "Delve state
+   line (depth · deepest · Cache/s)."*
+2. Cache banked. *Owns: Delve tab, "Cache banked."*
+3. Cache tree — 5 afford-gated upgrade rows (deeper bore, cache sifter,
+   recovered overclock, salvage beacon, buried scripts). *Owns: Delve tab,
+   "Cache tree (5 upgrade rows...)."* The overclock row is a guideline-5
+   term (feeds the Boss-tab-consumed atk product) whose current-total
+   multiplier isn't spelled out as one number — a legibility gap Phase 1
+   already flagged for later phases, not fixed by this spec.
+
+No reorder — audit's own verdict names this tab "the structural model the
+others should follow": one list, no dormant padding, everything actionable.
+
+**States:**
+- `locked`: whole tab, before `features.player && CP ≥ 100`.
+- `empty`/dormant: N/A in the audit sense (no bulk unearned-content block
+  like Trophies/Armory) — Cache simply starts at 0 and climbs, a numeric
+  floor rather than a distinct empty UI state.
+- `active`: default and only steady state once unlocked.
+- `in-progress`: N/A — Delve is continuous passive accumulation, not a
+  started/stopped run (unlike Dungeon).
+- `error`: N/A — afford-gated buttons, no invalid input.
+
+**Primary action:** Buy the next affordable Cache-tree row.
+
+**Exit:** Tab switch (typically to Boss to see the overclock bonus land, or
+Dungeon once bots.pop ≥ 10 unlocks it).
+
+### Dungeon
+
+**Purpose:** Send bots into a floor-by-floor dungeon run for gear; pull out
+before attrition costs most of the run's loot.
+
+**Entry points:** Tab nav, opens once `features.delve && bots.pop ≥ 10`
+(`## IA` sitemap). `UNLOCK_MSG.dungeon` ("send bots in...") is the discovery
+trigger.
+
+**Primary decision:** Idle — how many bots to assign per duty, at what
+difficulty, and when to send them in. Running — whether to pull out now.
+
+**Content blocks (in order — REORDERED vs. current DOM, see Design
+Decisions; distinct per state, per the plan's edge case):**
+
+*Idle:*
+1. Instance state summary — difficulty, abilities-to-block count,
+   bots-needed, deepest floor reached. *Owns: Dungeon tab, "Instance state
+   line (...idle: difficulty/live-ability-count/bots-needed/deepest)."*
+2. Instance projection — projected floor for the currently-allocated
+   squad. *Owns: Dungeon tab, "Instance projection line (...idle: projected
+   floor)."*
+3. Assign bots — duty rows ×3 (Sunder/Mass Dispel/Summon Adds: effect
+   sentence, needed-bots readout, allocation control, assigned/needed
+   stat). *Owns: Dungeon tab, "Duty rows ×3...".*
+4. Run controls — difficulty input, pull-out-at-floor setting, proxy
+   toggle, Send-bots-in button. *Owns: Dungeon tab, "Difficulty (...)",
+   "Pull-out-at-floor setting...", "Proxy toggle...", "Send/Pull-out
+   buttons."*
+5. How it works — the static intro paragraph explaining the mechanic.
+   *Owns: Dungeon tab, "Intro paragraph (static, 6 lines)."* **Moved below
+   the action blocks** — it currently precedes them and the audit already
+   named it as filling the first screen before any control appears; Phase
+   5 shortens the copy, this phase only moves it out of the way of DW-2.3.
+6. Boss abilities journal — ×3 rows, unseen/seen. *Owns: Dungeon tab, "Boss
+   abilities journal ×3 rows...".*
+
+*Running (in-progress — distinct per the plan's edge case):*
+1. Instance state summary — floor, haul, damage % (pulling out at floor
+   restated inline — same owning row, flagged `DUP` by Phase 1, carried
+   forward). *Same row as idle block 1, different content.*
+2. Instance projection — bots still alive, ban rate per floor. *Same row
+   as idle block 2, different content.*
+3. Assign bots — duty rows now read committed/surviving counts; allocation
+   inputs disabled (`i.running` in `main.js`). *Same rows as idle block 3.*
+4. Run controls — Send-bots-in hidden, Pull-out-now shown; difficulty and
+   pull-out-floor inputs remain visible (pull-out floor stays live-editable
+   mid-run per `main.js:509-511`). *Same rows as idle block 4.*
+5. How it works — unchanged, same position.
+6. Boss abilities journal — updates live as mechanics are encountered mid-run.
+
+**States:**
+- `locked`: whole tab, before `features.delve && bots.pop ≥ 10`.
+- `empty`/first-visit idle: Boss-abilities journal is three identical
+  "Unknown — you haven't run into this one yet" rows; deepest floor reads
+  0; no bots assigned to any duty — a sub-case of `idle`, not a separate
+  mode.
+- `idle`: default pre-run state (block set above).
+- `in-progress`/`running`: distinct content per block set above — the
+  plan's named edge case, confirmed against `main.js renderInstance()`'s
+  `i.running` branch.
+- `error`: N/A — no invalid-input path; a dead run resolves via the wipe
+  rule (keep `WIPE_KEEP`% of loot), which is a game-rule outcome, not a UI
+  error state.
+
+**Primary action:** Idle — "Send bots in." Running — "Pull out now (keep
+loot)."
+
+**Exit:** Tab switch. A run resolves on its own (wipe or manual pull-out)
+back to the idle state on the same tab — not a forced exit.
