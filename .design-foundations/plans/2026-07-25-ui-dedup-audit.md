@@ -1,11 +1,12 @@
 # Design Plan: UI de-duplication audit — all six tabs
 
-**Status:** in-progress
+**Status:** complete
 **Track:** Standard
 **Entry stage:** Discover (neither DESIGN.md nor JOURNEY.md exists)
 **Created:** 2026-07-25
 **Started:** 2026-07-25
-**Current Phase:** 6
+**Completed:** 2026-07-26
+**Current Phase:** 6/6 — all phases done
 
 **Pacing:** user-requested pause between every phase (context-size check
 before continuing or clearing to resume next session). Resume with
@@ -462,6 +463,32 @@ explicitly exempt and noted rather than silently passed.
 ---
 
 ## Execution log
+
+### Phase 6: Compose six tab mocks (Gate: Full)
+- [x] BUILD: Discovery + design + production complete (model upgraded to
+      `opus`, same reasoning as Phase 5 — the heaviest composition phase)
+- [x] REVIEW: PASS, no Criticals. Detector clean (0 findings / 16 rules).
+      DW-6.1/6.2/6.3/6.5/6.6 pass on rendered evidence — measured screenshot
+      widths, grep of the emitted files, hierarchy judged on pixels.
+      DW-6.4 PARTIAL, accepted: Grind's five region-3 locked zones each print
+      the identical unlock string — the same group-boundary-as-N-repeats
+      pattern Phase 1 flagged, needing a grouped-locked-rows component that
+      neither Phase 4 nor Phase 6 built. Named and tracked, not hidden.
+- [x] Committed
+Commit: 97044fe
+Summary: Phase 6 delivered `internal/mocks/{boss,training,grind,player,delve,
+dungeon}.html` plus `build.mjs` (emits all six from one CSS source and ASSERTS
+the extended DW-6.2 — zero hex, zero rgb(), zero untokenized px, zero external
+refs, non-zero exit on failure) and `shoot.mjs` (12 captures via the repo's
+zero-dep headless CDP path). **scrollWidth 375px on a 375px viewport for all
+six, where the audit measured 414px.** The state ladder — the plan's whole
+reason for existing — reads apart at a glance on four channels: edge colour,
+control-widget presence, opacity, and the unlock condition as text. A locked
+row draws NO allocation control, taking the audit's 21 inert alloc clusters to
+zero. Composing on real pixels found three intra-mock duplications the text
+phases could not see (the audit was captured on a save with no cleared walls),
+including Boss's triple HP render that Phases 1, 2 and 4 each carried forward
+unresolved.
 
 ### Phase 5: Words (Gate: Standard)
 - [x] BUILD: Discovery + design + production complete (model upgraded to
