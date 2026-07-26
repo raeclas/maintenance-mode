@@ -399,7 +399,7 @@ strings, treating the tables as the intent and the mocks as the inventory.
       channel to fix a documentation defect. Second pass PASS; detector clean;
       one Minor (Boss row missing its lane-4 note) fixed by the orchestrator.
 - [x] Committed
-Commit: (see below)
+Commit: `32f1189`
 Summary: DESIGN.md v4 opens four colour lanes — rarity ramp promoted to a
 visual lane, per-Warden identity hue, per-tab accent identity, zone/IP power
 bands — with 28 lane members solved rather than picked (each binary-searched in
