@@ -1035,7 +1035,26 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
    ground. Ink and its own ground never share a hue.                      */
 .frame{padding:var(--space-9) var(--space-7) var(--space-8);
   margin:0 calc(var(--space-7) * -1) var(--space-9)}
-#bossName{font-size:var(--fs-warden);color:var(--w-active)}
+/* THE NAMEPLATE. Lane 2 moved OFF the type and ONTO the plate: the frame, its
+   rivets and the bevel carry the Warden's hue and the name goes back to gold.
+   Ten doors still read apart, but gold keeps the most important string in the
+   client, and ink still never shares a hue with its own ground — the same rule
+   the frame/groove/floor-glow split already follows. Built from the h3/.frame
+   construction rather than a new one. */
+.nameplate{
+  --rv:linear-gradient(var(--edge-lit),var(--edge-lit));
+  background:
+    var(--rv) var(--rivet-inset) var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) top var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) left var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    linear-gradient(var(--field),var(--inset) var(--space-10));
+  border:var(--border-hairline) solid var(--w-frame);
+  border-radius:var(--radius-window);
+  padding:var(--space-7) var(--space-7) var(--space-6);
+  box-shadow:0 var(--bevel) 0 var(--w-active),
+             inset 0 var(--bevel) 0 var(--edge-lit)}
+#bossName{font-size:var(--fs-warden);color:var(--gold)}
 .wallBtn.active{color:var(--w-active);border-color:var(--w-active)}
 
 /* ── 4. THE TAB ROW — TIER A, the navigation legend ───────────────────────
@@ -1322,11 +1341,29 @@ section.game.locked .glyph{color:var(--faint);background:var(--panel);
 <nav id="tabs" aria-label="Main"><button class="t-boss">Boss</button><button class="t-training active" aria-current="page">Training</button><button class="t-grind">Grind</button><button class="t-player">Player</button><button class="t-delve">Delve</button><button class="t-dungeon">Dungeon</button><button class="t-help">Help</button></nav>
 <section class="game">
   <h3><span class="glyph" aria-hidden="true">R</span>Rig</h3>
-  <div class="rig">
-    <button>multiclient &middot; 248 &rarr; 297 bot slots &middot; 119,647c</button>
-    <button class="affordable">account creator &middot; 240 &rarr; 270 bots per hour &middot; 12,069c</button>
-    <button class="affordable">script version &middot; bot strength &times;1.75 &rarr; &times;2.00 &middot; 819c</button>
-    <button class="affordable">overclock &middot; bot speed &times;1.80 &rarr; &times;2.00 &middot; 2,506c</button>
+  
+  <div class="rowlist">
+    <div class="row">
+      <span class="rowName">multiclient<div class="sub">248 slots</div></span>
+      <span class="rowGain">+50 slots/rank</span>
+      <span class="rowStat">rank 4</span>
+      <button>119,647c</button>
+    </div><div class="row">
+      <span class="rowName">account creator<div class="sub">240/h</div></span>
+      <span class="rowGain">+30/h/rank</span>
+      <span class="rowStat">rank 3</span>
+      <button class="affordable">12,069c</button>
+    </div><div class="row">
+      <span class="rowName">script version<div class="sub">&times;1.75 atk</div></span>
+      <span class="rowGain">+0.25 atk/rank</span>
+      <span class="rowStat">rank 5</span>
+      <button class="affordable">819c</button>
+    </div><div class="row">
+      <span class="rowName">overclock<div class="sub">&times;1.80 clock</div></span>
+      <span class="rowGain">+0.20 clock/rank</span>
+      <span class="rowStat">rank 4</span>
+      <button class="affordable">2,506c</button>
+    </div>
   </div>
   <div class="sub">lost in the Dungeon 47</div>
   <div class="barTrack"><div class="barFill" style="width:93%"></div></div>

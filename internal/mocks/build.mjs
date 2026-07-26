@@ -1168,7 +1168,26 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
    ground. Ink and its own ground never share a hue.                      */
 .frame{padding:var(--space-9) var(--space-7) var(--space-8);
   margin:0 calc(var(--space-7) * -1) var(--space-9)}
-#bossName{font-size:var(--fs-warden);color:var(--w-active)}
+/* THE NAMEPLATE. Lane 2 moved OFF the type and ONTO the plate: the frame, its
+   rivets and the bevel carry the Warden's hue and the name goes back to gold.
+   Ten doors still read apart, but gold keeps the most important string in the
+   client, and ink still never shares a hue with its own ground — the same rule
+   the frame/groove/floor-glow split already follows. Built from the h3/.frame
+   construction rather than a new one. */
+.nameplate{
+  --rv:linear-gradient(var(--edge-lit),var(--edge-lit));
+  background:
+    var(--rv) var(--rivet-inset) var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) top var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) left var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    linear-gradient(var(--field),var(--inset) var(--space-10));
+  border:var(--border-hairline) solid var(--w-frame);
+  border-radius:var(--radius-window);
+  padding:var(--space-7) var(--space-7) var(--space-6);
+  box-shadow:0 var(--bevel) 0 var(--w-active),
+             inset 0 var(--bevel) 0 var(--edge-lit)}
+#bossName{font-size:var(--fs-warden);color:var(--gold)}
 .wallBtn.active{color:var(--w-active);border-color:var(--w-active)}
 
 /* ── 4. THE TAB ROW — TIER A, the navigation legend ───────────────────────
@@ -1635,8 +1654,10 @@ const zonesSection = `<section class="game">
 const warden = `<div class="frame">
     <div class="bossPanel">
       ${g("M")}
-      <div id="bossName">Maren</div>
-      <div id="bossTitle">Warden of the Second Door</div>
+      <div class="nameplate">
+        <div id="bossName">Maren</div>
+        <div id="bossTitle">Warden of the Second Door</div>
+      </div>
     </div>
   </div>`;
 
@@ -1791,11 +1812,23 @@ const training = page({
     the farm</code>).`,
   body: `<section class="game">
   <h3>${g("R")}Rig</h3>
-  <div class="rig">
-    <button>multiclient &middot; 248 &rarr; 297 bot slots &middot; 119,647c</button>
-    <button class="affordable">account creator &middot; 240 &rarr; 270 bots per hour &middot; 12,069c</button>
-    <button class="affordable">script version &middot; bot strength &times;1.75 &rarr; &times;2.00 &middot; 819c</button>
-    <button class="affordable">overclock &middot; bot speed &times;1.80 &rarr; &times;2.00 &middot; 2,506c</button>
+  ${/* Rig rows, matching the shipped client: the four buys are generated from
+        bots.RIG there, so adding or removing one is a single registry entry.
+        Rows rather than buttons because the effect used to be visible only as
+        an aggregate below, and the spend has to be comparable ACROSS upgrades:
+        what one rank of script version buys against one rank of overclock, at
+        their prices. Same row grammar as the ladders, zones and duty board. */""}
+  <div class="rowlist">
+    ${[["multiclient", "248 slots", "+50 slots", 4, "119,647c", false],
+       ["account creator", "240/h", "+30/h", 3, "12,069c", true],
+       ["script version", "&times;1.75 atk", "+0.25 atk", 5, "819c", true],
+       ["overclock", "&times;1.80 clock", "+0.20 clock", 4, "2,506c", true]]
+      .map(([name, at, step, rank, cost, afford]) => `<div class="row">
+      <span class="rowName">${name}<div class="sub">${at}</div></span>
+      <span class="rowGain">${step}/rank</span>
+      <span class="rowStat">rank ${rank}</span>
+      <button${afford ? ` class="affordable"` : ""}>${cost}</button>
+    </div>`).join("")}
   </div>
   <div class="sub">lost in the Dungeon 47</div>
   <div class="barTrack"><div class="barFill" style="width:93%"></div></div>

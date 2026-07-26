@@ -56,9 +56,14 @@
 
   <section id="battleSec" class="tabpane">
     <!-- identity -->
+    <!-- The nameplate carries the Warden's hue (frame, rivets, underline);
+         the NAME itself stays gold, the client's own signature on its most
+         important string. Switching doors re-tints the plate, not the type. -->
     <div class="bossPanel">
-      <div id="bossName"></div>
-      <div id="bossTitle"></div>
+      <div class="nameplate">
+        <div id="bossName"></div>
+        <div id="bossTitle"></div>
+      </div>
     </div>
 
     <!-- navigation: switch to a cleared wall -->
@@ -87,12 +92,9 @@
 
   <section id="botSec" class="game hidden tabpane" style="display:none">
     <h3>Rig</h3>
-    <div class="rig">
-      <button id="buyCap"></button>
-      <button id="buyCreate"></button>
-      <button id="buyPower"></button>
-      <button id="buySpeed"></button>
-    </div>
+    <!-- Rows are built from bots.RIG — add or remove an upgrade there and
+         this list follows. No per-upgrade markup lives here any more. -->
+    <div class="rowlist" id="rig"></div>
     <div class="sub" id="rigStats"></div>
     <div class="barTrack popTrack"><div class="barFill" id="popFill"></div></div>
 

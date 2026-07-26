@@ -43,10 +43,20 @@ function say(event) {
 // A cleared wall you're farming needs no fight-progress — it's just broken.
 function farmRecord() { return { hp: 0, broken: true, nearSaid: true, farmCarry: 0 }; }
 
+// DNA v4 lane 2: --w-active is the door you are standing at, and the whole
+// Boss tab reads from it (nameplate frame and rivets, the arena floor glow,
+// the wall picker). It was pinned to --w2 in the stylesheet and nothing ever
+// moved it, so all ten Wardens rendered in Maren's green. One assignment.
+function setWardenHue(wall) {
+  const w = Math.max(1, Math.min(10, wall | 0)); // walls are 1-indexed; --w1..--w10
+  document.documentElement.style.setProperty("--w-active", `var(--w${w})`);
+}
+
 function refreshBoss() {
   boss = getBoss(state.wall);
   $("bossName").textContent = boss.name;
   $("bossTitle").textContent = boss.title;
+  setWardenHue(state.wall);
   say(state.boss.broken ? "break" : "greet");
 }
 
@@ -420,13 +430,22 @@ $("wipeBtn").addEventListener("click", () => {
 });
 
 // ---- bot farm ----
-function buyLabel(what, cost) {
-  return `${what} (${fmt(cost)}c)`;
+// Rig rows, built once from the registry. Same row grammar as the script
+// ladders, the zone list and the duty board — a rig upgrade is a row that
+// costs copper, so it reads as the same instrument rather than a new one.
+const rigBtns = {};
+for (const u of bots.RIG) {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML =
+    `<span class="rowName">${u.name}<div class="sub" id="rigAt_${u.id}"></div></span>` +
+    `<span class="rowGain" id="rigStep_${u.id}"></span>` +
+    `<span class="rowStat" id="rigRank_${u.id}"></span>` +
+    `<button id="rigBuy_${u.id}"></button>`;
+  $("rig").appendChild(row);
+  rigBtns[u.id] = row.querySelector("button");
+  rigBtns[u.id].addEventListener("click", () => bots.buy(state, u.id));
 }
-$("buyCap").addEventListener("click", () => bots.buy(state, "cap"));
-$("buyCreate").addEventListener("click", () => bots.buy(state, "create"));
-$("buyPower").addEventListener("click", () => bots.buy(state, "power"));
-$("buySpeed").addEventListener("click", () => bots.buy(state, "speed"));
 $("enhPlus").addEventListener("change", () => {
   state.bots.enhTarget.plus = Math.max(0, Math.min(enh.MAX_PLUS, Math.floor(Number($("enhPlus").value)) || 0));
 });
@@ -920,10 +939,17 @@ function render() {
 
   // bot farm
   const b = state.bots;
-  // rig labels speak the BOTTER register
-  const rig = [["buyCap", `multiclient +${4}`, bots.capCost(b)], ["buyCreate", "account creator +", bots.createCost(b)],
-    ["buyPower", "script version +", bots.powerCost(b)], ["buySpeed", "overclock +", bots.speedCost(b)]];
-  for (const [id, label, cost] of rig) { $(id).textContent = buyLabel(label, cost); buyState($(id), state.copper >= cost); }
+  // Rig rows: current value, what the next rank adds, rank, price. The gain
+  // used to be visible only as an aggregate in rigStats, so you could not
+  // compare one rank of power against one rank of speed at their prices.
+  for (const u of bots.RIG) {
+    const cost = bots.rigCost(b, u.id);
+    $(`rigAt_${u.id}`).textContent = u.at(b);
+    $(`rigStep_${u.id}`).textContent = `${u.step(b)}/rank`;
+    $(`rigRank_${u.id}`).textContent = `rank ${bots.rigRank(b, u.id)}`;
+    rigBtns[u.id].textContent = `${fmt(cost)}c`;
+    buyState(rigBtns[u.id], state.copper >= cost);
+  }
   const scale = bots.effScale(b);
   const scaled = scale < 0.995 ? ` · short ${((1 - scale) * 100).toFixed(0)}%` : "";
   $("rigStats").textContent =
@@ -1200,6 +1226,7 @@ if (DEV) {
 
 $("bossName").textContent = boss.name;
 $("bossTitle").textContent = boss.title;
+setWardenHue(state.wall);
 initBattle($("battle"));
 say(state.boss.broken ? "break" : "greet");
 startGameLoop(tick, render);

@@ -74,22 +74,75 @@ export function botDps(b, player) {
   return strength * speed;
 }
 
-// Copper costs (exponential — copper can't runaway-compound the chain).
-// Bases softened 2026-07-22 (flatter scaling) so rig upgrades stay buyable
-// deep instead of walling out; still exponential. Playtest-tuned (bot lane).
-export function capCost(b) { return Math.round(800 * Math.pow(1.65, b.capRank)); }
-export function createCost(b) { return Math.round(500 * Math.pow(1.7, b.createRank)); }
-export function powerCost(b) { return Math.round(200 * Math.pow(1.6, b.powerRank)); }
-export function speedCost(b) { return Math.round(300 * Math.pow(1.7, b.speedRank)); }
+/* ── The rig registry ──────────────────────────────────────────────────────
+   ONE entry per upgrade. Adding or removing a rig upgrade used to mean
+   editing five places — a <button> in index.html, a click listener, a
+   label/cost row in the render, a xCost() here, and the COSTS map — and it
+   was easy to land four of the five. Everything an upgrade needs now lives
+   in one row of this table, and the UI renders whatever is in it.
 
-const COSTS = { cap: capCost, create: createCost, power: powerCost, speed: speedCost };
+   ADDING one is genuinely one entry. REMOVING one is one entry plus the test
+   at internal/test.js:229-232, which pins the four shipped upgrades by name —
+   that assertion is doing its job and should be updated, not deleted. This
+   was checked by actually pulling an entry out and running the suite, not by
+   assuming; the first attempt threw instead of failing cleanly, which is why
+   rigCost and buy both tolerate an unknown id now.
+
+   id     save key prefix; the rank counter is `${id}Rank`
+   name   player-facing label. Botter's-toolkit register (REMAKE-DESIGN §16) —
+          placeholders for now, the user is finalising these later.
+   base   cost of rank 0
+   growth cost multiplier per rank. Exponential: copper must not
+          runaway-compound the chain. Bases softened 2026-07-22 (flatter
+          scaling) so rig upgrades stay buyable deep instead of walling out.
+          Playtest-tuned — the bot lane is deliberately not sim-gated.
+   at     what the stat reads at rank r — the CURRENT value
+   step   one-line description of what the next rank buys, so the spend is
+          comparable across upgrades instead of being an aggregate elsewhere
+   ─────────────────────────────────────────────────────────────────────────*/
+export const RIG = [
+  { id: "cap", name: "multiclient", base: 800, growth: 1.65,
+    at: b => `${capacity(b)} slots`,
+    step: b => `+${Math.round(capacity(b) * (CAP_GROWTH - 1))} slots` },
+  { id: "create", name: "account creator", base: 500, growth: 1.7,
+    at: b => `${Math.round(createRate(b))}/h`,
+    step: () => `+${Math.round(CREATE_PER_H * CREATE_PER_RANK)}/h` },
+  { id: "power", name: "script version", base: 200, growth: 1.6,
+    at: b => `×${botPower(b).toFixed(2)} atk`,
+    step: () => `+${POWER_PER_RANK.toFixed(2)} atk` },
+  { id: "speed", name: "overclock", base: 300, growth: 1.7,
+    at: b => `×${botSpeed(b).toFixed(2)} clock`,
+    step: () => `+${SPEED_PER_RANK.toFixed(2)} clock` },
+];
+export const RIG_BY_ID = Object.fromEntries(RIG.map(u => [u.id, u]));
+
+export const rigRank = (b, id) => b[`${id}Rank`] || 0;
+// Infinity for an id that is not in the registry, so a RETIRED upgrade reads
+// as "never affordable" instead of throwing. Verified the hard way: pulling
+// one entry out of RIG to test the add/remove claim took `npm test` down,
+// because the named exports below still asked for it. An upgrade you can add
+// in one line but not remove in one line is not the thing that was asked for.
+export function rigCost(b, id) {
+  const u = RIG_BY_ID[id];
+  if (!u) return Infinity;
+  return Math.round(u.base * Math.pow(u.growth, rigRank(b, id)));
+}
+
+// Kept as named exports: save migration, tests and the sim all call these by
+// name, and a registry is not a reason to break their callers. They survive a
+// retired entry because rigCost does.
+export function capCost(b) { return rigCost(b, "cap"); }
+export function createCost(b) { return rigCost(b, "create"); }
+export function powerCost(b) { return rigCost(b, "power"); }
+export function speedCost(b) { return rigCost(b, "speed"); }
 
 export function buy(state, what) {
   const b = state.bots;
-  const cost = COSTS[what](b);
+  if (!RIG_BY_ID[what]) return false; // an id that left the registry
+  const cost = rigCost(b, what);
   if (state.copper < cost) return false;
   state.copper -= cost;
-  b[what + "Rank"]++;
+  b[what + "Rank"] = rigRank(b, what) + 1;
   return true;
 }
 

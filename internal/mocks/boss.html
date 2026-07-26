@@ -1035,7 +1035,26 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
    ground. Ink and its own ground never share a hue.                      */
 .frame{padding:var(--space-9) var(--space-7) var(--space-8);
   margin:0 calc(var(--space-7) * -1) var(--space-9)}
-#bossName{font-size:var(--fs-warden);color:var(--w-active)}
+/* THE NAMEPLATE. Lane 2 moved OFF the type and ONTO the plate: the frame, its
+   rivets and the bevel carry the Warden's hue and the name goes back to gold.
+   Ten doors still read apart, but gold keeps the most important string in the
+   client, and ink still never shares a hue with its own ground — the same rule
+   the frame/groove/floor-glow split already follows. Built from the h3/.frame
+   construction rather than a new one. */
+.nameplate{
+  --rv:linear-gradient(var(--edge-lit),var(--edge-lit));
+  background:
+    var(--rv) var(--rivet-inset) var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) top var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) left var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    linear-gradient(var(--field),var(--inset) var(--space-10));
+  border:var(--border-hairline) solid var(--w-frame);
+  border-radius:var(--radius-window);
+  padding:var(--space-7) var(--space-7) var(--space-6);
+  box-shadow:0 var(--bevel) 0 var(--w-active),
+             inset 0 var(--bevel) 0 var(--edge-lit)}
+#bossName{font-size:var(--fs-warden);color:var(--gold)}
 .wallBtn.active{color:var(--w-active);border-color:var(--w-active)}
 
 /* ── 4. THE TAB ROW — TIER A, the navigation legend ───────────────────────
@@ -1330,8 +1349,10 @@ different state, not a duplicated fact. The second is <b>frontier broken</b>, th
   <div class="frame">
     <div class="bossPanel">
       <span class="glyph" aria-hidden="true">M</span>
-      <div id="bossName">Maren</div>
-      <div id="bossTitle">Warden of the Second Door</div>
+      <div class="nameplate">
+        <div id="bossName">Maren</div>
+        <div id="bossTitle">Warden of the Second Door</div>
+      </div>
     </div>
   </div>
 
@@ -1376,8 +1397,10 @@ different state, not a duplicated fact. The second is <b>frontier broken</b>, th
   <div class="frame">
     <div class="bossPanel">
       <span class="glyph" aria-hidden="true">M</span>
-      <div id="bossName">Maren</div>
-      <div id="bossTitle">Warden of the Second Door</div>
+      <div class="nameplate">
+        <div id="bossName">Maren</div>
+        <div id="bossTitle">Warden of the Second Door</div>
+      </div>
     </div>
   </div>
 
