@@ -67,6 +67,7 @@ const c = t => {
 };
 
 const floaters = []; // {x, y, alpha, text, size, color, scale, vx}
+let bossX = GATE.x;  // where the Warden actually is — see LOOKS `aside`
 let lastHitAt = 0;
 let shakeUntil = 0;
 let flashUntil = 0;
@@ -85,7 +86,7 @@ export function initBattle(el) {
 // fades. Outlined at draw time — the damage-skin look.
 function spawnFloater(text, color, size = 15) {
   floaters.push({
-    x: GATE.x - 42 + Math.random() * 84,
+    x: bossX - 42 + Math.random() * 84,   // Sef stands aside; the numbers follow him
     // Mid-torso, drifting up to the shoulders. Numbers belong ON the thing
     // being hit — but above this the drift carries them across the hood and
     // covers the eyes, which are the only face the Warden has.
@@ -240,6 +241,24 @@ const WARDEN = [
   [-0.26, 0.84], [-0.14, 0.86], [-0.16, 0.94],              // near collar + hood
 ];
 
+/* Yara, the ninth door. Her identity is the silhouette rather than the light:
+   a trailing mass — hair, fabric, both at once — sweeping off the FAR side and
+   pooling on the floor. Far side deliberately: the near side has to stay clear
+   of the centre seam, which is the HP meter.
+
+   Honest ceiling on this channel: at 192px and near-black, hair versus cloak is
+   not distinguishable and there is no face. What reads is a tall figure with a
+   long asymmetric train. That is genuinely all a canvas silhouette can carry —
+   and it is the reason a portrait is where "who she is" actually belongs. */
+const WARDEN_DRAPE = [
+  [0.02, 1.00], [0.18, 0.92], [0.16, 0.84], [0.36, 0.80],   // head, far collar
+  [0.62, 0.84], [0.52, 0.66], [0.46, 0.50],                 // the train's shoulder
+  [0.60, 0.34], [0.86, 0.16], [0.96, 0.04],                 // sweeping out and down
+  [0.70, 0.00], [-0.26, 0.00],                              // pooled on the floor, to the hem
+  [-0.30, 0.30], [-0.26, 0.54], [-0.34, 0.72],              // near side — kept narrow
+  [-0.22, 0.82], [-0.12, 0.85], [-0.14, 0.92],
+];
+
 /* The envelope — the Warden's aura, and the thing every boss reference had
    that this arena did not. In all of them the figure is a near-black mass and
    ALL the light and hue lives in a spread 2-3x its size around it. The figure
@@ -257,67 +276,178 @@ const WARDEN = [
    can only ever ADD, so the envelope can never hide the HP seam it crosses or
    darken the wall it spills onto. It also happens to be how light works.
 
-   One geometry, ten hues: `--w-active` is the door's own colour, so the same
-   fan is Vess's olive at the first door and someone else's at the tenth. */
-// Three BLADES per side, not a fan of needles. A 4px-based spike over 130px of
-// length is a hair, and eight of them read as a scratched-in sunburst pinned to
-// the chest — the references' wings have mass, so the blades are wide at the
-// root, swept along a curve, and the near-horizontal one is dropped: a spike
-// out of the ribs reads as a skewer, not a wing.
-// Angles are biased AWAY from vertical: a 16/10 aperture is wider than it is
-// tall, so a spread that reaches up gets guillotined by the top edge and a
-// spread that reaches out fills the frame. Four blades per side, shortening
-// outward, so the wing has a filled base instead of three gaps.
-const RAYS = [[34, 1.00], [52, 0.88], [70, 0.70], [88, 0.46]];  // deg from up, length
-const ROOT = 9;                                      // half-width at the root
+   `--w-active` is the door's own colour, so every construction below comes out
+   in the hue of the door you are standing at, for free. */
+
+/* ── per-Warden identity ───────────────────────────────────────────────────
+   Ten doors were reading as ten ROOMS rather than ten bosses, and the reason
+   is structural, not cosmetic: DESIGN.md's lane 2 is "WARDEN — which door you
+   are at", explicitly "qualitative, not ordinal: a door is a PLACE, not a
+   magnitude". The hue lane says WHERE you are. Nothing in the system ever said
+   WHO is standing there. This is that missing channel.
+
+   Six constructions, taken from the user's boss references as GEOMETRY rather
+   than as art, spread over ten doors:
+
+     sweep   asymmetric swept wings, one side leading    martial, directional
+     ascent  narrow blades biased steeply upward         rising, held
+     corona  a full burst, all round and long            overwhelming
+     ring    an arc, or a closed circle, behind the head sealed, ancient
+     vein    NO envelope — the mass is lit from INSIDE   contained
+     drape   NO envelope — a trailing silhouette carries it (see WARDEN_DRAPE)
+
+   `vein` and `drape` are the load-bearing ones. Without a construction that is
+   the ABSENCE of an envelope, all ten doors are a light show and none of them
+   lands.                                                                    */
+const FANS = {
+  // Angles are biased AWAY from vertical: a 16/10 aperture is wider than it is
+  // tall, so a spread that reaches up gets guillotined by the top edge and one
+  // that reaches out fills the frame. corona deliberately runs past 90° so it
+  // wraps under the figure and becomes a burst rather than a pair of wings.
+  sweep:  [[34, 1.00], [52, 0.88], [70, 0.70], [88, 0.46]],
+  ascent: [[14, 0.84], [26, 1.00], [38, 0.94], [50, 0.72], [62, 0.48]],
+  corona: [[20, 0.92], [42, 1.00], [64, 0.96], [86, 0.86], [108, 0.70], [130, 0.50]],
+};
+const ROOT = 9;   // half-width at the blade root. 4px was a hair, not a wing.
+// Where the envelope hangs from, as a fraction of body height above the feet.
+const ORIGIN = { sweep: 0.22, ascent: 0.22, ring: 0.42, corona: 0.42 };
 const STILL = typeof matchMedia === "function"
   && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-function drawEnvelope(now, x, top, hgt, spread, crisis) {
-  const ox = x, oy = Math.round(top + hgt * 0.22);   // behind the shoulders
-  const R = hgt * 0.54 * spread * (STILL ? 1 : 1 + 0.04 * Math.sin(now / 700));
+const LOOKS = {
+  // Vess greets you and points you at the bot forums. The first door should not
+  // spend the whole budget — quiet, warm, lit from within.
+  w1:  { kind: "vein",   heat: 0.55 },
+  // "This one was sealed after the exploits were catalogued." A ring IS a seal:
+  // tight, closed, high-contrast.
+  // `at` overrides where the ring hangs. A ring this small centred on the torso
+  // is almost entirely BEHIND the figure — all that escaped was a stray hook off
+  // one hip. A tight ring has to sit behind the HEAD to read at all, where it
+  // becomes the halo-as-seal; only a ring as big as Osei's can afford the torso.
+  w2:  { kind: "ring",   scale: 0.72, arc: 0.55, at: 0.10 },
+  // "It was built for a raid of forty." The enforcer.
+  w3:  { kind: "sweep",  scale: 1.00, bias: 1 },
+  // Osei is the OLDEST — the only Warden who remembers the roster coloured in
+  // and the auction house mid-war. Age is carried by scale, tempo and
+  // WHOLENESS: the widest envelope of the ten, the only unbroken circle, the
+  // slowest pulse. Never by wear. The no-decay rule is hard, and "the oldest is
+  // the most INTACT, because it predates the dying" is the reading that argues
+  // for the server still working rather than against it.
+  w4:  { kind: "ring",   scale: 1.34, arc: 1, pulse: 0.30 },
+  // "Everything temporary here became forever." Vess's construction, guttering.
+  // One number apart, seven doors apart.
+  w5:  { kind: "vein",   heat: 0.20 },
+  // "Some servers should be allowed to die with dignity." Hostile and
+  // defensive, so the sweep leads on the side facing the door it is protecting.
+  w6:  { kind: "sweep",  scale: 0.92, bias: -1 },
+  // "Six years I have stood here." Blades held, not thrown.
+  w7:  { kind: "ascent", scale: 0.86 },
+  // Sef was written as a tier-four raid encounter and shipped as a door guard.
+  // He is the ONLY Warden with no envelope at all, which in a set of ten light
+  // shows is the loudest signal available. He also stands ASIDE — far enough to
+  // lean on the right jamb, which is both the clearest view of the HP seam in
+  // the whole climb and a man visibly not doing his job. Under 15% it ignites
+  // into the envelope he was PROMISED: cut content at full size, for the only
+  // fight anyone ever gave him.
+  w8:  { kind: "cut",    aside: 0.05, flare: "corona", scale: 1.30 },
+  // Yara offers you the way out, which makes her structurally the temptress.
+  // Her identity is in the silhouette rather than in light — and no envelope.
+  w9:  { kind: "drape" },
+  // The end. A small dark figure inside a vast light.
+  w10: { kind: "corona", scale: 1.52 },
+};
+const LOOK_OF = id => LOOKS[id] || LOOKS.w3;   // a new wall draws SOMETHING
+
+// One blade fan serves sweep, ascent and corona — they differ only in their
+// angle table. `bias` makes one wing lead, which is what separates a posed
+// silhouette from a symmetrical one.
+function blades(ox, oy, R, fan, bias, alpha) {
+  ctx.fillStyle = c("--w-active");
+  ctx.globalAlpha = alpha;
+  for (const dir of [-1, 1]) {
+    const side = !bias || dir === bias ? 1 : 0.58;
+    for (const [deg, len] of fan) {
+      const a = deg * Math.PI / 180, L = R * len * side;
+      const sn = Math.sin(a), cs = Math.cos(a);
+      ctx.beginPath();                              // root edge, swept to the tip
+      ctx.moveTo(ox + dir * cs * ROOT, oy + sn * ROOT);
+      ctx.quadraticCurveTo(
+        ox + dir * (sn * L * 0.6 + cs * L * 0.18), oy - cs * L * 0.6 + sn * L * 0.18,
+        ox + dir * sn * L, oy - cs * L);
+      ctx.lineTo(ox - dir * cs * ROOT, oy - sn * ROOT);
+      ctx.fill();
+    }
+  }
+}
+
+/* `arc` 1 = a closed circle (Osei, the oldest and the only whole one); below 1
+   it is an arc of that fraction of a turn, centred straight up.
+
+   An ELLIPSE, not a circle. Osei's ring has to be the widest envelope of the
+   ten to carry "oldest", and a circle that wide does not fit a 16/10 frame —
+   at scale 1.34 the top third was cut off flat at y=0, which reads as a bug
+   rather than as scale. Squashed, it stays the widest thing in the arena and
+   still fits, and a halo behind a standing figure wants to be oval anyway. */
+function ringEnv(ox, oy, R, arc, flat, alpha) {
+  ctx.strokeStyle = c("--w-active");
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = Math.max(2, R * 0.055);
+  ctx.beginPath();
+  const ry = R * flat;
+  if (arc >= 1) ctx.ellipse(ox, oy, R, ry, 0, 0, Math.PI * 2);
+  else ctx.ellipse(ox, oy, R, ry, 0, -Math.PI / 2 - Math.PI * arc, -Math.PI / 2 + Math.PI * arc);
+  ctx.stroke();
+}
+
+function drawEnvelope(now, look, x, top, hgt, spread, crisis) {
+  let kind = look.kind;
+  if (kind === "cut") {
+    if (!crisis) return;      // Sef is not defending this door…
+    kind = look.flare;        // …until the last 15% of it.
+  }
+  if (kind === "vein" || kind === "drape") return;   // these are carried by the figure
+  const beat = STILL ? 1 : 1 + 0.04 * Math.sin(now * (look.pulse ?? 1) / 700);
+  // Wings come off the BACK, so they hang from the shoulders. A ring or a burst
+  // surrounds the whole figure, so it centres on the torso — pinned at shoulder
+  // height instead, both of them ran off the top of the frame while leaving
+  // dead space under the hem.
+  const ox = x, oy = Math.round(top + hgt * (look.at ?? ORIGIN[kind] ?? 0.22));
+  const R = hgt * 0.54 * (look.scale ?? 1) * spread * beat;
   if (R < 6) return;
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
   const bloom = ctx.createRadialGradient(ox, oy, 0, ox, oy, R * 1.05);
-  bloom.addColorStop(0, c("--w-active"));            // the haze the blades sit in
+  bloom.addColorStop(0, c("--w-active"));            // the haze it all sits in
   bloom.addColorStop(1, "rgba(0,0,0,0)");
   ctx.globalAlpha = (crisis ? 0.42 : 0.28) * spread;
   ctx.fillStyle = bloom;
   ctx.fillRect(ox - R * 1.1, oy - R * 1.1, R * 2.2, R * 2.2);
   // Low alpha on purpose. Additive fills COMPOUND where blades overlap, so the
   // hot core near the shoulders comes free from the geometry — at 0.32 each the
-  // overlap clipped to solid and the wings read as foliage, not light.
-  ctx.fillStyle = c("--w-active");
-  ctx.globalAlpha = crisis ? 0.30 : 0.20;
-  for (const dir of [-1, 1]) for (const [deg, len] of RAYS) {
-    const a = deg * Math.PI / 180, L = R * len;
-    const sn = Math.sin(a), cs = Math.cos(a);
-    ctx.beginPath();                                  // root edge, swept to the tip
-    ctx.moveTo(ox + dir * cs * ROOT, oy + sn * ROOT);
-    ctx.quadraticCurveTo(
-      ox + dir * (sn * L * 0.6 + cs * L * 0.18), oy - cs * L * 0.6 + sn * L * 0.18,
-      ox + dir * sn * L, oy - cs * L);
-    ctx.lineTo(ox - dir * cs * ROOT, oy - sn * ROOT);
-    ctx.fill();
-  }
+  // overlaps clipped to solid and the wings read as foliage, not light.
+  const alpha = crisis ? 0.30 : 0.20;
+  if (kind === "ring") ringEnv(ox, oy, R, look.arc ?? 1, look.flat ?? 0.78, alpha);
+  else blades(ox, oy, R, FANS[kind] || FANS.sweep, look.bias ?? 0, alpha);
   ctx.restore();
 }
 
 // goneFrac 0..1 opens fracture lines of LIGHT through the silhouette — never
 // chips or notches. Light-through reads as "something is giving way";
 // material-removed reads as "this is broken", and nothing here is broken.
-function drawBoss(now, broken, goneFrac) {
+function drawBoss(now, broken, goneFrac, id) {
+  const look = LOOK_OF(id);
   const hgt = BOSS_H;
   const u = Math.round(hgt * 0.42);
-  const x = broken ? GATE.x - Math.round(DOOR.w * 0.42) : GATE.x;
+  const x = broken ? GATE.x - Math.round(DOOR.w * 0.42)
+    : GATE.x + Math.round(W * (look.aside ?? 0));
   const top = FLOOR - hgt;
   const lit = now < bossFlashUntil;
-  const body = trace(WARDEN, x, FLOOR, u, hgt);
+  const body = trace(look.kind === "drape" ? WARDEN_DRAPE : WARDEN, x, FLOOR, u, hgt);
+  bossX = x;
 
   // Envelope first: the figure silhouettes against its own aura.
   const crisis = goneFrac > 0.85;
-  if (!broken) drawEnvelope(now, x, top, hgt, crisis ? 1.10 : 0.45 + 0.55 * (1 - goneFrac), crisis);
+  if (!broken) drawEnvelope(now, look, x, top, hgt, crisis ? 1.10 : 0.45 + 0.55 * (1 - goneFrac), crisis);
 
   // LIT, not backlit — an object standing in the room, --field over the
   // --panel leaf behind it. The lighting treatment is the same as before; it
@@ -346,7 +476,38 @@ function drawBoss(now, broken, goneFrac) {
   ctx.globalCompositeOperation = "lighter";
   ctx.fillStyle = wash;
   ctx.fillRect(x - u, FLOOR - hgt * 0.55, u * 2, hgt * 0.55);
+  // VEIN: no envelope at all — the mass is lit from INSIDE instead. At 192px
+  // individual veins are noise, so this is a hot core rather than linework: what
+  // reads is a figure glowing from within. Dims with the door's health like
+  // every other construction, so it still carries state.
+  if (look.kind === "vein") {
+    const cy = top + hgt * 0.55;
+    const core = ctx.createRadialGradient(x, cy, 0, x, cy, u * 1.6);
+    core.addColorStop(0, c("--w-active"));
+    core.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.globalAlpha = look.heat * (0.45 + 0.55 * (1 - goneFrac));
+    ctx.fillStyle = core;
+    ctx.fillRect(x - u * 1.8, top, u * 3.6, hgt);
+  }
   ctx.restore();
+
+  // DRAPE has no envelope, and left at that Yara was the only Warden in ten
+  // with no light of her own at all — which reads as unfinished rather than as
+  // deliberate. Her hue runs along the train's outer edge instead: light
+  // catching fabric. It is her own light, exactly as an envelope would be, so
+  // it is not a second room light source.
+  if (look.kind === "drape") {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x + u * 0.2, top, u * 1.4, hgt);
+    ctx.clip();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = c("--w-active");
+    ctx.globalAlpha = 0.45 * (0.5 + 0.5 * (1 - goneFrac));
+    ctx.lineWidth = 3;
+    ctx.stroke(body);
+    ctx.restore();
+  }
 
   // Rim on the seam side only: stroke the whole profile, clipped to the near
   // half. One light source in the room means one lit edge — and it is beside
@@ -503,7 +664,7 @@ export function renderBattle(state) {
     ctx.fill();
     ctx.globalAlpha = 1;
   }
-  drawBoss(now, state.boss.broken, goneFrac);
+  drawBoss(now, state.boss.broken, goneFrac, boss?.id);
   drawHero(now, fighting);
 
   // damage stream: auto-hits at the character's hit rate, each rolls a crit tier

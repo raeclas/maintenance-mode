@@ -113,11 +113,17 @@ export const bosses = [
     id: "w8", wall: 8, name: "Sef", title: "Warden of the Eighth Door",
     hp: 40_000_000_000_000_000_000, windowS: 30, speedKnee: 48.0,
     set: { name: "The Eighth Door", mult: 9.4 },
+    // Sef is the betrayer, and his grievance is with the DEVELOPERS, not with
+    // the server. He was written as a tier-four raid encounter and shipped as a
+    // door guard, and he has been waiting six years for a patch that would make
+    // him what he was promised. He opens the eighth door out of spite. The
+    // satire spike in a run of sincere Wardens: everyone else mourns the
+    // players, Sef is aggrieved about his career.
     dialogue: {
-      greet: ["You're almost to the year it didn't survive. The last patch. The last player — before you."],
-      fail_hopeless: ["There's nothing to win back here. Only something to witness."],
-      fail_near: ["…Nearly."],
-      break: ["The Eighth gives way. Two doors left. Slow down — you'll want to remember this part."],
+      greet: ["The eighth door. Do you know what I was FOR? Tier four. Final encounter of an expansion that never shipped. They wrote me a second phase."],
+      fail_hopeless: ["Look at me. A door. Six years in a corridor because someone cut a zone to make a deadline. Hit me again — it's the most anyone has ever used me."],
+      fail_near: ["…There. That's nearly the fight I was written for."],
+      break: ["Through you go. I was never guarding this for them — I was waiting for a patch that would make me what they promised. It never shipped. So take their door. Wrecking what they abandoned is the only power I was ever given."],
     },
   },
   {
