@@ -13,7 +13,7 @@ import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMa
 import * as armory from "./armory.js";
 import { RARITIES, RARITY_BY_ID } from "./rarity.js";
 import { affixLabel } from "./affixes.js";
-import { banWave, pendingScripts, scriptMult, totalFills } from "./rebirth.js";
+import { banWave, pendingScripts, scriptMult, totalFills, depthMult } from "./rebirth.js";
 import { grantBreakPiece, rollFarmDrop, bossHasSet, PARTS, pieceOf, ownedIdxs, ownsPiece, setComplete, setCount, SET_BONUS } from "./trophies.js";
 import * as dungeon from "./dungeon.js";
 import * as inst from "./instance.js";
@@ -91,6 +91,11 @@ function advanceWall() {
   state.boss = state.frontierBoss;
   refreshBoss();
   log(`— descending to ${next.name}, ${next.title}`);
+  // The depth term is banked at the BREAK, so it is reported at the break. Left
+  // to the Training tab it would be a reward the player discovers later, on a
+  // surface they may not open for hours — which is the same as no reward.
+  if (state.features.rebirth)
+    log(`— every Ban Wave now pays ×${depthMult(state).toFixed(2)} (${state.maxWall - 1} doors cleared)`);
   save(state);
 }
 
@@ -317,6 +322,9 @@ const HELP_ROOMS = [
       Scripts, and every Script permanently adds +1% damage. Scripts never reset.`,
       `Bank when the payout is worth the reset. Scripts are the square root of your
       training fills, so pushing twice as long pays well under twice the Scripts.`,
+      `Every door you clear multiplies that payout, and the multiplier is permanent —
+      a Ban Wave never takes it back. Breaking the next Warden before you bank is
+      always worth more than banking first.`,
       `Your bots borrow your power — each one hits at 10% of your ATK and 10% of your
       hits per second. So more damage means a faster farm too, and every Ban Wave
       rebuilds quicker than the one before.`],
@@ -886,9 +894,17 @@ function render() {
   if (state.features.rebirth) { // Ban Wave panel: payout preview + what survives
     const pend = pendingScripts(state);
     const btn = $("banWaveBtn");
+    // Law 5: show the whole product, not the result. The payout is now two
+    // terms and the player must be able to trace both — the depth term is the
+    // entire reason to break a door before banking, so hiding it inside one
+    // number would hide the decision it exists to create.
+    const doors = Math.max(0, (state.maxWall || 1) - 1);
+    const depthTxt = doors > 0
+      ? ` × <b>${depthMult(state).toFixed(2)}</b> for ${doors} door${doors > 1 ? "s" : ""} cleared`
+      : "";
     $("banWaveInfo").innerHTML = banArmed
       ? `<span class="warn">wipes bots · training · copper. Keeps gear, scrap, scripts, story. Bank <b>+${fmt(pend)}</b> scripts?</span>`
-      : `<b>+${fmt(pend)}</b> scripts ready (from ${fmt(totalFills(state))} training fills)` +
+      : `<b>+${fmt(pend)}</b> scripts ready (from ${fmt(totalFills(state))} training fills${depthTxt})` +
         ` · <b>${fmt(state.rebirths || 0)}</b> done`;
     btn.disabled = pend <= 0 && !banArmed;
     btn.textContent = banArmed ? "confirm Ban Wave" : "Ban Wave";

@@ -1882,7 +1882,7 @@ const training = page({
         explains nothing. The armed-state destructive confirm is untouched. */""}
   <h3>${g("B")}Ban Wave<span class="sub">&mdash; the anti-cheat notices the farm</span></h3>
   <div class="runControls">
-    <span class="caption">+206 Scripts ready, from 42,436 training fills &middot; 0 Ban Waves so far</span>
+    <span class="caption">+298 Scripts ready, from 42,436 training fills &times; 1.45 for 1 door cleared &middot; 0 Ban Waves so far</span>
   </div>
   <div class="ctaRow"><button class="cta">Ban Wave</button></div>
 </section>`,
@@ -2390,6 +2390,9 @@ ${helpRoom("T", "Training", [
       `Bank when the payout is worth the reset. Scripts are the square root of
        your training fills, so pushing twice as long pays well under twice the
        Scripts.`,
+      `Every door you clear multiplies that payout, and the multiplier is
+       permanent &mdash; a Ban Wave never takes it back. Breaking the next
+       Warden before you bank is always worth more than banking first.`,
       `Your bots borrow your power &mdash; each one hits at 10% of your ATK and
        10% of your hits per second. So more damage means a faster farm too, and
        every Ban Wave rebuilds quicker than the one before.`),

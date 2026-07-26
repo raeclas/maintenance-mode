@@ -436,6 +436,25 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   const sm = newState(); sm.bots.bars.atk.fills = [288, 0, 0, 0];
   assert.ok(rebirth.pendingScripts(sm) < 2 * rebirth.pendingScripts(s));
 
+  // Depth multiplies the payout, and W1 is exactly 1.0 — a fresh account must
+  // pay precisely what it paid before this term existed.
+  assert.equal(rebirth.depthMult(newState()), 1);
+  const d3 = newState();
+  d3.bots.bars.atk.fills = [100, 0, 0, 0];
+  d3.bots.bars.speed.fills = [44, 0, 0];
+  d3.maxWall = 3;                                // two doors cleared
+  assert.ok(Math.abs(rebirth.depthMult(d3) - rebirth.DEPTH_PER_DOOR ** 2) < 1e-9);
+  assert.equal(rebirth.pendingScripts(d3),
+    Math.floor(12 * rebirth.DEPTH_PER_DOOR ** 2));
+  assert.ok(rebirth.pendingScripts(d3) > rebirth.pendingScripts(s)); // depth pays
+
+  // Depth is NOT farmable: a Ban Wave must not move it. That is what keeps the
+  // §7b spam gate intact now that the payout has a second term.
+  const dm = rebirth.depthMult(d3);
+  rebirth.banWave(d3);
+  assert.equal(rebirth.depthMult(d3), dm);
+  assert.equal(d3.maxWall, 3);                   // the ladder survives the reset
+
   // scriptMult is a displayed damage term; derive() scales with it
   s.scripts = 50;
   assert.ok(Math.abs(rebirth.scriptMult(s) - 1.5) < 1e-9);

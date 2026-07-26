@@ -15,10 +15,43 @@ export function totalFills(state) {
   return b.bars.atk.fills.reduce((s, n) => s + n, 0) + b.bars.speed.fills.reduce((s, n) => s + n, 0);
 }
 
-// Scripts a Ban Wave pays RIGHT NOW: √(training fills this run). The √ starves
-// rebirth-spam (§7b abuse gate) — doubling the grind is far less than double pay.
+/* Depth is the SPINE, and until now it fed prestige nothing. Scripts came only
+   from training fills, so breaking Vess, then Maren, then Korrin left every
+   future Ban Wave paying exactly what it paid before. The ten-door ladder sat
+   BESIDE the prestige loop instead of driving it — which is the real reason the
+   tenth door did not read as an ending. Nothing about descending compounded.
+
+   MULTIPLICATIVE, not a flat bonus per door, because the COST per door is
+   multiplicative: wall HP climbs ~9x per wall. A `+k per door` term decays to
+   irrelevance by the deep walls, which is the exact opposite of "pushing
+   bosses pays". A constant proportional reward against a constant proportional
+   cost keeps the incentive alive at every depth — while still growing far
+   slower than the HP curve, so prestige alone can never outrun the ladder.
+
+   Starting value 1.45 per door (W1 1.00 -> W5 4.4 -> W10 25.7). W1 is exactly
+   1.0, so this changes nothing about the game as it currently plays; it only
+   opens up as you descend.
+   TEST: after breaking a door, the pending-scripts number should visibly jump
+   on the next Ban Wave. If a break does not move a number the player notices,
+   raise it. If a banked wave trivialises the NEXT door — wall N+1 falling
+   faster than N did despite ~9x the HP — lower it.
+   PLAYTEST-OWNED: internal/sim.js models a single run to the W1 break and does
+   not model rebirth at all, so the sim cannot judge this number and will not
+   drift on it. The user is the sim here, as with the bot lane.              */
+export const DEPTH_PER_DOOR = 1.45;
+
+// Doors cleared, as a multiplier on the Ban Wave payout. `maxWall` is monotonic
+// and survives every reset, so depth cannot be farmed by rebirth-spam — the
+// only way to raise it is to break a door you have never broken.
+export function depthMult(state) {
+  return DEPTH_PER_DOOR ** Math.max(0, (state.maxWall || 1) - 1);
+}
+
+// Scripts a Ban Wave pays RIGHT NOW: √(training fills this run) × depth. The √
+// still starves rebirth-spam (§7b abuse gate) — doubling the grind is far less
+// than double pay — and depth cannot be spammed at all, so the gate holds.
 export function pendingScripts(state) {
-  return Math.floor(Math.sqrt(totalFills(state)));
+  return Math.floor(Math.sqrt(totalFills(state)) * depthMult(state));
 }
 
 // The permanent player-damage multiplier from banked scripts (displayed, law 5).
