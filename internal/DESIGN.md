@@ -1571,9 +1571,26 @@ so no new hex entered the palette).
 4. **Floaters spawn above the silhouette**, not at its midline — inside the
    mass their outline (`--well`) had nothing to separate them from.
 
-**Still open on taste:** the composition reads more as "panels with a lit seam"
-than as a door, and the areas outside the leaves are dead. Not a spec failure —
-a judgement the user has not made yet.
+**SUPERSEDED 2026-07-26 — the figures are LIT, not silhouetted.** The table
+above says both figures are a `--bg` mass with a rim light. Rendered, the user's
+verdict was *"not a fan of the shadowy aesthetic"*, and the diagnosis is a value
+inversion: the door was `--field` and the figures `--bg`, so the back of the
+room was the LIGHTEST surface and everything in front of it became a hole. A rim
+light cannot rescue that; it outlines the hole.
+
+The scene now runs the ramp's own gated separations back to front:
+
+| Layer | Was | Now | Why |
+|---|---|---|---|
+| Room | `--well` | `--bg` | `--well` is the deepest surface in the client; on it there is nothing for a lit figure to sit against |
+| Door | `--field` | `--panel` | 5.17 L\* off `--bg` — the step the palette was respread to guarantee. `--inset` was tried and is only 3.7 L\*, under the perceptual floor, so the door vanished |
+| Figures | `--bg` | `--field` body, `--panel` shade side, floor-glow wash up the lower half | L\* 13.9 puts them ABOVE the door, so they advance instead of receding |
+
+**Door width 60% → 94%.** At 60% a fifth of the frame down each side was dead
+`--bg`, and the scene read as panels floating in black rather than as a door.
+
+**Still open:** the Warden is a box. That is the art pass, not the lighting —
+see ROADMAP's NEXT UP.
 
 **The aperture IS the well.** `.canvasStub` carries the well construction
 directly; the `.arena` wrapper that used to box it is deleted (material rule 7).

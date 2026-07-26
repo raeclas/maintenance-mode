@@ -12,7 +12,10 @@ import { fmt } from "./format.js";
 // figure — DESIGN.md changed the aperture ratio for exactly this scene.
 const W = 560, H = 350;
 const FLOOR = Math.round(H * 0.76);   // the floor line; the glow band is below it
-const DOOR = { w: Math.round(W * 0.60), cx: Math.round(W * 0.52) };
+// The door fills the frame. At 60% it left a fifth of the width as dead --bg
+// down each side and the scene read as "panels floating in black" rather than
+// "you are standing at a door".
+const DOOR = { w: Math.round(W * 0.94), cx: Math.round(W * 0.50) };
 const GATE = { x: DOOR.cx + Math.round(W * 0.11), y: FLOOR }; // the Warden stands in front of the door
 const HERO = { x: Math.round(W * 0.16), y: FLOOR };
 
@@ -111,7 +114,13 @@ function drawDoor(open, remain) {
 
   for (const dir of [-1, 1]) { // two leaves, parting outward when open
     const x = dir < 0 ? DOOR.cx - half - part : DOOR.cx + part;
-    ctx.fillStyle = c("--field");
+    // Three steps, using the ramp's own gated separations: --bg room (L* 2.4)
+    // < --panel door (L* 7.4, the 5.17 L* step the palette was respread to
+    // guarantee) < --field figures (L* 13.9). The door was --field, which put
+    // it ABOVE the figures and turned every one of them into a silhouette —
+    // that inversion is what read as "shadowy". --inset was the overcorrection:
+    // only 3.7 L* off --bg, under the perceptual floor, so the door vanished.
+    ctx.fillStyle = c("--panel");
     ctx.fillRect(x, top, half, h);
     ctx.strokeStyle = c("--line");
     ctx.lineWidth = 1;
@@ -147,15 +156,31 @@ function drawBoss(now, broken, goneFrac) {
   const top = FLOOR - hgt;
   const lit = now < bossFlashUntil;
 
-  ctx.fillStyle = c("--bg");                       // the mass
-  ctx.fillRect(x - wid / 2, top, wid, hgt);
+  // LIT, not backlit. The Warden is an object standing in the room: --field
+  // body (a step ABOVE the --inset door behind it, so it advances), --panel
+  // down its shade side, and the floor glow washing up its lower half. It was
+  // a flat --bg mass, which on any ground reads as a hole rather than a thing.
+  const body = [x - wid / 2, top, wid, hgt];
+  ctx.fillStyle = c("--field");
+  ctx.fillRect(...body);
   ctx.fillRect(x - wid * 0.78, top + hgt * 0.10, wid * 1.56, hgt * 0.10); // shoulders
-  ctx.fillStyle = c("--bg");
-  ctx.fillRect(x - wid * 0.30, top - hgt * 0.13, wid * 0.60, hgt * 0.13);  // head
+  ctx.fillRect(x - wid * 0.30, top - hgt * 0.13, wid * 0.60, hgt * 0.13); // head
 
-  // rim light on the floor-glow side (screen left), warmed by the door's hue
-  ctx.fillStyle = lit ? c("--gold") : c("--gold-dim");
-  ctx.globalAlpha = lit ? 0.9 : 0.55;
+  ctx.fillStyle = c("--panel");                    // shade side, away from the door seam
+  ctx.fillRect(x + wid * 0.18, top, wid * 0.32, hgt);
+  ctx.fillRect(x + wid * 0.62, top + hgt * 0.10, wid * 0.16, hgt * 0.10);
+
+  const wash = ctx.createLinearGradient(0, FLOOR - hgt * 0.55, 0, FLOOR);
+  wash.addColorStop(0, "rgba(0,0,0,0)");           // the floor light climbing the body
+  wash.addColorStop(1, c("--floor-glow"));
+  ctx.fillStyle = wash;
+  ctx.globalAlpha = 0.85;
+  ctx.fillRect(x - wid * 0.78, FLOOR - hgt * 0.55, wid * 1.56, hgt * 0.55);
+  ctx.globalAlpha = 1;
+
+  // rim on the door-seam side, hot while it is being hit
+  ctx.fillStyle = lit ? c("--gold-bright") : c("--gold-dim");
+  ctx.globalAlpha = lit ? 0.95 : 0.6;
   ctx.fillRect(x - wid / 2, top, 2, hgt);
   ctx.fillRect(x - wid * 0.30, top - hgt * 0.13, 2, hgt * 0.13);
   ctx.globalAlpha = 1;
@@ -188,12 +213,14 @@ function drawHero(now, fighting) {
   const lunge = fighting ? Math.sin(now / 120) * 3 : 0;
   const x = HERO.x + lunge, top = FLOOR - hgt;
 
-  ctx.fillStyle = c("--bg");
+  ctx.fillStyle = c("--field");                    // lit, same language as the Warden
   ctx.fillRect(x - wid / 2, top, wid, hgt);
   ctx.fillRect(x - wid * 0.34, top - hgt * 0.20, wid * 0.68, hgt * 0.20); // head
+  ctx.fillStyle = c("--panel");                    // shade side, away from the door
+  ctx.fillRect(x - wid / 2, top, wid * 0.34, hgt);
 
   ctx.fillStyle = c("--bone");   // rim on the side facing the door
-  ctx.globalAlpha = 0.7;
+  ctx.globalAlpha = 0.8;
   ctx.fillRect(x + wid / 2 - 2, top, 2, hgt);
   ctx.fillRect(x + wid * 0.34 - 2, top - hgt * 0.20, 2, hgt * 0.20);
   ctx.globalAlpha = 1;
@@ -215,7 +242,10 @@ export function renderBattle(state) {
   // Ground: the well, with a warm band rising off the floor line — light
   // escaping under the door. --floor-glow is derived from the active Warden,
   // so each door lights its own room.
-  ctx.fillStyle = c("--well");
+  // The room sits on --bg, not --well. --well is the deepest surface in the
+  // whole client, and putting the whole scene on it left nothing for a lit
+  // figure to sit against — everything was the floor of the value range.
+  ctx.fillStyle = c("--bg");
   ctx.fillRect(-20, -20, W + 40, H + 40);
   // Light POOLS at the floor line and falls off both ways. Filling the whole
   // area below FLOOR with --floor-glow made a flat olive slab that read as
@@ -227,7 +257,7 @@ export function renderBattle(state) {
   ctx.fillRect(-20, FLOOR - H * 0.24, W + 40, H * 0.24);
   const down = ctx.createLinearGradient(0, FLOOR, 0, H);
   down.addColorStop(0, c("--floor-glow"));
-  down.addColorStop(1, c("--well"));
+  down.addColorStop(1, c("--bg"));
   ctx.fillStyle = down;
   ctx.fillRect(-20, FLOOR, W + 40, H - FLOOR + 20);
   ctx.fillStyle = c("--w-active");            // the floor seam: whose room this is
