@@ -176,7 +176,10 @@ export function allocUnlocked(state, key) {
   const [group, idx] = key.split(".");
   if (idx === undefined) return true;              // enh — no ladder
   if (group === "zones") return zoneUnlocked(state.cleared?.length, Number(idx));
-  return Number(idx) < (state.bots[group]?.unlocked ?? 0);
+  // The script ladders live at bots.bars.atk / bots.bars.speed. Reading them
+  // from bots.atk instead returned undefined, so this gate rejected EVERY
+  // training allocation — the whole Training tab stopped taking input.
+  return Number(idx) < (state.bots.bars?.[group]?.unlocked ?? 0);
 }
 
 export function setAlloc(state, key, n) {

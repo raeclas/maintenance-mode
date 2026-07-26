@@ -235,6 +235,21 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   s.bots.pop = 10;
   s.bots.alloc.atk = [3, 0, 0, 0];
   s.bots.alloc.speed = [0, 0, 0];
+  // The script ladders take allocation on their UNLOCKED tiers and refuse it
+  // on locked ones. Untested until 2026-07-26, when the lock gate read the
+  // bars from bots.atk instead of bots.bars.atk and silently rejected every
+  // training allocation in the game — the Training tab stopped taking input
+  // and every existing assertion still passed.
+  s.bots.alloc.atk = [0, 0, 0, 0, 0, 0, 0];
+  bots.setAlloc(s, "atk.0", 2);            // tier 0 ships unlocked
+  assert.equal(s.bots.alloc.atk[0], 2);
+  bots.setAlloc(s, "atk.3", 2);            // tier 3 is not unlocked yet
+  assert.equal(s.bots.alloc.atk[3], 0);
+  s.bots.bars.atk.unlocked = 4;            // unlock it, same call now lands
+  bots.setAlloc(s, "atk.3", 2);
+  assert.equal(s.bots.alloc.atk[3], 2);
+  s.bots.alloc.atk = [3, 0, 0, 0, 0, 0, 0];
+
   bots.setAlloc(s, "zones.2", 990); // hard-clamped to available bots
   assert.equal(s.bots.alloc.zones[2], 7);
   bots.setAlloc(s, "zones.2", -5); // clamped to 0, NaN-safe
