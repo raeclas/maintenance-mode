@@ -2,7 +2,7 @@
 
 **Status:** in-progress
 **Started:** 2026-07-26
-**Current Phase:** 2.5
+**Current Phase:** 3
 **Track:** Standard
 **Entry stage:** Design (JOURNEY.md and DESIGN.md both exist and are honored)
 **Created:** 2026-07-26
@@ -294,17 +294,63 @@ surfaces.
 - IN: `training, grind, delve, dungeon, help` recomposed against DESIGN.md v4
   and the Phase 2 relocation. (Boss and Player are done in Phases 1 and 2.5.)
   Grind is where the zone / IP power-band lane gets proven.
+- IN (**added 2026-07-26 by user decision**): the log/shell chrome is
+  restyled as an MMO chat window — see below. Shared chrome, so it reaches
+  all seven surfaces including the two already built.
 - OUT: production integration (a separate task).
+
+### The log becomes a chat window
+
+**User: "i want to strongly reconsider the log aesthetic especially this line
+as it doesnt really fit"** — pointing at `maintenance@dead-server:~$ ▮`
+(`index.html:204`, emitted into every mock by `build.mjs:1320`).
+
+They are right, and it is wrong three ways, not one:
+
+1. **A terminal inside an MMO client.** Nothing else in the game is a shell.
+   The player never types a command; there is no shell. It is set dressing
+   imitating an interface.
+2. **`dead-server` is decay copy.** The premise is the opposite — the server
+   WORKS, it is in maintenance mode, the players left. The DNA bans decay
+   signifiers, and this one sits in shared chrome on every screen.
+3. **The cursor `▮` implies input.** There is none.
+
+It survived as a documented "shell register at the edges" carve-out and was
+reviewed four times — but every review checked that it was CONFINED, never
+whether it should exist. A confined premise error is still a premise error.
+
+**Replacement: the honest MMO furniture.** A bottom-of-screen log in an MMO
+client is a chat window. In a dead MMO it is also the saddest object on the
+screen — System carries traffic (drops, kills, offline gains) while General
+sits empty, and `Players online: 1` finally has a home that means something.
+The emptiness does the storytelling that the decay string was faking. That is
+ABSENCE, which is the target feeling; the broken shell prompt was DISREPAIR,
+which is banned.
+
+**Also settled here, on pixels, not blind:** `section.game button` sets
+`font-family: monospace`, so most controls across every tab render mono. Two
+prior reviews flagged this as a watch item and neither resolved it. The
+defence is that it is the "botter's toolkit" register (REMAKE-DESIGN.md §16,
+one of three canonical registers) — plausible, but font family is doing a lot
+of register work alone, and "the client reads like a terminal" is the same
+complaint one level up. **User's call: render it both ways and judge on the
+rendered surfaces.**
 
 **Constraints:** Same as the previous plan's Phase 6 — self-contained HTML,
 tokens only, no untokenized px, no horizontal scroll at 375px, no fact
-duplicated within a surface.
+duplicated within a surface. The chat window is chrome: it must not acquire a
+lane budget of its own (DESIGN.md v4 Tier A/B), must not become a
+notification/obligation mechanic, and must not reintroduce decay copy.
 
 **Edge cases:** List-heavy surfaces (Grind, Training) are the real test of a
 material language — a treatment that only works on a hero surface has failed.
-Dungeon still needs both idle and in-progress states.
+Dungeon still needs both idle and in-progress states. The chat window has an
+empty state (General with no traffic) that must read as *quiet*, not *broken*.
 
-**Produces:** `internal/mocks/{training,grind,delve,dungeon,help}.html`
+**Produces:** `internal/mocks/{training,grind,delve,dungeon,help}.html`, plus
+the chat-window chrome regenerated into `boss.html` / `player.html`, plus the
+JOURNEY.md chrome rows and DESIGN.md register section that the log change
+supersedes.
 
 **Done when:**
 - [ ] DW-3.1: Five surfaces render self-contained, no missing deps.
@@ -313,6 +359,14 @@ Dungeon still needs both idle and in-progress states.
 - [ ] DW-3.4: No fact appears twice within a single mock.
 - [ ] DW-3.5: The state ladder reads apart on every list surface.
 - [ ] DW-3.6: Review returns no Critical findings.
+- [ ] DW-3.7: The shell prompt is gone from every surface AND from
+      `index.html` / `build.mjs`; no `dead-server` string and no fake cursor
+      survives anywhere in the rendered chrome.
+- [ ] DW-3.8: The chat window renders on all seven surfaces with its System
+      and General states, and its empty state reads as quiet rather than
+      broken — judged on the rendered pixels.
+- [ ] DW-3.9: The mono-vs-UI-font question is decided on rendered evidence —
+      both treatments rendered, one chosen, the reason recorded in DESIGN.md.
 
 ---
 
