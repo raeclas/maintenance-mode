@@ -187,9 +187,9 @@ function drawDoor(open, remain) {
   }
   ctx.restore();
 
-  if (!open && remain > 0) { // the seam of light — this is the HP meter
-    const crisis = remain < 0.15;
-    const lit = Math.round(h * remain);
+  const crisis = remain < 0.15;
+  const lit = !open && remain > 0 ? Math.round(h * remain) : 0;
+  if (lit) { // the seam of light — this is the HP meter
     ctx.fillStyle = c(crisis ? "--meter-fill-depletion-crisis" : "--meter-fill-depletion");
     ctx.fillRect(APER.cx - 2, FLOOR - lit, 4, lit);
     ctx.globalAlpha = crisis ? 0.30 : 0.18;   // bloom either side of the seam
@@ -204,6 +204,30 @@ function drawDoor(open, remain) {
   plate(L - JAMB, top - LINTEL, DOOR.w + JAMB * 2, LINTEL);
   // the threshold: the frame's foot, catching the spill under the door
   plate(L - JAMB * 2, FLOOR, DOOR.w + JAMB * 4, Math.round(H * 0.022));
+
+  /* Light escaping the TOP of the seam, drawn after the frame so it washes the
+     lintel rather than being painted over by it.
+
+     The seam already reached the full height of the opening, but it stopped
+     dead against the lintel's --edge-shade line with nothing above it, so even
+     at 100% it read as "not going all the way up". The floor end got a spill
+     wedge and the head end got nothing. A light column has two ends.
+
+     It tracks the seam's top wherever that is, so as health drains the escape
+     travels down with it and the terminus is always a falloff instead of a
+     chop. */
+  if (lit) {
+    const topY = FLOOR - lit, reach = LINTEL * 1.15;
+    const esc = ctx.createLinearGradient(0, topY, 0, topY - reach);
+    esc.addColorStop(0, c(crisis ? "--meter-fill-depletion-crisis" : "--meter-fill-depletion"));
+    esc.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = (crisis ? 0.55 : 0.42) * remain;
+    ctx.fillStyle = esc;
+    ctx.fillRect(APER.cx - 10, topY - reach, 20, reach);
+    ctx.restore();
+  }
 }
 
 /* Silhouettes, not stacked rectangles.
