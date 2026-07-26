@@ -1132,8 +1132,10 @@ function renderInstance() {
       ? `Sending ${cost} bots. They should reach about floor ${proj} before too many are banned.`
       : `Assign some bots below to see how deep they'd get.`;
   }
-  $("instKeyInfo").textContent = `Higher difficulty = more abilities to block and better loot. ` +
-    `If the party dies you keep ${Math.round(inst.WIPE_KEEP * 100)}% of the loot — difficulty never drops.`;
+  // The difficulty helper moved to Help whole — a general rule about the
+  // setting, true regardless of what it is set to. The live consequences of
+  // the current value (abilities to block, bots needed, deepest floor) stay,
+  // and they are #instState above.
   const startBtn = $("instStart");
   startBtn.style.display = i.running ? "none" : "";
   $("instBankNow").style.display = i.running ? "" : "none";

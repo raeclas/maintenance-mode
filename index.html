@@ -119,14 +119,14 @@
   </section>
 
   <section id="farmSec" class="game hidden tabpane" style="display:none">
-    <h3>Zones <span class="sub">— squads need enough combined DPS to hold a zone; kills pay copper, drops roll by chance</span></h3>
+    <h3>Zones</h3>
     <div class="rowlist" id="zones"></div>
   </section>
 
   <section id="gearSec" class="game hidden tabpane" style="display:none">
     <div id="titles" style="display:none"></div>
 
-    <h3>Combat Power <span class="sub">— the factors your gear moves</span></h3>
+    <h3>Combat Power</h3>
     <div class="chipGroup" id="powerBreakdown">
       <div class="chip"><div class="chipVal"><b id="cpElP">—</b></div><div class="chipLbl">combat power</div></div>
       <div class="chip"><div class="chipVal"><b id="atkEl">—</b></div><div class="chipLbl">atk</div></div>
@@ -161,30 +161,27 @@
     </div>
     <div id="stashList"></div>
 
-    <h3>Armory <span class="sub" id="armorySub">— every drop merges into its entry; ranks grant permanent passives</span></h3>
+    <h3>Armory <span class="sub" id="armorySub"></span></h3>
     <div id="armoryGrid"></div>
   </section>
 
   <section id="dungeonSec" class="game hidden tabpane" style="display:none">
-    <h3>Delve <span class="sub">— the character mines the dead server's deep strata; depth follows your build, deeper = more Cache</span></h3>
+    <h3>Delve</h3>
     <div id="delveState"></div>
     <div id="delveCache"></div>
-    <h3>Cache tree <span class="sub">— every node feeds a system</span></h3>
+    <h3>Cache tree</h3>
     <div class="rowlist" id="delveTree"></div>
   </section>
 
   <section id="instanceSec" class="game hidden tabpane" style="display:none">
     <h3>Dungeon</h3>
-    <p class="sub">You send bots into a dungeon and they fight down through floors.
-    Each boss ability needs a certain number of bots assigned to block it — if it isn't
-    blocked, you deal less damage for the rest of the run. Bots get banned as you go
-    deeper, so eventually you run out and the party dies. Dying costs you most of the
-    run's loot — pull out early to keep all of it.</p>
+    <!-- The "How it works" block moved to Help whole: floors, attrition, the
+         wipe rule and the 40%-kept rule were all general teaching, and its
+         own register row noted nothing else mentions them. -->
     <div id="instState"></div>
     <div id="instProject" class="caption"></div>
 
     <h3>Assign bots</h3>
-    <p class="sub">Bots assigned here are spent — you get back whoever survives.</p>
     <div class="rowlist" id="instDuties"></div>
 
     <div class="arena">
@@ -192,7 +189,6 @@
         <span>Difficulty</span><input type="number" id="instKey" min="1" max="20" step="1" style="width:4em">
         <span>Pull out at floor</span><input type="number" id="instBank" min="1" max="50" step="1" style="width:4em">
       </div>
-      <div id="instKeyInfo" class="sub"></div>
       <label class="toggleLine"><input type="checkbox" id="instProxy"> Buy proxies <span class="sub">— 250c per run, 25% fewer bots banned</span></label>
       <div class="controls">
         <button id="instStart">Send bots in</button>
@@ -201,8 +197,10 @@
     </div>
 
     <h3>Boss abilities</h3>
-    <p class="sub">There's no wiki and nobody to ask. You find out what an ability does by
-    running into it.</p>
+    <!-- Flavor opener stays; the teaching clause after it ("you find out what
+         an ability does by running into it, and what you learn is permanent")
+         is Help's Boss-abilities-journal topic now. -->
+    <p class="sub">There's no wiki and nobody to ask.</p>
     <div class="rowlist" id="instJournal"></div>
   </section>
 
