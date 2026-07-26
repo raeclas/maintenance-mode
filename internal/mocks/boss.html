@@ -584,17 +584,32 @@ h3 .sub{flex-basis:100%}
 .controls:has(.breached){flex-direction:column;align-items:center;
   text-align:center}
 
-/* Stat grid — a label/value cluster for terms that are read as a TABLE, not
-   as a sentence. Columns are content-width so the values align on their own
-   edge; the total spans the value columns because it is one number, not a
-   rate-and-multiplier pair. Same chip/KPI role as DESIGN.md §Component
-   specs, laid out as rows because these terms come in fixed pairs. */
-.statgrid{display:grid;grid-template-columns:auto auto auto;
-  gap:var(--space-2) var(--space-6);justify-content:start;
-  margin-top:var(--space-5);font-size:var(--fs-small);font-family:monospace}
-.statgrid .k{color:var(--faint);letter-spacing:.08em}
-.statgrid .v{color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
-.statgrid .tot{grid-column:2/4;color:var(--bone)}
+/* ── LEDGER — fixed terms read as a table, not as a sentence ──────────────
+   A sentence makes the reader parse "20% of those" to learn super-crit is
+   conditional; columns show it. Built as a ledger rather than a bare grid
+   because Art Deco's own vocabulary is fine rules + letterspaced caps, and
+   a total separated by a rule is the oldest table idiom there is: the term
+   that multiplies damage should not look like just another row.
+   Label left, figures right, each figure column on its own edge.          */
+.ledger{display:grid;grid-template-columns:1fr auto auto;
+  column-gap:var(--space-7);margin-top:var(--space-6);
+  font-size:var(--fs-small);font-family:monospace}
+.ledger>*{padding:var(--space-2) 0}
+.ledger .hd{grid-column:1/-1;font-family:Georgia,serif;font-variant:small-caps;
+  letter-spacing:.16em;color:var(--gold);border-bottom:var(--border-hairline) solid var(--line);
+  margin-bottom:var(--space-2)}
+.ledger .k{color:var(--faint)}
+.ledger .v{color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
+/* the product row: ruled off above, and the only figure in bone — it is the
+   number that actually multiplies damage, the rest are its inputs.
+   The rule is its OWN full-span element, not a per-cell border-top: cell
+   borders are interrupted by the column gap, and a rule with gaps in it
+   reads as damage — the one thing this DNA must never do. */
+.ledger .rule{grid-column:1/-1;padding:0;height:0;
+  border-top:var(--border-hairline) solid var(--line);margin-top:var(--space-2)}
+.ledger .k.sum{padding-top:var(--space-4)}
+.ledger .v.sum{padding-top:var(--space-4);color:var(--bone)}
+.ledger .v.sum.wide{grid-column:2/-1}
 
 /* ── 7. NAV + WALL SELECTOR — a seam, not a border swap ───────────────────
    An MMO client's active tab is lit along its top edge. That is a second,
@@ -688,10 +703,12 @@ different state, not a duplicated fact. The second is <b>frontier broken</b>, th
       <span id="depth">92.4%</span>
       <span class="caption">At this rate the door breaks in 323 days.</span>
     </div>
-    <div id="projection" class="statgrid">
+    <div id="projection" class="ledger">
+      <span class="hd">Crits</span>
       <span class="k">Crit</span><span class="v">10%</span><span class="v">&times;2</span>
       <span class="k">Super crit</span><span class="v">20%</span><span class="v">&times;5</span>
-      <span class="k">Average</span><span class="v tot">&times;1.16</span>
+      <span class="rule"></span>
+      <span class="k sum">Average damage</span><span class="v sum wide">&times;1.16</span>
     </div>
 
   <div class="progress">
