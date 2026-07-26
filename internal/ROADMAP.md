@@ -114,10 +114,12 @@ before it was done, kept for the reasoning.
    the sprite question resolves. Ten identities now ship as six code
    constructions with zero art pipeline. **No SDXL download was started.**
 
-Still open from this pass: **identity art (slot 2)** — a portrait in the
-Agram-Delezie register beside the nameplate. The user chose "both, battle
-first"; battle is done. This is the one that genuinely needs the art decision
-reopened, because a painted full-value portrait is exactly what code cannot do.
+**PARKED 2026-07-26 by the user — do not re-propose unprompted.** Identity art
+(slot 2): a portrait in the Agram-Delezie register beside the nameplate. The
+user chose "both, battle first"; battle shipped, and slot 2 was then parked. It
+is the one piece that genuinely needs the art decision reopened, because a
+painted full-value portrait is exactly what code cannot do — which also means
+picking it up implies the ~7GB SDXL pull and GPU time. **Wait to be asked.**
 
 ### The original NEXT UP entry (2026-07-26, before the work)
 
