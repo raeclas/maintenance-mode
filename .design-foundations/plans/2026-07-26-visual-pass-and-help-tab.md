@@ -1,8 +1,8 @@
 # Design Plan: Visual pass + Help tab
 
-**Status:** in-progress
+**Status:** complete
 **Started:** 2026-07-26
-**Current Phase:** 3
+**Completed:** 2026-07-26
 **Track:** Standard
 **Entry stage:** Design (JOURNEY.md and DESIGN.md both exist and are honored)
 **Created:** 2026-07-26
@@ -500,7 +500,7 @@ DESIGN.md gate holds until the user confirms the direction on real pixels.
       DESIGN.md specs as a luminance-separated encoding, not stacked-card
       default).
 - [x] Committed
-Commit: (see below)
+Commit: `b795a93`
 Summary: all seven surfaces now carry DNA v4 and the Phase 2 copy relocation;
 `help.html` exists as a real surface built from the Phase 2 page spec; and the
 shell prompt is gone from every mock and from shipped `index.html`.
