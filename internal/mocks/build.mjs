@@ -631,6 +631,18 @@ h3 .sub{flex-basis:100%}
 .controls:has(.breached){flex-direction:column;align-items:center;
   text-align:center}
 
+/* Stat grid — a label/value cluster for terms that are read as a TABLE, not
+   as a sentence. Columns are content-width so the values align on their own
+   edge; the total spans the value columns because it is one number, not a
+   rate-and-multiplier pair. Same chip/KPI role as DESIGN.md §Component
+   specs, laid out as rows because these terms come in fixed pairs. */
+.statgrid{display:grid;grid-template-columns:auto auto auto;
+  gap:var(--space-2) var(--space-6);justify-content:start;
+  margin-top:var(--space-5);font-size:var(--fs-small);font-family:monospace}
+.statgrid .k{color:var(--faint);letter-spacing:.08em}
+.statgrid .v{color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
+.statgrid .tot{grid-column:2/4;color:var(--bone)}
+
 /* ── 7. NAV + WALL SELECTOR — a seam, not a border swap ───────────────────
    An MMO client's active tab is lit along its top edge. That is a second,
    positional channel on top of the existing colour one.                    */
@@ -885,8 +897,11 @@ const boss = page({
       <span id="depth">92.4%</span>
       <span class="caption">At this rate the door breaks in 323 days.</span>
     </div>
-    <div id="projection" class="caption">Crits &times;1.16 average damage &mdash;
-      10.0% of hits crit for &times;2, and 20.0% of those crit again for &times;5.</div>
+    <div id="projection" class="statgrid">
+      <span class="k">Crit</span><span class="v">10%</span><span class="v">&times;2</span>
+      <span class="k">Super crit</span><span class="v">20%</span><span class="v">&times;5</span>
+      <span class="k">Average</span><span class="v tot">&times;1.16</span>
+    </div>
 
   <div class="progress">
     <div class="caption">Combat Power 2,481,600/s &mdash; full breakdown on the
