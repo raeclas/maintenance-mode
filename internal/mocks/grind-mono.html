@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Training &mdash; Maintenance Mode mock</title>
+<title>Grind (monospace specimen) &mdash; Maintenance Mode mock</title>
 <!--
   Phase 3 mock, .design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md
   Tokens : internal/DESIGN.md ## Visual DNA v4 (+ v3 construction, Phase 3/4 tiers)
@@ -303,6 +303,7 @@
      grid still fits its narrowest legible width. */
   --armory-zone-col:40px;
   --armory-min:434px;
+  --font-data:monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--dim);font-family:var(--font-body);
@@ -1272,25 +1273,20 @@ section.game.locked .glyph{color:var(--faint);background:var(--panel);
 </style>
 </head>
 <body>
-<main class="client t-training">
-<div class="mockNote"><b>MOCK</b> &mdash; not the shipped client. Training tab, recomposed against <b>DESIGN.md's Visual DNA v4</b> and cut
-    to the <b>Phase 2 relocation table</b>. 9 of 13 script tiers are locked and not
-    one of them draws an allocation control &mdash; the audit counted 21 inert
-    clusters across this tab and Grind. The rig stats line keeps only the one fact
-    the four rig buttons do not already carry: each button prints its lever's
-    current value on the left of its own <code>&rarr;</code>.
-    <b>Colour:</b> <b>one</b> Tier-B lane &mdash; lane 3, Training's accent
-    (<code>--acc-training</code>, the script console), on chrome only: the window
-    frames, the title-bar grooves, and the live row's edge and name. Nothing on
-    this tab has a rarity or a power band.
-    <b>Copy:</b> five relocations land here &mdash; the population bar's
-    differentiation clause, the ATK sub, the SPEED sub, the Enhance squad sub and
-    the Ban Wave teaching paragraph. Every heading is bare and every number,
-    price, cap and state readout is untouched. <b>The unlock rule moved with the
-    ATK sub</b>, so read the locked rows as the ladder alone: no edge, unlit, no
-    control, and the word "locked" with its own condition. The two short flavor
-    lines stay by the rule's own carve-out (<code>&mdash; the anti-cheat notices
-    the farm</code>).
+<main class="client t-grind">
+<div class="mockNote"><b>MOCK</b> &mdash; not the shipped client. <b>SPECIMEN, not a surface &mdash; and the treatment that was
+    REJECTED.</b> This is <code>grind.html</code>'s body with exactly one token
+    changed back: <code>--font-data</code> returns to <code>monospace</code>.
+    Everything else is byte-identical. It exists so DW-3.9's decision can be
+    re-checked on pixels instead of taken on trust &mdash; compare against
+    <code>shots/grind-375.png</code>. Three things decided it: the "botter's
+    toolkit" register is a <b>naming</b> register and survives the font change
+    intact; column alignment does not need mono, because
+    <code>font-variant-numeric:tabular-nums</code> is already on
+    <code>body</code> and holds in the UI face on both genuinely tabular blocks;
+    and this page is <b>6,438px</b> tall at 375px against the UI face's
+    <b>5,734px</b>, with the live row's stat line wrapping where the other does
+    not. Reasoning in full: DESIGN.md <code>## The data face (v4, Phase 3)</code>.
   <br><br><b>Shared chrome, new this phase: the log is a chat window.</b>
   The shell prompt that used to head this block is gone from every surface and
   from <code>index.html</code>. It was wrong three ways &mdash; a shell inside a
@@ -1319,133 +1315,130 @@ section.game.locked .glyph{color:var(--faint);background:var(--panel);
   </div>
   <button class="helpBtn" title="Help">?</button>
 </header>
-<nav id="tabs" aria-label="Main"><button class="t-boss">Boss</button><button class="t-training active" aria-current="page">Training</button><button class="t-grind">Grind</button><button class="t-player">Player</button><button class="t-delve">Delve</button><button class="t-dungeon">Dungeon</button><button class="t-help">Help</button></nav>
+<nav id="tabs" aria-label="Main"><button class="t-boss">Boss</button><button class="t-training">Training</button><button class="t-grind active" aria-current="page">Grind</button><button class="t-player">Player</button><button class="t-delve">Delve</button><button class="t-dungeon">Dungeon</button><button class="t-help">Help</button></nav>
 <section class="game">
-  <h3><span class="glyph" aria-hidden="true">R</span>Rig</h3>
-  <div class="rig">
-    <button>multiclient &middot; 248 &rarr; 297 bot slots &middot; 119,647c</button>
-    <button class="affordable">account creator &middot; 240 &rarr; 270 bots per hour &middot; 12,069c</button>
-    <button class="affordable">script version &middot; bot strength &times;1.75 &rarr; &times;2.00 &middot; 819c</button>
-    <button class="affordable">overclock &middot; bot speed &times;1.80 &rarr; &times;2.00 &middot; 2,506c</button>
-  </div>
-  <div class="sub">lost in the Dungeon 47</div>
-  <div class="barTrack"><div class="barFill" style="width:93%"></div></div>
-  
-  <div class="sub">231 of 248 slots filled</div>
-
-  
-  <h3><span class="glyph" aria-hidden="true">A</span>ATK scripts</h3>
-  <div class="caption">+16.65 ATK trained so far &middot; +0.0275/s right now</div>
-  <div class="rowlist"><div class="row active">
-    <div class="rowName">swing macro</div>
-    <div class="rowGain">+0.0005 ATK per fill</div>
+  <h3><span class="glyph" aria-hidden="true">Z</span>Zones</h3>
+  <div class="rowlist"><div class="row dormant">
+    <div class="rowName">Novice Meadow<span class="sub">Training Slime &middot; 12 HP</span></div>
+    <div class="rowGain">5c per kill<span class="sub"><span class="band b1">IP 10&ndash;30</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
-  <button>&minus;</button><input value="100" readonly>
+  <button>&minus;</button><input value="0" readonly>
+  <button>+</button>
+</span></div>
+    <div class="rowStat">no bots here</div>
+    <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
+  </div><div class="row dormant">
+    <div class="rowName">Webbed Ravine<span class="sub">Ravine Weaver &middot; 60 HP</span></div>
+    <div class="rowGain">20c per kill<span class="sub"><span class="band b1">IP 40&ndash;120</span></span></div>
+    <div class="rowAlloc"><span class="allocMini">
+  <button>&minus;</button><input value="0" readonly>
+  <button>+</button>
+</span></div>
+    <div class="rowStat">no bots here</div>
+    <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
+  </div><div class="row active">
+    <div class="rowName">Salt Flats<span class="sub">Salt Strider &middot; 250 HP</span></div>
+    <div class="rowGain">75c per kill<span class="sub"><span class="band b1">IP 150&ndash;450</span></span></div>
+    <div class="rowAlloc"><span class="allocMini">
+  <button>&minus;</button><input value="20" readonly>
   <button>+</button><button>cap</button><button>&ctdot;</button>
 </span></div>
-    <div class="rowStat">30,276 fills &middot; at the 50/s cap &mdash; more bots here do nothing, move them to another script</div>
+    <div class="rowStat">50 kills/s CAPPED &middot; 5,766c/s (&times;1.24) &middot; overkill &times;125.1</div>
     <div class="rowBar"><div class="rowFill" style="width:100%"></div></div>
   </div><div class="row dormant">
-    <div class="rowName">combo macro</div>
-    <div class="rowGain">+0.005 ATK per fill</div>
+    <div class="rowName">Cinder Steppe<span class="sub">Steppe Charger &middot; 700 HP</span></div>
+    <div class="rowGain">300c per kill<span class="sub"><span class="band b2">IP 600&ndash;1,800</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
 </span></div>
-    <div class="rowStat">0 fills &middot; no bots on it</div>
+    <div class="rowStat">no bots here</div>
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
-  </div><div class="row locked">
-    <div class="rowName">cancel-weave script</div>
-    <div class="rowGain">+0.045 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 30,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">frame-perfect script</div>
-    <div class="rowGain">+0.35 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 90,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">packet-replay script</div>
-    <div class="rowGain">+2.8 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 270,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">netcode desync</div>
-    <div class="rowGain">+22 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 810,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">tick-rate exploit</div>
-    <div class="rowGain">+175 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 2,430,000 fills</div>
-    
-  </div></div>
-
-  <h3><span class="glyph" aria-hidden="true">S</span>SPEED scripts</h3>
-  <div class="caption">+0.13 hits/s trained so far &middot; +0.00034/s right now</div>
-  <div class="rowlist"><div class="row active">
-    <div class="rowName">autoclicker</div>
-    <div class="rowGain">+0.00001 hits/s per fill</div>
+  </div><div class="row dormant">
+    <div class="rowName">The Doorstep<span class="sub">Door Sentry &middot; 1,500 HP</span></div>
+    <div class="rowGain">2,250c per kill<span class="sub"><span class="band b2">IP 4,500&ndash;13,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
-  <button>&minus;</button><input value="60" readonly>
+  <button>&minus;</button><input value="0" readonly>
+  <button>+</button>
+</span></div>
+    <div class="rowStat">no bots here</div>
+    <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
+  </div><div class="row dormant">
+    <div class="rowName">The Threshold<span class="sub">Threshold Husk &middot; 5,000 HP</span></div>
+    <div class="rowGain">7,000c per kill<span class="sub"><span class="band b2">IP 13,500&ndash;40,500</span></span></div>
+    <div class="rowAlloc"><span class="allocMini">
+  <button>&minus;</button><input value="0" readonly>
+  <button>+</button>
+</span></div>
+    <div class="rowStat">no bots here</div>
+    <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
+  </div><div class="row dormant">
+    <div class="rowName">Ashen Nave<span class="sub">Nave Revenant &middot; 16,000 HP</span></div>
+    <div class="rowGain">21,000c per kill<span class="sub"><span class="band b3">IP 40,500&ndash;121,500</span></span></div>
+    <div class="rowAlloc"><span class="allocMini">
+  <button>&minus;</button><input value="0" readonly>
+  <button>+</button>
+</span></div>
+    <div class="rowStat">no bots here</div>
+    <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
+  </div><div class="row dormant">
+    <div class="rowName">Flooded Undercroft<span class="sub">Undercroft Lurker &middot; 52,000 HP</span></div>
+    <div class="rowGain">65,000c per kill<span class="sub"><span class="band b3">IP 121,500&ndash;364,500</span></span></div>
+    <div class="rowAlloc"><span class="allocMini">
+  <button>&minus;</button><input value="0" readonly>
+  <button>+</button>
+</span></div>
+    <div class="rowStat">no bots here</div>
+    <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
+  </div><div class="row dormant">
+    <div class="rowName">The Long Dark<span class="sub">Pale Sentinel &middot; 170,000 HP</span></div>
+    <div class="rowGain">200,000c per kill<span class="sub"><span class="band b3">IP 364,500&ndash;1,093,500</span></span></div>
+    <div class="rowAlloc"><span class="allocMini">
+  <button>&minus;</button><input value="0" readonly>
+  <button>+</button>
+</span></div>
+    <div class="rowStat">no bots here</div>
+    <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
+  </div><div class="row struggling">
+    <div class="rowName">The Second Door<span class="sub">Sealed Warden &middot; 550,000 HP</span></div>
+    <div class="rowGain">620,000c per kill<span class="sub"><span class="band b4">IP 1,093,500&ndash;3,280,500</span></span></div>
+    <div class="rowAlloc"><span class="allocMini">
+  <button>&minus;</button><input value="15" readonly>
   <button>+</button><button>cap</button><button>&ctdot;</button>
 </span></div>
-    <div class="rowStat">12,160 fills &middot; 31.2 fills/s</div>
-    <div class="rowBar"><div class="rowFill" style="width:62%"></div></div>
-  </div><div class="row dormant">
-    <div class="rowName">turbo clicker</div>
-    <div class="rowGain">+0.0001 hits/s per fill</div>
-    <div class="rowAlloc"><span class="allocMini">
-  <button>&minus;</button><input value="0" readonly>
-  <button>+</button>
-</span></div>
-    <div class="rowStat">0 fills &middot; no bots on it</div>
+    <div class="rowStat">too weak to hold &mdash; 1,172,556 damage/s of the 1,700,000 this zone needs</div>
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row locked">
-    <div class="rowName">no-delay hack</div>
-    <div class="rowGain">+0.0009 hits/s per fill</div>
+    <div class="rowName">Frostbound Wastes<span class="sub">Wastes Wight &middot; 1,650,000 HP</span></div>
+    <div class="rowGain">1,860,000c per kill<span class="sub"><span class="band b4">IP 3,280,500&ndash;9,841,500</span></span></div>
     <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 30,000 fills</div>
+    <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
-    <div class="rowName">input injector</div>
-    <div class="rowGain">+0.007 hits/s per fill</div>
+    <div class="rowName">The Sunken Archive<span class="sub">Archive Colossus &middot; 5,000,000 HP</span></div>
+    <div class="rowGain">5,600,000c per kill<span class="sub"><span class="band b4">IP 9,841,500&ndash;29,524,500</span></span></div>
     <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 90,000 fills</div>
+    <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
-    <div class="rowName">kernel clicker</div>
-    <div class="rowGain">+0.055 hits/s per fill</div>
+    <div class="rowName">Obsidian Reach<span class="sub">Reach Devourer &middot; 15,000,000 HP</span></div>
+    <div class="rowGain">17,000,000c per kill<span class="sub"><span class="band b5">IP 29,524,500&ndash;88,573,500</span></span></div>
     <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 270,000 fills</div>
+    <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
-    <div class="rowName">hypervisor clock</div>
-    <div class="rowGain">+0.42 hits/s per fill</div>
+    <div class="rowName">The Hollow Spire<span class="sub">Spire Revenant &middot; 45,000,000 HP</span></div>
+    <div class="rowGain">50,000,000c per kill<span class="sub"><span class="band b5">IP 88,573,500&ndash;265,720,500</span></span></div>
     <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 810,000 fills</div>
+    <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
+    
+  </div><div class="row locked">
+    <div class="rowName">World's Edge<span class="sub">Edge Sentinel &middot; 135,000,000 HP</span></div>
+    <div class="rowGain">150,000,000c per kill<span class="sub"><span class="band b5">IP 265,720,500&ndash;797,161,500</span></span></div>
+    <div class="rowAlloc"></div>
+    <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div></div>
-
-  
-  <h3><span class="glyph" aria-hidden="true">E</span>Enhance squad</h3>
-  <div class="runControls">
-    <span class="seg"><button>weapon</button><button class="active">armor</button><button>charm</button></span>
-    <label>stop at + <input class="ipDial" value="15" readonly></label>
-  </div>
-  <div class="caption">one try every 9.4s &middot; 83,215c each</div>
-
-  
-  <h3><span class="glyph" aria-hidden="true">B</span>Ban Wave<span class="sub">&mdash; the anti-cheat notices the farm</span></h3>
-  <div class="runControls">
-    <span class="caption">+206 Scripts ready, from 42,436 training fills &middot; 0 Ban Waves so far</span>
-  </div>
-  <div class="ctaRow"><button class="cta">Ban Wave</button></div>
 </section>
 <div class="mockNote"><b>State ladder</b> (this plan's whole point). <b>live</b>: a
 4px left edge in <b>THIS ROOM'S accent</b> (v4 &mdash; gold left that slot and

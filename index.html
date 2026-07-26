@@ -201,7 +201,16 @@
     <div class="rowlist" id="instJournal"></div>
   </section>
 
-  <div id="logHead">maintenance@dead-server:~$ <span class="cursor">▮</span></div>
+  <!-- The shell prompt that used to live here is DELETED, not re-confined:
+       a terminal inside a client that has no shell, naming the server a dead
+       one in a game whose premise is that it still works, behind a cursor
+       implying an input that does not exist. See internal/DESIGN.md
+       "## The chat window (v4, Phase 3)".
+       This is the copy half only — the chat window's construction (channel
+       plates, System/General) lands with the style.css integration pass.
+       .cursor and @keyframes blink are already deleted; #logHead keeps its
+       current rule until that pass restyles it. -->
+  <div id="logHead">System &middot; <span id="online">Players online: 1</span></div>
   <div id="log"></div>
 
   <footer><button id="exportBtn">export save</button> · <button id="wipeBtn">wipe save (dev)</button></footer>

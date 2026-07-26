@@ -130,7 +130,8 @@ the plan's constraint, this is IA, not a bug to normalize.
 Hub (persistent chrome — not a tab; always visible once state.unlocked)
 ├── resource bar (Combat Power · bots · copper · scripts chips)
 ├── tab nav (7 buttons, "???" label pre-unlock — Help never locked)
-├── activity log ("maintenance@dead-server:~$")
+├── chat window (System / General channels + `Players online: 1`) — replaces
+│     the shell-prompt log header, Phase 3 of the visual-pass plan
 └── footer (export / wipe save)
 
 Spokes (seven tabs — unlock condition in main.js checkUnlocks(), Help
@@ -220,7 +221,9 @@ explicitly so Phase 2 doesn't let it grow its own breakdown.
 | Copper total + rate | **Grind tab** (copper is earned there) | live | resbar chip `#copperEl`/`#copperRate` | POINTER — rate is computed live across all held zones. |
 | Scripts + damage multiplier | **Training tab** (Ban Wave section) | dormant until 1st rebirth, then live | resbar chip `#scriptsEl`/`#scriptMultEl` (hidden until `scripts>0 or rebirths>0`) | POINTER — echo of `scriptMult()`, the guideline-5 term also folded into the Boss-tab drain. |
 | Tab nav labels (7) | — (nav is the IA itself) | 2 live (Boss, Help) + up to 5 `locked` at game start, unlocking per ladder | `#tabs` | `locked` renders literally as `???`. **Help added Phase 2 (visual-pass-and-help-tab plan) — never `locked`.** |
-| Activity log | — (event history, not live state) | live (rolling, capped 40 lines) | `#log` | Out of scope for fact-ownership dedup by design: the log's job IS to echo past events after the fact; it is not a second simultaneous render of current state. |
+| Activity log → **chat window, System channel** | — (event history, not live state) | live (rolling, capped 40 lines) | `#chat` › `#log` | Out of scope for fact-ownership dedup by design: the log's job IS to echo past events after the fact; it is not a second simultaneous render of current state. **Rehoused Phase 3** (visual-pass plan) as an MMO chat panel — see `### Shared chrome: the chat window` below. |
+| **Chat window, General channel** | — (no traffic exists; there is one player) | live, permanently **empty** | `#chat` › `#log` | NEW Phase 3. Owns no fact by design — the emptiness IS the content, and it is the ABSENCE the premise is built on. Never gains a badge, an unread count or a notification: that would be an obligation mechanic (standing hard veto). |
+| **`Players online: 1`** | — (premise, not a game stat) | live, always `1` | `#chat` › `#online` | NEW Phase 3 as a persistent counter. Previously appeared only inside a rare `[Server]` log line at `plus >= 16` (`main.js:168`). It is the one number in the client that means the whole game, and an MMO chat window is where an online count belongs. |
 | `#helpBtn` (`?`) | — (nav shortcut, not content) | live | resource bar | **Retargeted Phase 2**: switches to the Help tab. Previously opened `#helpModal` (Ban Wave topic only) — that modal is retired; its content is now owned by Help's Training section, see `## Phase 2: Help tab + copy relocation`. |
 | Footer (export/wipe) | — (dev/meta utility) | live | `#logHead`/footer | Not a game fact. |
 
@@ -1075,7 +1078,7 @@ tab lets you DO — register name first, plain consequence second:
 | enhance milestone | `[Server] a player has reached +{plus}. Players online: 1.` | `main.js:168` at `plus >= 16`. Unchanged — this is the shell register at its one intended edge, and it is the game's whole premise in one line |
 | title earned | `★ title: +{plus}` | `main.js:172` at `plus >= 18` |
 | Ban Wave | `! Ban Wave #{n} — farm reset · banked +{s} Scripts (×{m} damage)` | `main.js:417`; `rebirth.js:25` |
-| log header | `maintenance@dead-server:~$ ▮` | `index.html:204`. Unchanged — DESIGN.md confines the shell register to exactly here |
+| ~~log header~~ | **RETIRED, Phase 3** | `index.html:204`. The shell prompt and its block cursor are deleted, not re-confined. See `### Shared chrome: the chat window` below, and DESIGN.md `## The chat window (v4, Phase 3)` for why "confined" was never a defence. |
 
 **Footer / meta:**
 
@@ -1127,11 +1130,35 @@ line, or one stated pointer away, is a fail.
 | journal | `Boss abilities` `h3` sub | `what you learn here is permanent` |
 | proxy | its own toggle label | `250c per run, 25% fewer bots banned` |
 | Warden / door / breach | boss title + the break log line | `Warden of the First Door` · `★ W1 BREACHED` |
-| `maintenance@dead-server:~$` · `Players online: 1` | not defined, deliberately | the shell register at its two intended edges (DESIGN.md `## Direction`) — atmosphere, never an instruction. No control depends on reading it |
+| ~~`maintenance@dead-server:~$`~~ | **RETIRED, Phase 3** | the shell register is gone, not confined. DESIGN.md `## The chat window (v4, Phase 3)` |
+| `System` · `General` | the chat window's own two channel plates | standard MMO chat-channel names; the content of each channel defines it — System carries traffic, General carries nothing |
+| `Players online: 1` | not defined, deliberately | the premise stated as a number, in the place an MMO client puts an online count. Atmosphere, never an instruction; no control depends on reading it |
 
 **Result:** every name that governs a control is defined on its own line or
-one stated pointer away. The only undefined strings are the two shell-register
-lines, which carry no instruction and gate no action.
+one stated pointer away. The only undefined string is `Players online: 1`,
+which carries no instruction and gates no action.
+
+---
+
+### Shared chrome: the chat window (Phase 3)
+
+Produced by Phase 3 of `.design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md`,
+on the user's decision. Replaces the shell-prompt log header in the Global
+chrome table above. Rendered on **all seven** surfaces; it is chrome, not a
+tab's content, so it owns no tab's fact.
+
+| Element | Final copy | Note |
+|---|---|---|
+| channel plate 1 | `System` | active by default; carries the existing log lines unchanged |
+| channel plate 2 | `General` | selectable, and permanently empty |
+| `#online` | `Players online: 1` | persistent. Previously a fragment of the `plus >= 16` `[Server]` log line (`main.js:168`), which stays as it is — that line is an in-fiction *announcement*, this is the client's own counter |
+| General, empty state | `Nothing here.` | The one string this phase writes from scratch. It states the fact and **does not narrate the silence**: the emptiness is the storytelling, and a sentence *about* it would be the decay register returning as prose. Reads quiet because the window around it is intact, lit and selectable — Nielsen #1, visibility of system status |
+
+**What it must never grow:** an unread badge, a message count, a notification
+dot, or any "N new" affordance. All four are obligation mechanics and the veto
+on those is standing (CLAUDE.md hard vetoes). A chat window in this game is a
+place where nothing happens; making it demand attention would invert the one
+feeling it exists to carry.
 
 ---
 

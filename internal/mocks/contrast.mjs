@@ -16,8 +16,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const css = readFileSync(join(HERE, "boss.html"), "utf8")
-  + readFileSync(join(HERE, "player.html"), "utf8");   // v4: two recomposed surfaces
+// Phase 3: all SEVEN surfaces. This file exists to read the CSS that actually
+// shipped rather than a second copy of the hexes, and two of seven stopped
+// being that the moment the other five were recomposed.
+const css = ["boss", "training", "grind", "player", "delve", "dungeon", "help"]
+  .map(n => readFileSync(join(HERE, `${n}.html`), "utf8")).join("");
 
 const T = {};
 for (const [, k, v] of css.matchAll(/--([\w-]+)\s*:\s*(#[0-9a-fA-F]{6})\b/g)) T[k] = v;
@@ -98,7 +101,12 @@ const BAND = ["band-1", "band-2", "band-3", "band-4", "band-5"];
 // TEXT floor 4.5 (WCAG 1.4.3 AA) · NON-TEXT floor 3.0 (WCAG 1.4.11).
 const PAIRS = [
   ...Object.entries(ON).flatMap(([t, ss]) => ss.map(s => [t, s, 4.5, "text"])),
-  ["logline", "bg", 4.5, "text"],          // #logHead sits directly in <main>
+  // ["logline","bg"] RETIRED with the shell prompt (Phase 3). #logHead is gone;
+  // the chat window that replaced it is built from tokens already gated above:
+  // its head is --bone/--dim on the title-bar stops, its channel plates are
+  // --bone/--dim on --field, its socket body is the existing log inks on
+  // --well, and its empty state is --faint on --well. Zero new hexes, so the
+  // contrast surface cannot regress by construction rather than by luck.
   ["on-gold", "gold", 4.5, "text"],        // CTA text on a solid-gold fill
   // v3: the Descend CTA's face is a gold->gold-dim gloss, so its dark label
   // renders on BOTH stops. The bottom stop was a new, un-gated pairing the

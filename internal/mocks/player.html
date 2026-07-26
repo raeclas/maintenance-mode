@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Player &mdash; Maintenance Mode mock</title>
 <!--
-  Phase 6 mock, .design-foundations/plans/2026-07-25-ui-dedup-audit.md
-  Tokens : internal/DESIGN.md (Phase 3 LOCKED + Phase 4 component/dimension tiers)
+  Phase 3 mock, .design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md
+  Tokens : internal/DESIGN.md ## Visual DNA v4 (+ v3 construction, Phase 3/4 tiers)
   Blocks : internal/JOURNEY.md ## Page specs (order) + ## Fact ownership (state)
-  Copy   : internal/JOURNEY.md Phase 5 microcopy, verbatim
-  Save state rendered by all six mocks:
+  Copy   : internal/JOURNEY.md Phase 5 microcopy, as cut by the Phase 2
+           relocation table (teaching prose lives on the Help tab now)
+  Save state rendered by all seven mocks:
   frontier W2 (Maren), W1 (Vess) cleared and farming · Combat Power
   2,481,600/s (ATK 94,000.0 x hits/s 26.4) · copper 84,600c +4,650/s · bots
   231/248, 16 free · rig ranks cap 10 / create 6 / power 3 / speed 4 · training
@@ -40,7 +41,12 @@
   --well:#05060a;    /* was #101014 — L* 1.4, the deepest surface on screen */
   --line:#262a34; --line-soft:#1b1b22;
   --risk:#7aa4d4; --warn:#b26f5f; --alert:#d25b44; --copper:#d08a3e; --live:#6bbf7a;
-  --logline:#598368;
+  /* --logline (#598368) is RETIRED, Phase 3. It existed for exactly one
+     element — #logHead, the shell prompt — and that element no longer exists.
+     A token whose only consumer has been deleted is dead weight, and leaving it
+     would leave contrast.mjs gating a pair nothing renders. The shipped
+     style.css still carries the hardcoded #4e7a5e this token was minted to
+     replace; that hex dies with the element at integration. */
   --level-muted:#5a7a5a;        /* Phase 4 semantic addition (was style.css:309) */
   /* rarity ramp — rarity.js named tokens; mythic carries DESIGN.md's AA fix */
   --rar-common:#b8b8b8; --rar-uncommon:#5fd35f; --rar-rare:#5a8bd6;
@@ -57,6 +63,28 @@
      between one override and four. Data stays monospace either way — that
      register split is REMAKE-DESIGN.md §16's, not this pass's. */
   --font-body:Georgia,serif;
+  /* THE DATA FACE. Was monospace at ~30 literal sites; DECIDED on rendered
+     pixels this phase (DW-3.9) and now the UI face everywhere.
+
+     The mono footprint was two prior reviews' unresolved watch item, and its
+     defence was that it carries REMAKE-DESIGN.md §16's "botter's toolkit"
+     register. Judged on internal/mocks/grind.html against
+     internal/mocks/grind-mono.html, which is this token flipped back and
+     nothing else, the defence does not hold: §16 is a NAMING register
+     (multiclient, packet-replay script, tick-rate exploit, proxies) and it
+     survives a font change completely intact. Column alignment does not need
+     mono either — font-variant-numeric:tabular-nums is already set on body,
+     and it holds in the UI face on both of the genuinely tabular blocks (the
+     crit ledger and the 45-cell Armory grid; crops in shots/crops/). And mono
+     costs real surface: Grind at 375px is 6,438px tall in mono against 5,734px
+     here, 11% shorter, with the live row's stat no longer wrapping.
+
+     The two mock-ANNOTATION classes (.mockNote, .stateLabel) keep the literal
+     monospace deliberately: commentary about the mock should not be in the
+     mock's own voice, and it is what lets the specimen change the surface
+     without changing the text describing it. Full reasoning: DESIGN.md
+     "## The data face (v4, Phase 3) — mono, decided on pixels". */
+  --font-data:var(--font-ui);
   /* ── Phase 4 primitive dimension scale (derived from style.css's own px) ── */
   --border-hairline:1px;
   --space-1:2px; --space-2:3px; --space-3:4px; --space-4:6px;
@@ -306,13 +334,13 @@ b{font-weight:normal}
 .chip{padding:var(--chip-pad);text-align:center;
   border-left:var(--border-hairline) solid var(--line)}
 .chip:first-child{border-left:none}
-.chipVal{font-family:monospace;font-size:var(--fs-display);color:var(--chip-value)}
+.chipVal{font-family:var(--font-data);font-size:var(--fs-display);color:var(--chip-value)}
 .chipVal b{color:var(--chip-value-emphasis)}
-.chipLbl{font-size:var(--fs-micro);font-family:monospace;letter-spacing:.12em;
+.chipLbl{font-size:var(--fs-micro);font-family:var(--font-data);letter-spacing:.12em;
   color:var(--chip-label);text-transform:uppercase;margin-top:var(--chip-lbl-nudge)}
 .copper,.copper b{color:var(--copper)}
 .helpBtn{background:none;border:var(--border-hairline) solid var(--line);
-  color:var(--dim);font-family:monospace;font-size:var(--fs-body);
+  color:var(--dim);font-family:var(--font-data);font-size:var(--fs-body);
   width:var(--touch-min);height:var(--touch-min);margin-left:auto}
 
 /* ── tab nav. Six fixed destinations, all visible: wraps 3+3 on a phone
@@ -334,14 +362,14 @@ h3{font-size:var(--fs-small);font-variant:small-caps;letter-spacing:.1em;
   color:var(--gold-dim);border-top:var(--border-hairline) solid var(--line);
   padding-top:var(--space-5);margin:var(--space-6) 0 var(--space-4);font-weight:normal}
 section.game>h3:first-child{border-top:none;padding-top:0;margin-top:var(--space-1)}
-.sub{color:var(--recede);font-size:var(--fs-label);font-family:monospace;
+.sub{color:var(--recede);font-size:var(--fs-label);font-family:var(--font-data);
   font-style:italic;letter-spacing:0;text-transform:none;font-variant:normal;
   line-height:1.6;display:block;margin-top:var(--space-2)}
 .rowName .sub{margin-top:0}
 
 /* ── buttons ── */
 button{background:var(--field);color:var(--bone);
-  border:var(--border-hairline) solid var(--line);font-family:monospace;
+  border:var(--border-hairline) solid var(--line);font-family:var(--font-data);
   font-size:var(--fs-small);padding:var(--space-3) var(--space-6);
   min-height:var(--touch-min);cursor:pointer;text-align:left}
 button.affordable{border-color:var(--afford-accent);color:var(--afford-accent)}
@@ -360,7 +388,7 @@ button:disabled{color:var(--faint);cursor:default;background:var(--panel)}
   row-gap:var(--row-gap-wrap);align-items:center;padding:var(--row-pad);
   border-bottom:var(--border-hairline) solid var(--line-soft);
   border-left:var(--row-active-border) solid transparent;
-  font-family:monospace;font-size:var(--fs-small);position:relative}
+  font-family:var(--font-data);font-size:var(--fs-small);position:relative}
 .rowlist .row>.rowAlloc,.rowlist .row>.rowStat{grid-column:1/-1;min-width:0;
   overflow-wrap:anywhere}
 .rowName{color:var(--row-name)}
@@ -409,14 +437,14 @@ button:disabled{color:var(--faint);cursor:default;background:var(--panel)}
   border-color:var(--line-soft);min-width:var(--touch-min);text-align:center}
 .allocMini input{width:var(--alloc-input-width);min-height:var(--touch-min);
   background:var(--inset);color:var(--alloc-value);
-  border:var(--border-hairline) solid var(--line);font-family:monospace;
+  border:var(--border-hairline) solid var(--line);font-family:var(--font-data);
   padding:var(--alloc-input-pad);font-size:var(--fs-small);text-align:center}
 
 /* ── Boss ── */
 .bossPanel{text-align:center;margin:var(--space-6) 0 var(--space-4)}
 #bossName{color:var(--gold);font-size:var(--fs-masthead);font-variant:small-caps}
 #bossTitle{font-size:var(--fs-small);font-style:italic}
-.wallLbl{font-family:monospace;font-size:var(--fs-label);color:var(--recede);
+.wallLbl{font-family:var(--font-data);font-size:var(--fs-label);color:var(--recede);
   letter-spacing:.12em;text-transform:uppercase;text-align:center;
   margin-bottom:var(--space-2)}
 .wallScroll{overflow-x:auto;padding-bottom:var(--space-1)}
@@ -431,14 +459,14 @@ button:disabled{color:var(--faint);cursor:default;background:var(--panel)}
 .canvasStub{background:var(--well);
   aspect-ratio:16/7;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:var(--space-3);text-align:center;padding:var(--space-6)}
-.canvasStub .k{font-family:monospace;font-size:var(--fs-label);color:var(--recede);
+.canvasStub .k{font-family:var(--font-data);font-size:var(--fs-label);color:var(--recede);
   letter-spacing:.12em;text-transform:uppercase}
-.canvasStub .v{font-family:monospace;font-size:var(--fs-small);color:var(--faint);
+.canvasStub .v{font-family:var(--font-data);font-size:var(--fs-small);color:var(--faint);
   max-width:44ch;line-height:1.6}
 .controls{display:flex;align-items:baseline;flex-wrap:wrap;
   gap:var(--space-3) var(--space-7);margin:var(--arena-controls-margin)}
-#depth{color:var(--gold);font-size:var(--fs-hero);font-family:monospace}
-.caption{font-family:monospace;font-size:var(--fs-small);color:var(--recede);
+#depth{color:var(--gold);font-size:var(--fs-hero);font-family:var(--font-data)}
+.caption{font-family:var(--font-data);font-size:var(--fs-small);color:var(--recede);
   line-height:1.6}
 #projection{color:var(--gold)}
 .progress{display:flex;flex-direction:column;align-items:center;gap:var(--space-3);
@@ -463,33 +491,33 @@ button:disabled{color:var(--faint);cursor:default;background:var(--panel)}
   background:var(--inset)}
 .slot.filled{border-left-color:var(--gold-dim)}
 .slotName{font-variant:small-caps;color:var(--recede);font-size:var(--fs-small)}
-.slotItem{font-size:var(--fs-small);font-family:monospace;color:var(--bone)}
+.slotItem{font-size:var(--fs-small);font-family:var(--font-data);color:var(--bone)}
 .itemMeta{color:var(--dim)}
 .affixList{display:flex;flex-wrap:wrap;gap:var(--space-1) var(--space-7);
   margin-top:var(--space-2)}
-.affixItem{font-size:var(--fs-small);font-family:monospace;color:var(--dim)}
+.affixItem{font-size:var(--fs-small);font-family:var(--font-data);color:var(--dim)}
 .muted{color:var(--faint);font-style:italic}
-.enhInfo{font-size:var(--fs-label);font-family:monospace;color:var(--recede);
+.enhInfo{font-size:var(--fs-label);font-family:var(--font-data);color:var(--recede);
   line-height:1.6}
 .slotControls{display:flex;flex-wrap:wrap;gap:var(--space-3) var(--space-7);
   margin-top:var(--space-3);align-items:center}
-.toggleLine{font-size:var(--fs-small);font-family:monospace;color:var(--dim);
+.toggleLine{font-size:var(--fs-small);font-family:var(--font-data);color:var(--dim);
   display:block;margin:var(--space-4) 0;line-height:1.6}
 .filterRow{display:flex;flex-wrap:wrap;align-items:center;
   gap:var(--space-3) var(--space-5);margin-bottom:var(--space-3)}
-.filterLabel{font-size:var(--fs-small);color:var(--dim);font-family:monospace}
+.filterLabel{font-size:var(--fs-small);color:var(--dim);font-family:var(--font-data)}
 .ipDial{width:var(--ip-dial);min-height:var(--touch-min);background:var(--field);
   color:var(--gold);border:var(--border-hairline) solid var(--line);
-  font-family:monospace;padding:var(--alloc-input-pad);font-size:var(--fs-small)}
+  font-family:var(--font-data);padding:var(--alloc-input-pad);font-size:var(--fs-small)}
 select{min-height:var(--touch-min);background:var(--field);color:var(--bone);
-  border:var(--border-hairline) solid var(--line);font-family:monospace;
+  border:var(--border-hairline) solid var(--line);font-family:var(--font-data);
   font-size:var(--fs-small);padding:var(--space-2) var(--space-3)}
 .scrapWallet{font-size:var(--fs-small);color:var(--gold-dim);
-  margin:var(--space-1) 0 var(--space-4);font-family:monospace}
+  margin:var(--space-1) 0 var(--space-4);font-family:var(--font-data)}
 .scrapPill{display:inline-block;border:var(--border-hairline) solid var(--line);
   padding:var(--space-1) var(--space-5);margin:0 var(--space-3) var(--space-3) 0;
-  font-size:var(--fs-small);font-family:monospace}
-#stashList{font-family:monospace;font-size:var(--fs-small);margin-top:var(--space-4)}
+  font-size:var(--fs-small);font-family:var(--font-data)}
+#stashList{font-family:var(--font-data);font-size:var(--fs-small);margin-top:var(--space-4)}
 .stashRow{display:grid;grid-template-columns:var(--stash-mark-col) 1fr auto;
   gap:0 var(--space-5);align-items:center;padding:var(--space-2) var(--space-4);
   border-left:var(--row-active-border) solid var(--line);
@@ -513,14 +541,14 @@ select{min-height:var(--touch-min);background:var(--field);color:var(--bone);
   gap:var(--space-5);margin-bottom:var(--space-3)}
 .trophySetName{color:var(--bone);font-size:var(--fs-small)}
 .trophySet.dormant .trophySetName{color:var(--faint)}
-.trophySetProg{font-family:monospace;font-size:var(--fs-small);color:var(--dim)}
+.trophySetProg{font-family:var(--font-data);font-size:var(--fs-small);color:var(--dim)}
 .trophySet.dormant .trophySetProg{color:var(--faint)}
 details.trophySet>summary{cursor:pointer;color:var(--faint);
   padding:var(--space-2) 0;display:list-item}
 details.trophySet>summary .trophySetProg{float:right}
 details.trophySet>.pips{margin-top:var(--space-4)}
 .pips{display:flex;flex-wrap:wrap;gap:var(--space-3)}
-.pip{font-size:var(--fs-label);font-family:monospace;
+.pip{font-size:var(--fs-label);font-family:var(--font-data);
   padding:var(--space-1) var(--space-4);
   border:var(--border-hairline) solid var(--line-soft);color:var(--faint)}
 .pip.own{color:var(--gold);border-color:var(--gold)}
@@ -529,7 +557,7 @@ details.trophySet>.pips{margin-top:var(--space-4)}
   min-width:var(--armory-min)}
 .amRow{display:grid;grid-template-columns:var(--armory-zone-col) repeat(3,1fr);
   gap:var(--space-3);align-items:stretch}
-.amZone{font-family:monospace;font-size:var(--fs-label);color:var(--recede);
+.amZone{font-family:var(--font-data);font-size:var(--fs-label);color:var(--recede);
   align-self:center;text-align:right}
 .amCell{border:var(--border-hairline) solid var(--line);
   border-left:var(--space-1) solid var(--gold-dim);background:var(--panel);
@@ -540,31 +568,31 @@ details.trophySet>.pips{margin-top:var(--space-4)}
 .amCell.max{border-left-color:var(--gold)}
 .amName{font-size:var(--fs-label);color:var(--bone);overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
-.amRank{font-family:monospace;font-size:var(--fs-micro);color:var(--dim)}
+.amRank{font-family:var(--font-data);font-size:var(--fs-micro);color:var(--dim)}
 .amCell.max .amRank{color:var(--gold)}
 .rar-common{color:var(--rar-common)} .rar-uncommon{color:var(--rar-uncommon)}
 .rar-rare{color:var(--rar-rare)} .rar-epic{color:var(--rar-epic)}
 .rar-legendary{color:var(--rar-legendary)} .rar-mythic{color:var(--rar-mythic)}
 .rar-origin{color:var(--rar-origin)}
-#stacksHud{font-size:var(--fs-small);color:var(--warn);font-family:monospace;
+#stacksHud{font-size:var(--fs-small);color:var(--warn);font-family:var(--font-data);
   font-variant:normal;letter-spacing:0;text-transform:none}
 
 /* ── Delve / Dungeon ── */
-#delveState,#delveCache{font-family:monospace;font-size:var(--fs-body);
+#delveState,#delveCache{font-family:var(--font-data);font-size:var(--fs-body);
   color:var(--bone);margin-bottom:var(--space-1)}
 #delveState b,#delveCache b{color:var(--gold)}
 /* The Dungeon's run controls are grouped by proximity, not by a second frame.
    DESIGN.md already flagged that this tab reuses .arena purely for a bordered
    look; a panel inside a panel is a rule line doing no work. */
 .runPanel{margin:var(--arena-margin)}
-#instState{font-family:monospace;font-size:var(--fs-body);color:var(--bone);
+#instState{font-family:var(--font-data);font-size:var(--fs-body);color:var(--bone);
   line-height:1.6}
 #instState b{color:var(--gold)}
-.howItWorks p{font-size:var(--fs-small);font-family:monospace;color:var(--bone);
+.howItWorks p{font-size:var(--fs-small);font-family:var(--font-data);color:var(--bone);
   line-height:1.6;margin-bottom:var(--space-3)}
 .runControls{display:flex;flex-wrap:wrap;align-items:center;
   gap:var(--space-3) var(--space-7);margin-bottom:var(--space-3)}
-.runControls label{font-size:var(--fs-small);font-family:monospace;color:var(--dim)}
+.runControls label{font-size:var(--fs-small);font-family:var(--font-data);color:var(--dim)}
 .ctaRow{display:flex;flex-wrap:wrap;gap:var(--space-5);margin-top:var(--space-5)}
 .cta{flex:1;background:var(--panel);border:var(--border-hairline) solid var(--gold);
   color:var(--gold);font-family:var(--font-body);font-variant:small-caps;
@@ -574,18 +602,43 @@ details.trophySet>.pips{margin-top:var(--space-4)}
 .seg button{text-align:center}
 .seg button.active{color:var(--gold);border-color:var(--gold)}
 
-/* ── the dead server's console ── */
-#logHead{font-family:monospace;font-size:var(--fs-micro);letter-spacing:.04em;
-  color:var(--logline);border-top:var(--border-hairline) solid var(--line);
-  padding:var(--space-5) 0 var(--space-2)}
-.cursor{color:var(--live);animation:blink 1.1s steps(1) infinite}
-@keyframes blink{50%{opacity:0}}
-#log{font-family:monospace;font-size:var(--fs-small);max-height:var(--log-max-h);
+/* ── THE CHAT WINDOW ──────────────────────────────────────────────────────
+   Was: a shell prompt (index.html:204, emitted here) in a game that has no
+   shell, naming the server as a dead one in shared chrome on every screen,
+   behind a block cursor implying an input that does not exist. It survived
+   four reviews because every one of them checked that the shell register was
+   CONFINED and none asked whether it should exist. A confined premise error is
+   still a premise error.
+
+   Is now: the honest MMO furniture. A bottom-of-screen log in an MMO client is
+   a chat panel. In a dead MMO it is also the saddest object on the screen —
+   System carries the traffic while General sits empty, and "Players online: 1"
+   finally has a home where it means the whole premise. The EMPTINESS does the
+   storytelling the decay string was faking. That is ABSENCE, which is the
+   target feeling; the broken prompt was DISREPAIR, which is banned.
+
+   No unread badge, no notification dot, no count. That would be an obligation
+   mechanic and the veto on those is standing.                              */
+#chat{margin-top:var(--space-8)}
+#chatHead{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-3);
+  border-top:var(--border-hairline) solid var(--line);padding:var(--space-4) 0}
+.chan{font-size:var(--fs-label);padding:var(--space-2) var(--space-6);
+  color:var(--dim);text-align:center}
+.chan.active{color:var(--bone)}
+/* The counter the whole game is about, in the one place an MMO client puts it. */
+#online{margin-left:auto;font-family:var(--font-data);font-size:var(--fs-micro);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#log{font-family:var(--font-data);font-size:var(--fs-small);max-height:var(--log-max-h);
   overflow-y:auto}
 .logline{padding:var(--space-1) 0}
+/* Quiet, not broken: the window around it is intact, lit and selectable, and
+   the copy states the fact without narrating the silence. A sentence ABOUT the
+   emptiness is the decay register coming back in as prose. */
+.chatEmpty{color:var(--faint);font-style:italic;text-align:center;
+  padding:var(--space-9) var(--space-5)}
 .log-event{color:var(--gold)} .log-plain{color:var(--bone)}
 .log-dim{color:var(--recede)} .log-warn{color:var(--warn)}
-footer{text-align:center;margin-top:var(--space-8);font-family:monospace;
+footer{text-align:center;margin-top:var(--space-8);font-family:var(--font-data);
   font-size:var(--fs-label);color:var(--faint)}
 footer button{background:none;border:none;color:var(--faint);
   font-size:var(--fs-label);text-decoration:underline;text-align:center}
@@ -688,7 +741,7 @@ h3 .sub{margin-top:var(--space-4);font-style:normal;color:var(--dim);
    This is the rule that makes the language work on a surface with no hero:
    Training, Grind, Player and Delve are lists, and a list in a socket has
    depth without needing a frame or a display face.                         */
-.rowlist,.canvasStub,#dialogue{
+.rowlist,.canvasStub,#dialogue,#log{
   background:var(--well);
   border:var(--border-hairline) solid var(--edge-shade);
   border-radius:var(--radius-socket);
@@ -703,7 +756,7 @@ h3 .sub{margin-top:var(--space-4);font-style:normal;color:var(--dim);
    gradient and drops the foot — the button physically goes down. DISABLED
    loses the bevel AND the foot and flattens onto --panel, which is both the
    material carrying a state and the only ground where --faint clears AA.   */
-section.game button,#tabs button,.helpBtn{
+section.game button,#tabs button,.helpBtn,.chan{
   font-family:var(--font-ui);font-weight:bold;
   border:var(--border-hairline) solid var(--edge-shade);
   border-radius:var(--radius-control);
@@ -714,7 +767,7 @@ section.game button,#tabs button,.helpBtn{
     0 var(--space-1) 0 var(--edge-shade);
   text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
   text-align:center}
-section.game button:active,#tabs button:active,.helpBtn:active{
+section.game button:active,#tabs button:active,.helpBtn:active,.chan:active{
   background:linear-gradient(var(--panel),var(--field));
   box-shadow:
     inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
@@ -803,7 +856,7 @@ section.game button:disabled{
    DNA must never do.                                                       */
 .ledger{display:grid;grid-template-columns:1fr auto auto;
   column-gap:var(--space-7);margin-top:var(--space-6);
-  font-size:var(--fs-small);font-family:monospace}
+  font-size:var(--fs-small);font-family:var(--font-data)}
 .ledger>*{padding:var(--space-2) 0}
 .ledger .hd{grid-column:1/-1;font-family:var(--font-ui);font-weight:bold;
   font-variant:normal;text-transform:uppercase;letter-spacing:.12em;
@@ -883,7 +936,7 @@ section.game button:disabled{
    The band chip's MARKUP is emitted by shared helpers, so it reaches the four
    surfaces this phase does not recompose. It degrades to plain mono text
    there rather than rendering as an unstyled artefact.                     */
-.band{font-family:monospace;color:var(--bone)}
+.band{font-family:var(--font-data);color:var(--bone)}
 
 /* ── 0. THE ROOM'S OWN COLOUR ──────────────────────────────────────────────
    Each surface declares its accent ONCE, on <main>. Everything downstream
@@ -930,7 +983,7 @@ section.game{
    complete: a missing or offset rivet reads as damage instantly, so the
    construction makes that unrepresentable rather than merely discouraged.
    This is the no-decay veto expressed as CSS.                            */
-h3,.frame{
+h3,.frame,#chatHead{
   --rv:linear-gradient(var(--edge-lit),var(--edge-lit));
   background:
     var(--rv) var(--rivet-inset) var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
@@ -1137,6 +1190,85 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
    statements on the same row rather than as two shades of "on". */
 .amCell.max{border-left-color:var(--gold)}
 .pip.own{color:var(--gold);border-color:var(--gold)}
+
+/* ── 8. THE CHAT WINDOW — the same four constructions, at the chrome tier ──
+   A chat panel is a WINDOW with a TITLE BAR, two CONTROL plates and a SOCKET.
+   Building it out of anything else would announce it as a foreign object,
+   which is exactly the fault the shell prompt had. So it reuses the language
+   whole: #chatHead joined the h3/.frame rule above (rivets for free), .chan
+   joined the control rule, #log joined the socket rule.
+
+   IT CARRIES NO LANE HUE, and that is deliberate rather than incidental. A
+   section.game takes the room's --acc on its frame and its title-bar groove;
+   the chat window takes --line and --edge-lit instead. Persistent chrome that
+   re-tints per room would be a SECOND multi-hue element in the chrome, which
+   is the thing DESIGN.md "## Never (v4)" closes Tier A against — a legend
+   turning into wallpaper. Tier B lane counts on all seven surfaces are
+   unchanged by this window's existence, which is the property "chrome must not
+   acquire a lane budget of its own" actually asks for.                     */
+#chat{
+  border:var(--border-frame) solid var(--line);
+  border-radius:var(--radius-window);
+  background:linear-gradient(var(--panel),var(--plate-foot));
+  box-shadow:
+    inset var(--bevel) var(--bevel) 0 var(--edge-lit),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--edge-shade),
+    0 var(--bevel) 0 var(--edge-shade);
+  padding:0 var(--space-7) var(--space-7);
+  margin:var(--space-9) 0 0;
+  overflow:hidden}
+#chatHead{border-top:none;
+  margin:0 calc(var(--space-7) * -1) var(--space-7);
+  padding:var(--space-4) var(--space-7);
+  /* the groove closes NEUTRAL — see the tier note above */
+  box-shadow:0 var(--bevel) 0 var(--edge-lit),
+             inset 0 var(--bevel) 0 var(--edge-lit)}
+.chan{min-height:var(--touch-min);padding:var(--space-2) var(--space-6)}
+/* The selected channel wears the pressed construction permanently, the same
+   way #tabs button.active does — position, not colour, says which one you are
+   reading. Its ink is --bone, not an accent: this is chrome. */
+.chan.active{color:var(--bone);border-color:var(--line);
+  background:linear-gradient(var(--panel),var(--field));
+  /* 2px, not the hairline the other pressed controls use: at --fs-label on a
+     two-plate group a 1px inversion is v4's own "a rumour", and the channel you
+     are reading has to be unambiguous from across the window. */
+  box-shadow:
+    inset var(--bevel) var(--bevel) 0 var(--edge-shade),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--edge-lit)}
+#log{padding:var(--space-4) var(--space-5)}
+
+/* ── 9. HELP — a second heading level, because an h3 IS a title bar ───────
+   Six windows, one per room, each opening with the title bar and its gold
+   letter-glyph plate. Topics inside cannot also be h3s: thirty title bars on
+   one page is "everything equally prominent" (checklists Ch 7), so the topic
+   is one level down — a small uppercase label behind a 2px accent edge, which
+   is the room's own single lane-3 hue and adds no lane.                    */
+.topic{border-left:var(--bevel) solid var(--acc);padding-left:var(--space-6);
+  margin:var(--space-7) 0}
+.topic h4{font-family:var(--font-ui);font-size:var(--fs-small);font-weight:bold;
+  text-transform:uppercase;letter-spacing:.12em;color:var(--bone);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
+  margin-bottom:var(--space-3)}
+.topic p{font-size:var(--fs-small);font-family:var(--font-data);color:var(--bone);
+  line-height:1.65}
+.topic p + p{margin-top:var(--space-5)}
+/* A LOCKED Help block runs four ladder channels and NOT opacity: material
+   (unlit — flat, no bevel, no foot), type colour, control presence (no topics
+   at all), and the unlock text. --opacity-locked is deliberately absent —
+   DESIGN.md's own Player note says genuine readable text takes --faint at full
+   opacity so it holds AA, and a milestone string is genuine readable text. */
+section.game.locked{background:var(--panel);box-shadow:none;
+  border-color:var(--line-soft)}
+/* The flat background drops all four rivets AT ONCE, which is the no-decay rule
+   satisfied rather than broken: what it forbids is a MISSING or OFFSET rivet on
+   a lit plate, i.e. asymmetry. An unlit plate has nothing for rivets to sit on,
+   so they are complete-or-absent and never partial. */
+section.game.locked h3{background:var(--inset);box-shadow:none;
+  border-bottom-color:var(--line-soft);color:var(--faint);text-shadow:none}
+section.game.locked .glyph{color:var(--faint);background:var(--panel);
+  box-shadow:none;border-color:var(--line-soft)}
+.lockMsg{color:var(--faint);font-style:italic;font-size:var(--fs-small);
+  font-family:var(--font-data);padding:var(--space-3) 0 var(--space-5)}
 </style>
 </head>
 <body>
@@ -1164,7 +1296,29 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
     an opacity multiplier: this is genuine readable text, so it holds AA.
     <code>--dim</code>/<code>--recede</code>/<code>--faint</code> are BANNED on
     a rarity plate (4.04&ndash;4.63:1 there) &mdash; the plates carry
-    <code>--bone</code> and take their hierarchy from size and weight instead.</div>
+    <code>--bone</code> and take their hierarchy from size and weight instead.
+    <b>Copy, new in Phase 3:</b> the <b>six Player relocations</b> are applied
+    here too, though this tab was built in Phase 2.5. Leaving them would have put
+    the same six explanations on Player <i>and</i> on Help at once, which is the
+    tutorial-in-a-HUD this plan exists to remove. Every heading is bare; the
+    safeguard toggle keeps its own label, every enhance line keeps its cost,
+    chance and fallout, every scrap price stays, and the failstack HUD stays
+    because it is state.
+  <br><br><b>Shared chrome, new this phase: the log is a chat window.</b>
+  The shell prompt that used to head this block is gone from every surface and
+  from <code>index.html</code>. It was wrong three ways &mdash; a shell inside a
+  client that has no shell; it named the server a dead one, which is decay copy
+  in a game whose premise is that the server WORKS; and its block cursor implied
+  an input that does not exist. A bottom-of-screen log in an MMO client is a
+  <b>chat panel</b>: <b>System</b> carries the traffic, <b>General</b> is empty, and
+  <code>Players online: 1</code> finally has the place an MMO client actually
+  puts it. The emptiness is the storytelling &mdash; that is ABSENCE, the
+  target feeling, where the prompt was DISREPAIR, which is banned. It is built
+  from the four existing constructions (window / title bar / control / socket)
+  and carries <b>no lane hue</b>: neutral frame, neutral groove, because
+  persistent chrome that re-tints per room would be a second multi-hue chrome
+  element and Tier A is a closed set of one. No badge, no unread count &mdash;
+  that would be an obligation mechanic.</div>
 <header id="resbar">
   <div class="chipGroup">
     
@@ -1179,21 +1333,15 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
 </header>
 <nav id="tabs" aria-label="Main"><button class="t-boss">Boss</button><button class="t-training">Training</button><button class="t-grind">Grind</button><button class="t-player active" aria-current="page">Player</button><button class="t-delve">Delve</button><button class="t-dungeon">Dungeon</button><button class="t-help">Help</button></nav>
 <section class="game">
-  <h3><span class="glyph" aria-hidden="true">C</span>Combat Power<span class="sub">&mdash; your damage per second against the
-    door: ATK multiplied by hits per second. "Haste" anywhere on this tab is a
-    percentage added to hits per second. Everything below feeds these two
-    numbers.</span></h3>
+  
+  <h3><span class="glyph" aria-hidden="true">C</span>Combat Power</h3>
   <div class="chipGroup" id="powerBreakdown">
     <div class="chip"><div class="chipVal"><b>2,481,600</b></div><div class="chipLbl">combat power</div></div>
     <div class="chip"><div class="chipVal"><b>94,000.0</b></div><div class="chipLbl">ATK</div></div>
     <div class="chip"><div class="chipVal"><b>26.4</b></div><div class="chipLbl">hits/s</div></div>
   </div>
 
-  <h3><span class="glyph" aria-hidden="true">G</span>Gear <span id="stacksHud">&middot; 6 failstacks, +6% on your next attempt</span>
-    <span class="sub">&mdash; three slots. Enhancing raises an item's plus, and
-    every plus multiplies its base power by 1.12. A failed attempt anywhere banks
-    a failstack worth +1 percentage point on your next attempt, up to +15; a
-    success spends the whole bank.</span></h3>
+  <h3><span class="glyph" aria-hidden="true">G</span>Gear <span id="stacksHud">&middot; 6 failstacks, +6% on your next attempt</span></h3>
   <label class="toggleLine"><input type="checkbox"> safeguard &middot; 3&times; the
     copper, but a failure doesn't cost you a plus. Only works while the item is
     +5 to +14 &mdash; it can't protect a push past +15.</label>
@@ -1243,15 +1391,9 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
     </div>
   </div>
 
-  <p class="sub">Reforge rerolls an item's affixes for scrap of its own rarity. It
-    can't change the rarity or the IP &mdash; only which affixes it has and what
-    they roll. You see the result before you decide whether to keep it.</p>
+  
 
-  <h3><span class="glyph" aria-hidden="true">S</span>Stash<span class="sub">&mdash; where kept drops land, up to 50. An item's
-    rarity is how many affixes it rolled (Common 0, Origin 6) and its IP is how
-    strong those affixes roll. Salvaging turns an item into scrap of its own
-    rarity. Locking one protects it from auto-salvage, the bulk sweep and the
-    stash-full clear-out.</span></h3>
+  <h3><span class="glyph" aria-hidden="true">S</span>Stash</h3>
   <div class="scrapWallet">
     <span class="scrapPill r-common">124 Common</span>
     <span class="scrapPill r-rare">38 Rare</span>
@@ -1310,10 +1452,7 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
     <div class="sub">&hellip;and 7 more (salvage to clear)</div>
   </div>
 
-  <h3><span class="glyph" aria-hidden="true">T</span>Trophies <span class="caption">0/10 sets complete</span>
-    <span class="sub">&mdash; each Warden has a 7-piece set. Breaking its door
-    gives you the first piece; the rest come from farming that Warden on the Boss
-    tab. A complete set multiplies your damage by 1.5.</span></h3>
+  <h3><span class="glyph" aria-hidden="true">T</span>Trophies <span class="caption">0/10 sets complete</span></h3>
   <div class="trophySet started">
     <div class="trophySetHead">
       <span class="trophySetName">The First Door</span>
@@ -1358,12 +1497,7 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
     <div class="pips"><span class="pip" title="Not recovered yet — farm that Warden for it.">&#9672; Hinge +54% atk</span><span class="pip" title="Not recovered yet — farm that Warden for it.">&#9672; Bolt +54% atk</span><span class="pip" title="Not recovered yet — farm that Warden for it.">&#9672; Latch +54% speed</span><span class="pip" title="Not recovered yet — farm that Warden for it.">&#9672; Keyward +54% speed</span><span class="pip" title="Not recovered yet — farm that Warden for it.">&#9672; Lintel +68% atk</span><span class="pip" title="Not recovered yet — farm that Warden for it.">&#9672; Threshold +109% farm</span><span class="pip" title="Not recovered yet — farm that Warden for it.">&#9672; Frame +68% atk</span></div>
   </details>
 
-  <h3><span class="glyph" aria-hidden="true">A</span>Armory<span class="sub">&mdash; every drop is logged here against its own
-    entry, one per item name, whether you keep it or scrap it. Rarer copies count
-    for more: a Common is worth 1 point, an Origin 13. The first rank costs 3
-    points and each rank after costs 60% more, up to rank 12. Weapons rank ATK,
-    armor ranks haste, charms rank copper &mdash; and the ranks survive every Ban
-    Wave.</span></h3>
+  <h3><span class="glyph" aria-hidden="true">A</span>Armory</h3>
   <div class="caption">rank 29 across 10 entries &middot; +3.35% ATK &middot;
     +4.34% haste &middot; +0.50% copper</div>
   <div class="amScroll"><div id="armoryGrid"><div class="amRow">
@@ -1593,15 +1727,26 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
   </div>
 </div></div></div>
 </section>
-<div class="mockNote"><b>State ladder</b> (this plan's whole point). <b>live</b>: gold
-left edge, bone name, allocation control, a filling bar. <b>dormant</b> (unlocked,
-idle): neutral left edge, dim name, faint stat, control present reading 0, empty
-track. <b>locked</b>: no left edge, whole row at <code>--opacity-locked</code>,
-<b>no allocation control at all</b>, and the row says the word "locked" and its
-unlock condition. Three independent channels per state &mdash; edge, type, controls.</div>
+<div class="mockNote"><b>State ladder</b> (this plan's whole point). <b>live</b>: a
+4px left edge in <b>THIS ROOM'S accent</b> (v4 &mdash; gold left that slot and
+became the client's own voice), name in the same accent, allocation control, a
+filling bar, and the row lifted onto its own lit ground. <b>dormant</b>
+(unlocked, idle): neutral left edge, dim name, faint stat, control present
+reading 0, empty track, lying flat in the socket. <b>struggling</b>:
+<code>--warn</code> edge and stat, which no accent is placed near.
+<b>locked</b>: no left edge, unlit, whole row at
+<code>--opacity-locked</code>, <b>no allocation control at all</b>, and the row
+says the word "locked" and its unlock condition. Six independent channels
+&mdash; edge, type, controls, unlock text, material lift, socket lit-ness.</div>
 
-<div id="logHead">maintenance@dead-server:~$ <span class="cursor">&#9646;</span></div>
-<div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-loot log-plain">drop: <span class="rar rar-epic">Epic Sentry Halberd</span> 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
+<div id="chat">
+  <div id="chatHead">
+    <button class="chan active">System</button>
+    <button class="chan">General</button>
+    <span id="online">Players online: 1</span>
+  </div>
+  <div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-loot log-plain">drop: <span class="rar rar-epic">Epic Sentry Halberd</span> 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
+</div>
 <footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>
 </main>
 </body>

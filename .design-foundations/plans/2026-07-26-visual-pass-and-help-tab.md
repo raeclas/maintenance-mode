@@ -486,3 +486,65 @@ fix would have left it armed.
 
 **State at pause:** `style.css`, `rarity.js` and `index.html` are untouched. The
 DESIGN.md gate holds until the user confirms the direction on real pixels.
+
+### Phase 3: Recompose the remaining surfaces (Gate: Full)
+- [x] BUILD: five surfaces + Help + chat-window chrome + the mono decision
+- [x] REVIEW: FAIL → PASS. The one defect was `help.html` rendering the chat
+      window twice — once as the General/empty-state demonstration, once as
+      normal page-bottom chrome — duplicating the `#online` fact and its DOM
+      ids. A verbatim DW-3.4 violation and invalid HTML. Fixed in the
+      generator by giving `page()` a `chatChannel` parameter so Help's own
+      persistent chat opens on General: the empty state is now demonstrated by
+      the real chrome instead of by a copy of it. Second pass PASS, detector
+      register-justified (15 `nested-cards` are the Lane-4 power-band chips
+      DESIGN.md specs as a luminance-separated encoding, not stacked-card
+      default).
+- [x] Committed
+Commit: (see below)
+Summary: all seven surfaces now carry DNA v4 and the Phase 2 copy relocation;
+`help.html` exists as a real surface built from the Phase 2 page spec; and the
+shell prompt is gone from every mock and from shipped `index.html`.
+
+**The log is a chat window.** System carries the traffic, General is empty, and
+`Players online: 1` sits in the window's persistent counter where an MMO client
+actually puts it. The emptiness does the storytelling the `dead-server` string
+was faking — absence, not disrepair. It carries **no lane hue** (neutral frame,
+neutral groove): persistent chrome that re-tinted per room would be a second
+multi-hue chrome element, and Tier A is a closed set of one. No badge and no
+unread count, which would be an obligation mechanic.
+
+**DW-3.9 — the mono question, settled on pixels after two prior reviews left it
+open.** The **UI face wins**; `--font-data` now resolves to `var(--font-ui)`.
+Three findings decided it: the "botter's toolkit" register is a *naming*
+register (REMAKE-DESIGN.md §16's words are all still on screen), so it never
+lived in the font at all; column alignment is held by
+`font-variant-numeric: tabular-nums`, verified on the two genuinely tabular
+blocks; and mono cost **11% of surface height** (Grind 6,438px → 5,734px at
+375px, and the live row's stat stopped wrapping). `grind-mono.html` is kept as
+the losing treatment so the call can be re-checked rather than taken on trust.
+
+**Two more doc-vs-pixels defects, same class as the one the Phase 2.5 review
+caught.** (1) DESIGN.md justified `--acc-dungeon` sitting 8° from `--warn` — the
+palette's closest pair — on the grounds that *"Dungeon is the single tab with no
+struggling state"*. `dungeon.html` renders **Mass Dispel** as `.row.struggling`
+and always has. Replaced with the separation that is actually true on the
+render. (2) `MATERIAL_SPECIMEN` claimed Grind's hue but rendered Boss's, because
+Phase 2.5 correctly scoped `--acc` to `main.t-*` and the specimen was a `<div>`;
+deleted rather than repaired, since it previewed a page this phase makes real.
+
+**Scope note:** `player.html` took its six copy cuts here even though the plan's
+IN list named five surfaces — otherwise the same six explanations would have sat
+on Player *and* Help simultaneously.
+
+**Deliberately left:** `boss.html` and `dungeon.html` carry duplicate DOM ids
+where a block is rendered twice to show two mutually-exclusive states. Invalid
+HTML, but no fact is duplicated (the states are adjacent and labelled, and the
+real page renders one), so suffixing ids in state demos is churn with no reader
+benefit. Recorded rather than fixed.
+
+`.cursor` and `@keyframes blink` deleted from `style.css` — dead the moment the
+cursor left `index.html`. `#logHead` keeps its rule until the integration pass
+restyles it; its `/* the dead server's console */` comment, decay framing in
+shipped code, is corrected.
+
+`npm test` and `npm run sim` green, no baseline drift — no gameplay code moved.

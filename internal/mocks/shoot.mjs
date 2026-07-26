@@ -1,5 +1,5 @@
-// shoot.mjs — screenshot the six Phase 6 mocks at phone and desktop width and
-// report each one's scrollWidth, headless, zero dependencies.
+// shoot.mjs — screenshot the seven mocks (plus one specimen) at phone and
+// desktop width and report each one's scrollWidth, headless, zero deps.
 //
 // The browser MCP is not available in this environment; internal/shot.mjs
 // already proved the CDP path works here, so this is that pattern pointed at
@@ -9,7 +9,7 @@
 //   node internal/mocks/shoot.mjs
 //
 // Output: internal/mocks/shots/<tab>-375.png and <tab>-1280.png, full page.
-// Exits non-zero if any mock's scrollWidth exceeds 375 at phone width (DW-6.3).
+// Exits non-zero if any mock's scrollWidth exceeds 375 at phone width (DW-3.3).
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -18,7 +18,11 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, "shots");
-const NAMES = ["boss", "training", "grind", "player", "delve", "dungeon"];
+// Seven surfaces (Help is new in Phase 3) plus one specimen: grind-mono is
+// grind.html with --font-data flipped back to monospace, i.e. the treatment
+// DW-3.9 REJECTED, kept so the decision can be re-checked on pixels.
+const NAMES = ["boss", "training", "grind", "player", "delve", "dungeon", "help",
+  "grind-mono"];
 const WIDTHS = [[375, 812, 2], [1280, 900, 1]];
 const PORT = 9223;
 const PROFILE = join(tmpdir(), `mm-mockshot-${Date.now()}`);
@@ -98,8 +102,8 @@ async function main() {
   proc.kill();
   await sleep(300);
   try { rmSync(PROFILE, { recursive: true, force: true }); } catch {}
-  if (overflow) { console.error(`\nDW-6.3 FAILED: ${overflow} mock(s) overflow at 375px`); process.exit(1); }
-  console.log(`\nDW-6.3: no horizontal overflow at 375px on any mock`);
+  if (overflow) { console.error(`\nDW-3.3 FAILED: ${overflow} mock(s) overflow at 375px`); process.exit(1); }
+  console.log(`\nDW-3.3: no horizontal overflow at 375px on any mock`);
 }
 
 main().catch(e => { console.error("FAILED:", e.message); process.exit(1); });

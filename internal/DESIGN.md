@@ -1,7 +1,10 @@
 # Design: Last Warmth
 
 > **v4, 2026-07-26 — read `# Visual DNA v4` FIRST.** v4 supersedes v3's
-> **colour rule** and **construction weight**; it supersedes nothing else. v3
+> **colour rule** and **construction weight**, and — as of **Phase 3** — the
+> **shell/terminal register** (retired entirely; see `## The chat window (v4,
+> Phase 3)`) and the **monospace data face** (now the UI face; see `## The data
+> face (v4, Phase 3)`). It supersedes nothing else. v3
 > still owns the four constructions, the signature move, the type voice and the
 > archetype, and it is still the section that explains WHY the client looks like
 > a window. The v1 body and `# Visual DNA v2` remain superseded by v3.
@@ -28,6 +31,10 @@ user's look sign-off.
 `internal/mocks/shots/{boss,player}-375.png`. The v3 renders are preserved as
 `boss-375-v3.png` / `boss-1280-v3.png`; the pre-v4 Player render is
 `player-375-v1.png`.
+**Propagated (Phase 3) to all seven:** `training`, `grind` (where lane 4 is
+proved), `delve`, `dungeon` and the new `help` surface, plus the shared chat
+window. `grind-mono.html` is a specimen, not a surface — the font treatment
+DW-3.9 rejected, kept as evidence.
 
 ## Why there is a v4
 
@@ -334,10 +341,37 @@ constant.
 | **struggling** (Grind only) | flat, full opacity, **`--warn` edge and `--warn` stat — unchanged** |
 | **locked** | `--opacity-locked`, **unlit**, no edge, no control at all, and the row prints the word "locked" with its unlock condition |
 
-`--warn` still owns `struggling` alone. **No accent is placed where it could be
-mistaken for it:** the nearest is `--acc-dungeon`, and Dungeon is the single tab
-with no struggling state. Verified on the 375px render — the Grind specimen
-draws all four states side by side with both of Grind's lanes active.
+`--warn` still owns `struggling` alone.
+
+> **CORRECTED 2026-07-26 (Phase 3), on the rendered Dungeon surface.** v4 said:
+> *"No accent is placed where it could be mistaken for it: the nearest is
+> `--acc-dungeon`, and Dungeon is the single tab with no struggling state."*
+> **The second clause is false.** `dungeon.html` renders **Mass Dispel** as
+> `.row.struggling` and always has, two rows under **Sunder**, which is `.active`
+> and therefore wears `--acc-dungeon`. So the closest accent/`--warn` pair in the
+> whole palette (8° apart) is not merely possible — it is **on screen, adjacent,
+> on the one surface v4 claimed it could not be.** The document was excusing the
+> pair with a fact the mocks contradict, which is the same class of defect the
+> Phase 2.5 review caught in the co-occurrence rule.
+
+**The real separation, verified on `shots/crops/dungeon-duties.png` rather than
+argued:** the two states never colour the same SLOT, and three channels part
+them.
+
+| | live (Sunder) | struggling (Mass Dispel) |
+|---|---|---|
+| **which slot is coloured** | the **name** (accent); stat is `--bone` | the **stat** (`--warn`); name is `--bone` |
+| **material** | lifted onto its own `--inset` → `--well` ground | flat in the socket |
+| **the word** | `3 assigned — blocked` | `2 assigned — NOT BLOCKED` |
+
+That is the same three-part argument this document already uses for the 1° gap
+between `--acc-player` and `--rar-rare` — **chroma tier, element class, and the
+word** — and it is true here. The old sentence reached for a fourth reason that
+was not. The pair stays; the excuse is replaced with the check.
+
+Verified on the 375px renders — Grind draws all four states side by side with
+both of its lanes active, Training draws live / dormant / locked ×11, and
+Dungeon draws the adjacency above.
 
 ## Construction (v4) — v3's carpentry at full weight
 
@@ -378,6 +412,116 @@ it cannot drift into meaning something the heading does not already say.
 > emitted files, and `build.mjs`'s external-reference assertion proves it
 > mechanically rather than by claim.
 
+## The chat window (v4, Phase 3) — the shell register, retired
+
+**Added 2026-07-26 by user decision.** This section **supersedes** the shell/
+terminal carve-out wherever this document grants it: the v1 `## Direction`
+sentence *"The shell/terminal register (`maintenance@dead-server:~$`, `PLAYERS
+ONLINE`) stays confined to the log and meta edges"*, and the
+`### Hardcoded-color audit` row for `#logHead`.
+
+**What the user said:** *"i want to strongly reconsider the log aesthetic
+especially this line as it doesnt really fit."*
+
+**Why it had to go — three faults, not one:**
+
+1. **A terminal inside an MMO client.** Nothing else in the game is a shell. The
+   player never types a command; there is no shell. It was set dressing
+   imitating an interface.
+2. **It named the server a dead one.** The premise is the exact opposite — the
+   server WORKS, it is in maintenance mode, the players left. This document bans
+   decay signifiers, and that one sat in shared chrome on every screen.
+3. **The block cursor implied an input.** There is none.
+
+**Why four reviews missed it.** Every one of them checked that the shell
+register was CONFINED. None asked whether it should exist. **A confined premise
+error is still a premise error**, and "it is only at the edges" is not a defence
+of a thing that should not be there at all.
+
+**The replacement: the honest MMO furniture.** A bottom-of-screen log in an MMO
+client is a **chat panel**. In a dead MMO it is also the saddest object on the
+screen — **System** carries the traffic (drops, kills, offline gains) while
+**General** sits empty, and `Players online: 1` finally has the place an MMO
+client actually puts an online counter. **The emptiness does the storytelling
+the decay string was faking.** That is ABSENCE, which is the target feeling; the
+prompt was DISREPAIR, which is banned.
+
+| Part | Construction | Token |
+|---|---|---|
+| `#chat` | WINDOW | `--border-frame` frame in **`--line`**, `--radius-window`, `--bevel`, hard foot |
+| `#chatHead` | TITLE BAR (joins the `h3,.frame` rule, so the four rivets come for free) | groove in **`--edge-lit`** |
+| `.chan` ×2 | CONTROL; the active one wears the pressed construction permanently, at `--bevel` weight | ink `--bone` active / `--dim` idle |
+| `#log` | SOCKET (joins `.rowlist,.canvasStub,#dialogue`) | `--well` |
+| `.chatEmpty` | — | `--faint`, italic |
+
+**It carries NO lane hue, and that is a rule rather than an omission.** A
+`section.game` takes the room's `--acc` on its frame and its title-bar groove;
+the chat window takes `--line` and `--edge-lit`. Persistent chrome that
+re-tints per room would be a **second multi-hue element in the chrome**, which
+`## Never (v4)` closes Tier A against — a legend turning into wallpaper. Tier B
+lane counts on all seven surfaces are unchanged by this window's existence,
+which is what *"chrome must not acquire a lane budget of its own"* actually
+asks for.
+
+**Zero new hexes.** Every ink it uses on every ground it uses was already in
+`contrast.mjs`'s gated set, so the contrast surface cannot regress by
+construction rather than by luck. `--logline` (`#598368`) is **retired** — its
+only consumer was `#logHead`, and its gated pair went with it (190 → 189).
+
+**The empty state must read quiet, not broken.** Copy: `Nothing here.` The
+window around it is intact, lit and selectable; the copy states the fact and
+does **not narrate the silence**. A sentence *about* the emptiness would be the
+decay register coming back as prose, which is the fault being fixed.
+**No badge, no unread count, no notification dot** — that is an obligation
+mechanic and the veto on those is standing.
+
+## The data face (v4, Phase 3) — mono, decided on pixels
+
+**Decided 2026-07-26 on the user's explicit instruction** — *"render it both
+ways and judge on the rendered surfaces"* — closing a watch item two prior
+reviews raised and neither resolved. **The data face is now the UI face**
+(`--font-data: var(--font-ui)`); monospace survives only on the mock's own
+annotation classes.
+
+The ~30 literal `font-family: monospace` declarations became one token,
+`--font-data`, precisely so the alternative could be rendered at all.
+
+**Evidence:** `internal/mocks/grind.html` (UI face) against
+`internal/mocks/grind-mono.html` (**the rejected treatment, kept**) — one token
+apart, byte-identical otherwise. Full-page renders at `shots/grind-375.png` and
+`shots/grind-mono-375.png`; 1:1 detail crops at `shots/crops/grind-rows.png` vs
+`grind-mono-rows.png`, `ledger-ui.png` vs `ledger-mono.png`, `armory-ui.png` vs
+`armory-mono.png`. The crops matter: a 6,000px full-page shot downscales the
+type to unreadability, which is the wrong instrument for a type decision, so
+`internal/mocks/crop.mjs` was added to take clipped captures at 2x.
+(`shots/` is gitignored, as it has been since the first mock phase.)
+
+**Why the UI face won — three findings, in order of weight:**
+
+1. **The register defence does not survive inspection.** Mono was held to carry
+   `REMAKE-DESIGN.md` §16's *"botter's toolkit"*. But §16 is a **naming**
+   register — multiclient, account creator, script version, overclock,
+   autoclicker, packet-replay script, tick-rate exploit, proxies — and every one
+   of those words is still on the surface. The register was never in the font.
+2. **Column alignment never needed mono.** `font-variant-numeric: tabular-nums`
+   is already set on `body` and Tahoma honours it. Verified on the two blocks
+   that are genuinely tabular — the crit ledger and the 45-cell Armory grid —
+   both hold their columns in the UI face (`ledger-ui.png`, `armory-ui.png`).
+3. **Mono cost real surface.** Grind at 375px: **6,438px** tall in mono,
+   **5,734px** in the UI face — **11% shorter**, and the live row's stat line
+   stops wrapping. On a phone-first surface with 15 rows that is a measurable
+   price paid for texture.
+
+And the argument that closes it: *"the client reads like a terminal"* is the
+same complaint one level up that produced the chat-window change. Retiring the
+shell prompt while every stat row still rendered in a console face would have
+fixed the symptom and left the cause.
+
+**What keeps monospace, deliberately:** `.mockNote` and `.stateLabel`, the two
+mock-annotation classes. Commentary about a mock should not be in the mock's own
+voice, and holding them literal is what let the specimen change the surface
+without changing the text describing it.
+
 ## Canvas scene spec (v4) — what the arena draws per Warden hue
 
 The arena stays a labelled canvas placeholder in the mock (it is CANVAS-drawn;
@@ -406,6 +550,21 @@ v1's five, v2's #6 and v3's #7 all still stand. Added:
 9. **The tab row is seven wide at `repeat(4,1fr)`.** Applied in the mocks this
    phase, matching Phase 2's own accepted specimen
    (`internal/mocks/tabrow-specimen.html`, variant B) and JOURNEY.md's IA.
+10. **The shell prompt is deleted, and three things die with it** (Phase 3 —
+    see `## The chat window (v4, Phase 3)`). `index.html:204`'s prompt string
+    and its `<span class="cursor">` are **already removed this phase**, since
+    DW-3.7 scopes that one edit into the design pass. Still pending the
+    integration task: `style.css`'s `#logHead` rule — including its hardcoded
+    `#4e7a5e`, the last un-tokenized colour a prior review raised as Critical —
+    plus `.cursor`, `@keyframes blink`, and the `.cursor` reference inside the
+    `prefers-reduced-motion` rule, which become **dead CSS** the moment the
+    element goes. Named here so the next pass deletes them rather than
+    rediscovering them; `.cursor` joins the dead-CSS list in the v1 body.
+11. **`--font-data` replaces ~30 literal `font-family: monospace` declarations,
+    and resolves to the UI face** (Phase 3 — see `## The data face (v4, Phase
+    3)`). In `style.css` this is one token plus a sweep of the same ~30 sites.
+    `.mockNote` / `.stateLabel` are mock-only and do not exist in the shipped
+    stylesheet.
 
 ## Contrast evidence (v4) — computed, not asserted
 
@@ -415,8 +574,15 @@ v1's five, v2's #6 and v3's #7 all still stand. Added:
 (c) gate the four lanes and a set of surface pairs by **L\* separation**.
 
 ```
-all 190 gated pairs + 16 L* surface pairs pass       (was 49 — coverage GREW ~4x)
+all 189 gated pairs + 16 L* surface pairs pass       (was 49 — coverage GREW ~4x)
 ```
+
+**Phase 3 update:** the checker now parses **all seven** surfaces, not two — it
+exists to read the CSS that actually shipped, and two of seven stopped being
+that once the other five were recomposed. The count moved 190 → 189 for exactly
+one reason: `--logline`'s pair retired with `#logHead`. **No pair was loosened
+and no pair moved.** The chat window and the Help surface added **zero** hexes,
+so both are covered by pairs that were already gated.
 
 Not one previously-passing pair moved. The growth is entirely new coverage: the
 rarity lane had **zero** gated pairs before this phase, which is exactly how two
@@ -1447,9 +1613,19 @@ neutrals read as cooling server metal; exactly two warm hues — gold and
 bone — carry all the "still alive" signal in the entire palette. Georgia
 serif small-caps chrome (the game's own UI voice) frames dense monospace
 data rows (the botter's-toolkit/admin-console voice) wherever the content
-is a stat table. The shell/terminal register (`maintenance@dead-server:~$`,
+is a stat table. ~~The shell/terminal register (`maintenance@dead-server:~$`,
 `PLAYERS ONLINE`) stays confined to the log and meta edges — it is not the
-base layer.
+base layer.~~
+
+> **SUPERSEDED by v4 Phase 3 — `## The chat window (v4, Phase 3)`.** The shell
+> register is **retired, not re-confined**: the prompt is gone from every
+> surface and from `index.html`, and the log is an MMO chat window. Four
+> reviews checked that the register was confined; none asked whether it should
+> exist. `Players online: 1` survives as the chat window's online counter,
+> which is the one place in an MMO client where that number belongs.
+> **The Georgia/monospace split in the sentence above is also superseded** —
+> Georgia left the chrome in v3, and monospace left the data in Phase 3
+> (`## The data face (v4, Phase 3)`).
 
 ## Signature move
 
@@ -1508,7 +1684,16 @@ ships today, verified where it was previously just asserted.
   correct choice per `chapter-03-typography.md`'s own worked example
   (Georgia over Garamond for exactly this reason); nothing to change.
 - **Data / stat rows / controls / log / canvas:** `monospace` — the
-  botter's-toolkit and admin-console register. **Corrected per review
+  botter's-toolkit and admin-console register.
+  > **SUPERSEDED by v4 Phase 3 — `## The data face (v4, Phase 3)`.** Decided on
+  > rendered pixels: the data face is now `--font-data`, resolving to the UI
+  > face. The register lives in §16's NAMES, not in the font; tabular columns
+  > are held by `font-variant-numeric: tabular-nums`, not by the font; and mono
+  > cost 11% of the surface height on the 15-row Grind list. The paragraph
+  > below is kept because its accounting of *where* mono reached is the
+  > inventory the token replaced.
+
+  **Corrected per review
   (Minor 2)** — this covers more than readout content: `section.game
   button` sets `font-family: monospace` as its base rule, which cascades to
   essentially every action button in every tab (rig buys, ATK/SPEED fills,

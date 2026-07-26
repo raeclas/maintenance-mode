@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Training &mdash; Maintenance Mode mock</title>
+<title>Help &mdash; Maintenance Mode mock</title>
 <!--
   Phase 3 mock, .design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md
   Tokens : internal/DESIGN.md ## Visual DNA v4 (+ v3 construction, Phase 3/4 tiers)
@@ -1272,25 +1272,38 @@ section.game.locked .glyph{color:var(--faint);background:var(--panel);
 </style>
 </head>
 <body>
-<main class="client t-training">
-<div class="mockNote"><b>MOCK</b> &mdash; not the shipped client. Training tab, recomposed against <b>DESIGN.md's Visual DNA v4</b> and cut
-    to the <b>Phase 2 relocation table</b>. 9 of 13 script tiers are locked and not
-    one of them draws an allocation control &mdash; the audit counted 21 inert
-    clusters across this tab and Grind. The rig stats line keeps only the one fact
-    the four rig buttons do not already carry: each button prints its lever's
-    current value on the left of its own <code>&rarr;</code>.
-    <b>Colour:</b> <b>one</b> Tier-B lane &mdash; lane 3, Training's accent
-    (<code>--acc-training</code>, the script console), on chrome only: the window
-    frames, the title-bar grooves, and the live row's edge and name. Nothing on
-    this tab has a rarity or a power band.
-    <b>Copy:</b> five relocations land here &mdash; the population bar's
-    differentiation clause, the ATK sub, the SPEED sub, the Enhance squad sub and
-    the Ban Wave teaching paragraph. Every heading is bare and every number,
-    price, cap and state readout is untouched. <b>The unlock rule moved with the
-    ATK sub</b>, so read the locked rows as the ladder alone: no edge, unlit, no
-    control, and the word "locked" with its own condition. The two short flavor
-    lines stay by the rule's own carve-out (<code>&mdash; the anti-cheat notices
-    the farm</code>).
+<main class="client t-help">
+<div class="mockNote"><b>MOCK</b> &mdash; not the shipped client. <b>Help &mdash; a NEW surface</b>, built from
+    <code>internal/JOURNEY.md</code>'s Phase 2 page spec. This is where the
+    <b>22 relocated explanations</b> land: every general "how X works" rule the
+    six live tabs used to print beside the number it was already displaying.
+    Reference only &mdash; <b>no action resolves here</b>, so there is no
+    primary action and no control that changes state.
+    <b>Six blocks in tab-bar order</b>, which is the spec's own Jakob's-law
+    argument: the mental model for "where do I find X" carries over unchanged.
+    Each block is a <b>window</b> with the room's name on its <b>title bar</b>
+    and its <b>gold letter-glyph plate</b>; topics inside are one level down
+    (a small uppercase label behind a 2px accent edge) because an
+    <code>h3</code> <i>is</i> a title bar in this DNA and thirty of them would
+    be no hierarchy at all.
+    <b>Colour:</b> <b>one</b> Tier-B lane &mdash; lane 3, Help's accent
+    (<code>--acc-help</code>, the manual, paper). Nothing here has a rarity, a
+    Warden or a power band.
+    <b>One deviation from the spec's verbatim copy, declared:</b> the
+    <b>Difficulty</b> topic drops its closing sentence &mdash; the one restating
+    what a wipe pays out &mdash; because <b>How a run works</b>, three topics
+    above it, already owns the wipe rule.
+    On the live Dungeon tab those two strings sat in different blocks; landing
+    them both on one page made the duplication adjacent, and one fact keeps one
+    owner.
+    Two states are drawn, each under its own dashed
+<b>STATE</b> label; the repeated headings between them are the same block in a
+different state, not a duplicated fact. The second is a <b>gated</b> block: the ladder without an
+    opacity multiplier &mdash; unlit material, <code>--faint</code> type, no
+    topics at all, and the milestone string reused verbatim from the tab
+    button's own <code>title</code>. Genuine readable text keeps full opacity so
+    it holds AA. Below that, the <b>General</b> channel of the chat window,
+    which is the state you cannot see while System has traffic.
   <br><br><b>Shared chrome, new this phase: the log is a chat window.</b>
   The shell prompt that used to head this block is gone from every surface and
   from <code>index.html</code>. It was wrong three ways &mdash; a shell inside a
@@ -1319,133 +1332,111 @@ section.game.locked .glyph{color:var(--faint);background:var(--panel);
   </div>
   <button class="helpBtn" title="Help">?</button>
 </header>
-<nav id="tabs" aria-label="Main"><button class="t-boss">Boss</button><button class="t-training active" aria-current="page">Training</button><button class="t-grind">Grind</button><button class="t-player">Player</button><button class="t-delve">Delve</button><button class="t-dungeon">Dungeon</button><button class="t-help">Help</button></nav>
+<nav id="tabs" aria-label="Main"><button class="t-boss">Boss</button><button class="t-training">Training</button><button class="t-grind">Grind</button><button class="t-player">Player</button><button class="t-delve">Delve</button><button class="t-dungeon">Dungeon</button><button class="t-help active" aria-current="page">Help</button></nav>
 <section class="game">
-  <h3><span class="glyph" aria-hidden="true">R</span>Rig</h3>
-  <div class="rig">
-    <button>multiclient &middot; 248 &rarr; 297 bot slots &middot; 119,647c</button>
-    <button class="affordable">account creator &middot; 240 &rarr; 270 bots per hour &middot; 12,069c</button>
-    <button class="affordable">script version &middot; bot strength &times;1.75 &rarr; &times;2.00 &middot; 819c</button>
-    <button class="affordable">overclock &middot; bot speed &times;1.80 &rarr; &times;2.00 &middot; 2,506c</button>
-  </div>
-  <div class="sub">lost in the Dungeon 47</div>
-  <div class="barTrack"><div class="barFill" style="width:93%"></div></div>
-  
-  <div class="sub">231 of 248 slots filled</div>
+  <h3><span class="glyph" aria-hidden="true">B</span>Boss</h3>
+  <div class="topic"><h4>Crits</h4><p>Every hit has a chance to crit for extra damage, and a crit
+      has its own chance to crit again &mdash; a super-crit &mdash; for even
+      more. The Boss tab's Average row is what your damage actually multiplies
+      by once both chances are folded in.</p></div><div class="topic"><h4>Farming a cleared door</h4><p>Once a door is open, farming it rolls for
+      the rest of that Warden's trophy set every 30 seconds &mdash; each roll a
+      25% chance to drop the next piece.</p></div>
+</section>
 
-  
-  <h3><span class="glyph" aria-hidden="true">A</span>ATK scripts</h3>
-  <div class="caption">+16.65 ATK trained so far &middot; +0.0275/s right now</div>
-  <div class="rowlist"><div class="row active">
-    <div class="rowName">swing macro</div>
-    <div class="rowGain">+0.0005 ATK per fill</div>
-    <div class="rowAlloc"><span class="allocMini">
-  <button>&minus;</button><input value="100" readonly>
-  <button>+</button><button>cap</button><button>&ctdot;</button>
-</span></div>
-    <div class="rowStat">30,276 fills &middot; at the 50/s cap &mdash; more bots here do nothing, move them to another script</div>
-    <div class="rowBar"><div class="rowFill" style="width:100%"></div></div>
-  </div><div class="row dormant">
-    <div class="rowName">combo macro</div>
-    <div class="rowGain">+0.005 ATK per fill</div>
-    <div class="rowAlloc"><span class="allocMini">
-  <button>&minus;</button><input value="0" readonly>
-  <button>+</button>
-</span></div>
-    <div class="rowStat">0 fills &middot; no bots on it</div>
-    <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
-  </div><div class="row locked">
-    <div class="rowName">cancel-weave script</div>
-    <div class="rowGain">+0.045 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 30,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">frame-perfect script</div>
-    <div class="rowGain">+0.35 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 90,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">packet-replay script</div>
-    <div class="rowGain">+2.8 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 270,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">netcode desync</div>
-    <div class="rowGain">+22 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 810,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">tick-rate exploit</div>
-    <div class="rowGain">+175 ATK per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 2,430,000 fills</div>
-    
-  </div></div>
+<section class="game">
+  <h3><span class="glyph" aria-hidden="true">T</span>Training</h3>
+  <div class="topic"><h4>Bot pool</h4><p>The population bar is every bot you own, filled or not.
+      The counter at the top of the screen is only the ones not assigned to any
+      job.</p></div><div class="topic"><h4>Scripts</h4><p>Put bots on a script to run it. Every fill it completes
+      adds its stat &mdash; ATK or hits per second &mdash; permanently. Any one
+      script tops out at 50 fills per second; the next script down unlocks once
+      the one above it has enough fills. Speed has one more rule: past a
+      threshold that rises with each deeper Warden, extra hits per second still
+      count, just less.</p></div><div class="topic"><h4>Enhance squad</h4><p>Bots that keep pressing enhance on one item for you.
+      Same odds and the same copper cost as doing it yourself &mdash; they just
+      never stop. The odds and the fallout are on the Player tab.</p></div><div class="topic"><h4>Ban Wave</h4><p>Banking a Ban Wave resets your bots, your training and your copper to the
+       start. Everything your character owns stays: gear, plusses, scrap,
+       trophies, Armory ranks, titles and door progress. In exchange you bank
+       &radic;(training fills) as Scripts, and every Script permanently adds +1%
+       damage. Scripts never reset.</p><p>Bank when the payout is worth the reset. Scripts are the square root of
+       your training fills, so pushing twice as long pays well under twice the
+       Scripts.</p><p>Your bots borrow your power &mdash; each one hits at 10% of your ATK and
+       10% of your hits per second. So more damage means a faster farm too, and
+       every Ban Wave rebuilds quicker than the one before.</p></div>
+</section>
 
-  <h3><span class="glyph" aria-hidden="true">S</span>SPEED scripts</h3>
-  <div class="caption">+0.13 hits/s trained so far &middot; +0.00034/s right now</div>
-  <div class="rowlist"><div class="row active">
-    <div class="rowName">autoclicker</div>
-    <div class="rowGain">+0.00001 hits/s per fill</div>
-    <div class="rowAlloc"><span class="allocMini">
-  <button>&minus;</button><input value="60" readonly>
-  <button>+</button><button>cap</button><button>&ctdot;</button>
-</span></div>
-    <div class="rowStat">12,160 fills &middot; 31.2 fills/s</div>
-    <div class="rowBar"><div class="rowFill" style="width:62%"></div></div>
-  </div><div class="row dormant">
-    <div class="rowName">turbo clicker</div>
-    <div class="rowGain">+0.0001 hits/s per fill</div>
-    <div class="rowAlloc"><span class="allocMini">
-  <button>&minus;</button><input value="0" readonly>
-  <button>+</button>
-</span></div>
-    <div class="rowStat">0 fills &middot; no bots on it</div>
-    <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
-  </div><div class="row locked">
-    <div class="rowName">no-delay hack</div>
-    <div class="rowGain">+0.0009 hits/s per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 30,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">input injector</div>
-    <div class="rowGain">+0.007 hits/s per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 90,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">kernel clicker</div>
-    <div class="rowGain">+0.055 hits/s per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 270,000 fills</div>
-    
-  </div><div class="row locked">
-    <div class="rowName">hypervisor clock</div>
-    <div class="rowGain">+0.42 hits/s per fill</div>
-    <div class="rowAlloc"></div>
-    <div class="rowStat">locked &middot; 0 / 810,000 fills</div>
-    
-  </div></div>
+<section class="game">
+  <h3><span class="glyph" aria-hidden="true">G</span>Grind</h3>
+  <div class="topic"><h4>Zones</h4><p>Put bots on a zone. Their combined damage has to clear the
+      zone's hold number or they earn nothing at all. A zone they can hold kills
+      up to 50 mobs a second; every kill pays copper and has a 1-in-400 chance
+      to drop a piece of gear. IP is the power band those drops roll in &mdash;
+      deeper zones drop higher.</p></div>
+</section>
 
-  
-  <h3><span class="glyph" aria-hidden="true">E</span>Enhance squad</h3>
-  <div class="runControls">
-    <span class="seg"><button>weapon</button><button class="active">armor</button><button>charm</button></span>
-    <label>stop at + <input class="ipDial" value="15" readonly></label>
-  </div>
-  <div class="caption">one try every 9.4s &middot; 83,215c each</div>
+<section class="game">
+  <h3><span class="glyph" aria-hidden="true">P</span>Player</h3>
+  <div class="topic"><h4>Combat Power</h4><p>Your damage per second against the door: ATK
+      multiplied by hits per second. "Haste" anywhere on the Player tab is a
+      percentage added to hits per second.</p></div><div class="topic"><h4>Enhance</h4><p>Three slots. Enhancing raises an item's plus, and every
+      plus multiplies its base power by 1.12. A failed attempt anywhere banks a
+      failstack worth +1 percentage point on your next attempt, up to +15; a
+      success spends the whole bank.</p></div><div class="topic"><h4>Reforge</h4><p>Reforge rerolls an item's affixes for scrap of its own
+      rarity. It can't change the rarity or the IP &mdash; only which affixes it
+      has and what they roll. You see the result before you decide whether to
+      keep it.</p></div><div class="topic"><h4>Stash</h4><p>Where kept drops land, up to 50. An item's rarity is how
+      many affixes it rolled (Common 0, Origin 6) and its IP is how strong those
+      affixes roll. Salvaging turns an item into scrap of its own rarity.
+      Locking one protects it from auto-salvage, the bulk sweep and the
+      stash-full clear-out.</p></div><div class="topic"><h4>Trophies</h4><p>Each Warden has a 7-piece set. Breaking its door gives
+      you the first piece; the rest come from farming that Warden on the Boss
+      tab. A complete set multiplies your damage by 1.5.</p></div><div class="topic"><h4>Armory</h4><p>Every drop is logged here against its own entry, one per
+      item name, whether you keep it or scrap it. Rarer copies count for more: a
+      Common is worth 1 point, an Origin 13. The first rank costs 3 points and
+      each rank after costs 60% more, up to rank 12. Weapons rank ATK, armor
+      ranks haste, charms rank copper &mdash; and the ranks survive every Ban
+      Wave.</p></div>
+</section>
 
-  
-  <h3><span class="glyph" aria-hidden="true">B</span>Ban Wave<span class="sub">&mdash; the anti-cheat notices the farm</span></h3>
-  <div class="runControls">
-    <span class="caption">+206 Scripts ready, from 42,436 training fills &middot; 0 Ban Waves so far</span>
-  </div>
-  <div class="ctaRow"><button class="cta">Ban Wave</button></div>
+<section class="game">
+  <h3><span class="glyph" aria-hidden="true">D</span>Delve</h3>
+  <div class="topic"><h4>How depth works</h4><p>Your character digs on their own down here, no
+      input needed. Depth is however deep your Combat Power clears: floor 1
+      needs 10 damage per second and each floor after needs 70% more. Every
+      extra floor pays 35% more Cache per second, and Cache is the buried server
+      data you spend below.</p></div><div class="topic"><h4>Cache tree</h4><p>Each row buys one rank. Every rank you buy raises that
+      row's next price.</p></div>
+</section>
+
+<section class="game">
+  <h3><span class="glyph" aria-hidden="true">D</span>Dungeon</h3>
+  <div class="topic"><h4>How a run works</h4><p>Your bots fight down through the floors on their
+      own, and each floor takes longer than the last. Some of them get banned on
+      every floor, faster the deeper they go. When too many abilities go
+      unblocked, the party dies. If they die you keep 40% of what they found.
+      Pull out early and you keep all of it.</p></div><div class="topic"><h4>Assigning bots</h4><p>Each ability needs a set number of bots on it to be
+      blocked. An ability you leave unblocked cuts your damage every floor it
+      fires, and when your damage falls below 25% of normal the party dies. Bots
+      you send are spent &mdash; you get back whoever survives.</p></div><div class="topic"><h4>Difficulty</h4><p>Higher difficulty means more abilities to block, more
+      bots on each, better loot &mdash; and bots banned faster. You set it; it
+      never drops on its own.</p></div><div class="topic"><h4>Pull-out floor</h4><p>Your bots come home with everything the moment they
+      clear the floor you set here. You can change it mid-run.</p></div><div class="topic"><h4>Boss abilities journal</h4><p>You find out what an ability does by
+      running into it. What you learn here is permanent: it survives a Ban
+      Wave.</p></div>
+</section>
+
+<div class="stateLabel">state &mdash; gated (a block whose tab has not unlocked yet)</div>
+<section class="game locked">
+  <h3><span class="glyph" aria-hidden="true">P</span>Player</h3>
+  <p class="lockMsg">Unlocks when your bots find their first piece of gear.</p>
+</section>
+<section class="game locked">
+  <h3><span class="glyph" aria-hidden="true">D</span>Delve</h3>
+  <p class="lockMsg">Unlocks at 100 Combat Power.</p>
+</section>
+<section class="game locked">
+  <h3><span class="glyph" aria-hidden="true">D</span>Dungeon</h3>
+  <p class="lockMsg">Unlocks once you have 10 bots.</p>
 </section>
 <div class="mockNote"><b>State ladder</b> (this plan's whole point). <b>live</b>: a
 4px left edge in <b>THIS ROOM'S accent</b> (v4 &mdash; gold left that slot and
@@ -1458,14 +1449,24 @@ reading 0, empty track, lying flat in the socket. <b>struggling</b>:
 <code>--opacity-locked</code>, <b>no allocation control at all</b>, and the row
 says the word "locked" and its unlock condition. Six independent channels
 &mdash; edge, type, controls, unlock text, material lift, socket lit-ness.</div>
-
+<div class="stateLabel">state &mdash; the chat window's General
+    channel (empty; System is the state every other mock renders). This page's
+    own chat window, below, is the specimen &mdash; it opens on General.</div>
+  <div class="mockNote"><b>The empty state is the point.</b> System carries
+    drops, kills and offline gains; General has nobody in it. It has to read
+    <b>quiet</b>, not <b>broken</b> &mdash; so the window around it is intact
+    and lit, the channel plate is plainly selectable, and the copy states the
+    fact without narrating the silence. A sentence <i>about</i> the emptiness
+    would be the decay register coming back as prose, and the whole reason the
+    shell prompt had to go is that it faked this feeling instead of earning
+    it.</div>
 <div id="chat">
   <div id="chatHead">
-    <button class="chan active">System</button>
-    <button class="chan">General</button>
+    <button class="chan">System</button>
+    <button class="chan active">General</button>
     <span id="online">Players online: 1</span>
   </div>
-  <div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-loot log-plain">drop: <span class="rar rar-epic">Epic Sentry Halberd</span> 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
+  <div id="log"><div class="chatEmpty">Nothing here.</div></div>
 </div>
 <footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>
 </main>

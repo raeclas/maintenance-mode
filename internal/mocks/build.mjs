@@ -57,7 +57,12 @@ const TOKENS = `
   --well:#05060a;    /* was #101014 — L* 1.4, the deepest surface on screen */
   --line:#262a34; --line-soft:#1b1b22;
   --risk:#7aa4d4; --warn:#b26f5f; --alert:#d25b44; --copper:#d08a3e; --live:#6bbf7a;
-  --logline:#598368;
+  /* --logline (#598368) is RETIRED, Phase 3. It existed for exactly one
+     element — #logHead, the shell prompt — and that element no longer exists.
+     A token whose only consumer has been deleted is dead weight, and leaving it
+     would leave contrast.mjs gating a pair nothing renders. The shipped
+     style.css still carries the hardcoded #4e7a5e this token was minted to
+     replace; that hex dies with the element at integration. */
   --level-muted:#5a7a5a;        /* Phase 4 semantic addition (was style.css:309) */
   /* rarity ramp — rarity.js named tokens; mythic carries DESIGN.md's AA fix */
   --rar-common:#b8b8b8; --rar-uncommon:#5fd35f; --rar-rare:#5a8bd6;
@@ -74,6 +79,28 @@ const TOKENS = `
      between one override and four. Data stays monospace either way — that
      register split is REMAKE-DESIGN.md §16's, not this pass's. */
   --font-body:Georgia,serif;
+  /* THE DATA FACE. Was monospace at ~30 literal sites; DECIDED on rendered
+     pixels this phase (DW-3.9) and now the UI face everywhere.
+
+     The mono footprint was two prior reviews' unresolved watch item, and its
+     defence was that it carries REMAKE-DESIGN.md §16's "botter's toolkit"
+     register. Judged on internal/mocks/grind.html against
+     internal/mocks/grind-mono.html, which is this token flipped back and
+     nothing else, the defence does not hold: §16 is a NAMING register
+     (multiclient, packet-replay script, tick-rate exploit, proxies) and it
+     survives a font change completely intact. Column alignment does not need
+     mono either — font-variant-numeric:tabular-nums is already set on body,
+     and it holds in the UI face on both of the genuinely tabular blocks (the
+     crit ledger and the 45-cell Armory grid; crops in shots/crops/). And mono
+     costs real surface: Grind at 375px is 6,438px tall in mono against 5,734px
+     here, 11% shorter, with the live row's stat no longer wrapping.
+
+     The two mock-ANNOTATION classes (.mockNote, .stateLabel) keep the literal
+     monospace deliberately: commentary about the mock should not be in the
+     mock's own voice, and it is what lets the specimen change the surface
+     without changing the text describing it. Full reasoning: DESIGN.md
+     "## The data face (v4, Phase 3) — mono, decided on pixels". */
+  --font-data:var(--font-ui);
   /* ── Phase 4 primitive dimension scale (derived from style.css's own px) ── */
   --border-hairline:1px;
   --space-1:2px; --space-2:3px; --space-3:4px; --space-4:6px;
@@ -372,13 +399,13 @@ b{font-weight:normal}
 .chip{padding:var(--chip-pad);text-align:center;
   border-left:var(--border-hairline) solid var(--line)}
 .chip:first-child{border-left:none}
-.chipVal{font-family:monospace;font-size:var(--fs-display);color:var(--chip-value)}
+.chipVal{font-family:var(--font-data);font-size:var(--fs-display);color:var(--chip-value)}
 .chipVal b{color:var(--chip-value-emphasis)}
-.chipLbl{font-size:var(--fs-micro);font-family:monospace;letter-spacing:.12em;
+.chipLbl{font-size:var(--fs-micro);font-family:var(--font-data);letter-spacing:.12em;
   color:var(--chip-label);text-transform:uppercase;margin-top:var(--chip-lbl-nudge)}
 .copper,.copper b{color:var(--copper)}
 .helpBtn{background:none;border:var(--border-hairline) solid var(--line);
-  color:var(--dim);font-family:monospace;font-size:var(--fs-body);
+  color:var(--dim);font-family:var(--font-data);font-size:var(--fs-body);
   width:var(--touch-min);height:var(--touch-min);margin-left:auto}
 
 /* ── tab nav. Six fixed destinations, all visible: wraps 3+3 on a phone
@@ -400,14 +427,14 @@ h3{font-size:var(--fs-small);font-variant:small-caps;letter-spacing:.1em;
   color:var(--gold-dim);border-top:var(--border-hairline) solid var(--line);
   padding-top:var(--space-5);margin:var(--space-6) 0 var(--space-4);font-weight:normal}
 section.game>h3:first-child{border-top:none;padding-top:0;margin-top:var(--space-1)}
-.sub{color:var(--recede);font-size:var(--fs-label);font-family:monospace;
+.sub{color:var(--recede);font-size:var(--fs-label);font-family:var(--font-data);
   font-style:italic;letter-spacing:0;text-transform:none;font-variant:normal;
   line-height:1.6;display:block;margin-top:var(--space-2)}
 .rowName .sub{margin-top:0}
 
 /* ── buttons ── */
 button{background:var(--field);color:var(--bone);
-  border:var(--border-hairline) solid var(--line);font-family:monospace;
+  border:var(--border-hairline) solid var(--line);font-family:var(--font-data);
   font-size:var(--fs-small);padding:var(--space-3) var(--space-6);
   min-height:var(--touch-min);cursor:pointer;text-align:left}
 button.affordable{border-color:var(--afford-accent);color:var(--afford-accent)}
@@ -426,7 +453,7 @@ ${BP}{.rig{grid-template-columns:1fr 1fr}}
   row-gap:var(--row-gap-wrap);align-items:center;padding:var(--row-pad);
   border-bottom:var(--border-hairline) solid var(--line-soft);
   border-left:var(--row-active-border) solid transparent;
-  font-family:monospace;font-size:var(--fs-small);position:relative}
+  font-family:var(--font-data);font-size:var(--fs-small);position:relative}
 .rowlist .row>.rowAlloc,.rowlist .row>.rowStat{grid-column:1/-1;min-width:0;
   overflow-wrap:anywhere}
 .rowName{color:var(--row-name)}
@@ -475,14 +502,14 @@ ${BP}{
   border-color:var(--line-soft);min-width:var(--touch-min);text-align:center}
 .allocMini input{width:var(--alloc-input-width);min-height:var(--touch-min);
   background:var(--inset);color:var(--alloc-value);
-  border:var(--border-hairline) solid var(--line);font-family:monospace;
+  border:var(--border-hairline) solid var(--line);font-family:var(--font-data);
   padding:var(--alloc-input-pad);font-size:var(--fs-small);text-align:center}
 
 /* ── Boss ── */
 .bossPanel{text-align:center;margin:var(--space-6) 0 var(--space-4)}
 #bossName{color:var(--gold);font-size:var(--fs-masthead);font-variant:small-caps}
 #bossTitle{font-size:var(--fs-small);font-style:italic}
-.wallLbl{font-family:monospace;font-size:var(--fs-label);color:var(--recede);
+.wallLbl{font-family:var(--font-data);font-size:var(--fs-label);color:var(--recede);
   letter-spacing:.12em;text-transform:uppercase;text-align:center;
   margin-bottom:var(--space-2)}
 .wallScroll{overflow-x:auto;padding-bottom:var(--space-1)}
@@ -497,14 +524,14 @@ ${BP}{
 .canvasStub{background:var(--well);
   aspect-ratio:16/7;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:var(--space-3);text-align:center;padding:var(--space-6)}
-.canvasStub .k{font-family:monospace;font-size:var(--fs-label);color:var(--recede);
+.canvasStub .k{font-family:var(--font-data);font-size:var(--fs-label);color:var(--recede);
   letter-spacing:.12em;text-transform:uppercase}
-.canvasStub .v{font-family:monospace;font-size:var(--fs-small);color:var(--faint);
+.canvasStub .v{font-family:var(--font-data);font-size:var(--fs-small);color:var(--faint);
   max-width:44ch;line-height:1.6}
 .controls{display:flex;align-items:baseline;flex-wrap:wrap;
   gap:var(--space-3) var(--space-7);margin:var(--arena-controls-margin)}
-#depth{color:var(--gold);font-size:var(--fs-hero);font-family:monospace}
-.caption{font-family:monospace;font-size:var(--fs-small);color:var(--recede);
+#depth{color:var(--gold);font-size:var(--fs-hero);font-family:var(--font-data)}
+.caption{font-family:var(--font-data);font-size:var(--fs-small);color:var(--recede);
   line-height:1.6}
 #projection{color:var(--gold)}
 .progress{display:flex;flex-direction:column;align-items:center;gap:var(--space-3);
@@ -529,33 +556,33 @@ ${BP}{
   background:var(--inset)}
 .slot.filled{border-left-color:var(--gold-dim)}
 .slotName{font-variant:small-caps;color:var(--recede);font-size:var(--fs-small)}
-.slotItem{font-size:var(--fs-small);font-family:monospace;color:var(--bone)}
+.slotItem{font-size:var(--fs-small);font-family:var(--font-data);color:var(--bone)}
 .itemMeta{color:var(--dim)}
 .affixList{display:flex;flex-wrap:wrap;gap:var(--space-1) var(--space-7);
   margin-top:var(--space-2)}
-.affixItem{font-size:var(--fs-small);font-family:monospace;color:var(--dim)}
+.affixItem{font-size:var(--fs-small);font-family:var(--font-data);color:var(--dim)}
 .muted{color:var(--faint);font-style:italic}
-.enhInfo{font-size:var(--fs-label);font-family:monospace;color:var(--recede);
+.enhInfo{font-size:var(--fs-label);font-family:var(--font-data);color:var(--recede);
   line-height:1.6}
 .slotControls{display:flex;flex-wrap:wrap;gap:var(--space-3) var(--space-7);
   margin-top:var(--space-3);align-items:center}
-.toggleLine{font-size:var(--fs-small);font-family:monospace;color:var(--dim);
+.toggleLine{font-size:var(--fs-small);font-family:var(--font-data);color:var(--dim);
   display:block;margin:var(--space-4) 0;line-height:1.6}
 .filterRow{display:flex;flex-wrap:wrap;align-items:center;
   gap:var(--space-3) var(--space-5);margin-bottom:var(--space-3)}
-.filterLabel{font-size:var(--fs-small);color:var(--dim);font-family:monospace}
+.filterLabel{font-size:var(--fs-small);color:var(--dim);font-family:var(--font-data)}
 .ipDial{width:var(--ip-dial);min-height:var(--touch-min);background:var(--field);
   color:var(--gold);border:var(--border-hairline) solid var(--line);
-  font-family:monospace;padding:var(--alloc-input-pad);font-size:var(--fs-small)}
+  font-family:var(--font-data);padding:var(--alloc-input-pad);font-size:var(--fs-small)}
 select{min-height:var(--touch-min);background:var(--field);color:var(--bone);
-  border:var(--border-hairline) solid var(--line);font-family:monospace;
+  border:var(--border-hairline) solid var(--line);font-family:var(--font-data);
   font-size:var(--fs-small);padding:var(--space-2) var(--space-3)}
 .scrapWallet{font-size:var(--fs-small);color:var(--gold-dim);
-  margin:var(--space-1) 0 var(--space-4);font-family:monospace}
+  margin:var(--space-1) 0 var(--space-4);font-family:var(--font-data)}
 .scrapPill{display:inline-block;border:var(--border-hairline) solid var(--line);
   padding:var(--space-1) var(--space-5);margin:0 var(--space-3) var(--space-3) 0;
-  font-size:var(--fs-small);font-family:monospace}
-#stashList{font-family:monospace;font-size:var(--fs-small);margin-top:var(--space-4)}
+  font-size:var(--fs-small);font-family:var(--font-data)}
+#stashList{font-family:var(--font-data);font-size:var(--fs-small);margin-top:var(--space-4)}
 .stashRow{display:grid;grid-template-columns:var(--stash-mark-col) 1fr auto;
   gap:0 var(--space-5);align-items:center;padding:var(--space-2) var(--space-4);
   border-left:var(--row-active-border) solid var(--line);
@@ -579,14 +606,14 @@ select{min-height:var(--touch-min);background:var(--field);color:var(--bone);
   gap:var(--space-5);margin-bottom:var(--space-3)}
 .trophySetName{color:var(--bone);font-size:var(--fs-small)}
 .trophySet.dormant .trophySetName{color:var(--faint)}
-.trophySetProg{font-family:monospace;font-size:var(--fs-small);color:var(--dim)}
+.trophySetProg{font-family:var(--font-data);font-size:var(--fs-small);color:var(--dim)}
 .trophySet.dormant .trophySetProg{color:var(--faint)}
 details.trophySet>summary{cursor:pointer;color:var(--faint);
   padding:var(--space-2) 0;display:list-item}
 details.trophySet>summary .trophySetProg{float:right}
 details.trophySet>.pips{margin-top:var(--space-4)}
 .pips{display:flex;flex-wrap:wrap;gap:var(--space-3)}
-.pip{font-size:var(--fs-label);font-family:monospace;
+.pip{font-size:var(--fs-label);font-family:var(--font-data);
   padding:var(--space-1) var(--space-4);
   border:var(--border-hairline) solid var(--line-soft);color:var(--faint)}
 .pip.own{color:var(--gold);border-color:var(--gold)}
@@ -595,7 +622,7 @@ details.trophySet>.pips{margin-top:var(--space-4)}
   min-width:var(--armory-min)}
 .amRow{display:grid;grid-template-columns:var(--armory-zone-col) repeat(3,1fr);
   gap:var(--space-3);align-items:stretch}
-.amZone{font-family:monospace;font-size:var(--fs-label);color:var(--recede);
+.amZone{font-family:var(--font-data);font-size:var(--fs-label);color:var(--recede);
   align-self:center;text-align:right}
 .amCell{border:var(--border-hairline) solid var(--line);
   border-left:var(--space-1) solid var(--gold-dim);background:var(--panel);
@@ -606,31 +633,31 @@ details.trophySet>.pips{margin-top:var(--space-4)}
 .amCell.max{border-left-color:var(--gold)}
 .amName{font-size:var(--fs-label);color:var(--bone);overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
-.amRank{font-family:monospace;font-size:var(--fs-micro);color:var(--dim)}
+.amRank{font-family:var(--font-data);font-size:var(--fs-micro);color:var(--dim)}
 .amCell.max .amRank{color:var(--gold)}
 .rar-common{color:var(--rar-common)} .rar-uncommon{color:var(--rar-uncommon)}
 .rar-rare{color:var(--rar-rare)} .rar-epic{color:var(--rar-epic)}
 .rar-legendary{color:var(--rar-legendary)} .rar-mythic{color:var(--rar-mythic)}
 .rar-origin{color:var(--rar-origin)}
-#stacksHud{font-size:var(--fs-small);color:var(--warn);font-family:monospace;
+#stacksHud{font-size:var(--fs-small);color:var(--warn);font-family:var(--font-data);
   font-variant:normal;letter-spacing:0;text-transform:none}
 
 /* ── Delve / Dungeon ── */
-#delveState,#delveCache{font-family:monospace;font-size:var(--fs-body);
+#delveState,#delveCache{font-family:var(--font-data);font-size:var(--fs-body);
   color:var(--bone);margin-bottom:var(--space-1)}
 #delveState b,#delveCache b{color:var(--gold)}
 /* The Dungeon's run controls are grouped by proximity, not by a second frame.
    DESIGN.md already flagged that this tab reuses .arena purely for a bordered
    look; a panel inside a panel is a rule line doing no work. */
 .runPanel{margin:var(--arena-margin)}
-#instState{font-family:monospace;font-size:var(--fs-body);color:var(--bone);
+#instState{font-family:var(--font-data);font-size:var(--fs-body);color:var(--bone);
   line-height:1.6}
 #instState b{color:var(--gold)}
-.howItWorks p{font-size:var(--fs-small);font-family:monospace;color:var(--bone);
+.howItWorks p{font-size:var(--fs-small);font-family:var(--font-data);color:var(--bone);
   line-height:1.6;margin-bottom:var(--space-3)}
 .runControls{display:flex;flex-wrap:wrap;align-items:center;
   gap:var(--space-3) var(--space-7);margin-bottom:var(--space-3)}
-.runControls label{font-size:var(--fs-small);font-family:monospace;color:var(--dim)}
+.runControls label{font-size:var(--fs-small);font-family:var(--font-data);color:var(--dim)}
 .ctaRow{display:flex;flex-wrap:wrap;gap:var(--space-5);margin-top:var(--space-5)}
 .cta{flex:1;background:var(--panel);border:var(--border-hairline) solid var(--gold);
   color:var(--gold);font-family:var(--font-body);font-variant:small-caps;
@@ -640,18 +667,43 @@ details.trophySet>.pips{margin-top:var(--space-4)}
 .seg button{text-align:center}
 .seg button.active{color:var(--gold);border-color:var(--gold)}
 
-/* ── the dead server's console ── */
-#logHead{font-family:monospace;font-size:var(--fs-micro);letter-spacing:.04em;
-  color:var(--logline);border-top:var(--border-hairline) solid var(--line);
-  padding:var(--space-5) 0 var(--space-2)}
-.cursor{color:var(--live);animation:blink 1.1s steps(1) infinite}
-@keyframes blink{50%{opacity:0}}
-#log{font-family:monospace;font-size:var(--fs-small);max-height:var(--log-max-h);
+/* ── THE CHAT WINDOW ──────────────────────────────────────────────────────
+   Was: a shell prompt (index.html:204, emitted here) in a game that has no
+   shell, naming the server as a dead one in shared chrome on every screen,
+   behind a block cursor implying an input that does not exist. It survived
+   four reviews because every one of them checked that the shell register was
+   CONFINED and none asked whether it should exist. A confined premise error is
+   still a premise error.
+
+   Is now: the honest MMO furniture. A bottom-of-screen log in an MMO client is
+   a chat panel. In a dead MMO it is also the saddest object on the screen —
+   System carries the traffic while General sits empty, and "Players online: 1"
+   finally has a home where it means the whole premise. The EMPTINESS does the
+   storytelling the decay string was faking. That is ABSENCE, which is the
+   target feeling; the broken prompt was DISREPAIR, which is banned.
+
+   No unread badge, no notification dot, no count. That would be an obligation
+   mechanic and the veto on those is standing.                              */
+#chat{margin-top:var(--space-8)}
+#chatHead{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-3);
+  border-top:var(--border-hairline) solid var(--line);padding:var(--space-4) 0}
+.chan{font-size:var(--fs-label);padding:var(--space-2) var(--space-6);
+  color:var(--dim);text-align:center}
+.chan.active{color:var(--bone)}
+/* The counter the whole game is about, in the one place an MMO client puts it. */
+#online{margin-left:auto;font-family:var(--font-data);font-size:var(--fs-micro);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#log{font-family:var(--font-data);font-size:var(--fs-small);max-height:var(--log-max-h);
   overflow-y:auto}
 .logline{padding:var(--space-1) 0}
+/* Quiet, not broken: the window around it is intact, lit and selectable, and
+   the copy states the fact without narrating the silence. A sentence ABOUT the
+   emptiness is the decay register coming back in as prose. */
+.chatEmpty{color:var(--faint);font-style:italic;text-align:center;
+  padding:var(--space-9) var(--space-5)}
 .log-event{color:var(--gold)} .log-plain{color:var(--bone)}
 .log-dim{color:var(--recede)} .log-warn{color:var(--warn)}
-footer{text-align:center;margin-top:var(--space-8);font-family:monospace;
+footer{text-align:center;margin-top:var(--space-8);font-family:var(--font-data);
   font-size:var(--fs-label);color:var(--faint)}
 footer button{background:none;border:none;color:var(--faint);
   font-size:var(--fs-label);text-decoration:underline;text-align:center}
@@ -782,7 +834,7 @@ h3 .sub{margin-top:var(--space-4);font-style:normal;color:var(--dim);
    This is the rule that makes the language work on a surface with no hero:
    Training, Grind, Player and Delve are lists, and a list in a socket has
    depth without needing a frame or a display face.                         */
-.rowlist,.canvasStub,#dialogue{
+.rowlist,.canvasStub,#dialogue,#log{
   background:var(--well);
   border:var(--border-hairline) solid var(--edge-shade);
   border-radius:var(--radius-socket);
@@ -797,7 +849,7 @@ h3 .sub{margin-top:var(--space-4);font-style:normal;color:var(--dim);
    gradient and drops the foot — the button physically goes down. DISABLED
    loses the bevel AND the foot and flattens onto --panel, which is both the
    material carrying a state and the only ground where --faint clears AA.   */
-section.game button,#tabs button,.helpBtn{
+section.game button,#tabs button,.helpBtn,.chan{
   font-family:var(--font-ui);font-weight:bold;
   border:var(--border-hairline) solid var(--edge-shade);
   border-radius:var(--radius-control);
@@ -808,7 +860,7 @@ section.game button,#tabs button,.helpBtn{
     0 var(--space-1) 0 var(--edge-shade);
   text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
   text-align:center}
-section.game button:active,#tabs button:active,.helpBtn:active{
+section.game button:active,#tabs button:active,.helpBtn:active,.chan:active{
   background:linear-gradient(var(--panel),var(--field));
   box-shadow:
     inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
@@ -897,7 +949,7 @@ section.game button:disabled{
    DNA must never do.                                                       */
 .ledger{display:grid;grid-template-columns:1fr auto auto;
   column-gap:var(--space-7);margin-top:var(--space-6);
-  font-size:var(--fs-small);font-family:monospace}
+  font-size:var(--fs-small);font-family:var(--font-data)}
 .ledger>*{padding:var(--space-2) 0}
 .ledger .hd{grid-column:1/-1;font-family:var(--font-ui);font-weight:bold;
   font-variant:normal;text-transform:uppercase;letter-spacing:.12em;
@@ -977,7 +1029,7 @@ section.game button:disabled{
    The band chip's MARKUP is emitted by shared helpers, so it reaches the four
    surfaces this phase does not recompose. It degrades to plain mono text
    there rather than rendering as an unstyled artefact.                     */
-.band{font-family:monospace;color:var(--bone)}
+.band{font-family:var(--font-data);color:var(--bone)}
 `;
 
 /* ═════════════════════════════════════════════════════════════════════════
@@ -1064,7 +1116,7 @@ section.game{
    complete: a missing or offset rivet reads as damage instantly, so the
    construction makes that unrepresentable rather than merely discouraged.
    This is the no-decay veto expressed as CSS.                            */
-h3,.frame{
+h3,.frame,#chatHead{
   --rv:linear-gradient(var(--edge-lit),var(--edge-lit));
   background:
     var(--rv) var(--rivet-inset) var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
@@ -1271,6 +1323,85 @@ h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
    statements on the same row rather than as two shades of "on". */
 .amCell.max{border-left-color:var(--gold)}
 .pip.own{color:var(--gold);border-color:var(--gold)}
+
+/* ── 8. THE CHAT WINDOW — the same four constructions, at the chrome tier ──
+   A chat panel is a WINDOW with a TITLE BAR, two CONTROL plates and a SOCKET.
+   Building it out of anything else would announce it as a foreign object,
+   which is exactly the fault the shell prompt had. So it reuses the language
+   whole: #chatHead joined the h3/.frame rule above (rivets for free), .chan
+   joined the control rule, #log joined the socket rule.
+
+   IT CARRIES NO LANE HUE, and that is deliberate rather than incidental. A
+   section.game takes the room's --acc on its frame and its title-bar groove;
+   the chat window takes --line and --edge-lit instead. Persistent chrome that
+   re-tints per room would be a SECOND multi-hue element in the chrome, which
+   is the thing DESIGN.md "## Never (v4)" closes Tier A against — a legend
+   turning into wallpaper. Tier B lane counts on all seven surfaces are
+   unchanged by this window's existence, which is the property "chrome must not
+   acquire a lane budget of its own" actually asks for.                     */
+#chat{
+  border:var(--border-frame) solid var(--line);
+  border-radius:var(--radius-window);
+  background:linear-gradient(var(--panel),var(--plate-foot));
+  box-shadow:
+    inset var(--bevel) var(--bevel) 0 var(--edge-lit),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--edge-shade),
+    0 var(--bevel) 0 var(--edge-shade);
+  padding:0 var(--space-7) var(--space-7);
+  margin:var(--space-9) 0 0;
+  overflow:hidden}
+#chatHead{border-top:none;
+  margin:0 calc(var(--space-7) * -1) var(--space-7);
+  padding:var(--space-4) var(--space-7);
+  /* the groove closes NEUTRAL — see the tier note above */
+  box-shadow:0 var(--bevel) 0 var(--edge-lit),
+             inset 0 var(--bevel) 0 var(--edge-lit)}
+.chan{min-height:var(--touch-min);padding:var(--space-2) var(--space-6)}
+/* The selected channel wears the pressed construction permanently, the same
+   way #tabs button.active does — position, not colour, says which one you are
+   reading. Its ink is --bone, not an accent: this is chrome. */
+.chan.active{color:var(--bone);border-color:var(--line);
+  background:linear-gradient(var(--panel),var(--field));
+  /* 2px, not the hairline the other pressed controls use: at --fs-label on a
+     two-plate group a 1px inversion is v4's own "a rumour", and the channel you
+     are reading has to be unambiguous from across the window. */
+  box-shadow:
+    inset var(--bevel) var(--bevel) 0 var(--edge-shade),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--edge-lit)}
+#log{padding:var(--space-4) var(--space-5)}
+
+/* ── 9. HELP — a second heading level, because an h3 IS a title bar ───────
+   Six windows, one per room, each opening with the title bar and its gold
+   letter-glyph plate. Topics inside cannot also be h3s: thirty title bars on
+   one page is "everything equally prominent" (checklists Ch 7), so the topic
+   is one level down — a small uppercase label behind a 2px accent edge, which
+   is the room's own single lane-3 hue and adds no lane.                    */
+.topic{border-left:var(--bevel) solid var(--acc);padding-left:var(--space-6);
+  margin:var(--space-7) 0}
+.topic h4{font-family:var(--font-ui);font-size:var(--fs-small);font-weight:bold;
+  text-transform:uppercase;letter-spacing:.12em;color:var(--bone);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
+  margin-bottom:var(--space-3)}
+.topic p{font-size:var(--fs-small);font-family:var(--font-data);color:var(--bone);
+  line-height:1.65}
+.topic p + p{margin-top:var(--space-5)}
+/* A LOCKED Help block runs four ladder channels and NOT opacity: material
+   (unlit — flat, no bevel, no foot), type colour, control presence (no topics
+   at all), and the unlock text. --opacity-locked is deliberately absent —
+   DESIGN.md's own Player note says genuine readable text takes --faint at full
+   opacity so it holds AA, and a milestone string is genuine readable text. */
+section.game.locked{background:var(--panel);box-shadow:none;
+  border-color:var(--line-soft)}
+/* The flat background drops all four rivets AT ONCE, which is the no-decay rule
+   satisfied rather than broken: what it forbids is a MISSING or OFFSET rivet on
+   a lit plate, i.e. asymmetry. An unlit plate has nothing for rivets to sit on,
+   so they are complete-or-absent and never partial. */
+section.game.locked h3{background:var(--inset);box-shadow:none;
+  border-bottom-color:var(--line-soft);color:var(--faint);text-shadow:none}
+section.game.locked .glyph{color:var(--faint);background:var(--panel);
+  box-shadow:none;border-color:var(--line-soft)}
+.lockMsg{color:var(--faint);font-style:italic;font-size:var(--fs-small);
+  font-family:var(--font-data);padding:var(--space-3) 0 var(--space-5)}
 `;
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -1317,44 +1448,85 @@ const resbar = (skip = "") => `<header id="resbar">
   <button class="helpBtn" title="Help">?</button>
 </header>`;
 
-const log = lines => `<div id="logHead">maintenance@dead-server:~$ <span class="cursor">&#9646;</span></div>
-<div id="log">${lines.map(([cls, t]) => `<div class="logline ${cls}">${t}</div>`).join("")}</div>
-<footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>`;
+// The System channel's traffic — the same four log lines the six mocks always
+// carried, unchanged. Lane 1 reaches the console: a drop is announced in its
+// own tier's hue, with the tier still spelled out beside it.
+const LOG_LINES = [
+  ["log-event", "&#9733; W1 BREACHED &mdash; Vess"],
+  ["log-loot log-event", "&#9670; Vess's Latch dropped &middot; +4% speed"],
+  ["log-loot log-plain", `drop: <span class="rar rar-epic">Epic Sentry Halberd</span> 11,200IP &middot; stashed`],
+  ["log-dim", "While you were away (3h): +48,200 copper, 6 drops."],
+];
 
-const page = ({ title, tab, note, body, skipChip, v3 = false, v4 = false, ladderExtra = "" }) => `<!doctype html>
+// The client's chat window, in place of the retired shell prompt. Two
+// channels; System carries the traffic, General is empty, and the emptiness is
+// the storytelling — nobody is left to type in it. `Players online: 1` is the
+// window's persistent counter, which is where an MMO client actually puts it
+// and the one place the number means the whole premise.
+const chat = (channel = "system") => `<div id="chat">
+  <div id="chatHead">
+    <button class="chan${channel === "system" ? " active" : ""}">System</button>
+    <button class="chan${channel === "general" ? " active" : ""}">General</button>
+    <span id="online">Players online: 1</span>
+  </div>
+  <div id="log">${channel === "system"
+    ? LOG_LINES.map(([cls, t]) => `<div class="logline ${cls}">${t}</div>`).join("")
+    : `<div class="chatEmpty">Nothing here.</div>`}</div>
+</div>`;
+
+const FOOTER = `<footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>`;
+
+// Printed on every surface, because the chat window IS on every surface.
+const CHATNOTE = `<b>Shared chrome, new this phase: the log is a chat window.</b>
+  The shell prompt that used to head this block is gone from every surface and
+  from <code>index.html</code>. It was wrong three ways &mdash; a shell inside a
+  client that has no shell; it named the server a dead one, which is decay copy
+  in a game whose premise is that the server WORKS; and its block cursor implied
+  an input that does not exist. A bottom-of-screen log in an MMO client is a
+  <b>chat panel</b>: <b>System</b> carries the traffic, <b>General</b> is empty, and
+  <code>Players online: 1</code> finally has the place an MMO client actually
+  puts it. The emptiness is the storytelling &mdash; that is ABSENCE, the
+  target feeling, where the prompt was DISREPAIR, which is banned. It is built
+  from the four existing constructions (window / title bar / control / socket)
+  and carries <b>no lane hue</b>: neutral frame, neutral groove, because
+  persistent chrome that re-tints per room would be a second multi-hue chrome
+  element and Tier A is a closed set of one. No badge, no unread count &mdash;
+  that would be an obligation mechanic.`;
+
+// `chatChannel` picks which channel the page's own chat window opens on. Help
+// opens on General so the empty state is demonstrated by the real chrome —
+// a second chat window would duplicate #online and its ids on one page.
+const page = ({ title, tab, note, body, skipChip, v3 = false, v4 = false,
+  ladderExtra = "", fontOverride = "", chatChannel = "system" }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title} &mdash; Maintenance Mode mock</title>
 <!--
-  Phase 6 mock, .design-foundations/plans/2026-07-25-ui-dedup-audit.md
-  Tokens : internal/DESIGN.md (Phase 3 LOCKED + Phase 4 component/dimension tiers)
+  Phase 3 mock, .design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md
+  Tokens : internal/DESIGN.md ## Visual DNA v4 (+ v3 construction, Phase 3/4 tiers)
   Blocks : internal/JOURNEY.md ## Page specs (order) + ## Fact ownership (state)
-  Copy   : internal/JOURNEY.md Phase 5 microcopy, verbatim
-  Save state rendered by all six mocks:
+  Copy   : internal/JOURNEY.md Phase 5 microcopy, as cut by the Phase 2
+           relocation table (teaching prose lives on the Help tab now)
+  Save state rendered by all seven mocks:
   ${S.replace(/\n/g, "\n  ")}
   Self-contained: no external stylesheet, font, script or image.
   Generated by internal/mocks/build.mjs — edit that, not this file.
 -->
-<style>${TOKENS}${v3 || v4 ? TOKENS_V3 : ""}${v4 ? TOKENS_V4 : ""}${TOKENS_END}${CSS}${v3 || v4 ? CSS_V3 : ""}${v4 ? CSS_V4 : ""}</style>
+<style>${TOKENS}${v3 || v4 ? TOKENS_V3 : ""}${v4 ? TOKENS_V4 : ""}${fontOverride}${TOKENS_END}${CSS}${v3 || v4 ? CSS_V3 : ""}${v4 ? CSS_V4 : ""}</style>
 </head>
 <body>
 <main class="client${v4 ? ` t-${tab}` : ""}">
-<div class="mockNote"><b>MOCK</b> &mdash; not the shipped client. ${note}</div>
+<div class="mockNote"><b>MOCK</b> &mdash; not the shipped client. ${note}
+  <br><br>${CHATNOTE}</div>
 ${resbar(skipChip)}
 ${tabs(tab)}
 ${body}
 <div class="mockNote">${LADDER}</div>
 ${ladderExtra}
-${log([
-  ["log-event", "&#9733; W1 BREACHED &mdash; Vess"],
-  ["log-loot log-event", "&#9670; Vess's Latch dropped &middot; +4% speed"],
-  // lane 1 reaches the console too: a drop is announced in its own tier's hue,
-  // with the tier still spelled out beside it.
-  ["log-loot log-plain", `drop: <span class="rar rar-epic">Epic Sentry Halberd</span> 11,200IP &middot; stashed`],
-  ["log-dim", "While you were away (3h): +48,200 copper, 6 drops."],
-])}
+${chat(chatChannel)}
+${FOOTER}
 </main>
 </body>
 </html>`;
@@ -1363,12 +1535,17 @@ ${log([
    Ladder key — the same sentence on every mock, so a reviewer reads the
    three states the same way on all six surfaces.
    ───────────────────────────────────────────────────────────────────────── */
-const LADDER = `<b>State ladder</b> (this plan's whole point). <b>live</b>: gold
-left edge, bone name, allocation control, a filling bar. <b>dormant</b> (unlocked,
-idle): neutral left edge, dim name, faint stat, control present reading 0, empty
-track. <b>locked</b>: no left edge, whole row at <code>--opacity-locked</code>,
-<b>no allocation control at all</b>, and the row says the word "locked" and its
-unlock condition. Three independent channels per state &mdash; edge, type, controls.`;
+const LADDER = `<b>State ladder</b> (this plan's whole point). <b>live</b>: a
+4px left edge in <b>THIS ROOM'S accent</b> (v4 &mdash; gold left that slot and
+became the client's own voice), name in the same accent, allocation control, a
+filling bar, and the row lifted onto its own lit ground. <b>dormant</b>
+(unlocked, idle): neutral left edge, dim name, faint stat, control present
+reading 0, empty track, lying flat in the socket. <b>struggling</b>:
+<code>--warn</code> edge and stat, which no accent is placed near.
+<b>locked</b>: no left edge, unlit, whole row at
+<code>--opacity-locked</code>, <b>no allocation control at all</b>, and the row
+says the word "locked" and its unlock condition. Six independent channels
+&mdash; edge, type, controls, unlock text, material lift, socket lit-ness.`;
 
 // Files that draw a tab in two states repeat that tab's chrome once per state.
 // That is one block rendered twice, not one fact printed twice.
@@ -1434,12 +1611,13 @@ const zoneRow = (z, i) => {
   return row({ ...common, cls: "dormant", allocHtml: alloc(0, []), stat: "no bots here", fill: 0 });
 };
 
+// RELOCATED (Phase 2 table, Grind row): the Zones h3 sub taught the hold
+// number, the 50 kills/s cap, the 1-in-400 drop chance and what an IP band is.
+// All four are general mechanics, none of them change with state, and all four
+// now live at Help -> Grind -> "Zones". The heading is bare; every per-row
+// number the decision actually needs is untouched.
 const zonesSection = `<section class="game">
-  <h3>${g("Z")}Zones<span class="sub">&mdash; put bots on a zone. Their combined damage
-    has to clear the zone's hold number or they earn nothing at all. A zone they
-    can hold kills up to 50 mobs a second; every kill pays copper and has a
-    1-in-400 chance to drop a piece of gear. IP is the power band those drops
-    roll in &mdash; deeper zones drop higher.</span></h3>
+  <h3>${g("Z")}Zones</h3>
   <div class="rowlist">${ZONES.map(zoneRow).join("")}</div>
 </section>`;
 
@@ -1468,37 +1646,25 @@ const wallSelect = second => `<div class="wallLbl">Doors you've opened</div>
     <button class="wallBtn active">W2 Maren &middot; ${second}</button>
   </div></div>`;
 
-// Boss has no rowlist, so the state ladder has no surface here to prove itself
-// on. It is drawn in the ANNOTATION layer instead — dashed, labelled, using
-// Grind's own verbatim rows — so the reviewer can check on real pixels that a
-// richer material language did not flatten a channel. Never product copy.
-const MATERIAL_SPECIMEN = `
-<div class="stateLabel">specimen &mdash; grind's real rowlist under v3 carpentry
-  (not a boss-tab block)</div>
-<div class="mockNote"><b>Grind is the honest test of a window language</b> &mdash;
-  no hero, no name-plate, no display type, 15 rows. This is <b>the same section, the
-  same rows and the same copy <code>grind.html</code> renders</b>: one shared constant
-  used twice, not a lookalike. What has to read here is <b>depth and pressability
-  without a single hero-only treatment</b>. The section is a <b>window</b> (3px frame,
-  outer bevel, rounded, standing on a hard foot); its <code>h3</code> is the
-  <b>title bar</b>; the rowlist is a <b>socket</b> cut into the window body; the rows
-  are <b>leaves</b> in it separated by two-tone grooves; the alloc controls are small
-  pressable <b>plates</b> around a socketed readout. If this reads flat, the language
-  has failed and the remaining five surfaces would inherit the failure.
-  <br><br><b>v4 adds the colour test.</b> This specimen is wrapped in Grind's own
-  room class, so it renders the <b>two-lane maximum</b> the co-occurrence rule
-  allows: <b>lane 3</b> (Grind's accent &mdash; the window frame, the title bar's
-  groove, the live row's edge and name) plus <b>lane 4</b> (the power band &mdash;
-  each zone's IP range in a filled heat chip, cold at z1, hot at z15). Note the
-  chip lane sits at L* ~16 while the accent sits at L* 59: they are in different
-  <b>luminance</b> tiers, which is what stops them competing, not their hues.
-  <b>The state ladder is the thing to check here</b> &mdash; live now wears the
-  ROOM's colour instead of gold, and <b>dormant / struggling / locked must still
-  read apart at 375px</b>. <code>--warn</code> still owns struggling alone.</div>
-<div class="t-grind">${zonesSection}</div>`;
+/* DELETED, Phase 3 — MATERIAL_SPECIMEN.
+   It existed for one reason: to preview Grind's rowlist under the new
+   carpentry BEFORE grind.html carried it. grind.html carries it now, which is
+   this phase, so the specimen is a preview of a page you can open.
+
+   It also had to go on two counts of its own. (a) Phase 2.5 correctly scoped
+   `--acc` to `main.t-*` so the tab buttons could not silently set it — and the
+   specimen was a `<div class="t-grind">`, not a `main`, so it inherited BOSS's
+   accent while its own annotation claimed it proved "lane 3, Grind's accent".
+   Doc and pixels disagreed one level down from the disagreement Phase 2.5 was
+   fixing. (b) It rendered the whole Zones section a second time inside
+   boss.html, which is a standing DW-3.4 exposure for a block that no longer
+   earns it. Deleting is a smaller diff than inventing a scoping class to fix a
+   preview of a page that now exists.
+
+*/
 
 const boss = page({
-  title: "Boss", tab: "boss", v4: true, ladderExtra: MATERIAL_SPECIMEN,
+  title: "Boss", tab: "boss", v4: true,
   note: `Boss tab, recomposed against <b>DESIGN.md's Visual DNA v4</b> &mdash;
     v3's MapleStory construction taken to full weight, plus the amended colour
     rule. Not one string, fact owner or block position changed. <b>Construction:</b>
@@ -1604,15 +1770,27 @@ const tierRow = t => row({
 });
 
 const training = page({
-  title: "Training", tab: "training",
-  note: `Training tab. 9 of 13 script tiers are locked and not one of them draws
-    an allocation control &mdash; the audit counted 21 inert clusters across this
-    tab and Grind. The unlock rule now lives in the section header, which is why
-    no locked row names its predecessor any more. The rig stats line keeps only
-    the one fact the four rig buttons do not already carry: each button prints
-    its lever's current value on the left of its own <code>&rarr;</code>.`,
+  title: "Training", tab: "training", v4: true,
+  note: `Training tab, recomposed against <b>DESIGN.md's Visual DNA v4</b> and cut
+    to the <b>Phase 2 relocation table</b>. 9 of 13 script tiers are locked and not
+    one of them draws an allocation control &mdash; the audit counted 21 inert
+    clusters across this tab and Grind. The rig stats line keeps only the one fact
+    the four rig buttons do not already carry: each button prints its lever's
+    current value on the left of its own <code>&rarr;</code>.
+    <b>Colour:</b> <b>one</b> Tier-B lane &mdash; lane 3, Training's accent
+    (<code>--acc-training</code>, the script console), on chrome only: the window
+    frames, the title-bar grooves, and the live row's edge and name. Nothing on
+    this tab has a rarity or a power band.
+    <b>Copy:</b> five relocations land here &mdash; the population bar's
+    differentiation clause, the ATK sub, the SPEED sub, the Enhance squad sub and
+    the Ban Wave teaching paragraph. Every heading is bare and every number,
+    price, cap and state readout is untouched. <b>The unlock rule moved with the
+    ATK sub</b>, so read the locked rows as the ladder alone: no edge, unlit, no
+    control, and the word "locked" with its own condition. The two short flavor
+    lines stay by the rule's own carve-out (<code>&mdash; the anti-cheat notices
+    the farm</code>).`,
   body: `<section class="game">
-  <h3>Rig</h3>
+  <h3>${g("R")}Rig</h3>
   <div class="rig">
     <button>multiclient &middot; 248 &rarr; 297 bot slots &middot; 119,647c</button>
     <button class="affordable">account creator &middot; 240 &rarr; 270 bots per hour &middot; 12,069c</button>
@@ -1621,38 +1799,42 @@ const training = page({
   </div>
   <div class="sub">lost in the Dungeon 47</div>
   <div class="barTrack"><div class="barFill" style="width:93%"></div></div>
-  <div class="sub">231 of 248 slots filled &mdash; this bar is every bot you own;
-    the counter at the top of the screen is the ones not assigned to anything.</div>
+  ${/* RELOCATED (Phase 2 table, Training/#popFill row): only the differentiation
+        clause moves — "this bar is every bot you own; the counter at the top of
+        the screen is the ones not assigned to anything" is a general fact about
+        two chrome elements, true whatever the numbers are. Help -> Training ->
+        "Bot pool". The count itself is state and stays. */""}
+  <div class="sub">231 of 248 slots filled</div>
 
-  <h3>ATK scripts<span class="sub">&mdash; put bots on a script to run it. Every
-    fill it completes adds its ATK permanently. Any one script tops out at 50
-    fills per second, and the next script down unlocks once the one above it has
-    enough fills.</span></h3>
+  ${/* RELOCATED: the ATK sub (fill -> gain, the 50/s cap, the unlock rule) and
+        the SPEED sub (same-as-ATK, the knee) merge into one Help topic, which
+        is what the original "same as ATK" line already intended.
+        Help -> Training -> "Scripts". */""}
+  <h3>${g("A")}ATK scripts</h3>
   <div class="caption">+16.65 ATK trained so far &middot; +0.0275/s right now</div>
   <div class="rowlist">${atkTiers.map(tierRow).join("")}</div>
 
-  <h3>SPEED scripts<span class="sub">&mdash; same as ATK, for hits per second.
-    Past 9 hits/s on this door the returns shrink: every point still counts, just
-    less. Each deeper Warden raises that number.</span></h3>
+  <h3>${g("S")}SPEED scripts</h3>
   <div class="caption">+0.13 hits/s trained so far &middot; +0.00034/s right now</div>
   <div class="rowlist">${speedTiers.map(tierRow).join("")}</div>
 
-  <h3>Enhance squad<span class="sub">&mdash; bots that keep pressing enhance on
-    one item for you. Same odds and the same copper cost as doing it yourself;
-    they just never stop. Pick the slot and the plus to stop at. The odds and the
-    fallout are on the Player tab.</span></h3>
+  ${/* RELOCATED: Help -> Training -> "Enhance squad". The POINTER ("the odds and
+        the fallout are on the Player tab") travels WITH the explanation rather
+        than staying behind, because out of its teaching sentence it would be a
+        bare cross-reference to nothing. */""}
+  <h3>${g("E")}Enhance squad</h3>
   <div class="runControls">
     <span class="seg"><button>weapon</button><button class="active">armor</button><button>charm</button></span>
     <label>stop at + <input class="ipDial" value="15" readonly></label>
   </div>
   <div class="caption">one try every 9.4s &middot; 83,215c each</div>
 
-  <h3>Ban Wave<span class="sub">&mdash; the anti-cheat notices the farm</span></h3>
-  <p class="caption">Banking a Ban Wave resets your bots, your training and your
-    copper to the start. Everything your character owns stays: gear, plusses,
-    scrap, trophies, Armory ranks, titles and door progress. In exchange you bank
-    &radic;(training fills) as Scripts, and every Script permanently adds +1%
-    damage. Scripts never reset.</p>
+  ${/* RELOCATED: the teaching paragraph (what resets, what survives, the root
+        formula, the permanent +1%) -> Help -> Training -> "Ban Wave", folded in
+        with the retired #helpModal's own two paragraphs. The flavor sub STAYS
+        by the stays/moves rule's explicit carve-out: it names an event and
+        explains nothing. The armed-state destructive confirm is untouched. */""}
+  <h3>${g("B")}Ban Wave<span class="sub">&mdash; the anti-cheat notices the farm</span></h3>
   <div class="runControls">
     <span class="caption">+206 Scripts ready, from 42,436 training fills &middot; 0 Ban Waves so far</span>
   </div>
@@ -1661,11 +1843,26 @@ const training = page({
 });
 
 const grind = page({
-  title: "Grind", tab: "grind",
-  note: `Grind tab, all 15 zones, four states side by side: <b>Salt Flats</b>
-    live and held, <b>The Second Door</b> live and failing (DESIGN.md's REQUIRED
-    struggling state, which the shipped build still renders identically to
-    locked), eight dormant zones, five locked zones with no controls at all.`,
+  title: "Grind", tab: "grind", v4: true,
+  note: `Grind tab under <b>DESIGN.md's Visual DNA v4</b> &mdash; and the surface
+    where <b>lane 4, the power band</b>, is proved. All 15 zones, four states side
+    by side: <b>Salt Flats</b> live and held, <b>The Second Door</b> live and
+    failing (DESIGN.md's REQUIRED struggling state, which the shipped build still
+    renders identically to locked), eight dormant zones, five locked zones with no
+    controls at all.
+    <b>Two hue lanes, which is the co-occurrence cap:</b> <b>lane 3</b> (Grind's
+    accent &mdash; window frame, title-bar groove, the live row's edge and name)
+    and <b>lane 4</b> (every zone's IP range in a filled heat chip, cold at z1,
+    hot at z15). They cannot compete: the chip ground sits at <b>L* ~16.5</b>
+    while the accent ink sits at <b>L* 59</b> &mdash; different luminance tiers,
+    which is what separates them, not their hues. Every chip prints the IP range
+    inside it, so the ordering survives with the colour removed.
+    <b>The state ladder is the thing to check here</b> &mdash; live wears the
+    ROOM's colour now instead of gold, and dormant / struggling / locked must
+    still read apart at 375px. <code>--warn</code> still owns struggling alone.
+    <b>Copy:</b> one relocation &mdash; the Zones sub (hold number, 50 kills/s
+    cap, 1-in-400 drop chance, what an IP band is) is now Help &rarr; Grind.
+    Every per-row number a bot-placement decision needs is still on the row.`,
   body: zonesSection,
 });
 
@@ -1770,23 +1967,25 @@ const player = page({
     an opacity multiplier: this is genuine readable text, so it holds AA.
     <code>--dim</code>/<code>--recede</code>/<code>--faint</code> are BANNED on
     a rarity plate (4.04&ndash;4.63:1 there) &mdash; the plates carry
-    <code>--bone</code> and take their hierarchy from size and weight instead.`,
+    <code>--bone</code> and take their hierarchy from size and weight instead.
+    <b>Copy, new in Phase 3:</b> the <b>six Player relocations</b> are applied
+    here too, though this tab was built in Phase 2.5. Leaving them would have put
+    the same six explanations on Player <i>and</i> on Help at once, which is the
+    tutorial-in-a-HUD this plan exists to remove. Every heading is bare; the
+    safeguard toggle keeps its own label, every enhance line keeps its cost,
+    chance and fallout, every scrap price stays, and the failstack HUD stays
+    because it is state.`,
   body: `<section class="game">
-  <h3>${g("C")}Combat Power<span class="sub">&mdash; your damage per second against the
-    door: ATK multiplied by hits per second. "Haste" anywhere on this tab is a
-    percentage added to hits per second. Everything below feeds these two
-    numbers.</span></h3>
+  ${/* RELOCATED (Phase 2 table, Player rows). Six subs leave this tab; the three
+        self-labelling chips, every price, chance, fallout and count stay. */""}
+  <h3>${g("C")}Combat Power</h3>
   <div class="chipGroup" id="powerBreakdown">
     <div class="chip"><div class="chipVal"><b>2,481,600</b></div><div class="chipLbl">combat power</div></div>
     <div class="chip"><div class="chipVal"><b>94,000.0</b></div><div class="chipLbl">ATK</div></div>
     <div class="chip"><div class="chipVal"><b>26.4</b></div><div class="chipLbl">hits/s</div></div>
   </div>
 
-  <h3>${g("G")}Gear <span id="stacksHud">&middot; 6 failstacks, +6% on your next attempt</span>
-    <span class="sub">&mdash; three slots. Enhancing raises an item's plus, and
-    every plus multiplies its base power by 1.12. A failed attempt anywhere banks
-    a failstack worth +1 percentage point on your next attempt, up to +15; a
-    success spends the whole bank.</span></h3>
+  <h3>${g("G")}Gear <span id="stacksHud">&middot; 6 failstacks, +6% on your next attempt</span></h3>
   <label class="toggleLine"><input type="checkbox"> safeguard &middot; 3&times; the
     copper, but a failure doesn't cost you a plus. Only works while the item is
     +5 to +14 &mdash; it can't protect a push past +15.</label>
@@ -1836,15 +2035,10 @@ const player = page({
     </div>
   </div>
 
-  <p class="sub">Reforge rerolls an item's affixes for scrap of its own rarity. It
-    can't change the rarity or the IP &mdash; only which affixes it has and what
-    they roll. You see the result before you decide whether to keep it.</p>
+  ${/* RELOCATED: the Reforge teaching line -> Help -> Player -> "Reforge". Each
+        slot's own Reforge button and its scrap price stay put. */""}
 
-  <h3>${g("S")}Stash<span class="sub">&mdash; where kept drops land, up to 50. An item's
-    rarity is how many affixes it rolled (Common 0, Origin 6) and its IP is how
-    strong those affixes roll. Salvaging turns an item into scrap of its own
-    rarity. Locking one protects it from auto-salvage, the bulk sweep and the
-    stash-full clear-out.</span></h3>
+  <h3>${g("S")}Stash</h3>
   <div class="scrapWallet">
     <span class="scrapPill r-common">124 Common</span>
     <span class="scrapPill r-rare">38 Rare</span>
@@ -1903,18 +2097,10 @@ const player = page({
     <div class="sub">&hellip;and 7 more (salvage to clear)</div>
   </div>
 
-  <h3>${g("T")}Trophies <span class="caption">0/10 sets complete</span>
-    <span class="sub">&mdash; each Warden has a 7-piece set. Breaking its door
-    gives you the first piece; the rest come from farming that Warden on the Boss
-    tab. A complete set multiplies your damage by 1.5.</span></h3>
+  <h3>${g("T")}Trophies <span class="caption">0/10 sets complete</span></h3>
   ${SETS.map(trophySet).join("")}
 
-  <h3>${g("A")}Armory<span class="sub">&mdash; every drop is logged here against its own
-    entry, one per item name, whether you keep it or scrap it. Rarer copies count
-    for more: a Common is worth 1 point, an Origin 13. The first rank costs 3
-    points and each rank after costs 60% more, up to rank 12. Weapons rank ATK,
-    armor ranks haste, charms rank copper &mdash; and the ranks survive every Ban
-    Wave.</span></h3>
+  <h3>${g("A")}Armory</h3>
   <div class="caption">rank 29 across 10 entries &middot; +3.35% ATK &middot;
     +4.34% haste &middot; +0.50% copper</div>
   <div class="amScroll"><div id="armoryGrid">${armory}</div></div>
@@ -1932,23 +2118,27 @@ const TREE = [
   ["buried scripts", "+5% ATK and hits per training fill, per rank", "rank 2 &middot; &times;1.10 now", "Buy &middot; 72 Cache"],
 ];
 const delve = page({
-  title: "Delve", tab: "delve",
-  note: `Delve tab. The audit named this the structural model the others should
-    follow, so nothing is reordered. Two things change, both from Phase 5: every
-    buy button carries the verb (G5 was a bare price stretched across the row)
-    and every rank readout prints the multiplier actually folded into Combat
-    Power, not just its per-rank gain.`,
+  title: "Delve", tab: "delve", v4: true,
+  note: `Delve tab under <b>DESIGN.md's Visual DNA v4</b>. The audit named this the
+    structural model the others should follow, so nothing is reordered. Two things
+    carried from Phase 5 stay: every buy button carries the verb (G5 was a bare
+    price stretched across the row) and every rank readout prints the multiplier
+    actually folded into Combat Power, not just its per-rank gain.
+    <b>Colour:</b> <b>one</b> Tier-B lane &mdash; lane 3, Delve's accent
+    (<code>--acc-delve</code>, the descent), on chrome only. A Cache-tree row
+    deliberately takes <b>no</b> live edge: a purchase is not an allocation, so an
+    accent edge would mark every row and discriminate nothing. Affordability is
+    the button's own job.
+    <b>Copy:</b> two relocations &mdash; the Delve sub (the depth formula, the
+    Cache-per-floor rate) and the Cache tree sub (prices rise per rank) are now
+    Help &rarr; Delve. The live depth, deepest-ever, Cache/s and balance stay.`,
   body: `<section class="game">
-  <h3>Delve<span class="sub">&mdash; your character digs on their own down here,
-    no input needed. Depth is however deep your Combat Power clears: floor 1
-    needs 10 damage per second and each floor after needs 70% more. Every extra
-    floor pays 35% more Cache per second, and Cache is the buried server data you
-    spend below.</span></h3>
+  ${/* RELOCATED: Help -> Delve -> "How depth works" and "Cache tree". */""}
+  <h3>${g("D")}Delve</h3>
   <div id="delveState">depth <b>27</b> &middot; deepest ever 27 &middot; <b>2,974</b> Cache/s</div>
   <div id="delveCache"><b>8,420</b> Cache banked</div>
 
-  <h3>Cache tree<span class="sub">&mdash; each row buys one rank. Every rank you
-    buy raises that row's next price.</span></h3>
+  <h3>${g("C")}Cache tree</h3>
   <div class="rowlist">
     ${/* No .active edge here: a Cache-tree row is a purchase, not an allocation,
           so the gold edge would mark every row and discriminate nothing. The
@@ -1978,16 +2168,17 @@ const dutyRows = running => [
   stat: d.stat,
 })).join("");
 
-const howItWorks = `<h3>How it works</h3>
-<div class="howItWorks">
-  <p>Your bots fight down through the floors on their own, and each floor takes longer than the last.</p>
-  <p>Some of them get banned on every floor, faster the deeper they go. When too many abilities go unblocked, the party dies.</p>
-  <p>If they die you keep 40% of what they found. Pull out early and you keep all of it.</p>
-</div>`;
+/* RELOCATED, WHOLE BLOCK: `How it works` is gone from the live tab. Its own
+   register row said its sole job was general teaching — "nothing else mentions
+   floors or the wipe rule" — so there is nothing left after the teaching is
+   cut. It is now Help -> Dungeon -> "How a run works", verbatim. */
 
-const journal = `<h3>Boss abilities<span class="sub">&mdash; there's no wiki and
-  nobody to ask. You find out what an ability does by running into it. What you
-  learn here is permanent: it survives a Ban Wave.</span></h3>
+// RELOCATED (Boss abilities): only the flavor OPENER stays, by the stays/moves
+// rule's short-flavor carve-out. It names the situation and explains no
+// mechanic. How discovery works and that it survives a Ban Wave are now
+// Help -> Dungeon -> "Boss abilities journal".
+const journal = `<h3>${g("B")}Boss abilities<span class="sub">&mdash; there's no
+  wiki and nobody to ask.</span></h3>
 <div class="rowlist">
   ${row({ cls: "active", name: "Sunder", stat: "met and blocked" })}
   ${row({ name: "Mass Dispel", stat: "met on a run, never blocked" })}
@@ -1995,27 +2186,33 @@ const journal = `<h3>Boss abilities<span class="sub">&mdash; there's no wiki and
 </div>`;
 
 const dungeon = page({
-  title: "Dungeon", tab: "dungeon",
-  note: `Dungeon tab. ${TWO_STATES} The audit's three-statement problem is
-    answered by three teaching locations owning one mechanic each: <b>Assign
-    bots</b> owns blocking, <b>Difficulty</b> owns what difficulty changes,
-    <b>How it works</b> owns the run loop. No duty row restates the block rule,
-    no stat column restates the needed count, no journal row restates an effect,
-    and the running state line no longer restates the pull-out floor two rows
-    below it. The intro that filled the first screen is now three lines,
-    <b>below</b> the controls.`,
+  title: "Dungeon", tab: "dungeon", v4: true,
+  note: `Dungeon tab under <b>DESIGN.md's Visual DNA v4</b>. ${TWO_STATES}
+    <b>Colour:</b> <b>one</b> Tier-B lane &mdash; lane 3, Dungeon's accent
+    (<code>--acc-dungeon</code>, the difficulty ladder). It is the accent that
+    sits nearest <code>--warn</code> on the wheel, and this is the surface where
+    that has to be checked: <b>Sunder</b> is live (accent edge, accent name) and
+    <b>Mass Dispel</b> is struggling (<code>--warn</code> edge, <code>--warn</code>
+    stat) two rows apart. They must not read as the same statement.
+    <b>Copy:</b> five relocations, seven cut sites &mdash; the <b>whole</b>
+    <code>How it works</code> block is gone (its own register row said its only
+    job was general teaching, so nothing remains once the teaching is cut), the
+    <code>Assign bots</code> sub and the pull-out-floor helper are cut from
+    <b>both</b> states, the difficulty helper is cut, and <code>Boss
+    abilities</code> keeps only its flavor opener. What stays is every number the
+    decision needs: each duty's own <code>&minus;N% damage every floor it's
+    unblocked</code>, the needed-bot count, the assigned/blocked state, both
+    input values, the proxy toggle's own price, and the live projections.`,
   body: `<div class="stateLabel">state &mdash; idle</div>
 <section class="game">
-  <h3>Dungeon</h3>
+  <h3>${g("D")}Dungeon</h3>
   <div id="instState">At difficulty <b>6</b>: 3 abilities to block, 3 bots needed
     on each. Deepest floor so far: 12.</div>
   <div class="caption">Sending 5 bots. They should reach about floor 6 before too
     many are banned.</div>
 
-  <h3>Assign bots<span class="sub">&mdash; each ability needs a set number of bots
-    on it to be blocked. An ability you leave unblocked cuts your damage every
-    floor it fires, and when your damage falls below 25% of normal the party
-    dies. Bots you send are spent &mdash; you get back whoever survives.</span></h3>
+  ${/* RELOCATED: Help -> Dungeon -> "Assigning bots". Cut from BOTH states. */""}
+  <h3>${g("A")}Assign bots</h3>
   <div class="rowlist">${dutyRows(false)}</div>
 
   <div class="runPanel">
@@ -2023,32 +2220,27 @@ const dungeon = page({
       <label>Difficulty <input class="ipDial" value="6" readonly></label>
       <label>Pull out at floor <input class="ipDial" value="9" readonly></label>
     </div>
-    <div class="sub">Higher difficulty means more abilities to block, more bots on
-      each, better loot &mdash; and bots banned faster. You set it; it never drops
-      on its own. If the party dies you keep 40% of what they found.</div>
-    <div class="sub">Your bots come home with everything the moment they clear this
-      floor. You can change it mid-run.</div>
+    ${/* RELOCATED: the difficulty helper -> Help -> Dungeon -> "Difficulty",
+          and the pull-out-floor helper -> Help -> Dungeon -> "Pull-out floor".
+          Both are general rules about a setting, true whatever it is set to.
+          The labels and the live values stay. */""}
     <label class="toggleLine"><input type="checkbox" checked> Buy proxies &middot;
       250c per run, 25% fewer bots banned</label>
     <div class="ctaRow"><button class="cta">Send bots in</button></div>
   </div>
 
-  ${howItWorks}
   ${journal}
 </section>
 
 <div class="stateLabel">state &mdash; in progress</div>
 <section class="game">
-  <h3>Dungeon</h3>
+  <h3>${g("D")}Dungeon</h3>
   <div id="instState">Floor <b>7</b> &middot; 14 items so far &middot; dealing
     <b>53%</b> damage.</div>
   <div class="caption">3 bots still alive &middot; about 21% of them get banned on
     the next floor.</div>
 
-  <h3>Assign bots<span class="sub">&mdash; each ability needs a set number of bots
-    on it to be blocked. An ability you leave unblocked cuts your damage every
-    floor it fires, and when your damage falls below 25% of normal the party
-    dies. Bots you send are spent &mdash; you get back whoever survives.</span></h3>
+  <h3>${g("A")}Assign bots</h3>
   <div class="rowlist">${dutyRows(true)}</div>
 
   <div class="runPanel">
@@ -2056,17 +2248,229 @@ const dungeon = page({
       <label>Difficulty <input class="ipDial" value="6" readonly disabled></label>
       <label>Pull out at floor <input class="ipDial" value="9" readonly></label>
     </div>
-    <div class="sub">Your bots come home with everything the moment they clear this
-      floor. You can change it mid-run.</div>
     <div class="ctaRow"><button class="cta">Pull out now &mdash; keep all 14 items</button></div>
   </div>
 </section>`,
 });
 
 /* ─────────────────────────────────────────────────────────────────────────
+   7. HELP — a NEW surface. internal/JOURNEY.md "### Help" is the spec; every
+   string below is that spec's Final-copy column, verbatim, and this is where
+   all 22 relocated explanations land.
+
+   Construction: six windows, one per room, in TAB-BAR ORDER — the spec's own
+   Jakob's-law argument, so "where do I find X" carries over from a mental
+   model the player already has. An h3 IS a title bar in this DNA, so topics
+   cannot also be h3s (six sections x five topics = thirty title bars, which is
+   "everything equally prominent"). They are one level down instead: a small
+   uppercase h4 behind a 2px accent edge.
+   ───────────────────────────────────────────────────────────────────────── */
+const topic = (name, ...paras) => `<div class="topic"><h4>${name}</h4>${
+  paras.map(p => `<p>${p}</p>`).join("")}</div>`;
+
+const helpRoom = (glyph, room, topics) => `<section class="game">
+  <h3>${g(glyph)}${room}</h3>
+  ${topics}
+</section>`;
+
+// A gated block renders its milestone string and nothing else — the same "no
+// spoilers" rule the tab bar itself follows, and the string is reused verbatim
+// from the tab button `title` that already ships (main.js:241-245).
+const helpLocked = (glyph, room, msg) => `<section class="game locked">
+  <h3>${g(glyph)}${room}</h3>
+  <p class="lockMsg">${msg}</p>
+</section>`;
+
+const help = page({
+  title: "Help", tab: "help", v4: true,
+  note: `<b>Help &mdash; a NEW surface</b>, built from
+    <code>internal/JOURNEY.md</code>'s Phase 2 page spec. This is where the
+    <b>22 relocated explanations</b> land: every general "how X works" rule the
+    six live tabs used to print beside the number it was already displaying.
+    Reference only &mdash; <b>no action resolves here</b>, so there is no
+    primary action and no control that changes state.
+    <b>Six blocks in tab-bar order</b>, which is the spec's own Jakob's-law
+    argument: the mental model for "where do I find X" carries over unchanged.
+    Each block is a <b>window</b> with the room's name on its <b>title bar</b>
+    and its <b>gold letter-glyph plate</b>; topics inside are one level down
+    (a small uppercase label behind a 2px accent edge) because an
+    <code>h3</code> <i>is</i> a title bar in this DNA and thirty of them would
+    be no hierarchy at all.
+    <b>Colour:</b> <b>one</b> Tier-B lane &mdash; lane 3, Help's accent
+    (<code>--acc-help</code>, the manual, paper). Nothing here has a rarity, a
+    Warden or a power band.
+    <b>One deviation from the spec's verbatim copy, declared:</b> the
+    <b>Difficulty</b> topic drops its closing sentence &mdash; the one restating
+    what a wipe pays out &mdash; because <b>How a run works</b>, three topics
+    above it, already owns the wipe rule.
+    On the live Dungeon tab those two strings sat in different blocks; landing
+    them both on one page made the duplication adjacent, and one fact keeps one
+    owner.
+    ${TWO_STATES} The second is a <b>gated</b> block: the ladder without an
+    opacity multiplier &mdash; unlit material, <code>--faint</code> type, no
+    topics at all, and the milestone string reused verbatim from the tab
+    button's own <code>title</code>. Genuine readable text keeps full opacity so
+    it holds AA. Below that, the <b>General</b> channel of the chat window,
+    which is the state you cannot see while System has traffic.`,
+  body: `${helpRoom("B", "Boss", [
+    topic("Crits", `Every hit has a chance to crit for extra damage, and a crit
+      has its own chance to crit again &mdash; a super-crit &mdash; for even
+      more. The Boss tab's Average row is what your damage actually multiplies
+      by once both chances are folded in.`),
+    topic("Farming a cleared door", `Once a door is open, farming it rolls for
+      the rest of that Warden's trophy set every 30 seconds &mdash; each roll a
+      25% chance to drop the next piece.`),
+  ].join(""))}
+
+${helpRoom("T", "Training", [
+    topic("Bot pool", `The population bar is every bot you own, filled or not.
+      The counter at the top of the screen is only the ones not assigned to any
+      job.`),
+    topic("Scripts", `Put bots on a script to run it. Every fill it completes
+      adds its stat &mdash; ATK or hits per second &mdash; permanently. Any one
+      script tops out at 50 fills per second; the next script down unlocks once
+      the one above it has enough fills. Speed has one more rule: past a
+      threshold that rises with each deeper Warden, extra hits per second still
+      count, just less.`),
+    topic("Enhance squad", `Bots that keep pressing enhance on one item for you.
+      Same odds and the same copper cost as doing it yourself &mdash; they just
+      never stop. The odds and the fallout are on the Player tab.`),
+    topic("Ban Wave",
+      `Banking a Ban Wave resets your bots, your training and your copper to the
+       start. Everything your character owns stays: gear, plusses, scrap,
+       trophies, Armory ranks, titles and door progress. In exchange you bank
+       &radic;(training fills) as Scripts, and every Script permanently adds +1%
+       damage. Scripts never reset.`,
+      `Bank when the payout is worth the reset. Scripts are the square root of
+       your training fills, so pushing twice as long pays well under twice the
+       Scripts.`,
+      `Your bots borrow your power &mdash; each one hits at 10% of your ATK and
+       10% of your hits per second. So more damage means a faster farm too, and
+       every Ban Wave rebuilds quicker than the one before.`),
+  ].join(""))}
+
+${helpRoom("G", "Grind", [
+    topic("Zones", `Put bots on a zone. Their combined damage has to clear the
+      zone's hold number or they earn nothing at all. A zone they can hold kills
+      up to 50 mobs a second; every kill pays copper and has a 1-in-400 chance
+      to drop a piece of gear. IP is the power band those drops roll in &mdash;
+      deeper zones drop higher.`),
+  ].join(""))}
+
+${helpRoom("P", "Player", [
+    topic("Combat Power", `Your damage per second against the door: ATK
+      multiplied by hits per second. "Haste" anywhere on the Player tab is a
+      percentage added to hits per second.`),
+    topic("Enhance", `Three slots. Enhancing raises an item's plus, and every
+      plus multiplies its base power by 1.12. A failed attempt anywhere banks a
+      failstack worth +1 percentage point on your next attempt, up to +15; a
+      success spends the whole bank.`),
+    topic("Reforge", `Reforge rerolls an item's affixes for scrap of its own
+      rarity. It can't change the rarity or the IP &mdash; only which affixes it
+      has and what they roll. You see the result before you decide whether to
+      keep it.`),
+    topic("Stash", `Where kept drops land, up to 50. An item's rarity is how
+      many affixes it rolled (Common 0, Origin 6) and its IP is how strong those
+      affixes roll. Salvaging turns an item into scrap of its own rarity.
+      Locking one protects it from auto-salvage, the bulk sweep and the
+      stash-full clear-out.`),
+    topic("Trophies", `Each Warden has a 7-piece set. Breaking its door gives
+      you the first piece; the rest come from farming that Warden on the Boss
+      tab. A complete set multiplies your damage by 1.5.`),
+    topic("Armory", `Every drop is logged here against its own entry, one per
+      item name, whether you keep it or scrap it. Rarer copies count for more: a
+      Common is worth 1 point, an Origin 13. The first rank costs 3 points and
+      each rank after costs 60% more, up to rank 12. Weapons rank ATK, armor
+      ranks haste, charms rank copper &mdash; and the ranks survive every Ban
+      Wave.`),
+  ].join(""))}
+
+${helpRoom("D", "Delve", [
+    topic("How depth works", `Your character digs on their own down here, no
+      input needed. Depth is however deep your Combat Power clears: floor 1
+      needs 10 damage per second and each floor after needs 70% more. Every
+      extra floor pays 35% more Cache per second, and Cache is the buried server
+      data you spend below.`),
+    topic("Cache tree", `Each row buys one rank. Every rank you buy raises that
+      row's next price.`),
+  ].join(""))}
+
+${helpRoom("D", "Dungeon", [
+    topic("How a run works", `Your bots fight down through the floors on their
+      own, and each floor takes longer than the last. Some of them get banned on
+      every floor, faster the deeper they go. When too many abilities go
+      unblocked, the party dies. If they die you keep 40% of what they found.
+      Pull out early and you keep all of it.`),
+    topic("Assigning bots", `Each ability needs a set number of bots on it to be
+      blocked. An ability you leave unblocked cuts your damage every floor it
+      fires, and when your damage falls below 25% of normal the party dies. Bots
+      you send are spent &mdash; you get back whoever survives.`),
+    // DEVIATION, declared in the mock note and the discovery file: JOURNEY's
+    // verbatim copy ends this topic with "If the party dies you keep 40% of
+    // what they found" — the sentence "How a run works" already owns three
+    // topics up. One fact, one owner.
+    topic("Difficulty", `Higher difficulty means more abilities to block, more
+      bots on each, better loot &mdash; and bots banned faster. You set it; it
+      never drops on its own.`),
+    topic("Pull-out floor", `Your bots come home with everything the moment they
+      clear the floor you set here. You can change it mid-run.`),
+    topic("Boss abilities journal", `You find out what an ability does by
+      running into it. What you learn here is permanent: it survives a Ban
+      Wave.`),
+  ].join(""))}
+
+<div class="stateLabel">state &mdash; gated (a block whose tab has not unlocked yet)</div>
+${helpLocked("P", "Player", "Unlocks when your bots find their first piece of gear.")}
+${helpLocked("D", "Delve", "Unlocks at 100 Combat Power.")}
+${helpLocked("D", "Dungeon", "Unlocks once you have 10 bots.")}`,
+  // Help's own chat opens on General rather than rendering a second window
+  // below the page's: one #online, one set of ids, and the empty state is
+  // demonstrated by the live chrome instead of by a copy of it.
+  chatChannel: "general",
+  ladderExtra: `<div class="stateLabel">state &mdash; the chat window's General
+    channel (empty; System is the state every other mock renders). This page's
+    own chat window, below, is the specimen &mdash; it opens on General.</div>
+  <div class="mockNote"><b>The empty state is the point.</b> System carries
+    drops, kills and offline gains; General has nobody in it. It has to read
+    <b>quiet</b>, not <b>broken</b> &mdash; so the window around it is intact
+    and lit, the channel plate is plainly selectable, and the copy states the
+    fact without narrating the silence. A sentence <i>about</i> the emptiness
+    would be the decay register coming back as prose, and the whole reason the
+    shell prompt had to go is that it faked this feeling instead of earning
+    it.</div>`,
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
    Emit + check
    ───────────────────────────────────────────────────────────────────────── */
-const FILES = { boss, training, grind, player, delve, dungeon };
+/* DW-3.9's EVIDENCE, kept rather than deleted. The user's call was "render it
+   both ways and judge on the rendered surfaces"; this is the treatment that
+   LOST, preserved so the decision can be re-checked instead of taken on
+   trust. One token differs from grind.html — --font-data back to monospace —
+   and nothing else. Grind is the right specimen: 15 rows, four states, numeric
+   columns, no hero. A specimen, not an eighth surface, like
+   tabrow-specimen.html before it. */
+const grindMono = page({
+  title: "Grind (monospace specimen)", tab: "grind", v4: true,
+  fontOverride: "\n  --font-data:monospace;",
+  note: `<b>SPECIMEN, not a surface &mdash; and the treatment that was
+    REJECTED.</b> This is <code>grind.html</code>'s body with exactly one token
+    changed back: <code>--font-data</code> returns to <code>monospace</code>.
+    Everything else is byte-identical. It exists so DW-3.9's decision can be
+    re-checked on pixels instead of taken on trust &mdash; compare against
+    <code>shots/grind-375.png</code>. Three things decided it: the "botter's
+    toolkit" register is a <b>naming</b> register and survives the font change
+    intact; column alignment does not need mono, because
+    <code>font-variant-numeric:tabular-nums</code> is already on
+    <code>body</code> and holds in the UI face on both genuinely tabular blocks;
+    and this page is <b>6,438px</b> tall at 375px against the UI face's
+    <b>5,734px</b>, with the live row's stat line wrapping where the other does
+    not. Reasoning in full: DESIGN.md <code>## The data face (v4, Phase 3)</code>.`,
+  body: zonesSection,
+});
+
+const FILES = { boss, training, grind, player, delve, dungeon, help,
+  "grind-mono": grindMono };
 mkdirSync(OUT, { recursive: true });
 
 let failed = 0;
@@ -2105,5 +2509,6 @@ for (const [name, html] of Object.entries(FILES)) {
   else console.log(`ok   ${name}.html  (${(html.length / 1024).toFixed(1)}kB, no hex / no rgb / no raw px / no external refs)`);
 }
 
-console.log(failed ? `\nDW-6.2: ${failed} file(s) FAILED` : `\nDW-6.1 + DW-6.2: all 6 files pass`);
+console.log(failed ? `\nDW-3.2: ${failed} file(s) FAILED`
+  : `\nDW-3.1 + DW-3.2: all ${Object.keys(FILES).length} files pass`);
 process.exit(failed ? 1 : 0);
