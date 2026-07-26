@@ -89,11 +89,44 @@ misses**; the same failure mode as the copy sweep that walked a table instead
 of the rendered output.
 
 
+### NEXT UP — the arena's art pass (user-requested 2026-07-26)
+
+The arena was brought onto DNA v4 in `6774331` and the user's verdict was
+**"looks good, however aesthetically not a fan of the shadowy aesthetic"** and
+**"I would like the boss to be cooler — I know that needs actual art."** Both
+are open work, not defects.
+
+1. **Lose the shadowy read.** Every figure is currently a flat `--bg` mass with
+   a 2px rim, which is what DESIGN.md's canvas section literally specifies
+   ("flat dark mass with a rim-light"). Rendered, it makes the arena a set of
+   voids on a dim ground. The spec is the thing to change here, not just the
+   code — silhouette-plus-rim was chosen on paper and has now been seen. Likely
+   direction: light the figures rather than backlight them, so the Warden is an
+   OBJECT in the room instead of a hole in it, and lift the ground off `--well`
+   so there is something for a lit figure to sit against.
+2. **The Warden needs real art.** A 10-Warden sprite set, one per door, is the
+   ask. `internal/art/` has the working pipeline (SDXL + `nerijs/pixel-art-xl`
+   LoRA, the user's RTX 4070S; recreate `.venv` on first use and mirror the old
+   repo's working env). **The no-AI-generated-ICONS veto does NOT cover scene
+   or character art** — it names icons specifically, and hand-made or pipeline
+   art is explicitly permitted. New game means new art and new names; the old
+   manifest prompts are deliberately not carried over.
+   Constraints that still bind: dark ramp, no decay/ruin signifiers (the server
+   works), and each Warden has an assigned hue (`--w1`..`--w10`) the sprite
+   should sit with rather than fight.
+3. **Composition, still open from the same commit:** the scene reads more as
+   "panels with a lit seam" than as a door, and the space either side of the
+   leaves is dead. Widening the leaves to fill the frame is the cheap fix; real
+   art may make it moot, so sequence this after (2).
+
 ### Open with the user, not with the code
 
-- **Maren/Vess renders GREEN, not gold.** DNA v4 lane 2 gives each Warden its
-  own hue and the Boss name takes it. Working as specified; the user was asked
-  and has not ruled. Boss-only, cheap to reverse.
+- ~~Maren/Vess renders GREEN, not gold~~ — **RESOLVED `c92fe37`.** The user
+  chose the third option: lane 2 moved off the type and onto the nameplate, so
+  the plate carries the door's hue and the name is gold again. The same commit
+  fixed `--w-active` being pinned to `var(--w2)` with nothing ever moving it —
+  all ten Wardens had been rendering in Maren's green.
+- **The arena art pass** — see NEXT UP above.
 - **`main` is unmerged.** Waiting on a playtest.
 
 ### Hard-won rules from these sessions — do not re-derive
