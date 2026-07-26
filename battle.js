@@ -240,6 +240,70 @@ const WARDEN = [
   [-0.26, 0.84], [-0.14, 0.86], [-0.16, 0.94],              // near collar + hood
 ];
 
+/* The envelope — the Warden's aura, and the thing every boss reference had
+   that this arena did not. In all of them the figure is a near-black mass and
+   ALL the light and hue lives in a spread 2-3x its size around it. The figure
+   was never the missing piece; the envelope was.
+
+   It carries state, so it is not decoration: the spread RETRACTS as the door
+   is worn down (the same language as the seam — light going out IS health
+   draining), and FLARES under 15% where the seam already goes -crisis. That
+   makes boss progress readable at arm's length, which a 4px seam and 1.5px
+   fracture lines are not. On BREACHED it goes out entirely: the envelope is
+   the Warden's presence, and the gold flood through the open door is what
+   replaces it.
+
+   `lighter` for the whole thing, which is not a style choice — additive light
+   can only ever ADD, so the envelope can never hide the HP seam it crosses or
+   darken the wall it spills onto. It also happens to be how light works.
+
+   One geometry, ten hues: `--w-active` is the door's own colour, so the same
+   fan is Vess's olive at the first door and someone else's at the tenth. */
+// Three BLADES per side, not a fan of needles. A 4px-based spike over 130px of
+// length is a hair, and eight of them read as a scratched-in sunburst pinned to
+// the chest — the references' wings have mass, so the blades are wide at the
+// root, swept along a curve, and the near-horizontal one is dropped: a spike
+// out of the ribs reads as a skewer, not a wing.
+// Angles are biased AWAY from vertical: a 16/10 aperture is wider than it is
+// tall, so a spread that reaches up gets guillotined by the top edge and a
+// spread that reaches out fills the frame. Four blades per side, shortening
+// outward, so the wing has a filled base instead of three gaps.
+const RAYS = [[34, 1.00], [52, 0.88], [70, 0.70], [88, 0.46]];  // deg from up, length
+const ROOT = 9;                                      // half-width at the root
+const STILL = typeof matchMedia === "function"
+  && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function drawEnvelope(now, x, top, hgt, spread, crisis) {
+  const ox = x, oy = Math.round(top + hgt * 0.22);   // behind the shoulders
+  const R = hgt * 0.54 * spread * (STILL ? 1 : 1 + 0.04 * Math.sin(now / 700));
+  if (R < 6) return;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  const bloom = ctx.createRadialGradient(ox, oy, 0, ox, oy, R * 1.05);
+  bloom.addColorStop(0, c("--w-active"));            // the haze the blades sit in
+  bloom.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.globalAlpha = (crisis ? 0.42 : 0.28) * spread;
+  ctx.fillStyle = bloom;
+  ctx.fillRect(ox - R * 1.1, oy - R * 1.1, R * 2.2, R * 2.2);
+  // Low alpha on purpose. Additive fills COMPOUND where blades overlap, so the
+  // hot core near the shoulders comes free from the geometry — at 0.32 each the
+  // overlap clipped to solid and the wings read as foliage, not light.
+  ctx.fillStyle = c("--w-active");
+  ctx.globalAlpha = crisis ? 0.30 : 0.20;
+  for (const dir of [-1, 1]) for (const [deg, len] of RAYS) {
+    const a = deg * Math.PI / 180, L = R * len;
+    const sn = Math.sin(a), cs = Math.cos(a);
+    ctx.beginPath();                                  // root edge, swept to the tip
+    ctx.moveTo(ox + dir * cs * ROOT, oy + sn * ROOT);
+    ctx.quadraticCurveTo(
+      ox + dir * (sn * L * 0.6 + cs * L * 0.18), oy - cs * L * 0.6 + sn * L * 0.18,
+      ox + dir * sn * L, oy - cs * L);
+    ctx.lineTo(ox - dir * cs * ROOT, oy - sn * ROOT);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 // goneFrac 0..1 opens fracture lines of LIGHT through the silhouette — never
 // chips or notches. Light-through reads as "something is giving way";
 // material-removed reads as "this is broken", and nothing here is broken.
@@ -250,6 +314,10 @@ function drawBoss(now, broken, goneFrac) {
   const top = FLOOR - hgt;
   const lit = now < bossFlashUntil;
   const body = trace(WARDEN, x, FLOOR, u, hgt);
+
+  // Envelope first: the figure silhouettes against its own aura.
+  const crisis = goneFrac > 0.85;
+  if (!broken) drawEnvelope(now, x, top, hgt, crisis ? 1.10 : 0.45 + 0.55 * (1 - goneFrac), crisis);
 
   // LIT, not backlit — an object standing in the room, --field over the
   // --panel leaf behind it. The lighting treatment is the same as before; it
