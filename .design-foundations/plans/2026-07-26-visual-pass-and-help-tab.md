@@ -2,7 +2,7 @@
 
 **Status:** in-progress
 **Started:** 2026-07-26
-**Current Phase:** 2
+**Current Phase:** 3
 **Track:** Standard
 **Entry stage:** Design (JOURNEY.md and DESIGN.md both exist and are honored)
 **Created:** 2026-07-26
@@ -288,7 +288,7 @@ for a stripe nobody can perceive.
       mocks directly; nothing further found. Second pass PASS, detector 0/16,
       one Minor (tally arithmetic) fixed by the orchestrator.
 - [x] Committed
-Commit: (see below)
+Commit: `b2d6b17`
 Summary: JOURNEY.md now carries a stays/moves rule, a 22-row relocation table
 covering every teaching string on all six live tabs, and a full Help page spec
 (6 gated content blocks, states, final copy); the seven-tab row is re-fitted at
