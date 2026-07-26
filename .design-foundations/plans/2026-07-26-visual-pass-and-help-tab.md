@@ -2,11 +2,11 @@
 
 **Status:** in-progress
 **Started:** 2026-07-26
-**Current Phase:** 3
+**Current Phase:** 2.5
 **Track:** Standard
 **Entry stage:** Design (JOURNEY.md and DESIGN.md both exist and are honored)
 **Created:** 2026-07-26
-**Phases:** 3
+**Phases:** 4 (Phase 2.5 inserted 2026-07-26)
 
 **Review-model:** REVIEW dispatches run at `fable` (carried over from the
 previous plan's user instruction). Blind isolation unchanged.
@@ -196,6 +196,90 @@ stays. The Help tab must be reachable from the existing `?` button.
 
 ---
 
+## Phase 2.5: Visual DNA v4 — colour lanes + full-Maple construction
+
+**Stage:** Design
+**Model:** opus
+**Doctrine:** `design-dna`, `color`, `techniques`, `ai-tells`, `checklists`
+**Gate:** Full
+
+**Added 2026-07-26 by user decision after reviewing Phase 1's v3 on real
+pixels:** *"the UI itself is ok. maybe more stylised aesthetic is how i would
+have preferred. adding colour where it could potentially add more flavour
+could be nice as well."* v3 was accepted only provisionally; this phase spends
+the revision BEFORE Phase 3 propagates a look the user is lukewarm on.
+
+**Goal:** Push v3's construction to full MapleStory weight and open four
+colour lanes, proved on one hero surface and one list surface.
+
+**The amended colour rule.** DESIGN.md v3 states that `warn`/`alert`/`copper`
+are functional-semantic accents that **never** enter identity roles, and that
+gold is the sole signature. That rule is the direct cause of every surface
+reading identical, and the user has now amended it. Colour may carry identity —
+but every new hue must still attach to a MEANING the player can name. The rule
+that survives: no hue is decorative. Four lanes, all user-selected:
+
+1. **Rarity ramp promoted.** `rarity.js` is already multi-hue and currently
+   only tints text. It becomes a real visual lane — item plates, stash cells,
+   Armory cells, drop lines. Invents no new meaning.
+2. **Per-Warden identity hue.** Each of the 10 Wardens owns a hue; the Boss
+   tab re-tints per door (frame, `--floor-glow`, name plate). Makes a door
+   feel like a place.
+3. **Per-tab accent identity.** Each of the seven tabs owns an accent — tab
+   chip, `.row.active` stripe, `h3` rule. Body text stays neutral; gold
+   remains the client's own signature, not a tab's.
+4. **Zone / IP power bands.** Grind zones and gear IP already carry a
+   power-band concept with no colour; a cool→hot ramp makes progression
+   visible at a glance on list surfaces.
+
+**Construction: push hard.** Thick beveled frames, pronounced plates, gold
+letter-glyph icon plates per section, corner ornament, chunky window chrome,
+display type stepped up. **Letter glyphs and hand-made marks only — the
+no-AI-generated-icons veto is unchanged and absolute.**
+
+**Scope:**
+- IN: DESIGN.md v4 (colour lanes + construction layer superseded); recomposed
+  `internal/mocks/boss.html` (construction + Warden hue) and
+  `internal/mocks/player.html` (rarity plates + tab accent + list stress test).
+- OUT: the other five surfaces (Phase 3); copy relocation (already specified
+  in Phase 2, applied in Phase 3).
+
+**Constraints:** Every new hex passes AA on the dark ramp before it ships.
+**Surface separation is an L\* question, not a ratio question** — this was
+Phase 1's v2 failure, where WCAG's `+0.05` flare term made a 1.04:1 dark-on-dark
+pair read as fine when it meant invisible. The state ladder (live / dormant /
+locked) must still read apart, and colour identity must not become a fifth
+channel that drowns it. No decay signifiers — ornament reads as ruin the
+moment it looks damaged, and the server still works. JOURNEY.md's fact
+ownership is untouched.
+
+**Edge cases:** Seven tab accents plus ten Warden hues plus six rarity tiers
+is a lot of hue on one dark ramp — the phase must state which lanes may
+co-occur on one surface and which are mutually exclusive, or Phase 3 inherits
+a clown car. The arena stays a labelled canvas placeholder, but the DNA must
+say what it draws per Warden hue.
+
+**Produces:** `internal/DESIGN.md` v4 + `internal/mocks/{boss,player}.html`
+
+**Done when:**
+- [ ] DW-2.5.1: DESIGN.md v4 specifies all four colour lanes as named tokens
+      with the meaning each hue carries, and states the co-occurrence rule
+      (which lanes may appear together on one surface).
+- [ ] DW-2.5.2: Every new or changed hex passes AA on the dark ramp (≥4.5:1
+      body, ≥3:1 non-text), verified by computed ratio; no previously-fixed
+      pair regresses; surface pairs verified by L\* separation, not ratio.
+- [ ] DW-2.5.3: The construction is materially heavier than v3 — judged on a
+      side-by-side screenshot against the current `internal/mocks/shots/`,
+      not asserted.
+- [ ] DW-2.5.4: `boss.html` and `player.html` render self-contained, no
+      hard-coded hex or untokenized px, no horizontal scroll at 375px.
+- [ ] DW-2.5.5: live / dormant / locked still read apart on both rendered
+      mocks, with the colour lanes active.
+- [ ] DW-2.5.6: No AI-generated icon. Any icon plate is a letter glyph or a
+      hand-made mark, and the mock says which.
+
+---
+
 ## Phase 3: Recompose the remaining surfaces
 
 **Stage:** Design
@@ -203,12 +287,13 @@ stays. The Help tab must be reachable from the existing `?` button.
 **Doctrine:** `usability`, `responsive`, `checklists`
 **Gate:** Full
 
-**Goal:** Apply the approved DNA and the copy relocation to the other six
+**Goal:** Apply the approved DNA and the copy relocation to the remaining five
 surfaces.
 
 **Scope:**
-- IN: `training, grind, player, delve, dungeon, help` recomposed against
-  DESIGN.md v2 and the Phase 2 relocation.
+- IN: `training, grind, delve, dungeon, help` recomposed against DESIGN.md v4
+  and the Phase 2 relocation. (Boss and Player are done in Phases 1 and 2.5.)
+  Grind is where the zone / IP power-band lane gets proven.
 - OUT: production integration (a separate task).
 
 **Constraints:** Same as the previous plan's Phase 6 — self-contained HTML,
@@ -219,10 +304,10 @@ duplicated within a surface.
 material language — a treatment that only works on a hero surface has failed.
 Dungeon still needs both idle and in-progress states.
 
-**Produces:** `internal/mocks/{training,grind,player,delve,dungeon,help}.html`
+**Produces:** `internal/mocks/{training,grind,delve,dungeon,help}.html`
 
 **Done when:**
-- [ ] DW-3.1: Six surfaces render self-contained, no missing deps.
+- [ ] DW-3.1: Five surfaces render self-contained, no missing deps.
 - [ ] DW-3.2: No hard-coded hex/rgb and no untokenized px in any mock.
 - [ ] DW-3.3: No mock scrolls horizontally at 375px.
 - [ ] DW-3.4: No fact appears twice within a single mock.
