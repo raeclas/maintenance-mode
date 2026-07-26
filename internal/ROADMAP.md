@@ -89,7 +89,37 @@ misses**; the same failure mode as the copy sweep that walked a table instead
 of the rendered output.
 
 
-### NEXT UP — the arena's art pass (user-requested 2026-07-26)
+### DONE 2026-07-26 — the arena's art pass (items 1 and 3; item 2 reframed)
+
+Shipped across four commits on `staging`. **Read the v5 canvas spec in
+DESIGN.md, not the description below** — the below is what the work looked like
+before it was done, kept for the reasoning.
+
+1. **The shadowy read** — fixed. But the real defect was found first: `--panel`
+   was called three times in `battle.js` and listed zero times in `TOKENS`, so
+   the door and both figures' shade sides had been rendering **#ff00ff magenta**
+   on staging since `8657911`. The fallback worked exactly as designed; nobody
+   re-rendered the canvas to look. `npm run arena` now fails the run on any
+   undefined canvas token.
+3. **Composition** — fixed, and the diagnosis inverted. Widening the leaves was
+   the *cause*, not the cure: at 94% of the frame there is no wall left for the
+   door to be an opening in. The aperture is back to 58% with a lintel, jambs
+   and a threshold.
+2. **"The Warden needs real art" — reframed, and the sprite question is
+   PARKED.** The user supplied five usable boss references (MapleStory + DFO).
+   In every one the figure is a near-black mass and ALL the light and hue lives
+   in an envelope 2–3× its size around it. **The figure was never the missing
+   piece; the envelope was** — and a static 64px sprite cannot radiate, retract
+   with HP, or flare at crisis, so the envelope had to be code regardless of how
+   the sprite question resolves. Ten identities now ship as six code
+   constructions with zero art pipeline. **No SDXL download was started.**
+
+Still open from this pass: **identity art (slot 2)** — a portrait in the
+Agram-Delezie register beside the nameplate. The user chose "both, battle
+first"; battle is done. This is the one that genuinely needs the art decision
+reopened, because a painted full-value portrait is exactly what code cannot do.
+
+### The original NEXT UP entry (2026-07-26, before the work)
 
 The arena was brought onto DNA v4 in `6774331` and the user's verdict was
 **"looks good, however aesthetically not a fan of the shadowy aesthetic"** and

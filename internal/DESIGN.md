@@ -522,21 +522,102 @@ mock-annotation classes. Commentary about a mock should not be in the mock's own
 voice, and holding them literal is what let the specimen change the surface
 without changing the text describing it.
 
-## Canvas scene spec (v4) — what the arena draws per Warden hue
+## Canvas scene spec (v5, 2026-07-26) — SUPERSEDES v4
 
-The arena stays a labelled canvas placeholder in the mock (it is CANVAS-drawn;
-faking it in HTML would be a lie about what the surface is). v3's Canvas scene
-spec is carried forward, with the Warden lane added:
+> **v4's table below is retained only as history. Do not build from it.** It
+> described a scene that was rejected on sight ("there is no background,
+> everything is basically black, my character is a block, i can't even tell the
+> door is a door"), and two of its rows described code that was never written.
+> **The code is the source of truth for this section — verify against
+> `battle.js` before trusting any row here.** This doc has described
+> non-existent canvas code four times; the rule is now explicit.
+
+The arena stays a labelled placeholder in the mocks (it is CANVAS-drawn; faking
+it in HTML would lie about what the surface is). `internal/arena.mjs` /
+`npm run arena` is how it is actually reviewed — all ten doors plus crisis
+frames, contact-sheeted.
+
+**Structure — the door is an opening in a WALL.** v4 had the leaves at 94% of
+the frame, which left no wall for the door to be an opening *in*, so the leaves
+read as the background. The aperture is 58%, framed by two jambs, a lintel and a
+threshold, each a plate carrying the same `--edge-lit` / `--edge-shade` bevel
+pair the DOM uses for every raised surface. Values back-to-front: `--bg` wall
+(L\* 2.5) < `--panel` leaf (7.4) < `--field` frame and figures (13.5). The leaf
+is the RECESS and so the darkest of the three.
+
+| Element | Token | Why |
+|---|---|---|
+| wall | `--bg` + one full-span `--line-soft` course | full-span because a rule WITH A GAP reads as damage, and nothing here is damaged |
+| door leaves | `--panel`, clipped to the aperture | a parting door slides BEHIND the frame, not over it |
+| frame (jambs / lintel / threshold) | `--field` plate + `--edge-lit` top, `--edge-shade` foot | each jamb's lit edge faces the seam — the only light source in the room |
+| HP seam | `--meter-fill-depletion`, `-crisis` under 15% | the meter IS the door's centre seam of light; light going out is health draining |
+| floor spill | the seam's colour, a wedge widening toward the viewer | what makes the seam a light SOURCE rather than a painted stripe |
+| floor band | `--floor-glow` (= 26% `--w-active` into `--well`) | light under **this** door — the room's own warmth |
+| floor seam | `--w-active` | the hairline that says where the floor is; matches the DOM's frame |
+| figures | traced profiles (`WARDEN`, `WARDEN_DRAPE`, `HERO_BODY`) | NOT stacked `fillRect`s — that is what "my character is a block" described |
+| figure contour | `--line` (L\* 17.1) all round | a MATERIAL edge; without it the shade side is `--panel` on a `--panel` leaf and dissolves |
+| figure rim | `--gold-dim`, `--gold-bright` on hit | one light source means ONE lit edge, on the seam side, hem excluded |
+| damage fractures | `--w-active` / `--gold` at the lit edge | light THROUGH the mass, never chips or notches — nothing is broken |
+| hero | `--bone` rim + polearm | **you are not the door.** The player never takes a Warden hue |
+| damage numbers | `--dmg-text` / `--crit-gold` / `--super-crit` | the client speaking, so gold's family, not the door's |
+| `BREACHED` reveal | `--fs-colossal` 52px, `--gold-bright` | the peak is the client's moment, not the door's |
+
+**The Warden envelope — lane 2's missing half.** Lane 2 is defined as "which
+door you are at", explicitly *a place, not a magnitude*. It says WHERE you are.
+Nothing said WHO stands there, which is why ten doors read as ten rooms. The
+envelope is that channel: an emissive spread around the figure, in
+`--w-active`, composited `lighter` throughout — additive light can only ADD, so
+it can never hide the HP seam it crosses or darken the wall it spills onto.
+
+It carries STATE, so it is not decoration: the spread retracts as the door is
+worn down, flares under 15% where the seam already goes `-crisis`, and goes out
+entirely on BREACHED.
+
+Six constructions over ten doors (`LOOKS` in `battle.js` — the geometry lives
+with the drawing code; `bosses.js` stays canon-only):
+
+| Construction | Shape | Doors |
+|---|---|---|
+| `sweep` | asymmetric swept wings, one side leading | W3 Korrin, W6 Ilva |
+| `ascent` | narrow blades biased steeply upward | W7 Domar |
+| `corona` | a full burst, all round and long | W10, and W8's crisis flare |
+| `ring` | an arc, or a closed ellipse, behind the figure | W2 Maren (seal), W4 Osei (oldest) |
+| `vein` | **no envelope** — the mass is lit from inside | W1 Vess, W5 Thale |
+| `drape` | **no envelope** — a trailing silhouette carries it | W9 Yara |
+
+`vein` and `drape` are load-bearing. Without a construction that is the ABSENCE
+of an envelope, all ten doors are a light show and none of them lands. W8 Sef is
+the only Warden with nothing at all, and stands aside off the door's centre —
+his construction is his character.
+
+**Rules learned on the pixels, not on paper:**
+- Wings hang from the shoulders; rings and bursts centre on the torso. Pinned at
+  shoulder height, both ran off the top of the frame while leaving dead space
+  under the hem.
+- A ring wide enough to read as "oldest" must be an ELLIPSE — a circle that wide
+  does not fit 16/10.
+- A small ring centred on the torso is hidden BEHIND the figure. Tight rings sit
+  behind the head, where they become halo-as-seal.
+- Blade roots need mass. A 4px base over 130px of length is a hair, and a fan of
+  them reads as a scratched-in sunburst pinned to the chest.
+- Additive fills COMPOUND on overlap, so base alpha stays low and the hot core
+  comes free from the geometry. At 0.32 each the overlaps clipped to solid and
+  the wings read as foliage.
+- Anything meant to light a figure must composite `lighter`. `--floor-glow` is
+  L\* 6.4 against a body at 13.5, so painted normally the "glow" SUBTRACTED
+  light and the Warden dimmed as it neared the lamp.
+
+### v4's table — history only, superseded above
 
 | Element | Token | What the hue does |
 |---|---|---|
-| floor band | `--floor-glow` (= 26% `--w-active` into `--well`) | light under **this** door — the room's own warmth, cool at Korrin's door and warm at Yara's |
-| floor seam | `--w-active` | the one hairline that says where the floor is; matches the DOM's frame so canvas and DOM agree whose room it is |
-| boss sprite rim / silhouette edge | `--w-active` | the Warden reads as belonging to the door, not as a sprite pasted into it |
-| damage cracks on the boss | `--w-active` at the crack's lit edge | progressive damage stays in the door's own key rather than importing a second hue |
-| hero sprite | unchanged — `--bone` / neutral | **you are not the door.** The player never takes a Warden hue; that separation is the point of the lane |
-| crit-tier damage numbers | unchanged — `--gold` / `--bone` | numbers are the client speaking, so they stay in gold's family |
-| `BREACHED` reveal | unchanged — `--fs-colossal` 52px, `--gold` | the peak is the client's own moment, not the door's |
+| floor band | `--floor-glow` (= 26% `--w-active` into `--well`) | light under **this** door |
+| floor seam | `--w-active` | the one hairline that says where the floor is |
+| boss sprite rim / silhouette edge | `--w-active` | the Warden belongs to the door |
+| damage cracks on the boss | `--w-active` at the crack's lit edge | damage stays in the door's key |
+| hero sprite | unchanged — `--bone` / neutral | you are not the door |
+| crit-tier damage numbers | unchanged — `--gold` / `--bone` | numbers are the client speaking |
+| `BREACHED` reveal | unchanged — `--fs-colossal` 52px, `--gold` | the peak is the client's moment |
 
 ## Required behaviour changes (v4)
 

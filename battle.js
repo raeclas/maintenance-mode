@@ -251,12 +251,15 @@ const WARDEN = [
    long asymmetric train. That is genuinely all a canvas silhouette can carry —
    and it is the reason a portrait is where "who she is" actually belongs. */
 const WARDEN_DRAPE = [
-  [0.02, 1.00], [0.18, 0.92], [0.16, 0.84], [0.36, 0.80],   // head, far collar
+  // A rounded crown offset to the far side — mass piled to one side, not the
+  // symmetrical point every other Warden wears. Yara sharing the hood cone made
+  // her read as the same creature in a longer coat.
+  [-0.10, 0.99], [0.10, 1.00], [0.22, 0.94], [0.20, 0.85], [0.36, 0.80],
   [0.62, 0.84], [0.52, 0.66], [0.46, 0.50],                 // the train's shoulder
   [0.60, 0.34], [0.86, 0.16], [0.96, 0.04],                 // sweeping out and down
   [0.70, 0.00], [-0.26, 0.00],                              // pooled on the floor, to the hem
   [-0.30, 0.30], [-0.26, 0.54], [-0.34, 0.72],              // near side — kept narrow
-  [-0.22, 0.82], [-0.12, 0.85], [-0.14, 0.92],
+  [-0.22, 0.82], [-0.18, 0.87], [-0.20, 0.95],
 ];
 
 /* The envelope — the Warden's aura, and the thing every boss reference had
