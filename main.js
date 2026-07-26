@@ -205,6 +205,9 @@ if (loaded && state.unlocked && state.lastSeen) {
 // ---- tabs + progressive feature unlocks ----
 const TAB_FEATURE = { botSec: "training", farmSec: "grind", gearSec: "player", dungeonSec: "delve", instanceSec: "dungeon" };
 const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", instanceSec: "Dungeon" };
+// Section id -> DNA v4 room name. Same keys as TAB_FEATURE plus battleSec,
+// which has no feature gate because Boss is always open.
+const TAB_ROOM = { battleSec: "boss", ...TAB_FEATURE };
 const UNLOCK_MSG = {
   training: "TRAINING — the old bot farms. Run scripts, build a swarm.",
   grind: "GRIND — deploy the swarm on the leveling zones for copper + gear.",
@@ -220,6 +223,11 @@ function showTab(id) {
   if (!tabUnlocked(id)) return; // ??? tabs are not enterable yet
   for (const pane of document.querySelectorAll(".tabpane")) pane.style.display = pane.id === id ? "" : "none";
   for (const btn of document.querySelectorAll("#tabs button")) btn.classList.toggle("active", btn.dataset.tab === id);
+  // The room class carries DNA v4's per-tab accent lane (--acc). One class on
+  // <main>, swapped per tab; every accent on the surface reads from it.
+  const room = document.querySelector("main");
+  for (const c of [...room.classList]) if (c.startsWith("t-")) room.classList.remove(c);
+  room.classList.add(`t-${TAB_ROOM[id] || "boss"}`);
 }
 for (const btn of document.querySelectorAll("#tabs button")) {
   btn.addEventListener("click", () => showTab(btn.dataset.tab));

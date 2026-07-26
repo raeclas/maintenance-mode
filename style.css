@@ -408,9 +408,11 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
 /* ---- game sections (revealed after the intro pull) ---- */
 .hidden { display: none !important; }
 
-#tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+/* Grid, not flex: flex:1 buttons cannot shrink below their content, so an
+   uppercase seven-tab row forced the page to 434px. The 4-column grid is the
+   re-fit Phase 2 measured at 375px (4+3, 87px buttons, 44px touch target). */
+#tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 10px; }
 #tabs button {
-  flex: 1;
   background: var(--panel);
   border: 1px solid var(--line);
   color: var(--dim);
@@ -703,7 +705,10 @@ section.game button:disabled { color: var(--faint); cursor: default; }
 }
 
 footer { text-align: center; margin-top: 18px; }
-#wipeBtn {
+/* Was #wipeBtn only, so #exportBtn rendered as a raw browser button — white
+   on black, the one unstyled control in the client. Both footer buttons are
+   the same thing; the mock has always styled them as a pair. */
+footer button {
   background: none;
   border: none;
   color: var(--faint);
@@ -927,3 +932,636 @@ section.game button.affordable { border-color: var(--gold); color: var(--gold); 
 #delveState b { color: var(--gold); }
 #delveCache { font-family: var(--font-data); font-size: var(--fs-body); color: var(--bone); margin-bottom: 8px; }
 #delveCache b { color: var(--gold); }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   VISUAL DNA v3 + v4 — the construction layer, ported verbatim from
+   internal/mocks/build.mjs (CSS_V3, CSS_V4) where it was designed and
+   reviewed on rendered pixels. Layered on the base above exactly as the
+   mocks compose it: base -> v3 construction -> v4 colour lanes.
+   Edit internal/mocks/build.mjs first, then re-port; the mocks are the
+   design contract and must not drift from what ships.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 0. THE VOICE ──────────────────────────────────────────────────────────
+   --font-body now resolves to --font-ui, so the serif is retired at all four
+   of its shipped sites from one token. What remains here is the WEIGHT and
+   the SHADOW, which is the other half of what the user was reacting to.
+
+   The shadow rule, stated so it is not applied by reflex: CHROME is shadowed,
+   DATA is not. A hard 1px shadow under every glyph of an 11px monospace stat
+   row fills its counters and destroys the even texture chapter-03's squint
+   test is about. Titles, labels, controls and the identity get the shadow;
+   rows, captions and the log do not.                                       */
+b{font-weight:bold}
+main.client{padding:var(--space-8) var(--space-5) var(--space-10)}
+
+/* ── 1. THE WINDOW ─────────────────────────────────────────────────────────
+   Every panel is an object with edges. A 3px frame, a real radius, a body
+   that falls from --panel to --plate-foot, an OUTER BEVEL drawn as two
+   opposed inset hairlines (warm --edge-lit at the top-left, cool
+   --edge-shade at the bottom-right — light from above, hue-shifted, ch09),
+   and a hard foot so the window sits ON the page instead of being part of it.
+
+   No blur anywhere in this file: a blurred coloured shadow on a dark ground
+   is the neon-glow tell AND reads as a screen in trouble. Offsets only.    */
+section.game{
+  border:var(--border-frame) solid var(--line);
+  border-radius:var(--radius-window);
+  background:linear-gradient(var(--panel),var(--plate-foot));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade);
+  padding:0 var(--space-7) var(--space-8);
+  margin:var(--space-8) 0;
+  overflow:hidden}
+
+/* ── 2. THE TITLE BAR — the signature move ────────────────────────────────
+   Every window wears its name on a raised strip full-bleed across its head,
+   closed by a two-tone groove (dark line, then lit line — the oldest
+   "something ends here" mark in interface carpentry).
+
+   The string is ALWAYS the block's own existing heading. No copy is invented,
+   no fact moves owner, no heading is duplicated: this is the same <h3> the
+   spec already had, given the shape a client window's header has. The
+   explainer sentence rides the plate under the name rather than being exiled
+   below it, which keeps the header one object instead of two.              */
+h3{
+  background:linear-gradient(var(--field),var(--inset) var(--space-10));
+  border:none;
+  border-bottom:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:0 var(--border-hairline) 0 var(--edge-lit),
+             inset 0 var(--border-hairline) 0 var(--edge-lit);
+  margin:var(--space-9) calc(var(--space-7) * -1) var(--space-7);
+  padding:var(--space-5) var(--space-7) var(--space-5);
+  display:block;
+  font-family:var(--font-ui);font-size:var(--fs-body);font-weight:bold;
+  font-variant:normal;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--bone);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+section.game>h3:first-child{margin-top:0;border-top:none}
+h3::before{content:none}          /* the v2 gold lozenge — superseded, gone */
+h3 .sub{margin-top:var(--space-4);font-style:normal;color:var(--dim);
+  letter-spacing:0;text-transform:none;font-weight:normal;
+  font-size:var(--fs-small);text-shadow:none}
+
+/* The Warden's name-plate is the SAME construction one size up. Block 1 of
+   the JOURNEY spec keeps both its facts, its strings, its owner and its
+   position; what changed is that the header of the Boss window is the boss,
+   which is what a boss frame in an MMO client actually is.                 */
+.frame{
+  background:linear-gradient(var(--field),var(--inset) var(--space-10));
+  border:none;
+  border-bottom:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:0 var(--border-hairline) 0 var(--edge-lit),
+             inset 0 var(--border-hairline) 0 var(--edge-lit);
+  margin:0 calc(var(--space-7) * -1) var(--space-8);
+  padding:var(--space-8) var(--space-7) var(--space-7)}
+.bossPanel{margin:0;text-align:center}
+#bossName{font-family:var(--font-ui);font-size:var(--fs-warden);
+  font-weight:bold;font-variant:normal;letter-spacing:.04em;line-height:1.1;
+  color:var(--gold);overflow-wrap:anywhere;
+  text-shadow:0 var(--space-1) 0 var(--edge-shade)}
+#bossTitle{font-family:var(--font-ui);font-size:var(--fs-small);
+  font-style:normal;font-weight:bold;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--bone);margin-top:var(--space-4);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+
+/* ── 3. THE SOCKET — anything you read FROM is cut INTO the body ──────────
+   The inverse bevel of the window: dark at the near (top-left) wall, lit on
+   the far (bottom-right) wall, on the --well ground, which sits below page
+   level. One blurred inner shadow is the only blur in the file and it is
+   pointed INWARD, so it can never read as a glow.
+
+   This is the rule that makes the language work on a surface with no hero:
+   Training, Grind, Player and Delve are lists, and a list in a socket has
+   depth without needing a frame or a display face.                         */
+.rowlist,.canvasStub,#dialogue,#log{
+  background:var(--well);
+  border:var(--border-hairline) solid var(--edge-shade);
+  border-radius:var(--radius-socket);
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) var(--space-2) var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-lit)}
+.rowlist{margin:var(--space-5) 0 var(--space-7)}
+
+/* ── 4. THE CONTROL — a button has a physical top surface ─────────────────
+   Rounded, gloss-gradient, lit top-left / dark bottom-right, a hard foot to
+   stand on, a bold shadowed label. PRESSED inverts the bevel, swaps the
+   gradient and drops the foot — the button physically goes down. DISABLED
+   loses the bevel AND the foot and flattens onto --panel, which is both the
+   material carrying a state and the only ground where --faint clears AA.   */
+section.game button,#tabs button,.helpBtn,.chan{
+  font-family:var(--font-ui);font-weight:bold;
+  border:var(--border-hairline) solid var(--edge-shade);
+  border-radius:var(--radius-control);
+  background:linear-gradient(var(--field),var(--panel));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
+  text-align:center}
+section.game button:active,#tabs button:active,.helpBtn:active,.chan:active{
+  background:linear-gradient(var(--panel),var(--field));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-lit);
+  transform:translateY(var(--border-hairline))}
+section.game button:disabled{
+  background:var(--panel);box-shadow:none;border-color:var(--line-soft);
+  text-shadow:none;color:var(--faint)}
+
+/* A SELECTED control wears the pressed construction permanently — that is
+   how an MMO client says "you are on this one", and it is a second,
+   positional channel on top of the colour one. Gold enters here as an
+   identity edge, never as a fill on chrome.                                */
+#tabs button.active,.wallBtn.active{
+  color:var(--gold);border-color:var(--gold);
+  background:linear-gradient(var(--panel),var(--field));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-lit)}
+#tabs{gap:var(--space-4);margin-bottom:var(--space-7)}
+#tabs button{font-variant:normal;text-transform:uppercase;letter-spacing:.08em;
+  font-size:var(--fs-small)}
+#tabs button.locked{background:var(--panel);box-shadow:none;
+  border-color:var(--line-soft);text-shadow:none}
+
+/* ── 5. THE CHROME BAND ───────────────────────────────────────────────────
+   The resource bar stays a flat band and the chip clusters are the raised
+   objects inside it. Deliberately NOT a raised bar holding raised plates:
+   a bevel inside a bevel is the nested-card tell and it is the one Maple
+   habit that has to be left at the door.                                   */
+#resbar{padding:var(--space-5) var(--space-3);margin-bottom:var(--space-7);
+  border-color:var(--line)}
+.chipGroup{border-radius:var(--radius-control);border-color:var(--edge-shade);
+  background:linear-gradient(var(--field),var(--panel));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade);
+  padding:var(--space-4) var(--space-1)}
+.chipVal{font-family:var(--font-ui);font-weight:bold;
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+.chipLbl{font-family:var(--font-ui);font-weight:bold;letter-spacing:.08em;
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+.chip{border-left-color:var(--edge-shade)}
+.helpBtn{margin-left:auto}
+
+/* ── 6. THE ARENA — a socket with light under the door ────────────────────
+   The canvas region IS the socket; no wrapper boxes it. The floor band and
+   its seam are background LAYERS, not borders, so no rectangle is ever drawn
+   inside another rectangle. What the canvas should DRAW is DESIGN.md's
+   Canvas scene spec; the DOM's job is to cut the aperture, not fake it.    */
+.canvasStub{position:relative;aspect-ratio:16/10;margin:var(--space-7) 0 0;
+  padding:var(--space-7)}
+.canvasStub::after{content:"";position:absolute;left:0;right:0;bottom:0;
+  height:24%;pointer-events:none;
+  background:linear-gradient(var(--gold-dim),var(--gold-dim))
+               0 100%/100% var(--border-hairline) no-repeat,
+             linear-gradient(transparent,var(--floor-glow))}
+.canvasStub .k,.canvasStub .v{position:relative;z-index:1}
+.canvasStub .k{font-family:var(--font-ui);font-weight:bold;
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+
+/* ── 7. THE SIEGE READOUT ─────────────────────────────────────────────────  */
+.wallLbl{font-family:var(--font-ui);font-weight:bold;color:var(--recede);
+  margin:var(--space-7) 0 var(--space-4);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+#wallSelect{gap:var(--space-4)}
+.controls{border-top:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:0 var(--border-hairline) 0 var(--edge-lit) inset;
+  padding-top:var(--space-7);margin:var(--space-8) 0 var(--space-5);
+  gap:var(--space-4) var(--space-7)}
+#depth{font-family:var(--font-ui);font-weight:bold;letter-spacing:.02em;
+  line-height:1;text-shadow:0 var(--space-1) 0 var(--edge-shade)}
+/* The wall's peak moment. 52px, bold, the heaviest shadow on the page, and
+   it owns its row rather than sitting flush-left in a baseline flex line.  */
+#depth.breached{font-size:var(--fs-colossal);letter-spacing:.03em}
+.controls:has(.breached){flex-direction:column;align-items:center;
+  text-align:center}
+
+/* ── 8. THE LEDGER — fixed terms read as a table, not as a sentence ───────
+   Four fixed terms, so columns, not prose: a sentence forces the reader to
+   parse "20% of those" to learn super-crit is conditional. The header is the
+   window's own title-bar voice one step down; the rule above the product row
+   is its OWN full-span element rather than per-cell borders, because a rule
+   interrupted by column gaps reads as a broken line — the one thing this
+   DNA must never do.                                                       */
+.ledger{display:grid;grid-template-columns:1fr auto auto;
+  column-gap:var(--space-7);margin-top:var(--space-6);
+  font-size:var(--fs-small);font-family:var(--font-data)}
+.ledger>*{padding:var(--space-2) 0}
+.ledger .hd{grid-column:1/-1;font-family:var(--font-ui);font-weight:bold;
+  font-variant:normal;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--bone);text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
+  border-bottom:var(--border-hairline) solid var(--line);
+  margin-bottom:var(--space-2)}
+.ledger .k{color:var(--faint)}
+.ledger .v{color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
+.ledger .rule{grid-column:1/-1;padding:0;height:0;
+  border-top:var(--border-hairline) solid var(--line);margin-top:var(--space-2)}
+.ledger .k.sum{padding-top:var(--space-4)}
+.ledger .v.sum{padding-top:var(--space-4);color:var(--bone);font-weight:bold}
+.ledger .v.sum.wide{grid-column:2/-1}
+
+/* ── 9. THE PRIMARY ACTION ────────────────────────────────────────────────
+   The one control on the tab that is not chrome. A solid gold face with dark
+   text is the loudest thing an MMO client's button vocabulary has, and this
+   button appears once per wall — the amplitude matches the moment. Gold as a
+   FILL is reserved to this one element; everywhere else gold is an edge.   */
+#descendBtn{display:block;width:100%;
+  font-family:var(--font-ui);font-size:var(--fs-masthead);font-weight:bold;
+  font-variant:normal;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--on-gold);
+  background:linear-gradient(var(--gold),var(--gold-dim));
+  border:var(--border-hairline) solid var(--gold);
+  border-radius:var(--radius-control);
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--gold),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade);
+  text-shadow:none;
+  padding:var(--space-7) var(--space-6);margin:var(--space-7) 0 var(--space-1)}
+#descendBtn:active{background:linear-gradient(var(--gold-dim),var(--gold));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--gold)}
+
+/* ── 10. THE STORY — recessed, so the voice sits behind the glass ─────────  */
+#dialogue{border-left:var(--row-active-border) solid var(--gold-dim);
+  font-size:var(--fs-display);line-height:1.55;color:var(--bone);
+  padding:var(--space-7);margin:var(--space-8) 0 0}
+#projection{color:var(--bone)}   /* gold on a sentence is why no other gold read */
+
+/* ── 11. THE LADDER, UNFLATTENED ──────────────────────────────────────────
+   The four state channels (edge colour, type colour, control presence,
+   unlock text) are untouched. v2 added a fifth — material. v3 keeps that and
+   the socket adds a sixth for free: a LIVE row is lifted out of the socket
+   onto its own lit ground, a DORMANT row lies flat in it, and a LOCKED row
+   is unlit — no groove highlight at all, which is the "visibly unlit
+   window" a chunkier frame language is supposed to buy. Six channels, none
+   lost, and every one of them still visible at 375px.
+
+   The groove between rows is the two-tone list separator: each row's dark
+   bottom border sits directly above the next row's lit top hairline.       */
+.rowlist .row{border-bottom:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:inset 0 var(--border-hairline) 0 var(--line-soft)}
+.rowlist .row:last-child{border-bottom:none}
+.rowlist .row.active{background:linear-gradient(var(--inset),var(--well));
+  box-shadow:inset 0 var(--border-hairline) 0 var(--edge-lit)}
+.rowlist .row.locked{box-shadow:none}
+.rowName{font-weight:bold}
+/* The cycle meter is a channel cut along the row's foot, not a line drawn on
+   it: a dark track with a lit fill, the same socket logic one pixel tall.  */
+.rowBar{background:var(--edge-shade)}
+
+/* ── 12. THE ALLOCATION CONTROL ───────────────────────────────────────────
+   Mini plates around a socketed readout — the shape every MMO client uses
+   for "spend some of this here". Absent entirely on a locked row, which is
+   the ladder's control channel and stays exactly as specced.               */
+.allocMini{gap:var(--space-3)}
+.allocMini input{background:var(--well);border-radius:var(--radius-socket);
+  border-color:var(--edge-shade);font-weight:bold;
+  box-shadow:inset var(--border-hairline) var(--border-hairline) var(--space-2) var(--edge-shade),
+             inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-lit)}
+
+/* ── v4 base-CSS fallback ─────────────────────────────────────────────────
+   The band chip's MARKUP is emitted by shared helpers, so it reaches the four
+   surfaces this phase does not recompose. It degrades to plain mono text
+   there rather than rendering as an unstyled artefact.                     */
+.band{font-family:var(--font-data);color:var(--bone)}
+
+/* ── 0. THE ROOM'S OWN COLOUR ──────────────────────────────────────────────
+   Each surface declares its accent ONCE, on <main>. Everything downstream
+   reads var(--acc), so re-skinning a tab is one assignment and no rule below
+   names a specific hue. Boss's accent is the active Warden's hue, which is
+   why Boss carries exactly one identity hue instead of two.
+
+   Scoped to main. on purpose: the tab buttons wear the same .t-* classes, so
+   an unscoped rule also set --acc on all seven of them — invisible today
+   (nothing inside a button reads --acc) and a seven-hue trapdoor the moment
+   anything did. Tier B's "exactly one lane-3 hue" is now true of the cascade
+   and not only of the render.                                            */
+main.t-boss{--acc:var(--acc-boss)}      main.t-training{--acc:var(--acc-training)}
+main.t-grind{--acc:var(--acc-grind)}    main.t-player{--acc:var(--acc-player)}
+main.t-delve{--acc:var(--acc-delve)}    main.t-dungeon{--acc:var(--acc-dungeon)}
+main.t-help{--acc:var(--acc-help)}
+
+/* ── 1. THE WINDOW, HEAVIER ────────────────────────────────────────────────
+   v3's frame was 3px with a 1px bevel. The v3 review's own Major was that a
+   1px edge at 10 L* "is not a bevel, it is a rumour"; the same argument taken
+   one step further gives a 4px frame with a 2px bevel and a 2px foot. The
+   frame itself is TINTED with the room's accent (24% into --line, L* ~29 —
+   ~20 L* over --panel, and checked by L* separation rather than by ratio,
+   because it is a surface).                                              */
+section.game{
+  border:var(--border-frame) solid var(--w-frame);
+  box-shadow:
+    inset var(--bevel) var(--bevel) 0 var(--edge-lit),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--edge-shade),
+    0 var(--bevel) 0 var(--edge-shade);
+  padding:0 var(--space-7) var(--space-9);
+  margin:var(--space-9) 0}
+.t-training section.game,.t-grind section.game,.t-player section.game,
+.t-delve section.game,.t-dungeon section.game,.t-help section.game{
+  border-color:color-mix(in oklab, var(--acc) 24%, var(--line))}
+
+/* ── 2. THE TITLE BAR, AT FULL WEIGHT ─────────────────────────────────────
+   v3's signature move, pushed: the label steps from --fs-body to --fs-display,
+   the closing groove's lit line goes from 1px --edge-lit to 2px of the ROOM'S
+   ACCENT, and the bar carries four CORNER RIVETS.
+
+   The rivets are four background layers — a drawn mark, not a glyph, not an
+   image, categorically not a generated icon. FOUR, always, symmetric, always
+   complete: a missing or offset rivet reads as damage instantly, so the
+   construction makes that unrepresentable rather than merely discouraged.
+   This is the no-decay veto expressed as CSS.                            */
+h3,.frame,#chatHead{
+  --rv:linear-gradient(var(--edge-lit),var(--edge-lit));
+  background:
+    var(--rv) var(--rivet-inset) var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) top var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) left var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    linear-gradient(var(--field),var(--inset) var(--space-10));
+  border-bottom:var(--bevel) solid var(--edge-shade);
+  box-shadow:0 var(--bevel) 0 var(--acc),
+             inset 0 var(--bevel) 0 var(--edge-lit)}
+h3{display:flex;flex-wrap:wrap;align-items:center;column-gap:var(--space-5);
+  font-size:var(--fs-display);letter-spacing:.12em;
+  padding:var(--space-5) var(--space-7);
+  margin:var(--space-10) calc(var(--space-7) * -1) var(--space-8)}
+h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
+
+/* THE LETTER-GLYPH PLATE. The project's standing veto is on AI-GENERATED
+   icons; letter glyphs and hand-made marks are the named exception, and this
+   is the letter-glyph case: one capital in the UI face, on the CONTROL
+   construction shrunk to a square. It is TYPE on a plate, so there is no
+   raster, no path, no generated art anywhere in the file — build.mjs's own
+   external-reference assertion proves that mechanically.
+
+   It is also where gold's new job lives: the glyph plates are the client
+   speaking in its own voice, on every window, in every room.             */
+.glyph{display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:var(--glyph-plate);height:var(--glyph-plate);
+  font-family:var(--font-ui);font-weight:bold;font-size:var(--fs-display);
+  line-height:1;color:var(--gold);
+  background:linear-gradient(var(--field),var(--panel));
+  border:var(--border-hairline) solid var(--edge-shade);
+  border-radius:var(--radius-control);
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--border-hairline) 0 var(--edge-shade);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+
+/* ── 3. THE DOOR ──────────────────────────────────────────────────────────
+   The Warden's name-plate is the same construction one size up, and the name
+   is now set in the DOOR'S OWN HUE rather than in gold. That is the whole of
+   lane 2 in one declaration: gold is the client, the hue is the place, and a
+   door finally feels like somewhere rather than like the same panel with a
+   different string in it.
+
+   The plate GROUND stays neutral on purpose. A hue-tinted ground under its
+   own hue costs that hue its contrast (3.87:1, measured) — so the tint goes
+   on the frame, the groove and the floor glow, and the ink keeps a clean
+   ground. Ink and its own ground never share a hue.                      */
+.frame{padding:var(--space-9) var(--space-7) var(--space-8);
+  margin:0 calc(var(--space-7) * -1) var(--space-9)}
+#bossName{font-size:var(--fs-warden);color:var(--w-active)}
+.wallBtn.active{color:var(--w-active);border-color:var(--w-active)}
+
+/* ── 4. THE TAB ROW — TIER A, the navigation legend ───────────────────────
+   Re-fit to four columns per Phase 2's own accepted specimen (7 buttons lay
+   out 4+3; repeat(3,1fr) left an orphan alone on a third row).
+
+   Every chip carries a 2px inset bar in ITS OWN accent, so all seven rooms
+   are legible in the row at once — but the INK stays --dim until a chip is
+   active. Colour identifies the room; the pressed construction plus the ink
+   still identify the current one, so the accent is an added channel and not a
+   replacement for one.
+
+   THIS IS THE WHOLE OF TIER A (DESIGN.md ## The co-occurrence rule, amended
+   2026-07-26). #tabs is the ONLY element in the client permitted to show more
+   than one hue of one lane at the same time, and it is bounded: lane 3 only,
+   chroma <= .05, the 2px foot bar only, inactive ink stays --dim. --acc-tab is
+   set and read here and NOWHERE ELSE — that grep is the check. A second
+   multi-hue persistent element is an amendment to DESIGN.md, not a change made
+   in this file.
+
+   Everything OUTSIDE #tabs is Tier B and carries exactly ONE lane-3 hue: the
+   surface's own --acc, set once on <main> in block 2 above. So Boss renders one
+   identity hue on its surface (lane 2, via the --acc-boss alias) and the legend
+   above it, which is what the amended per-surface table says.               */
+#tabs{grid-template-columns:repeat(4,1fr)}
+/* The accent bar is the FOOT of the chip only. Drawn as a corner inset it
+   wrapped up the right-hand side and ate that edge's --edge-shade, which cost
+   the chip its bevel — the accent would have been buying colour with depth. */
+#tabs button{box-shadow:
+  inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+  inset calc(var(--border-hairline) * -1) 0 0 var(--edge-shade),
+  inset 0 calc(var(--space-1) * -1) 0 var(--acc-tab),
+  0 var(--space-1) 0 var(--edge-shade)}
+#tabs button.t-boss{--acc-tab:var(--acc-boss)}
+#tabs button.t-training{--acc-tab:var(--acc-training)}
+#tabs button.t-grind{--acc-tab:var(--acc-grind)}
+#tabs button.t-player{--acc-tab:var(--acc-player)}
+#tabs button.t-delve{--acc-tab:var(--acc-delve)}
+#tabs button.t-dungeon{--acc-tab:var(--acc-dungeon)}
+#tabs button.t-help{--acc-tab:var(--acc-help)}
+#tabs button.active{color:var(--acc-tab);border-color:var(--acc-tab);
+  background:linear-gradient(var(--panel),var(--field));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) 0 0 var(--edge-lit),
+    inset 0 calc(var(--space-1) * -1) 0 var(--acc-tab)}
+
+/* ── 5. LANE 1 ON THE SURFACE — an item is a PLATE in its own rarity ──────
+   The tier hue was a text tint and nothing else. It is now a raised plate:
+   the tier's own hue mixed 16% into --plate-foot, a 4px edge in the pure hue,
+   the item name in the hue, and the meta line in --bone.
+
+   --dim / --recede / --faint are BANNED on these grounds — they measure
+   4.04-4.63:1 there. Fixed by ROLE, not by value (the same call v2 made for
+   --recede on --field): the plate carries --bone, and its hierarchy comes
+   from size and weight instead of from a quieter colour. contrast.mjs
+   asserts the ban, and now FAILS if a banned pair ever starts passing.
+
+   Every plate keeps its tier NAME printed beside it. Colour is never the only
+   channel (chapter-08, Critical — ~10% of male users).                   */
+.slot,.stashRow,.scrapPill{--rp:var(--panel);--ri:var(--line-soft)}
+.r-common{--rp:var(--rar-plate-common);--ri:var(--rar-common)}
+.r-uncommon{--rp:var(--rar-plate-uncommon);--ri:var(--rar-uncommon)}
+.r-rare{--rp:var(--rar-plate-rare);--ri:var(--rar-rare)}
+.r-epic{--rp:var(--rar-plate-epic);--ri:var(--rar-epic)}
+.r-legendary{--rp:var(--rar-plate-legendary);--ri:var(--rar-legendary)}
+.r-mythic{--rp:var(--rar-plate-mythic);--ri:var(--rar-mythic)}
+.r-origin{--rp:var(--rar-plate-origin);--ri:var(--rar-origin)}
+.slot{background:var(--rp);border-left:var(--border-frame) solid var(--ri);
+  border-top:none;border-radius:var(--radius-control);
+  padding:var(--space-6) var(--space-7);margin-top:var(--space-5);
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade)}
+.slot.filled{border-left-color:var(--ri)}
+/* An EMPTY slot is a socket, not a plate — nothing is in it to raise. That is
+   the material carrying the state, exactly as a disabled control does. */
+.slot:not(.filled){background:var(--well);box-shadow:
+  inset var(--border-hairline) var(--border-hairline) var(--space-2) var(--edge-shade);
+  border-left-color:var(--line-soft)}
+.slotName{color:var(--bone);font-weight:bold;letter-spacing:.1em;
+  text-transform:uppercase;font-size:var(--fs-label);font-variant:normal}
+.itemMeta,.enhInfo,.affixItem{color:var(--bone)}
+.slotItem{font-size:var(--fs-body)}
+.stashRow{background:var(--rp);border-left:var(--space-2) solid var(--ri);
+  border-bottom:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:inset 0 var(--border-hairline) 0 var(--edge-lit);
+  padding:var(--space-4) var(--space-5)}
+.stashRow .sInfo{color:var(--bone)}
+.scrapPill{background:var(--rp);color:var(--ri);border-color:var(--ri);
+  border-radius:var(--radius-socket);font-weight:bold}
+/* a drop logline names the item in its tier's hue — the same lane, in the
+   client's own console, which is where a drop is actually announced */
+.log-loot .rar{font-weight:bold}
+
+/* ── 6. LANE 4 ON THE SURFACE — a heat block, not ink ─────────────────────
+   The band is the one lane that is NOT ink, and that is deliberate: a filled
+   chip at L* ~16.5 sits in a different luminance tier from every ink lane, so
+   it cannot be mistaken for one even where the hues are close. Cut into the
+   surface as a socket, with a 2px lip of the pure band hue, carrying the
+   actual IP or zone number in --bone — the number is the redundant cue that
+   keeps the ordering readable without the colour.                        */
+.band{display:inline-block;background:var(--bc);color:var(--bone);
+  border-radius:var(--radius-socket);padding:0 var(--space-4);
+  font-size:var(--fs-label);letter-spacing:.04em;
+  box-shadow:inset 0 var(--space-1) 0 var(--bl),
+             inset var(--border-hairline) 0 var(--space-2) var(--edge-shade)}
+.b1{--bc:var(--band-1-chip);--bl:var(--band-1)}
+.b2{--bc:var(--band-2-chip);--bl:var(--band-2)}
+.b3{--bc:var(--band-3-chip);--bl:var(--band-3)}
+.b4{--bc:var(--band-4-chip);--bl:var(--band-4)}
+.b5{--bc:var(--band-5-chip);--bl:var(--band-5)}
+.amZone{text-align:center}
+
+/* ── 7. LANE 3 ON THE LADDER — the room's colour, not a fifth channel ─────
+   A live row's edge and name take the ROOM'S accent instead of gold. Nothing
+   else about the ladder moves: dormant is still a neutral edge with a dim
+   name, struggling is still --warn on both, locked still has NO edge, no
+   control, --opacity-locked and the literal word "locked". Six channels, all
+   six intact — the hue that fills the "live" slot is the only thing that
+   changed, and within a room it is constant.
+
+   --warn keeps "struggling" alone. No accent sits close enough to it to be
+   confused: the one that comes nearest is --acc-dungeon, and Dungeon is the
+   single tab with no struggling state.                                   */
+.row.active{border-left:var(--border-frame) solid var(--acc)}
+.row.active .rowName{color:var(--acc)}
+/* The Warden's own line carries the Warden's own hue — the door is speaking. */
+#dialogue{border-left-color:var(--w-active)}
+/* Light under THIS door: the arena's floor seam takes the Warden's hue, so the
+   canvas and the DOM agree on whose room it is. What the canvas draws with it
+   is DESIGN.md "## Canvas scene spec (v4)". */
+.canvasStub::after{background:
+  linear-gradient(var(--w-active),var(--w-active)) 0 100%/100% var(--border-hairline) no-repeat,
+  linear-gradient(transparent,var(--floor-glow))}
+.trophySet.started{border-left-color:var(--acc)}
+/* An UPGRADE is the client telling you something, and gold is the client's
+   voice — but the gold already lives in the row's own marker glyph. Letting it
+   also take the edge would cost the rarity lane its widest channel on the one
+   row that most needs it, so the edge stays rarity's and the glyph stays gold.
+   One fact, one slot. */
+.stashRow.upgrade{border-left-color:var(--ri)}
+/* border-color is a SHORTHAND and resets all four sides — it has to come
+   BEFORE the accent edge or it silently eats it. It did, and the ranked
+   Armory cells rendered with no accent at all until the render was read. */
+.amCell{border-color:var(--edge-shade);border-radius:var(--radius-socket);
+  border-left:var(--space-2) solid var(--acc)}
+.amCell.dormant{border-left-color:var(--line-soft)}
+/* MAXED stays gold. A completed thing is the client congratulating you, and
+   that is gold's job now — so gold and the accent read as two different
+   statements on the same row rather than as two shades of "on". */
+.amCell.max{border-left-color:var(--gold)}
+.pip.own{color:var(--gold);border-color:var(--gold)}
+
+/* ── 8. THE CHAT WINDOW — the same four constructions, at the chrome tier ──
+   A chat panel is a WINDOW with a TITLE BAR, two CONTROL plates and a SOCKET.
+   Building it out of anything else would announce it as a foreign object,
+   which is exactly the fault the shell prompt had. So it reuses the language
+   whole: #chatHead joined the h3/.frame rule above (rivets for free), .chan
+   joined the control rule, #log joined the socket rule.
+
+   IT CARRIES NO LANE HUE, and that is deliberate rather than incidental. A
+   section.game takes the room's --acc on its frame and its title-bar groove;
+   the chat window takes --line and --edge-lit instead. Persistent chrome that
+   re-tints per room would be a SECOND multi-hue element in the chrome, which
+   is the thing DESIGN.md "## Never (v4)" closes Tier A against — a legend
+   turning into wallpaper. Tier B lane counts on all seven surfaces are
+   unchanged by this window's existence, which is the property "chrome must not
+   acquire a lane budget of its own" actually asks for.                     */
+#chat{
+  border:var(--border-frame) solid var(--line);
+  border-radius:var(--radius-window);
+  background:linear-gradient(var(--panel),var(--plate-foot));
+  box-shadow:
+    inset var(--bevel) var(--bevel) 0 var(--edge-lit),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--edge-shade),
+    0 var(--bevel) 0 var(--edge-shade);
+  padding:0 var(--space-7) var(--space-7);
+  margin:var(--space-9) 0 0;
+  overflow:hidden}
+#chatHead{border-top:none;
+  margin:0 calc(var(--space-7) * -1) var(--space-7);
+  padding:var(--space-4) var(--space-7);
+  /* the groove closes NEUTRAL — see the tier note above */
+  box-shadow:0 var(--bevel) 0 var(--edge-lit),
+             inset 0 var(--bevel) 0 var(--edge-lit)}
+.chan{min-height:var(--touch-min);padding:var(--space-2) var(--space-6)}
+/* The selected channel wears the pressed construction permanently, the same
+   way #tabs button.active does — position, not colour, says which one you are
+   reading. Its ink is --bone, not an accent: this is chrome. */
+.chan.active{color:var(--bone);border-color:var(--line);
+  background:linear-gradient(var(--panel),var(--field));
+  /* 2px, not the hairline the other pressed controls use: at --fs-label on a
+     two-plate group a 1px inversion is v4's own "a rumour", and the channel you
+     are reading has to be unambiguous from across the window. */
+  box-shadow:
+    inset var(--bevel) var(--bevel) 0 var(--edge-shade),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--edge-lit)}
+#log{padding:var(--space-4) var(--space-5)}
+
+/* ── 9. HELP — a second heading level, because an h3 IS a title bar ───────
+   Six windows, one per room, each opening with the title bar and its gold
+   letter-glyph plate. Topics inside cannot also be h3s: thirty title bars on
+   one page is "everything equally prominent" (checklists Ch 7), so the topic
+   is one level down — a small uppercase label behind a 2px accent edge, which
+   is the room's own single lane-3 hue and adds no lane.                    */
+.topic{border-left:var(--bevel) solid var(--acc);padding-left:var(--space-6);
+  margin:var(--space-7) 0}
+.topic h4{font-family:var(--font-ui);font-size:var(--fs-small);font-weight:bold;
+  text-transform:uppercase;letter-spacing:.12em;color:var(--bone);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
+  margin-bottom:var(--space-3)}
+.topic p{font-size:var(--fs-small);font-family:var(--font-data);color:var(--bone);
+  line-height:1.65}
+.topic p + p{margin-top:var(--space-5)}
+/* A LOCKED Help block runs four ladder channels and NOT opacity: material
+   (unlit — flat, no bevel, no foot), type colour, control presence (no topics
+   at all), and the unlock text. --opacity-locked is deliberately absent —
+   DESIGN.md's own Player note says genuine readable text takes --faint at full
+   opacity so it holds AA, and a milestone string is genuine readable text. */
+section.game.locked{background:var(--panel);box-shadow:none;
+  border-color:var(--line-soft)}
+/* The flat background drops all four rivets AT ONCE, which is the no-decay rule
+   satisfied rather than broken: what it forbids is a MISSING or OFFSET rivet on
+   a lit plate, i.e. asymmetry. An unlit plate has nothing for rivets to sit on,
+   so they are complete-or-absent and never partial. */
+section.game.locked h3{background:var(--inset);box-shadow:none;
+  border-bottom-color:var(--line-soft);color:var(--faint);text-shadow:none}
+section.game.locked .glyph{color:var(--faint);background:var(--panel);
+  box-shadow:none;border-color:var(--line-soft)}
+.lockMsg{color:var(--faint);font-style:italic;font-size:var(--fs-small);
+  font-family:var(--font-data);padding:var(--space-3) 0 var(--space-5)}

@@ -7,7 +7,8 @@
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<main>
+<!-- class="client" is DNA v4's page frame; t-<room> is swapped per tab by
+     showTab() and carries that tab's accent lane. --><main class="client t-boss">
   <div id="resbar" class="game hidden">
     <div class="chipGroup">
       <div class="chip">
@@ -41,12 +42,12 @@
   </div>
 
   <nav id="tabs" class="game hidden">
-    <button data-tab="battleSec" class="active">Boss</button>
-    <button data-tab="botSec">Training</button>
-    <button data-tab="farmSec">Grind</button>
-    <button data-tab="gearSec">Player</button>
-    <button data-tab="dungeonSec">Delve</button>
-    <button data-tab="instanceSec">Dungeon</button>
+    <button data-tab="battleSec" class="t-boss active">Boss</button>
+    <button data-tab="botSec" class="t-training">Training</button>
+    <button data-tab="farmSec" class="t-grind">Grind</button>
+    <button data-tab="gearSec" class="t-player">Player</button>
+    <button data-tab="dungeonSec" class="t-delve">Delve</button>
+    <button data-tab="instanceSec" class="t-dungeon">Dungeon</button>
   </nav>
 
   <section id="battleSec" class="tabpane">
