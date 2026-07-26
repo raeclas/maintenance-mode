@@ -46,6 +46,10 @@ const PAIRS = [
   ...Object.entries(ON).flatMap(([t, ss]) => ss.map(s => [t, s, 4.5, "text"])),
   ["logline", "bg", 4.5, "text"],          // #logHead sits directly in <main>
   ["on-gold", "gold", 4.5, "text"],        // CTA text on a solid-gold fill
+  // v3: the Descend CTA's face is a gold->gold-dim gloss, so its dark label
+  // renders on BOTH stops. The bottom stop was a new, un-gated pairing the
+  // moment the button stopped being an outline and became a fill.
+  ["on-gold", "gold-dim", 4.5, "text"],
   ["warn", "panel", 4.5, "text"], ["alert", "panel", 4.5, "text"],
   ["copper", "panel", 4.5, "text"], ["live", "bg", 4.5, "text"],
   // v2: a rowlist is a WELL, so every row-level accent renders on --well now.

@@ -1,28 +1,443 @@
 # Design: Last Warmth
 
-> **v2, 2026-07-26 — read `## Visual DNA v2` FIRST.** The DNA, material and type
-> layers below were superseded by Phase 1 of
-> `.design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md`. Everything
-> else in this file — token NAMES, the semantic tiers, the dimension scale, the
-> component inventory, the state-ladder mechanics, the canvas token module, the
-> motion budget — is carried forward unchanged and is still the contract. The v2
-> section states exactly which paragraphs it replaces and which it does not.
+> **v3, 2026-07-26 — read `# Visual DNA v3` FIRST.** The DNA, material and type
+> layers in BOTH the v1 body and the `# Visual DNA v2` section are superseded by
+> v3. Everything else in this file — every colour hex, the semantic tiers, the
+> dimension scale, the type-scale VALUES, the component inventory, the
+> state-ladder mechanics, the canvas token module, the motion budget — is
+> carried forward unchanged and is still the contract. Each superseding section
+> states exactly which paragraphs it replaces and which it does not.
+>
+> **Reading order:** `# Visual DNA v3` (current) → `# Visual DNA v2` (rejected,
+> kept for the record and because v3 re-uses four of its tokens) → the v1 body
+> (still the law for colour, tokens and components).
 
 **Date:** 2026-07-25 · **Status:** LOCKED — contrast evidence passing (see report below); direction confirmed by the user 2026-07-25, closing DW-3.1. The 5 required code changes below were deferred by the same decision to a single integration pass after Phase 6; nothing in this document is applied to shipped code yet.
-**Archetype:** Ruler + Sage (stretch pairing, `archetypes.md`) · **Register:** restrained/data-dense structure · expressive at: BREACHED reveal, enhance feedback, maxed/complete states
+**Archetype:** ~~Ruler + Sage~~ → **SUPERSEDED by v3: Everyman + Sage** (see `# Visual DNA v3 ## The archetype, re-derived rather than defended` — the Ruler reading produced the look the user rejected, so it was re-derived rather than defended) · **Register:** restrained/data-dense structure · expressive at: BREACHED reveal, enhance feedback, maxed/complete states
 **Grounding:** a 2000s MMO raid client's UI chrome (gold small-caps headers, gear-slot panels, boss-frames) + a mid-2000s botting-forum/sysadmin console (monospace stat rows, tabular numerics) — restated directly from `REMAKE-DESIGN.md` §16's own three-register lexicon, not invented for this pass
 **DNA:** systematization pass, not a fresh divergent generation — see `## Why this isn't a diverge/critique/converge pass` below
-**Composition:** existing, unchanged — dense stat rows (`.rowlist`, the Armory grid, Trophy pips), bordered panels (`section.game`), no cards, no radius, no shadows (already the correct "Data-Dense Professional" discipline for this content). **Dead-CSS list, extended per review round 3 (grepped every name below across `index.html` + every `.js` file — zero references, confirmed independently, not taken on the prior review's word):** `.ztable`, `#pullBtn` / `#pullBtn:disabled` (the retired pull-to-attempt mechanic), `#ticketGain`, `#tierAtk`/`#tierSpeed`, `#gmSec`/`#gmPanel` (the retired GM tab/ticket economy), `.tier-risk`/`.tier-nightmare` (found in this pass — not in the review's own list, but the same class of orphan). None of these render, so none carry a live contrast obligation, but their selectors and any hardcoded hex inside them are named here so this document never again cites one as a shipped fact (the exact error DW-3.3's gold-CTA citation made last round — corrected below).
+**Composition:** existing, unchanged — dense stat rows (`.rowlist`, the Armory grid, Trophy pips), bordered panels (`section.game`), no cards, no radius, no shadows (already the correct "Data-Dense Professional" discipline for this content). **The "no radius, no shadows" half of that line is SUPERSEDED by v3** (`## Radius (v3)`, `## Material (v3)`); the Data-Dense Professional base and the density discipline are carried forward. **Dead-CSS list, extended per review round 3 (grepped every name below across `index.html` + every `.js` file — zero references, confirmed independently, not taken on the prior review's word):** `.ztable`, `#pullBtn` / `#pullBtn:disabled` (the retired pull-to-attempt mechanic), `#ticketGain`, `#tierAtk`/`#tierSpeed`, `#gmSec`/`#gmPanel` (the retired GM tab/ticket economy), `.tier-risk`/`.tier-nightmare` (found in this pass — not in the review's own list, but the same class of orphan). None of these render, so none carry a live contrast obligation, but their selectors and any hardcoded hex inside them are named here so this document never again cites one as a shipped fact (the exact error DW-3.3's gold-CTA citation made last round — corrected below).
 **Pins:** none — this phase systematizes an already-shipped, already-approved look; nothing was pinned because nothing was dealt
+
+---
+
+# Visual DNA v3
+
+**Date:** 2026-07-26 · **Status:** proposed, evidence passing, awaiting the
+user's look sign-off. **This is a DIRECTION CHANGE, not a refinement.**
+**Proved on:** `internal/mocks/boss.html` → `internal/mocks/shots/boss-375.png`.
+The rejected v2 render is preserved as `boss-375-deco.png` /
+`boss-1280-deco.png`; the pre-v2 render remains `boss-375-before.png`.
+
+## Why there is a v3
+
+v2 was shown to the user and rejected: *"there's something about the script and
+styling that irks me still. the early MMO UI vibe isn't there."* Asked which
+early-MMO house style to aim at, the answer was **MapleStory**.
+
+That is not a whim, it is a correction: MapleStory is already this project's
+stated reference for the gear/enhance chase. The UI matching the mechanics is
+the point, and v2's UI was matching a hotel lobby instead.
+
+**The diagnosis, stated plainly.** v2 modelled *light* — a lit lip, a gradient,
+a foot, a corner bracket. Light is the weakest depth cue on a dark ramp, and
+every one of v2's marks was one pixel wide. What MapleStory models is
+*carpentry*: a panel is a physical object with a thick frame you could grab, a
+name-plate at the top, sockets cut into its face, and buttons with a top
+surface. None of that existed in v2, and no amount of gold hairline was going to
+produce it.
+
+## The archetype, re-derived rather than defended
+
+v2's chain was: archetype is **Ruler** + Sage → Ruler's primary families are Art
+Deco and Swiss → implement Art Deco. The chain is valid. The **premise** is
+wrong, and defending it would force the new direction through the label that
+produced the rejected look.
+
+Ruler's core desire is *control and prestige*; its documented visual gravity is
+*"deep tones + gold/metallic, formal symmetry, serifs, luxury restraint"*
+(`archetypes.md` Part A). Read that back against the product: a game client
+whose entire premise is that the room is empty and the lights are still on. The
+archetype belongs to *the product's relationship with its audience*
+(`archetypes.md`'s own selection heuristic), and this client's relationship with
+its one remaining player is not prestige. It is **belonging** — the last
+friendly, familiar, still-maintained thing in a dead world. That is
+**Everyman**: voice *friendly, unpretentious*; gravity *approachable
+mid-contrast colour, familiar layouts*.
+
+This is also the sharper reading of the premise. A cold, formal chrome makes the
+game *about austerity*. A warm, welcoming, perfectly-working client with one
+player in it makes the game about **absence** — which is the stated feeling, and
+the one the no-decay veto exists to protect.
+
+**Sage carries forward unchanged.** The honest, fully-displayed numbers
+(guideline 5: every term is DISPLAYED) are Sage's contribution and nothing about
+them moves.
+
+> **Archetype (v3): Everyman + Sage.** Register: restrained/data-dense
+> structure · expressive at: the Warden's name-plate, the BREACHED peak, the
+> Descend action, enhance feedback, maxed/complete states.
+
+Everyman's primary families are Warm Editorial and **Playful Geometric**.
+Playful Geometric is the legal home of the borrowed axis — its documented
+position is *"chunky grotesque… mixed radius… geometric shapes as decoration
+with purpose, sticker/badge elements"*, which is MapleStory's construction
+described in `archetypes.md`'s own vocabulary. Warm Editorial is rejected on
+content pressure: dense tables and numbers push *away* from editorial families
+(`archetypes.md` Part C, content-type table).
+
+## The remix (`design-dna.md` §Remix Rules)
+
+```
+BASE       Data-Dense Professional   (content pressure: dense tables/numbers — unchanged since v1)
+BORROWS    Composition / material    from Playful Geometric (Everyman's own primary)
+KEEPS      Colour strategy + Motion  from the base — unchanged, not renegotiated
+DOMINANT   Composition — the window / socket / control language IS the identity
+```
+
+Rule 2 (borrow one or two axes) and rule 4 (colour and composition rarely both
+borrow) both hold, for the reason v2 already gave and v3 inherits: **the palette
+was never the problem.** Rule 3 (one axis dominates) — composition again. What
+changed between v2 and v3 is not *which axis* carries the identity, it is *which
+family that axis borrows from*. That is the whole of the pass.
+
+**Grounding (v3) — the collision:**
+
+> **MapleStory's window carpentry** (thick bevelled frames, title bars, sunken
+> item sockets, glossy pressable buttons) **+ a Bloomberg terminal's tabular
+> density** (fifteen rows of live numbers, tabular figures, no decoration inside
+> the data).
+
+Neither reference is itself a catalogued AI-tell aesthetic, so the collision
+does not triangulate back to the distributional centre. What satisfies both is a
+*toy-chunky window frame around a dead-serious stat table* — a shape with no
+cluster in the training data, because 2026 web UI has no title bars and
+MapleStory has no Bloomberg tables. It is also the game itself: satire shell,
+sincere numbers inside.
+
+**What deliberately did NOT travel from MapleStory: its colours.** Maple's real
+UI is cream, tan and cheerful. This game is dark-only by design and its premise
+is melancholy. The construction and the chunkiness travelled; the palette did
+not. **Not one hex moves in v3.**
+
+## What v3 supersedes and what it carries forward
+
+| Section | Status under v3 |
+|---|---|
+| `## Direction (v2)` / the v1 `## Direction` | **Superseded** — see `## Direction (v3)`. |
+| `## Signature move (v2)` — the Warden's gold corner-bracket frame | **Superseded.** See `## Signature move (v3)`. Art Deco corner brackets have no home in a Maple register; they are removed, not restyled. |
+| `## Material and depth (v2)` — the three elevations (plate / well / leaf) | **Superseded** by `## Material (v3)` — four constructions. The *surface-ramp respread* inside that section (the `well < bg < plate-foot < panel < field` L\* table and its reasoning) is **carried forward unchanged and is still law** — v3 depends on it more than v2 did. |
+| `## Material and depth (v2)` §Ornament — the gold lozenge, the fading hairline rule | **Superseded — deleted, not replaced.** Ornament is Deco vocabulary. v3's equivalent is the title bar, which is structure rather than decoration. |
+| `## Material and depth (v2)` §Rhythm — `--space-9` / `--space-10` | **Carried forward unchanged.** |
+| `## Type (v2)` — the display tier `--fs-warden` / `--fs-colossal` | **Values carried forward unchanged.** What is superseded is the FACE they are set in (Georgia → the UI sans) and the "engraved" treatment (→ hard 1px shadow). |
+| the v1 `## Type` — the Georgia / mono register split | **Half superseded.** Georgia leaves the chrome entirely. The mono side is **carried forward unchanged**. |
+| `## Gold discipline (v2)` — the 7-item list of what may be gold | **Carried forward, with one amendment**: the primary action may now be a gold *fill*, not only gold ink. Everything else is unchanged, including `#projection` staying `--bone`. |
+| the v1 `## Never` "no radius / no shadows" composition line | **Superseded.** MapleStory is round and beveled; see `## Radius (v3)`. |
+| `## Colour tokens` — every hex, the semantic table, the ladder maths, the contrast evidence | **Carried forward unchanged. Not one hex moved in v2 and not one moves in v3.** |
+| `## Colour tokens (v2 additions)` — `--plate-foot`, `--edge-lit`, `--edge-shade`, `--floor-glow` | **Carried forward unchanged in VALUE, re-pointed in PURPOSE**: v2 used them to light a flat plate, v3 uses them to bevel a frame. Same hexes, same gates. |
+| `## Canvas scene spec` | **Carried forward**, with one amendment noted under `## Required behaviour changes (v3)`. |
+| `## Motion budget` | **Carried forward unchanged. v3 adds zero animation**, exactly as v2 did. The no-ceremony veto is why richness here is material, never motion. |
+| `## Component specs` (token tiers, dimension scale, Row / Rowlist / Chip / Meter / Arena / Allocation / `.caption` / Tab / Affordability) | **Carried forward unchanged.** v3 restyles these components; it renames, merges and removes nothing. |
+| `## Never (v2 additions)` | **Amended** — see `## Never (v3)`. Three v2 entries are dropped as Deco-specific; the rest hold, and two are added. |
+
+## Direction (v3)
+
+The client is a **window**, and it was built to be used by people. Its panels
+have thick frames with a real outer bevel and rounded corners; each one wears
+its name on a plate across the top; anything you read from is cut into the
+surface as a socket; anything you press has a physical top you can see going
+down. It is chunky, tactile, friendly and *maintained* — the way a game client
+made in 2003 for a mass audience was friendly, because it had to be legible to
+everyone at once.
+
+**The melancholy is not in the chrome; it is in the room.** A warm, welcoming,
+perfectly-functioning client with exactly one player in it is sadder than a cold
+one, and it is the only reading that honours both the premise and the no-decay
+veto. **The feeling is absence, never disrepair.** Nothing is worn, chipped,
+scanlined, grained or broken. Every frame is complete and every bevel is
+symmetric. The server is fine.
+
+The dense stat rows keep their Bloomberg discipline — the content is tables and
+it still wins that vote. What changed is the furniture around them.
+
+## Signature move (v3)
+
+**The title bar. Every window wears its name.**
+
+A raised gradient strip runs full-bleed across the head of every window,
+carrying that block's name in bold tracked caps with a hard 1px shadow, closed
+by a two-tone groove: a dark line, then a lit line. One per window, always at
+the top, never anywhere else.
+
+**The string is always the block's own existing heading.** No copy is invented,
+no fact changes owner, no heading is duplicated — this is the `h3` the page spec
+already had, given the shape a client window's header actually has. The
+explainer sentence rides the plate under the name rather than being exiled below
+it, so the header stays one object instead of two.
+
+**The Warden's name-plate is the same construction, one size up.** On the Boss
+tab, block 1 of the JOURNEY spec *is* the window's title bar: the boss's name at
+`--fs-warden` over the title at `--fs-small`, on the same raised plate, closed
+by the same groove. Both facts, both strings, the same owner, the same first
+position — what changed is that the header of the Boss window is the boss, which
+is what a boss frame in an MMO client is.
+
+Why this and not the frame itself: a frame is the *language*, and a language
+cannot be a signature. The title bar is the one specific, memorable decision a
+template would never contain — nobody has put a title bar on a web panel since
+about 2006, and it is the single strongest "this is a client, not a page" signal
+available without a raster asset.
+
+## Material (v3) — four constructions
+
+Written as constructions, not as colours, so a surface nobody has drawn yet can
+be built from it. **Light still comes from above and is still warm**
+(`chapter-09-color-theory.md`: hue-shifted highlights and shadows — `--edge-lit`
+is warm, `--edge-shade` is a cool blue-black, never `#000`).
+
+| Construction | What it is | How it is built |
+|---|---|---|
+| **WINDOW** | a panel is an object with edges | `--border-frame` (3px) `--line` frame · `--radius-window` · `--panel` → `--plate-foot` body · **outer bevel** = two opposed inset hairlines, warm `--edge-lit` at the top-left and cool `--edge-shade` at the bottom-right · a hard `--edge-shade` foot below it so the window sits ON the page |
+| **TITLE BAR** | a window wears its name | `--field` → `--inset` strip, full-bleed across the head · lit inset hairline at the top · closed by a groove: `--edge-shade` border-bottom over an `--edge-lit` outset hairline · label bold, tracked, uppercase, hard 1px shadow |
+| **SOCKET** | anything you read FROM is cut INTO the body | `--well` ground · `--border-hairline` `--edge-shade` cut edge · `--radius-socket` · a blurred inner `--edge-shade` at the near (top-left) wall and a lit `--edge-lit` far (bottom-right) wall |
+| **CONTROL** | a button has a physical top surface | `--radius-control` · `--field` → `--panel` gloss · lit top-left / dark bottom-right bevel · a hard foot to stand on · bold shadowed label. **Pressed** inverts the bevel, swaps the gradient and drops the foot. **Disabled** loses the bevel AND the foot and flattens onto `--panel` |
+
+### The rules that make it reproducible
+
+1. **Raised or sunk, never flat.** Every surface is one of the four above.
+   Rows inside a socket are the one exception and that is the point: a leaf in a
+   socket is what keeps a 15-row list readable.
+2. **Never nest a bevel inside a bevel.** Carried forward verbatim from v2, and
+   it is the one Maple habit left at the door — Maple nests raised-in-raised
+   freely, and it is the nested-card tell (`ai-tells.md`: Fable 5's #1 measured
+   default, 6/6). The resource bar is therefore a *flat* band holding raised
+   chip plates, not a raised bar holding raised plates.
+3. **No blur except inward.** There is exactly one blurred shadow in the whole
+   language — the socket's inner shadow — and it points into the surface. An
+   outward blurred coloured shadow on a dark ground is the neon-glow tell AND
+   reads as a screen in trouble, which is the one thing this client must never
+   look like. Everything else is a hard offset.
+4. **A gradient always lights the TOP.** Carried forward from v2 unchanged, and
+   still a legibility rule wearing a lighting rule: no text ever lands on a
+   ground lighter than the AA-verified one.
+5. **Edges that are partial are background layers, not borders.** Carried
+   forward from v2. Borders are for complete rectangles only. This is what keeps
+   rule 2 satisfiable and it is why the arena's floor band is a layer.
+6. **A rowlist is a socket.** The rule that makes the language work on a surface
+   with no hero. Training, Grind, Player and Delve are lists; a list cut into
+   the window body has depth without needing a frame or a display face.
+   **Verified on pixels, not asserted:** `boss.html` renders Grind's real 15-row
+   section — the same shared constant `grind.html` uses, not a lookalike — as a
+   labelled specimen.
+7. **A wrapper with no styling left is deleted, not overridden.** Carried
+   forward from v2 (`.arena` is still gone).
+
+### Radius (v3) — the rule v2 had backwards
+
+v1 and v2 both carried an explicit **no-radius** rule, inherited from Swiss and
+Deco. v3 supersedes it: MapleStory is round, and a square-cornered frame reads
+as a `div` with a border rather than as an object.
+
+```css
+--radius-window:8px;   /* the window frame — the biggest object on screen */
+--radius-control:5px;  /* buttons, tabs, chip plates */
+--radius-socket:3px;   /* wells, tracks, inputs */
+```
+
+**Three steps, not one.** A single global radius is the unmodified-shadcn-token
+signature (`ai-tells.md` Checkable Signatures); three is a statement that the
+window, the control and the socket are three different objects. `5px` is not
+invented — it is `--chip-radius`, a value the shipped CSS already carried as its
+own named one-off. It always existed; it just had no system to belong to.
+
+### Colour tokens (v3 additions)
+
+**No colour token is added, moved or removed.** The complete v3 token delta:
+
+```css
+--radius-window:8px; --radius-control:5px; --radius-socket:3px;
+--border-frame:var(--space-2);  /* 3px — a frame, not a hairline. Aliased onto
+                                   the existing scale, not a new primitive */
+--font-ui:Tahoma,"Segoe UI",Verdana,sans-serif;
+--font-body:var(--font-ui);     /* the one seam that retires the serif */
+```
+
+That is the entire direction change in six values, which is precisely why the
+contrast surface cannot regress: there is no new colour for it to regress
+through.
+
+## Type (v3) — the change the user actually asked for
+
+**Georgia leaves the chrome. Not softened — removed**, so the claim is a
+measurement rather than an opinion: the rendered `boss.html` computes **0
+elements with a Georgia stack and 0 elements with `font-variant: small-caps`**.
+
+**Replacement: `Tahoma, "Segoe UI", Verdana, sans-serif`** — a system stack, no
+webfont, no external reference. This is a medium-form choice, not a taste one,
+and it is the same argument `chapter-03-typography.md` uses to prefer Georgia
+over Garamond, pointed at a different medium: Tahoma is Matthew Carter's
+small-size screen face — narrow, large x-height, heavily hinted, designed to
+stay legible and even in texture at 10–13px on a pixel grid, which is exactly
+the band this UI lives in. It is also, historically, the face early-2000s
+Windows game clients shipped their chrome in. **Arial and Helvetica are
+deliberately absent from the stack** — both are on `ai-tells.md`'s overused-font
+list; Tahoma and Verdana are not.
+
+**The boss's name does not get a second face.** Considered and rejected: a
+display face for the Warden would re-import the exact bookish register the user
+objected to, and MapleStory's own hierarchy is built from *size, weight and
+shadow depth on one face*, never from a face swap. `--fs-warden` (36px) and
+`--fs-colossal` (52px) survive unchanged; the identity reads because it is ~3×
+body size, bold, tracked, and carries the heaviest shadow on the page.
+Step-skipping for dominance (`techniques.md` Ch 7) still does the work — it just
+no longer needs a serif to do it.
+
+**The hard shadow, and where it is banned.** Chrome carries
+`text-shadow: 0 1px 0 var(--edge-shade)`; the identity and the hero number carry
+`0 2px 0`. **Data does not carry it at all.** A hard shadow under every glyph of
+an 11px monospace stat row fills its counters and destroys the even texture the
+squint test is about (`chapter-03-typography.md`). Titles, labels, controls and
+the identity are shadowed; rows, captions and the log are clean. That split is
+the register split doing visible work.
+
+**Monospace is carried forward unchanged** for the data register — it is
+`REMAKE-DESIGN.md` §16's botter's-toolkit voice, it carries the tabular figures
+the content needs, and it is not what the user meant by "the script": the
+complaint names the serif chrome, which is the part that left.
+
+**Weight.** `b { font-weight: bold }` — v1 neutered `<b>` to normal, which meant
+the resource bar's own headline numbers had no weight channel at all. Under a
+bold-small-type voice that was the wrong default.
+
+## Gold discipline (v3) — one amendment
+
+The v2 list of the seven things allowed to be gold is carried forward verbatim,
+with one change: **the primary action may be a gold FILL, not only gold ink.**
+
+`#descendBtn` is a solid `--gold` → `--gold-dim` gloss carrying `--on-gold`
+text. It is the loudest thing this button vocabulary has, it appears once per
+wall, and the amplitude matches the moment (`design-dna.md`: expressive moments
+are per-moment dial positions, not a global cap). **Gold as a fill is reserved
+to this one element**; everywhere else — the active tab, the active wall button,
+the live row's edge, the Warden's name — gold stays an edge or ink. That
+scarcity is what makes the fill legible as the peak.
+
+`#projection` stays `--bone`, unchanged from v2. A sentence in gold is still the
+reason no other gold would read as special.
+
+### Contrast evidence (v3) — computed, not asserted
+
+`node internal/mocks/contrast.mjs` parses the `:root` that actually ships in
+`boss.html`, computes every allowed text/ground pair at 4.5:1 and every non-text
+pair at 3.0:1, and exits non-zero on any miss.
+
+```
+all 49 gated pairs pass          (was 48 — coverage GREW, nothing regressed)
+```
+
+The one added pair is the one new pairing v3 introduces: the Descend CTA stopped
+being an outline and became a fill, so its dark label now renders on **both**
+stops of a `--gold` → `--gold-dim` gloss. The bottom stop was un-gated the
+moment that happened.
+
+```
+PASS  8.56:1  (>=4.5 text)  --on-gold on --gold
+PASS  5.69:1  (>=4.5 text)  --on-gold on --gold-dim      <- NEW
+```
+
+Every other pair is byte-identical to v2's report, because every hex is.
+The two banned pairings (`--recede` / `--faint` on `--field`) are still printed
+on every run so they cannot be quietly "fixed" by brightening a token instead of
+changing a role.
+
+## The state ladder under v3 — six channels, none lost
+
+The four channels the ladder shipped with (edge colour, type colour, control
+presence, unlock text) are untouched. v2 added a fifth (material: only a live
+row carries a lit edge). v3 keeps that and the socket adds a sixth for free:
+
+| State | What it looks like in a socket |
+|---|---|
+| **live** | lifted OUT of the socket onto its own `--inset` → `--well` ground, 3px `--gold` left edge, gold name, controls present, filling bar |
+| **dormant** | lying flat in the socket, neutral edge, dim name, faint stat, control present reading 0, empty track |
+| **struggling** (Grind only) | flat, full opacity, `--warn` left edge and `--warn` stat — live and failing, which is neither dormant nor locked |
+| **locked** | `--opacity-locked` AND **unlit** — no groove highlight at all, no left edge, no control, and the row prints the word "locked" with its unlock condition |
+
+"A locked window is visibly unlit" is the thing the brief predicted a chunkier
+frame language would buy, and it is verified on the render at 375px rather than
+assumed: the four states are drawn side by side in the Grind specimen.
+
+## Required behaviour changes (v3)
+
+Carried forward: v1's five and v2's #6 all still stand — they are colour and
+role fixes, independent of which look wins.
+
+7. **`battle.js`'s BREACHED reveal is still drawn in 52px Georgia.** v2 justified
+   `--fs-colossal` partly by matching it. With the serif retired from the DOM,
+   the canvas is now the only Georgia left in the product and the DOM and canvas
+   would disagree on the face while agreeing on the size. The canvas reveal
+   should move to the same UI stack. Size unchanged, copy unchanged, timing
+   unchanged — face only.
+
+## Never (v3)
+
+Carried forward from v1 and v2, minus the three entries that were Deco-specific
+(the corner-frame symmetry rule, the one-frame-per-surface rule, and the
+ornament-as-filler rule — all three governed marks that no longer exist), plus:
+
+- **No cream, tan or warm-light ground.** MapleStory's own palette is the one
+  thing deliberately not borrowed. Remix rule 4 is the reason; the dark ramp is
+  the law.
+- **No worn metal.** The instinct a chunkier, more physical register invites is
+  wear: chipped bevels, scratched plates, rust in the grooves, a frame with a
+  corner missing. All of it is banned by the no-decay veto, and the ban is
+  *sharper* here than it was in v2 because a chunky object is easier to
+  distress than a hairline is. Bevels are complete; grooves are clean.
+- **No glow on anything, ever** (carried forward). Hard offsets only; the single
+  blurred shadow in the language points inward.
+- **No texture, grain, scanline or CRT overlay** (carried forward).
+- **No bevel inside a bevel** (carried forward) — the nested-card tell, and the
+  one MapleStory habit not imported.
+- **No raster asset and no icon of any kind**, generated or otherwise (carried
+  forward, and load-bearing here: MapleStory leans hard on icon art and that
+  route is closed. Every mark in v3 is a border, a gradient, a radius or a
+  hard-offset shadow).
+- **No animation added.** v3, like v2, adds zero. Motion stays state-change
+  feedback only.
+- **No single global radius.** Three steps or it is the shadcn-default tell.
+
+## Open questions (v3)
+
+- **The other five surfaces have the ramp and the font seam but not the v3
+  construction.** `CSS_V3` is still Boss-only, behind the `v3` flag in
+  `build.mjs`, exactly as `CSS_V2` was — so `grind.html` shows what the tokens
+  alone buy and `boss.html`'s specimen shows what the tokens **plus** the
+  carpentry buy. The gap between those two renders is the remaining work: paste
+  `CSS_V3` into `CSS`, drop the flag, delete the split. Marked with a
+  `ponytail:` comment at the seam.
+- **Nothing here is applied to `style.css` yet.** v3 inherits v1/v2's position:
+  the DESIGN.md gate holds until the user confirms the direction on real pixels.
+- **Alternating row stripes were considered and skipped.** A real MapleStory
+  list device, but on this ramp the only legal alternation is ~1 L\* (invisible)
+  and the brighter options would open un-gated accent-on-ground pairs for a
+  stripe nobody can see. The socket's groove separators do the job for free.
+  Revisit only if the render reads flat — it does not.
 
 ---
 
 # Visual DNA v2
 
-**Date:** 2026-07-26 · **Status:** proposed, evidence passing, awaiting the
-user's look sign-off (Phase 1 of the visual-pass plan).
-**Proved on:** `internal/mocks/boss.html` → `internal/mocks/shots/boss-375.png`
-(the pre-v2 render is preserved as `boss-375-before.png` for the side-by-side).
+> **SUPERSEDED 2026-07-26 by `# Visual DNA v3`** — the user rejected this
+> direction on the render (*"the early MMO UI vibe isn't there"*). Kept in full
+> for the record, and because v3 re-uses four of its tokens (`--plate-foot`,
+> `--edge-lit`, `--edge-shade`, `--floor-glow`) unchanged in value, and inherits
+> its surface-ramp respread unchanged as law. The v3 supersede table above says
+> exactly which paragraphs below still hold.
+
+**Date:** 2026-07-26 · **Status:** REJECTED (superseded by v3).
+**Was proved on:** `internal/mocks/boss.html`, whose v2 render is preserved as
+`internal/mocks/shots/boss-375-deco.png` / `boss-1280-deco.png` (the pre-v2
+render is `boss-375-before.png`). `boss-375.png` is now the v3 render.
 
 ## Why there is a v2 at all
 

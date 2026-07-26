@@ -68,6 +68,12 @@ const TOKENS = `
   /* ── Phase 3 type scale ── */
   --fs-hero:26px; --fs-masthead:20px; --fs-display:16px; --fs-body:13px;
   --fs-small:11px; --fs-label:10px; --fs-micro:9px;
+  /* The chrome face, as ONE seam rather than four scattered declarations.
+     v1/v2 set Georgia at four separate sites (body, tab, CTA, .cta); v3
+     supersedes the serif chrome, and a single token is the difference
+     between one override and four. Data stays monospace either way — that
+     register split is REMAKE-DESIGN.md §16's, not this pass's. */
+  --font-body:Georgia,serif;
   /* ── Phase 4 primitive dimension scale (derived from style.css's own px) ── */
   --border-hairline:1px;
   --space-1:2px; --space-2:3px; --space-3:4px; --space-4:6px;
@@ -118,12 +124,21 @@ const TOKENS = `
                              rather than truncating (the plan's own edge case) */`;
 
 /* ─────────────────────────────────────────────────────────────────────────
-   VISUAL DNA v2 tokens — internal/DESIGN.md "## Visual DNA v2".
+   VISUAL DNA v3 tokens — internal/DESIGN.md "## Visual DNA v3".
    Injected INTO the same :root block (a second :root would slip past the
-   assertion's strip regex), and only on the surface Phase 1 recomposes.
+   assertion's strip regex), and only on the surface this pass recomposes.
+
+   v3 is a DIRECTION CHANGE, not a refinement: the user rejected v2's Art
+   Deco reading ("the early MMO UI vibe isn't there") and named MapleStory.
+   NOT ONE COLOUR MOVES. The four material hexes below are v2's, unchanged
+   and re-used for a different construction; everything v3 adds is a radius,
+   a frame width and a font stack. That is why the contrast surface cannot
+   regress by construction rather than by luck.
    ───────────────────────────────────────────────────────────────────────── */
-const TOKENS_V2 = `
-  /* ── v2 material: three elevations, built not coloured ── */
+const TOKENS_V3 = `
+  /* ── carried forward from v2, values UNCHANGED, purpose re-pointed:
+        v2 used these to LIGHT a flat plate; v3 uses them to BEVEL a frame.
+        Same hexes, same gates, different carpentry. ── */
   --plate-foot:#101015;   /* a plate's foot. DARKER than --panel on purpose: the
                              gradient lights the TOP, so no text ever sits on a
                              ground lighter than the AA-verified --panel.
@@ -138,14 +153,49 @@ const TOKENS_V2 = `
                              pure #000 (ai-tells colour rule, still held) */
   --floor-glow:#17140d;   /* warm dark. Light under the door: the arena's floor
                              band only, never a text ground */
-  /* ── v2 display type: two steps ABOVE the existing --fs-hero (26px) ── */
+  /* ── display type: two steps ABOVE the existing --fs-hero (26px). Values
+        unchanged from v2; what changed is that they are no longer set in a
+        serif — see --font-ui. ── */
   --fs-warden:36px;       /* the Warden's name — the identity, 1.38x over hero */
   --fs-colossal:52px;     /* the once-per-screen peak; the same 52px battle.js
                              already draws the BREACHED reveal at, so DOM and
                              canvas finally agree where the peak is */
-  /* ── v2 display-tier spacing: the scale had nothing above 16px, which is why
+  /* ── display-tier spacing: the scale had nothing above 16px, which is why
         every block read as one texture. Append-only, same derivation rule ── */
-  --space-9:24px; --space-10:32px;`;
+  --space-9:24px; --space-10:32px;
+
+  /* ══ v3 ADDITIONS — the whole of the direction change, in six values ══ */
+
+  /* RADIUS. v2 carried an explicit no-radius rule, inherited from Swiss/Deco.
+     v3 supersedes it: MapleStory is round, and a frame with square corners
+     reads as a div with a border rather than as an object. Three steps, not
+     one, because the window / the control / the socket are three different
+     objects and a single radius is the shadcn-default tell. */
+  --radius-window:8px;    /* the window frame — the biggest object on screen */
+  --radius-control:5px;   /* buttons, tabs, chip plates. Matches --chip-radius,
+                             which the shipped CSS already carries as its own
+                             named one-off: the value was always here, it just
+                             had no system to belong to */
+  --radius-socket:3px;    /* wells, tracks, inputs — things CUT INTO a surface
+                             read tighter than things sitting on one */
+
+  /* THE FRAME. A hairline is a rule; 3px is a frame you could grab. Aliased
+     onto the existing scale rather than minted as a new primitive. */
+  --border-frame:var(--space-2);
+
+  /* THE VOICE. Georgia leaves the chrome — it is the single most bookish
+     thing on the page and it is what the user means by "the script".
+     Tahoma is Matthew Carter's small-size screen face: narrow, large
+     x-height, hinted for exactly the 10-13px band this UI lives in
+     (chapter-03-typography.md's own medium-form argument — the same one
+     that put Georgia here for prose, pointed at dense chrome instead).
+     It is also, historically, the face early-2000s Windows game clients
+     shipped their chrome in. System stack only: no webfont, no external
+     reference. Arial/Helvetica are deliberately absent — both are on
+     ai-tells.md's overused-font list, Tahoma and Verdana are not. */
+  --font-ui:Tahoma,"Segoe UI",Verdana,sans-serif;
+  --font-body:var(--font-ui);   /* the one seam: this override retires the
+                                   serif at all four of its shipped sites */`;
 
 const TOKENS_END = `
 }`;
@@ -157,7 +207,7 @@ const BP = "@media (min-width:561px)";
 
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--dim);font-family:Georgia,serif;
+body{background:var(--bg);color:var(--dim);font-family:var(--font-body);
   font-size:var(--fs-body);font-variant-numeric:tabular-nums;line-height:1.45;
   display:flex;justify-content:center;min-height:100vh}
 main.client{width:100%;max-width:var(--page-max);
@@ -200,7 +250,7 @@ b{font-weight:normal}
 #tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);
   margin-bottom:var(--space-6)}
 #tabs button{background:var(--panel);border:var(--border-hairline) solid var(--line);
-  color:var(--tab-idle);font-family:Georgia,serif;font-variant:small-caps;
+  color:var(--tab-idle);font-family:var(--font-body);font-variant:small-caps;
   letter-spacing:.08em;font-size:var(--fs-body);padding:var(--tab-pad);
   min-height:var(--touch-min)}
 #tabs button.active{color:var(--tab-active);border-color:var(--gold)}
@@ -328,7 +378,7 @@ ${BP}{
   padding:var(--space-5);width:100%}
 #descendBtn{display:block;width:100%;background:var(--panel);
   border:var(--border-hairline) solid var(--gold);color:var(--gold);
-  font-family:Georgia,serif;font-variant:small-caps;letter-spacing:.1em;
+  font-family:var(--font-body);font-variant:small-caps;letter-spacing:.1em;
   font-size:var(--fs-display);padding:var(--space-6);margin:var(--space-5) 0;
   text-align:center}
 #dialogue{border-left:var(--row-active-border) solid var(--gold);
@@ -447,7 +497,7 @@ details.trophySet>.pips{margin-top:var(--space-4)}
 .runControls label{font-size:var(--fs-small);font-family:monospace;color:var(--dim)}
 .ctaRow{display:flex;flex-wrap:wrap;gap:var(--space-5);margin-top:var(--space-5)}
 .cta{flex:1;background:var(--panel);border:var(--border-hairline) solid var(--gold);
-  color:var(--gold);font-family:Georgia,serif;font-variant:small-caps;
+  color:var(--gold);font-family:var(--font-body);font-variant:small-caps;
   letter-spacing:.1em;font-size:var(--fs-display);padding:var(--space-6);
   text-align:center}
 .seg{display:inline-flex}
@@ -476,222 +526,316 @@ footer button{background:none;border:none;color:var(--faint);
 }`;
 
 /* ═════════════════════════════════════════════════════════════════════════
-   VISUAL DNA v2 — material, frame, ornament, display type.
-   internal/DESIGN.md "## Visual DNA v2" is the spec; this is its execution.
+   VISUAL DNA v3 — MapleStory's CARPENTRY on this game's dark ramp.
+   internal/DESIGN.md "## Visual DNA v3" is the spec; this is its execution.
 
-   Scoped to the Boss mock, because Phase 1's scope is one recomposed surface
-   and the other five must emit byte-identical. Adds ZERO animation (the motion
-   budget is untouched), ZERO raster assets, ZERO icons, ZERO external refs:
-   every mark below is a gradient, a border or a rotated square.
+   v2 modelled LIGHT (a lip, a gradient, a foot) and produced a tidy dark
+   dashboard. v3 models CARPENTRY: a panel is a WINDOW with a thick bevelled
+   frame and a title bar; anything you read FROM is a SOCKET cut into it;
+   every control has a physical top surface you can press. Four constructions,
+   applied everywhere, no exceptions — that is what makes it a language rather
+   than a hero-tab trick.
+
+   What did NOT travel from MapleStory: its colours. Maple's real UI is cream
+   and tan and cheerful; this game is dark-only and its premise is melancholy.
+   Remix rule 4 — colour and composition rarely both borrow — is the reason,
+   and it is the same rule v2 honoured. NOT ONE HEX MOVES IN v3.
+
+   Scoped to the Boss mock, because this pass's scope is one recomposed
+   surface. Adds ZERO animation (the motion budget is untouched), ZERO raster
+   assets, ZERO icons, ZERO external refs: every mark below is a border, a
+   gradient, a radius or a hard-offset shadow. Nothing is worn, chipped,
+   scanlined or distressed — the server works; only the players are gone.
 
    ponytail: two CSS strings instead of one until the look is signed off —
-   Phase 3 pastes this into CSS, drops the `v2` flag, and deletes the split.
+   the follow-up phase pastes this into CSS, drops the `v3` flag, and deletes
+   the split.
    ═════════════════════════════════════════════════════════════════════════ */
-const CSS_V2 = `
-/* ── 1. MATERIAL ───────────────────────────────────────────────────────────
-   Three elevations. Each is a CONSTRUCTION, not a colour — which is what
-   makes it reproducible on a surface nobody has drawn yet.
+const CSS_V3 = `
+/* ── 0. THE VOICE ──────────────────────────────────────────────────────────
+   --font-body now resolves to --font-ui, so the serif is retired at all four
+   of its shipped sites from one token. What remains here is the WEIGHT and
+   the SHADOW, which is the other half of what the user was reacting to.
 
-   PLATE  (raised)   : 2px warm --edge-lit lip, gradient falling from --panel
-                       to --plate-foot, 1px cool --edge-shade foot, --line
-                       hairline frame. Sits 5.2 L* above the page.
-   WELL   (recessed) : the --well ground (BELOW page level) with a 2px lit foot
-                       — light from above falls on the far wall of a recess,
-                       and the near wall is already the darkest thing on
-                       screen, so there is nothing left to shade it with.
-   LEAF   (flat)     : no bevel, no gradient. Lives IN a well or ON a plate;
-                       separated by hairlines alone. Density surfaces stay
-                       leaves — that is what keeps a 15-row list readable.
+   The shadow rule, stated so it is not applied by reflex: CHROME is shadowed,
+   DATA is not. A hard 1px shadow under every glyph of an 11px monospace stat
+   row fills its counters and destroys the even texture chapter-03's squint
+   test is about. Titles, labels, controls and the identity get the shadow;
+   rows, captions and the log do not.                                       */
+b{font-weight:bold}
+main.client{padding:var(--space-8) var(--space-5) var(--space-10)}
 
-   The lip is --space-1 (2px), not 1px. A 1px edge at 10 L* was the review's
-   Major: present in the CSS, invisible on the render. 2px at 18.6 L* reads. */
+/* ── 1. THE WINDOW ─────────────────────────────────────────────────────────
+   Every panel is an object with edges. A 3px frame, a real radius, a body
+   that falls from --panel to --plate-foot, an OUTER BEVEL drawn as two
+   opposed inset hairlines (warm --edge-lit at the top-left, cool
+   --edge-shade at the bottom-right — light from above, hue-shifted, ch09),
+   and a hard foot so the window sits ON the page instead of being part of it.
+
+   No blur anywhere in this file: a blurred coloured shadow on a dark ground
+   is the neon-glow tell AND reads as a screen in trouble. Offsets only.    */
 section.game{
+  border:var(--border-frame) solid var(--line);
+  border-radius:var(--radius-window);
   background:linear-gradient(var(--panel),var(--plate-foot));
-  box-shadow:inset 0 var(--space-1) 0 var(--edge-lit),
-             inset 0 calc(var(--border-hairline) * -1) 0 var(--edge-shade);
-  padding:var(--space-9) var(--space-7) var(--space-10);
-  margin:var(--space-9) 0}
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade);
+  padding:0 var(--space-7) var(--space-8);
+  margin:var(--space-8) 0;
+  overflow:hidden}
 
-/* WELL. Used by the arena, the dialogue, and — the point of this pass — every
-   ROWLIST, so a list-heavy surface gets its depth from the list itself rather
-   than from a frame it does not have. */
-.canvasStub,#dialogue,.rowlist{background:var(--well);
-  box-shadow:inset 0 calc(var(--space-1) * -1) 0 var(--edge-lit)}
-.rowlist{border-top:var(--border-hairline) solid var(--edge-shade);
-  margin:var(--space-5) 0 var(--space-6)}
+/* ── 2. THE TITLE BAR — the signature move ────────────────────────────────
+   Every window wears its name on a raised strip full-bleed across its head,
+   closed by a two-tone groove (dark line, then lit line — the oldest
+   "something ends here" mark in interface carpentry).
 
-/* Controls are small plates: same lit-top/dark-foot rule, one step brighter.
-   Scoped — the footer's export/wipe are text links, not controls, and must not
-   inherit a raise. A DISABLED control loses its raise entirely: the material
-   itself carries the state, and --faint only clears AA off the --field ground. */
-section.game button,.helpBtn,.chipGroup{
-  background:linear-gradient(var(--field),var(--panel));
-  box-shadow:inset 0 var(--space-1) 0 var(--edge-lit),
-             inset 0 calc(var(--border-hairline) * -1) 0 var(--edge-shade)}
-section.game button:disabled{background:var(--panel);box-shadow:none}
-
-/* ── 2. FRAME — the signature move ─────────────────────────────────────────
-   Four gold corner brackets on a hairline frame, EXACTLY ONE PER SURFACE,
-   around the one thing the surface is about. Eight background layers, no
-   extra markup, no icon, no image.
-
-   The no-decay rule lives here: a frame is always four corners, always
-   symmetric, always complete. A missing or broken bracket would read as
-   damage instantly, so the construction makes it unrepresentable.
-
-   No fill layer. A frame is a frame — it sits transparently on its parent's
-   plate. The 9th panel->plate-foot gradient this rule used to carry was a
-   second application of the construction its own parent already had (review
-   Minor): invisible only because the colours matched, and a bevel-inside-a-
-   bevel by the letter of material rule 2.                                  */
-.frame{position:relative;--br:linear-gradient(var(--gold),var(--gold));
-  border:var(--border-hairline) solid var(--line);
-  padding:var(--space-10) var(--space-7) var(--space-9);
-  background:
-    var(--br) 0 0/var(--space-9) var(--space-1) no-repeat,
-    var(--br) 0 0/var(--space-1) var(--space-9) no-repeat,
-    var(--br) 100% 0/var(--space-9) var(--space-1) no-repeat,
-    var(--br) 100% 0/var(--space-1) var(--space-9) no-repeat,
-    var(--br) 0 100%/var(--space-9) var(--space-1) no-repeat,
-    var(--br) 0 100%/var(--space-1) var(--space-9) no-repeat,
-    var(--br) 100% 100%/var(--space-9) var(--space-1) no-repeat,
-    var(--br) 100% 100%/var(--space-1) var(--space-9) no-repeat}
-
-/* ── 3. ORNAMENT ──────────────────────────────────────────────────────────
-   A hairline that fades in from nothing, a gold lozenge, a hairline that
-   fades out. The lozenge is a rotated square — a drawn mark, not a glyph and
-   not a generated icon. Used to CLOSE an identity block and to open a
-   section heading; never as filler between arbitrary elements.             */
-.ornRule{display:flex;align-items:center;justify-content:center;
-  gap:var(--space-5);margin:var(--space-6) 0 0}
-.ornRule::before,.ornRule::after{content:"";height:var(--border-hairline);width:35%}
-.ornRule::before{background:linear-gradient(90deg,transparent,var(--gold-dim))}
-.ornRule::after{background:linear-gradient(90deg,var(--gold-dim),transparent)}
-.ornRule i{flex:none;width:var(--space-4);height:var(--space-4);
-  transform:rotate(45deg);background:var(--gold)}
-
-/* Section headings inherit the ornament: the lozenge leads, the rule runs out
-   to the right. Replaces the naked border-top. */
-h3{border-top:none;padding-top:0;display:flex;flex-wrap:wrap;align-items:center;
-  gap:var(--space-5);margin:var(--space-10) 0 var(--space-5);
-  font-size:var(--fs-body);letter-spacing:.16em;color:var(--gold-dim)}
-h3::before{content:"";flex:none;width:var(--space-4);height:var(--space-4);
-  transform:rotate(45deg);background:var(--gold-dim)}
-h3 .sub{flex-basis:100%}
-
-/* ── 4. DISPLAY TYPE ──────────────────────────────────────────────────────
-   Gold text is engraved, never lit: a 1px offset in --edge-shade reads as
-   metal cut into a plate. A glow would read as neon-on-dark (an AI tell) and
-   as a screen in trouble (decay). Offset down, never out.                  */
-#bossName{font-size:var(--fs-warden);letter-spacing:.07em;line-height:1.1;
-  text-shadow:0 var(--border-hairline) 0 var(--edge-shade);overflow-wrap:anywhere}
-#bossTitle{font-size:var(--fs-body);color:var(--bone);margin-top:var(--space-4);
-  letter-spacing:.02em}
-.bossPanel{margin:0}
-#depth{letter-spacing:.03em;line-height:1;
+   The string is ALWAYS the block's own existing heading. No copy is invented,
+   no fact moves owner, no heading is duplicated: this is the same <h3> the
+   spec already had, given the shape a client window's header has. The
+   explainer sentence rides the plate under the name rather than being exiled
+   below it, which keeps the header one object instead of two.              */
+h3{
+  background:linear-gradient(var(--field),var(--inset) var(--space-10));
+  border:none;
+  border-bottom:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:0 var(--border-hairline) 0 var(--edge-lit),
+             inset 0 var(--border-hairline) 0 var(--edge-lit);
+  margin:var(--space-9) calc(var(--space-7) * -1) var(--space-7);
+  padding:var(--space-5) var(--space-7) var(--space-5);
+  display:block;
+  font-family:var(--font-ui);font-size:var(--fs-body);font-weight:bold;
+  font-variant:normal;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--bone);
   text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
-/* The peak. Georgia at 52px is exactly what battle.js already draws the canvas
-   BREACHED reveal at, so the DOM and the canvas agree on where the peak is.
-   Copy is Phase 5's, unchanged, including its case. */
-#depth.breached{font-size:var(--fs-colossal);font-family:Georgia,serif;
-  letter-spacing:.05em}
+section.game>h3:first-child{margin-top:0;border-top:none}
+h3::before{content:none}          /* the v2 gold lozenge — superseded, gone */
+h3 .sub{margin-top:var(--space-4);font-style:normal;color:var(--dim);
+  letter-spacing:0;text-transform:none;font-weight:normal;
+  font-size:var(--fs-small);text-shadow:none}
 
-/* ── 5. GOLD DISCIPLINE ───────────────────────────────────────────────────
-   Gold is identity only: the Warden's name, the one hero number, the frame,
-   the ornament, the active edge, the primary action. It is NOT a body or
-   caption colour — #projection carried gold on a sentence, which is the
-   single reason none of the other four golds read as special.              */
-#projection{color:var(--bone)}
-.wallLbl{color:var(--recede);margin-bottom:var(--space-5)}
+/* The Warden's name-plate is the SAME construction one size up. Block 1 of
+   the JOURNEY spec keeps both its facts, its strings, its owner and its
+   position; what changed is that the header of the Boss window is the boss,
+   which is what a boss frame in an MMO client actually is.                 */
+.frame{
+  background:linear-gradient(var(--field),var(--inset) var(--space-10));
+  border:none;
+  border-bottom:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:0 var(--border-hairline) 0 var(--edge-lit),
+             inset 0 var(--border-hairline) 0 var(--edge-lit);
+  margin:0 calc(var(--space-7) * -1) var(--space-8);
+  padding:var(--space-8) var(--space-7) var(--space-7)}
+.bossPanel{margin:0;text-align:center}
+#bossName{font-family:var(--font-ui);font-size:var(--fs-warden);
+  font-weight:bold;font-variant:normal;letter-spacing:.04em;line-height:1.1;
+  color:var(--gold);overflow-wrap:anywhere;
+  text-shadow:0 var(--space-1) 0 var(--edge-shade)}
+#bossTitle{font-family:var(--font-ui);font-size:var(--fs-small);
+  font-style:normal;font-weight:bold;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--bone);margin-top:var(--space-4);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
 
-/* ── 6. THE ARENA — a well, with light under the door ─────────────────────
-   The one pictorial hint in the DOM: a warm band at the floor line and a
-   gold-dim seam beneath it. Everything else about the scene is the canvas
-   spec in DESIGN.md; the DOM's job is to frame the aperture, not fake it.  */
-/* The arena is now a pure layout wrapper — no border, no fill. The canvas
-   region IS the well; a bordered box around a well is the redundant rule line
-   Tufte tells you to delete AND the nested-box shape detect.mjs flags. One
-   nesting level: section plate -> canvas well. */
-.canvasStub{position:relative;aspect-ratio:16/10;margin:var(--space-8) 0 0}
-/* The floor line is a background LAYER, not a border. A bordered box inside a
-   bordered box is both the rule line Tufte tells you to delete and the
-   nested-card tell detect.mjs flags (ai-tells.md: Fable 5's #1 default, 6/6).
-   The arena is the well; the canvas is its floor — one box, not two. */
-.canvasStub::after{content:"";position:absolute;left:0;right:0;bottom:0;height:24%;
-  pointer-events:none;
+/* ── 3. THE SOCKET — anything you read FROM is cut INTO the body ──────────
+   The inverse bevel of the window: dark at the near (top-left) wall, lit on
+   the far (bottom-right) wall, on the --well ground, which sits below page
+   level. One blurred inner shadow is the only blur in the file and it is
+   pointed INWARD, so it can never read as a glow.
+
+   This is the rule that makes the language work on a surface with no hero:
+   Training, Grind, Player and Delve are lists, and a list in a socket has
+   depth without needing a frame or a display face.                         */
+.rowlist,.canvasStub,#dialogue{
+  background:var(--well);
+  border:var(--border-hairline) solid var(--edge-shade);
+  border-radius:var(--radius-socket);
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) var(--space-2) var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-lit)}
+.rowlist{margin:var(--space-5) 0 var(--space-7)}
+
+/* ── 4. THE CONTROL — a button has a physical top surface ─────────────────
+   Rounded, gloss-gradient, lit top-left / dark bottom-right, a hard foot to
+   stand on, a bold shadowed label. PRESSED inverts the bevel, swaps the
+   gradient and drops the foot — the button physically goes down. DISABLED
+   loses the bevel AND the foot and flattens onto --panel, which is both the
+   material carrying a state and the only ground where --faint clears AA.   */
+section.game button,#tabs button,.helpBtn{
+  font-family:var(--font-ui);font-weight:bold;
+  border:var(--border-hairline) solid var(--edge-shade);
+  border-radius:var(--radius-control);
+  background:linear-gradient(var(--field),var(--panel));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
+  text-align:center}
+section.game button:active,#tabs button:active,.helpBtn:active{
+  background:linear-gradient(var(--panel),var(--field));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-lit);
+  transform:translateY(var(--border-hairline))}
+section.game button:disabled{
+  background:var(--panel);box-shadow:none;border-color:var(--line-soft);
+  text-shadow:none;color:var(--faint)}
+
+/* A SELECTED control wears the pressed construction permanently — that is
+   how an MMO client says "you are on this one", and it is a second,
+   positional channel on top of the colour one. Gold enters here as an
+   identity edge, never as a fill on chrome.                                */
+#tabs button.active,.wallBtn.active{
+  color:var(--gold);border-color:var(--gold);
+  background:linear-gradient(var(--panel),var(--field));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-lit)}
+#tabs{gap:var(--space-4);margin-bottom:var(--space-7)}
+#tabs button{font-variant:normal;text-transform:uppercase;letter-spacing:.08em;
+  font-size:var(--fs-small)}
+#tabs button.locked{background:var(--panel);box-shadow:none;
+  border-color:var(--line-soft);text-shadow:none}
+
+/* ── 5. THE CHROME BAND ───────────────────────────────────────────────────
+   The resource bar stays a flat band and the chip clusters are the raised
+   objects inside it. Deliberately NOT a raised bar holding raised plates:
+   a bevel inside a bevel is the nested-card tell and it is the one Maple
+   habit that has to be left at the door.                                   */
+#resbar{padding:var(--space-5) var(--space-3);margin-bottom:var(--space-7);
+  border-color:var(--line)}
+.chipGroup{border-radius:var(--radius-control);border-color:var(--edge-shade);
+  background:linear-gradient(var(--field),var(--panel));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade);
+  padding:var(--space-4) var(--space-1)}
+.chipVal{font-family:var(--font-ui);font-weight:bold;
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+.chipLbl{font-family:var(--font-ui);font-weight:bold;letter-spacing:.08em;
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+.chip{border-left-color:var(--edge-shade)}
+.helpBtn{margin-left:auto}
+
+/* ── 6. THE ARENA — a socket with light under the door ────────────────────
+   The canvas region IS the socket; no wrapper boxes it. The floor band and
+   its seam are background LAYERS, not borders, so no rectangle is ever drawn
+   inside another rectangle. What the canvas should DRAW is DESIGN.md's
+   Canvas scene spec; the DOM's job is to cut the aperture, not fake it.    */
+.canvasStub{position:relative;aspect-ratio:16/10;margin:var(--space-7) 0 0;
+  padding:var(--space-7)}
+.canvasStub::after{content:"";position:absolute;left:0;right:0;bottom:0;
+  height:24%;pointer-events:none;
   background:linear-gradient(var(--gold-dim),var(--gold-dim))
                0 100%/100% var(--border-hairline) no-repeat,
              linear-gradient(transparent,var(--floor-glow))}
 .canvasStub .k,.canvasStub .v{position:relative;z-index:1}
-.controls{border-top:var(--border-hairline) solid var(--line);
+.canvasStub .k{font-family:var(--font-ui);font-weight:bold;
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+
+/* ── 7. THE SIEGE READOUT ─────────────────────────────────────────────────  */
+.wallLbl{font-family:var(--font-ui);font-weight:bold;color:var(--recede);
+  margin:var(--space-7) 0 var(--space-4);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+#wallSelect{gap:var(--space-4)}
+.controls{border-top:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:0 var(--border-hairline) 0 var(--edge-lit) inset;
   padding-top:var(--space-7);margin:var(--space-8) 0 var(--space-5);
   gap:var(--space-4) var(--space-7)}
-/* BREACHED is the wall's peak moment — centre it and let it own the row
-   rather than sitting flush-left in a baseline flex line. */
+#depth{font-family:var(--font-ui);font-weight:bold;letter-spacing:.02em;
+  line-height:1;text-shadow:0 var(--space-1) 0 var(--edge-shade)}
+/* The wall's peak moment. 52px, bold, the heaviest shadow on the page, and
+   it owns its row rather than sitting flush-left in a baseline flex line.  */
+#depth.breached{font-size:var(--fs-colossal);letter-spacing:.03em}
 .controls:has(.breached){flex-direction:column;align-items:center;
   text-align:center}
 
-/* ── LEDGER — fixed terms read as a table, not as a sentence ──────────────
-   A sentence makes the reader parse "20% of those" to learn super-crit is
-   conditional; columns show it. Built as a ledger rather than a bare grid
-   because Art Deco's own vocabulary is fine rules + letterspaced caps, and
-   a total separated by a rule is the oldest table idiom there is: the term
-   that multiplies damage should not look like just another row.
-   Label left, figures right, each figure column on its own edge.          */
+/* ── 8. THE LEDGER — fixed terms read as a table, not as a sentence ───────
+   Four fixed terms, so columns, not prose: a sentence forces the reader to
+   parse "20% of those" to learn super-crit is conditional. The header is the
+   window's own title-bar voice one step down; the rule above the product row
+   is its OWN full-span element rather than per-cell borders, because a rule
+   interrupted by column gaps reads as a broken line — the one thing this
+   DNA must never do.                                                       */
 .ledger{display:grid;grid-template-columns:1fr auto auto;
   column-gap:var(--space-7);margin-top:var(--space-6);
   font-size:var(--fs-small);font-family:monospace}
 .ledger>*{padding:var(--space-2) 0}
-.ledger .hd{grid-column:1/-1;font-family:Georgia,serif;font-variant:small-caps;
-  letter-spacing:.16em;color:var(--gold);border-bottom:var(--border-hairline) solid var(--line);
+.ledger .hd{grid-column:1/-1;font-family:var(--font-ui);font-weight:bold;
+  font-variant:normal;text-transform:uppercase;letter-spacing:.12em;
+  color:var(--bone);text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
+  border-bottom:var(--border-hairline) solid var(--line);
   margin-bottom:var(--space-2)}
 .ledger .k{color:var(--faint)}
 .ledger .v{color:var(--dim);text-align:right;font-variant-numeric:tabular-nums}
-/* the product row: ruled off above, and the only figure in bone — it is the
-   number that actually multiplies damage, the rest are its inputs.
-   The rule is its OWN full-span element, not a per-cell border-top: cell
-   borders are interrupted by the column gap, and a rule with gaps in it
-   reads as damage — the one thing this DNA must never do. */
 .ledger .rule{grid-column:1/-1;padding:0;height:0;
   border-top:var(--border-hairline) solid var(--line);margin-top:var(--space-2)}
 .ledger .k.sum{padding-top:var(--space-4)}
-.ledger .v.sum{padding-top:var(--space-4);color:var(--bone)}
+.ledger .v.sum{padding-top:var(--space-4);color:var(--bone);font-weight:bold}
 .ledger .v.sum.wide{grid-column:2/-1}
 
-/* ── 7. NAV + WALL SELECTOR — a seam, not a border swap ───────────────────
-   An MMO client's active tab is lit along its top edge. That is a second,
-   positional channel on top of the existing colour one.                    */
-#tabs button{letter-spacing:.14em;font-size:var(--fs-small)}
-#tabs button.active{box-shadow:inset 0 var(--space-1) 0 var(--gold),
-  inset 0 calc(var(--border-hairline) * -1) 0 var(--edge-shade)}
-.wallBtn.active{box-shadow:inset 0 var(--space-1) 0 var(--gold),
-  inset 0 calc(var(--border-hairline) * -1) 0 var(--edge-shade)}
+/* ── 9. THE PRIMARY ACTION ────────────────────────────────────────────────
+   The one control on the tab that is not chrome. A solid gold face with dark
+   text is the loudest thing an MMO client's button vocabulary has, and this
+   button appears once per wall — the amplitude matches the moment. Gold as a
+   FILL is reserved to this one element; everywhere else gold is an edge.   */
+#descendBtn{display:block;width:100%;
+  font-family:var(--font-ui);font-size:var(--fs-masthead);font-weight:bold;
+  font-variant:normal;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--on-gold);
+  background:linear-gradient(var(--gold),var(--gold-dim));
+  border:var(--border-hairline) solid var(--gold);
+  border-radius:var(--radius-control);
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--gold),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade);
+  text-shadow:none;
+  padding:var(--space-7) var(--space-6);margin:var(--space-7) 0 var(--space-1)}
+#descendBtn:active{background:linear-gradient(var(--gold-dim),var(--gold));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--gold)}
 
-/* ── 8. PRIMARY ACTION — the deco double rule ─────────────────────────────
-   Gold hairline, a gap of ground, a second gold-dim rule inside it. Two
-   concentric rules is the oldest "this one matters" mark there is, and it
-   distinguishes the CTA from the frame without spending a second frame.    */
-#descendBtn{background:var(--panel);font-size:var(--fs-masthead);
-  letter-spacing:.18em;padding:var(--space-9) var(--space-6);
-  margin:var(--space-8) 0 0;
-  box-shadow:inset 0 0 0 var(--space-3) var(--panel),
-             inset 0 0 0 var(--space-4) var(--gold-dim)}
+/* ── 10. THE STORY — recessed, so the voice sits behind the glass ─────────  */
+#dialogue{border-left:var(--row-active-border) solid var(--gold-dim);
+  font-size:var(--fs-display);line-height:1.55;color:var(--bone);
+  padding:var(--space-7);margin:var(--space-8) 0 0}
+#projection{color:var(--bone)}   /* gold on a sentence is why no other gold read */
 
-/* ── 9. STORY — recessed, so the voice sits behind the glass ──────────────  */
-#dialogue{border-left-color:var(--gold-dim);
-  font-size:var(--fs-display);line-height:1.6;color:var(--bone);
-  padding:var(--space-9) var(--space-7);margin:var(--space-9) 0 0}
-
-/* ── 10. THE LADDER, UNFLATTENED ──────────────────────────────────────────
+/* ── 11. THE LADDER, UNFLATTENED ──────────────────────────────────────────
    The four state channels (edge colour, type colour, control presence,
-   unlock text) are untouched. Material adds a FIFTH: only a live row carries
-   the lit top edge. Richer look, one more channel, none lost.              */
-.rowlist .row.active{box-shadow:inset 0 var(--border-hairline) 0 var(--edge-lit)}
+   unlock text) are untouched. v2 added a fifth — material. v3 keeps that and
+   the socket adds a sixth for free: a LIVE row is lifted out of the socket
+   onto its own lit ground, a DORMANT row lies flat in it, and a LOCKED row
+   is unlit — no groove highlight at all, which is the "visibly unlit
+   window" a chunkier frame language is supposed to buy. Six channels, none
+   lost, and every one of them still visible at 375px.
 
-/* ── 11. CHROME BAND ──────────────────────────────────────────────────────  */
-#resbar{padding:var(--space-5) var(--space-3);margin-bottom:var(--space-9);
-  box-shadow:inset 0 calc(var(--border-hairline) * -1) 0 var(--gold-dim)}
-main.client{padding:var(--space-9) var(--space-5) var(--space-10)}
+   The groove between rows is the two-tone list separator: each row's dark
+   bottom border sits directly above the next row's lit top hairline.       */
+.rowlist .row{border-bottom:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:inset 0 var(--border-hairline) 0 var(--line-soft)}
+.rowlist .row:last-child{border-bottom:none}
+.rowlist .row.active{background:linear-gradient(var(--inset),var(--well));
+  box-shadow:inset 0 var(--border-hairline) 0 var(--edge-lit)}
+.rowlist .row.locked{box-shadow:none}
+.rowName{font-weight:bold}
+/* The cycle meter is a channel cut along the row's foot, not a line drawn on
+   it: a dark track with a lit fill, the same socket logic one pixel tall.  */
+.rowBar{background:var(--edge-shade)}
+
+/* ── 12. THE ALLOCATION CONTROL ───────────────────────────────────────────
+   Mini plates around a socketed readout — the shape every MMO client uses
+   for "spend some of this here". Absent entirely on a locked row, which is
+   the ladder's control channel and stays exactly as specced.               */
+.allocMini{gap:var(--space-3)}
+.allocMini input{background:var(--well);border-radius:var(--radius-socket);
+  border-color:var(--edge-shade);font-weight:bold;
+  box-shadow:inset var(--border-hairline) var(--border-hairline) var(--space-2) var(--edge-shade),
+             inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-lit)}
 `;
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -726,7 +870,7 @@ const log = lines => `<div id="logHead">maintenance@dead-server:~$ <span class="
 <div id="log">${lines.map(([cls, t]) => `<div class="logline ${cls}">${t}</div>`).join("")}</div>
 <footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>`;
 
-const page = ({ title, tab, note, body, skipChip, v2 = false, ladderExtra = "" }) => `<!doctype html>
+const page = ({ title, tab, note, body, skipChip, v3 = false, ladderExtra = "" }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -742,7 +886,7 @@ const page = ({ title, tab, note, body, skipChip, v2 = false, ladderExtra = "" }
   Self-contained: no external stylesheet, font, script or image.
   Generated by internal/mocks/build.mjs — edit that, not this file.
 -->
-<style>${TOKENS}${v2 ? TOKENS_V2 : ""}${TOKENS_END}${CSS}${v2 ? CSS_V2 : ""}</style>
+<style>${TOKENS}${v3 ? TOKENS_V3 : ""}${TOKENS_END}${CSS}${v3 ? CSS_V3 : ""}</style>
 </head>
 <body>
 <main class="client">
@@ -846,15 +990,18 @@ const zonesSection = `<section class="game">
 /* ─────────────────────────────────────────────────────────────────────────
    1. BOSS
    ───────────────────────────────────────────────────────────────────────── */
-// Block 1 of the JOURNEY spec, recomposed as the hero it is: the Warden's
-// frame. Same two facts, same two strings, same owner — a name that renders at
-// --fs-warden inside a bracketed frame is the SAME fact as a name that renders
-// at caption size, so nothing moved between owners.
+// Block 1 of the JOURNEY spec, recomposed as the hero it is: the Warden IS the
+// Boss window's title bar. Same two facts, same two strings, same owner, same
+// first position — a name that renders at --fs-warden on the window's own
+// name-plate is the SAME fact as a name that renders at caption size, so
+// nothing moved between owners.
+// The v2 gold lozenge (.ornRule) is GONE, not restyled: Art Deco ornament has
+// no home in a Maple register, and the name-plate's own groove already closes
+// the block.
 const warden = `<div class="frame">
     <div class="bossPanel">
       <div id="bossName">Maren</div>
       <div id="bossTitle">Warden of the Second Door</div>
-      <div class="ornRule"><i aria-hidden="true"></i></div>
     </div>
   </div>`;
 
@@ -869,27 +1016,30 @@ const wallSelect = second => `<div class="wallLbl">Doors you've opened</div>
 // Grind's own verbatim rows — so the reviewer can check on real pixels that a
 // richer material language did not flatten a channel. Never product copy.
 const MATERIAL_SPECIMEN = `
-<div class="stateLabel">specimen &mdash; grind's real rowlist under v2 material
+<div class="stateLabel">specimen &mdash; grind's real rowlist under v3 carpentry
   (not a boss-tab block)</div>
-<div class="mockNote"><b>Grind is the honest test of a material language</b> &mdash;
-  no hero, no frame, no display type, 15 rows. This is <b>the same section, the same
-  rows and the same copy <code>grind.html</code> renders</b>: one shared constant used
-  twice, not a lookalike. What has to read here is <b>depth, without a single
-  hero-only treatment</b>. The section is a <b>plate</b> (2px lit lip, gradient
-  falling to <code>--plate-foot</code>); the rowlist is a <b>well</b> cut below page
-  level with a lit foot; the rows are flat <b>leaves</b> in it; the alloc controls are
-  small raised plates. If this reads flat, the language has failed and Phase 3 would
-  have inherited the failure on five surfaces.</div>
+<div class="mockNote"><b>Grind is the honest test of a window language</b> &mdash;
+  no hero, no name-plate, no display type, 15 rows. This is <b>the same section, the
+  same rows and the same copy <code>grind.html</code> renders</b>: one shared constant
+  used twice, not a lookalike. What has to read here is <b>depth and pressability
+  without a single hero-only treatment</b>. The section is a <b>window</b> (3px frame,
+  outer bevel, rounded, standing on a hard foot); its <code>h3</code> is the
+  <b>title bar</b>; the rowlist is a <b>socket</b> cut into the window body; the rows
+  are <b>leaves</b> in it separated by two-tone grooves; the alloc controls are small
+  pressable <b>plates</b> around a socketed readout. If this reads flat, the language
+  has failed and the remaining five surfaces would inherit the failure.</div>
 ${zonesSection}`;
 
 const boss = page({
-  title: "Boss", tab: "boss", v2: true, ladderExtra: MATERIAL_SPECIMEN,
-  note: `Boss tab, recomposed against <b>DESIGN.md's Visual DNA v2</b>. Not one
-    string, fact owner or block position changed &mdash; what changed is the
-    material (three built elevations instead of one flat rect), the frame (the
-    signature move: four gold corner brackets, once per surface, around the
-    Warden), the ornament, and a display type tier that finally puts the
-    identity above the readout. The arena is CANVAS-drawn, so block 3 is a
+  title: "Boss", tab: "boss", v3: true, ladderExtra: MATERIAL_SPECIMEN,
+  note: `Boss tab, recomposed against <b>DESIGN.md's Visual DNA v3</b> &mdash;
+    MapleStory's construction on this game's dark ramp, replacing v2's Art Deco
+    reading. Not one string, fact owner or block position changed &mdash; what
+    changed is that a panel is now a <b>window</b> (thick bevelled frame,
+    rounded, title bar, standing on a hard foot), anything you read from is a
+    <b>socket</b> cut into it, every control has a pressable top surface, and
+    the chrome is set in a compact bold sans with a hard 1px shadow instead of
+    a serif. No colour token moved. The arena is CANVAS-drawn, so block 3 is a
     labelled placeholder &mdash; deliberately not a fake arena; what the canvas
     should DRAW is specced in DESIGN.md <code>## Canvas scene spec</code>.
     ${TWO_STATES} The second is <b>frontier broken</b>, the only state in which
