@@ -218,10 +218,21 @@ if (loaded && state.unlocked && state.lastSeen) {
 
 // ---- tabs + progressive feature unlocks ----
 const TAB_FEATURE = { botSec: "training", farmSec: "grind", gearSec: "player", dungeonSec: "delve", instanceSec: "dungeon" };
-const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", instanceSec: "Dungeon" };
+const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", instanceSec: "Dungeon", helpSec: "Help" };
 // Section id -> DNA v4 room name. Same keys as TAB_FEATURE plus battleSec,
 // which has no feature gate because Boss is always open.
-const TAB_ROOM = { battleSec: "boss", ...TAB_FEATURE };
+const TAB_ROOM = { battleSec: "boss", ...TAB_FEATURE, helpSec: "help" };
+// A locked tab's milestone, named without spoiling what is behind it. One
+// source for two consumers: the ??? tab button's tooltip and Help's gated
+// blocks. JOURNEY.md has cited these as shipped since the page specs were
+// written; they were specified and never actually wired up.
+const TAB_LOCK = {
+  botSec: "Unlocks as soon as the game starts.",
+  farmSec: "Unlocks with Training.",
+  gearSec: "Unlocks when your bots find their first piece of gear.",
+  dungeonSec: "Unlocks at 100 Combat Power.",
+  instanceSec: "Unlocks once you have 10 bots.",
+};
 const UNLOCK_MSG = {
   training: "TRAINING — the old bot farms. Run scripts, build a swarm.",
   grind: "GRIND — deploy the swarm on the leveling zones for copper + gear.",
@@ -252,7 +263,114 @@ function renderTabs() {
     const open = tabUnlocked(btn.dataset.tab);
     btn.textContent = open ? TAB_NAME[btn.dataset.tab] : "???";
     btn.classList.toggle("locked", !open);
+    if (!open) btn.title = TAB_LOCK[btn.dataset.tab] || "";
+    else btn.removeAttribute("title");
   }
+}
+
+/* ── Help ──────────────────────────────────────────────────────────────────
+   The 22 explanations the Phase 2 relocation table moved off the live tabs.
+   A live surface keeps what you need AT the moment of a decision; everything
+   that teaches a mechanic in general lives here. Copy is verbatim from
+   internal/JOURNEY.md's Help page spec — edit it there first.
+   A gated room prints its milestone string and nothing else, the same
+   no-spoilers rule the tab bar follows, reusing the tab's own lock copy.  */
+const HELP_ROOMS = [
+  ["B", "Boss", "battleSec", [
+    ["Crits", `Every hit has a chance to crit for extra damage, and a crit has its own
+      chance to crit again — a super-crit — for even more. The Boss tab's Average row
+      is what your damage actually multiplies by once both chances are folded in.`],
+    ["Farming a cleared door", `Once a door is open, farming it rolls for the rest of
+      that Warden's trophy set every 30 seconds — each roll a 25% chance to drop the
+      next piece.`],
+  ]],
+  ["T", "Training", "botSec", [
+    ["Bot pool", `The population bar is every bot you own, filled or not. The counter at
+      the top of the screen is only the ones not assigned to any job.`],
+    ["Scripts", `Put bots on a script to run it. Every fill it completes adds its stat —
+      ATK or hits per second — permanently. Any one script tops out at 50 fills per
+      second; the next script down unlocks once the one above it has enough fills.
+      Speed has one more rule: past a threshold that rises with each deeper Warden,
+      extra hits per second still count, just less.`],
+    ["Enhance squad", `Bots that keep pressing enhance on one item for you. Same odds
+      and the same copper cost as doing it yourself — they just never stop. The odds
+      and the fallout are on the Player tab.`],
+    ["Ban Wave", `Banking a Ban Wave resets your bots, your training and your copper to
+      the start. Everything your character owns stays: gear, plusses, scrap, trophies,
+      Armory ranks, titles and door progress. In exchange you bank √(training fills) as
+      Scripts, and every Script permanently adds +1% damage. Scripts never reset.`,
+      `Bank when the payout is worth the reset. Scripts are the square root of your
+      training fills, so pushing twice as long pays well under twice the Scripts.`,
+      `Your bots borrow your power — each one hits at 10% of your ATK and 10% of your
+      hits per second. So more damage means a faster farm too, and every Ban Wave
+      rebuilds quicker than the one before.`],
+  ]],
+  ["G", "Grind", "farmSec", [
+    ["Zones", `Put bots on a zone. Their combined damage has to clear the zone's hold
+      number or they earn nothing at all. A zone they can hold kills up to 50 mobs a
+      second; every kill pays copper and has a 1-in-400 chance to drop a piece of gear.
+      IP is the power band those drops roll in — deeper zones drop higher.`],
+  ]],
+  ["P", "Player", "gearSec", [
+    ["Combat Power", `Your damage per second against the door: ATK multiplied by hits
+      per second. "Haste" anywhere on the Player tab is a percentage added to hits per
+      second.`],
+    ["Enhance", `Three slots. Enhancing raises an item's plus, and every plus multiplies
+      its base power by 1.12. A failed attempt anywhere banks a failstack worth +1
+      percentage point on your next attempt, up to +15; a success spends the whole
+      bank.`],
+    ["Reforge", `Reforge rerolls an item's affixes for scrap of its own rarity. It can't
+      change the rarity or the IP — only which affixes it has and what they roll. You
+      see the result before you decide whether to keep it.`],
+    ["Stash", `Where kept drops land, up to 50. An item's rarity is how many affixes it
+      rolled (Common 0, Origin 6) and its IP is how strong those affixes roll.
+      Salvaging turns an item into scrap of its own rarity. Locking one protects it
+      from auto-salvage, the bulk sweep and the stash-full clear-out.`],
+    ["Trophies", `Each Warden has a 7-piece set. Breaking its door gives you the first
+      piece; the rest come from farming that Warden on the Boss tab. A complete set
+      multiplies your damage by 1.5.`],
+    ["Armory", `Every drop is logged here against its own entry, one per item name,
+      whether you keep it or scrap it. Rarer copies count for more: a Common is worth 1
+      point, an Origin 13. The first rank costs 3 points and each rank after costs 60%
+      more, up to rank 12. Weapons rank ATK, armor ranks haste, charms rank copper —
+      and the ranks survive every Ban Wave.`],
+  ]],
+  ["D", "Delve", "dungeonSec", [
+    ["How depth works", `Your character digs on their own down here, no input needed.
+      Depth is however deep your Combat Power clears: floor 1 needs 10 damage per
+      second and each floor after needs 70% more. Every extra floor pays 35% more
+      Cache per second, and Cache is the buried server data you spend below.`],
+    ["Cache tree", `Each row buys one rank. Every rank you buy raises that row's next
+      price.`],
+  ]],
+  ["D", "Dungeon", "instanceSec", [
+    ["How a run works", `Your bots fight down through the floors on their own, and each
+      floor takes longer than the last. Some of them get banned on every floor, faster
+      the deeper they go. When too many abilities go unblocked, the party dies. If they
+      die you keep 40% of what they found. Pull out early and you keep all of it.`],
+    ["Assigning bots", `Each ability needs a set number of bots on it to be blocked. An
+      ability you leave unblocked cuts your damage every floor it fires, and when your
+      damage falls below 25% of normal the party dies. Bots you send are spent — you
+      get back whoever survives.`],
+    ["Difficulty", `Higher difficulty means more abilities to block, more bots on each,
+      better loot — and bots banned faster. You set it; it never drops on its own.`],
+    ["Pull-out floor", `Your bots come home with everything the moment they clear the
+      floor you set here. You can change it mid-run.`],
+    ["Boss abilities journal", `You find out what an ability does by running into it.
+      What you learn here is permanent: it survives a Ban Wave.`],
+  ]],
+];
+
+function renderHelp() {
+  $("helpSec").innerHTML = HELP_ROOMS.map(([glyph, room, tab, topics]) => {
+    const head = `<h3><span class="glyph" aria-hidden="true">${glyph}</span>${room}</h3>`;
+    if (!tabUnlocked(tab)) {
+      return `<section class="game locked">${head}<p class="lockMsg">${TAB_LOCK[tab]}</p></section>`;
+    }
+    const body = topics.map(([name, ...paras]) =>
+      `<div class="topic"><h4>${name}</h4>${paras.map(p => `<p>${p}</p>`).join("")}</div>`).join("");
+    return `<section class="game">${head}${body}</section>`;
+  }).join("");
 }
 
 // milestone triggers — the cadence of new toys (starting values, playtest-tuned)
@@ -461,38 +579,24 @@ $("banWaveBtn").addEventListener("click", () => {
   const gained = banWave(state);
   if (gained > 0) {
     log(`⚡ Ban Wave #${fmt(state.rebirths)} — farm reset · banked +${fmt(gained)} scripts (×${scriptMult(state).toFixed(2)} damage)`);
-    if (state.rebirths === 1) openHelp("banwave"); // first-time explainer popup
+    // Was a modal that opened itself on the first Ban Wave. The explanation
+    // lives on the Help tab now, and yanking the player out of the thing they
+    // just did to read a manual is the ceremony this project vetoes. A pointer
+    // in the log does the job — POINTERs are a live-surface convention here.
+    if (state.rebirths === 1) log("Ban Wave explained on the Help tab.");
   }
   stashDirty = true;
   save(state);
 });
 
-// Help menu — a modal that doubles as the first-time explainer popup. Topics
-// are data; add an entry to grow it. openHelp(id) scrolls to that topic.
-const HELP = [
-  {
-    id: "banwave",
-    title: "Ban Wave",
-    body: [
-      "The anti-cheat finally notices your farm and bans the bots.",
-      "You LOSE the disposable bot layer — bots, training progress and copper reset to a fresh start.",
-      "You KEEP everything your character owns: gear, plusses, scrap, trophies, Armory ranks, titles and boss progress. None of it ever resets.",
-      "In return you bank <b>Scripts</b> = √(training fills this run). Every Script permanently adds <b>+1% damage</b>, and Scripts never reset.",
-      "Because your bots borrow your power, more damage means a faster farm too — so each Ban Wave you rebuild quicker and climb higher than before.",
-      "Bank when the √ payout is worth the reset: pushing twice as long pays less than twice the Scripts.",
-    ],
-  },
-];
-function openHelp(topicId) {
-  $("helpTitle").textContent = "Help";
-  $("helpContent").innerHTML = HELP.map(h =>
-    `<section class="helpTopic" id="help_${h.id}"><h3>${h.title}</h3>${h.body.map(p => `<p>${p}</p>`).join("")}</section>`
-  ).join("");
-  $("helpModal").style.display = "";
-  if (topicId) $(`help_${topicId}`)?.scrollIntoView();
-}
+// The help MODAL is retired. Its one topic — Ban Wave — is now Help's Training
+// block, and its two reference-only paragraphs (the √ judgement, and bots
+// borrowing 10% of your ATK and hits per second) were folded in there
+// verbatim; that content was always reference, which is what the Help tab is
+// for. The modal element survives only as the export-save container below.
 function closeHelp() { $("helpModal").style.display = "none"; }
-$("helpBtn").addEventListener("click", () => openHelp());
+// The ? in the resource bar is the Help tab's second entry point.
+$("helpBtn").addEventListener("click", () => showTab("helpSec"));
 $("helpClose").addEventListener("click", closeHelp);
 $("helpModal").addEventListener("click", e => { if (e.target === $("helpModal")) closeHelp(); });
 $("descendBtn").addEventListener("click", advanceWall);
@@ -709,7 +813,9 @@ function render() {
   const now = Date.now();
   const frameDt = Math.min(0.25, (now - lastRenderNow) / 1000); // clamp tab-switch/idle gaps
   lastRenderNow = now;
-  if (tabsDirty) renderTabs();
+  // Help's gated blocks track the same unlocks the tab row does, so one dirty
+  // flag drives both — a room opens in the manual the moment its tab does.
+  if (tabsDirty) { renderTabs(); renderHelp(); }
   renderBattle(state, now);
   const d = derive(state);
   const dps = d.atk * d.hitsPerSec;

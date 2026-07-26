@@ -33,10 +33,13 @@
     <button id="helpBtn" class="helpBtn" title="Help">?</button>
   </div>
 
+  <!-- Once the help modal; now only the export-save container. Help itself is
+       a tab, and the ? in the resource bar goes there. Ids kept because the
+       export handler writes into them. -->
   <div id="helpModal" class="modal" style="display:none">
     <div class="modalBox">
       <button id="helpClose" class="modalClose" aria-label="close">×</button>
-      <h2 id="helpTitle">Help</h2>
+      <h2 id="helpTitle">Export save</h2>
       <div id="helpContent"></div>
     </div>
   </div>
@@ -48,6 +51,7 @@
     <button data-tab="gearSec" class="t-player">Player</button>
     <button data-tab="dungeonSec" class="t-delve">Delve</button>
     <button data-tab="instanceSec" class="t-dungeon">Dungeon</button>
+    <button data-tab="helpSec" class="t-help">Help</button>
   </nav>
 
   <section id="battleSec" class="tabpane">
@@ -201,6 +205,13 @@
     running into it.</p>
     <div class="rowlist" id="instJournal"></div>
   </section>
+
+  <!-- Help — reference only, no action resolves here, so no primary action and
+       no control that changes state. Built by renderHelp() from HELP_ROOMS so
+       a gated room can swap to its milestone string without duplicating copy.
+       Six blocks in tab-bar order: the mental model for "where do I find X"
+       carries over unchanged. -->
+  <div id="helpSec" class="game hidden tabpane" style="display:none"></div>
 
   <!-- The shell prompt that used to live here is DELETED, not re-confined:
        a terminal inside a client that has no shell, naming the server a dead

@@ -31,7 +31,7 @@ const WIDTH = 375, HEIGHT = 812, DSF = 2; // the width the design plan specs aga
 
 const TABS = [
   ["boss", "battleSec"], ["training", "botSec"], ["grind", "farmSec"],
-  ["player", "gearSec"], ["delve", "dungeonSec"], ["dungeon", "instanceSec"],
+  ["player", "gearSec"], ["delve", "dungeonSec"], ["dungeon", "instanceSec"], ["help", "helpSec"],
 ];
 
 // Seed enough state that every tab renders populated rather than as an empty
@@ -128,10 +128,28 @@ async function main() {
 
   const shoot = async name => {
     await sleep(600); // let a couple of render frames land
-    const { data } = await send("Page.captureScreenshot",
-      { format: "png", captureBeyondViewport: true }); // full page, not just viewport
-    writeFileSync(join(OUT, `${name}.png`), Buffer.from(data, "base64"));
-    console.log(`wrote ${join(OUT, `${name}.png`)}`);
+    // A tall page (Help is ~3,500 CSS px of prose) can exceed the renderer's
+    // max texture at 2x and fail the capture outright. Drop that ONE page to
+    // 1x rather than losing it — and never let it abort the rest of the run.
+    for (const dsf of [DSF, 1]) {
+      try {
+        if (dsf !== DSF) {
+          await send("Emulation.setDeviceMetricsOverride",
+            { width: WIDTH, height: HEIGHT, deviceScaleFactor: dsf, mobile: true });
+          await sleep(300);
+        }
+        const { data } = await send("Page.captureScreenshot",
+          { format: "png", captureBeyondViewport: true }); // full page, not just viewport
+        writeFileSync(join(OUT, `${name}.png`), Buffer.from(data, "base64"));
+        console.log(`wrote ${join(OUT, `${name}.png`)}${dsf !== DSF ? `  (at ${dsf}x — too tall for ${DSF}x)` : ""}`);
+        return;
+      } catch (e) {
+        if (dsf === 1) { console.log(`  ! ${name}: capture failed — ${e.message}`); return; }
+      } finally {
+        if (dsf !== DSF) await send("Emulation.setDeviceMetricsOverride",
+          { width: WIDTH, height: HEIGHT, deviceScaleFactor: DSF, mobile: true });
+      }
+    }
   };
 
   // Overflow is a per-page fact worth reporting even when the PNG looks fine.
