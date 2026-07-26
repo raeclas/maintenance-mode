@@ -446,7 +446,7 @@ footer button{background:none;border:none;color:var(--faint);
   </div>
   <button class="helpBtn" title="Help">?</button>
 </header>
-<nav id="tabs" aria-label="Main"><button>Boss</button><button class="active" aria-current="page">Training</button><button>Grind</button><button>Player</button><button>Delve</button><button>Dungeon</button></nav>
+<nav id="tabs" aria-label="Main"><button class="t-boss">Boss</button><button class="t-training active" aria-current="page">Training</button><button class="t-grind">Grind</button><button class="t-player">Player</button><button class="t-delve">Delve</button><button class="t-dungeon">Dungeon</button><button class="t-help">Help</button></nav>
 <section class="game">
   <h3>Rig</h3>
   <div class="rig">
@@ -592,7 +592,7 @@ track. <b>locked</b>: no left edge, whole row at <code>--opacity-locked</code>,
 unlock condition. Three independent channels per state &mdash; edge, type, controls.</div>
 
 <div id="logHead">maintenance@dead-server:~$ <span class="cursor">&#9646;</span></div>
-<div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-plain">drop: Epic Sentry Halberd 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
+<div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-loot log-plain">drop: <span class="rar rar-epic">Epic Sentry Halberd</span> 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
 <footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>
 </main>
 </body>

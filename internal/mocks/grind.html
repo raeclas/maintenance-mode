@@ -444,16 +444,16 @@ footer button{background:none;border:none;color:var(--faint);
   </div>
   <button class="helpBtn" title="Help">?</button>
 </header>
-<nav id="tabs" aria-label="Main"><button>Boss</button><button>Training</button><button class="active" aria-current="page">Grind</button><button>Player</button><button>Delve</button><button>Dungeon</button></nav>
+<nav id="tabs" aria-label="Main"><button class="t-boss">Boss</button><button class="t-training">Training</button><button class="t-grind active" aria-current="page">Grind</button><button class="t-player">Player</button><button class="t-delve">Delve</button><button class="t-dungeon">Dungeon</button><button class="t-help">Help</button></nav>
 <section class="game">
-  <h3>Zones<span class="sub">&mdash; put bots on a zone. Their combined damage
+  <h3><span class="glyph" aria-hidden="true">Z</span>Zones<span class="sub">&mdash; put bots on a zone. Their combined damage
     has to clear the zone's hold number or they earn nothing at all. A zone they
     can hold kills up to 50 mobs a second; every kill pays copper and has a
     1-in-400 chance to drop a piece of gear. IP is the power band those drops
     roll in &mdash; deeper zones drop higher.</span></h3>
   <div class="rowlist"><div class="row dormant">
     <div class="rowName">Novice Meadow<span class="sub">Training Slime &middot; 12 HP</span></div>
-    <div class="rowGain">5c per kill<span class="sub">IP 10&ndash;30</span></div>
+    <div class="rowGain">5c per kill<span class="sub"><span class="band b1">IP 10&ndash;30</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -462,7 +462,7 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">Webbed Ravine<span class="sub">Ravine Weaver &middot; 60 HP</span></div>
-    <div class="rowGain">20c per kill<span class="sub">IP 40&ndash;120</span></div>
+    <div class="rowGain">20c per kill<span class="sub"><span class="band b1">IP 40&ndash;120</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -471,7 +471,7 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row active">
     <div class="rowName">Salt Flats<span class="sub">Salt Strider &middot; 250 HP</span></div>
-    <div class="rowGain">75c per kill<span class="sub">IP 150&ndash;450</span></div>
+    <div class="rowGain">75c per kill<span class="sub"><span class="band b1">IP 150&ndash;450</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="20" readonly>
   <button>+</button><button>cap</button><button>&ctdot;</button>
@@ -480,7 +480,7 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:100%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">Cinder Steppe<span class="sub">Steppe Charger &middot; 700 HP</span></div>
-    <div class="rowGain">300c per kill<span class="sub">IP 600&ndash;1,800</span></div>
+    <div class="rowGain">300c per kill<span class="sub"><span class="band b2">IP 600&ndash;1,800</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -489,7 +489,7 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">The Doorstep<span class="sub">Door Sentry &middot; 1,500 HP</span></div>
-    <div class="rowGain">2,250c per kill<span class="sub">IP 4,500&ndash;13,500</span></div>
+    <div class="rowGain">2,250c per kill<span class="sub"><span class="band b2">IP 4,500&ndash;13,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -498,7 +498,7 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">The Threshold<span class="sub">Threshold Husk &middot; 5,000 HP</span></div>
-    <div class="rowGain">7,000c per kill<span class="sub">IP 13,500&ndash;40,500</span></div>
+    <div class="rowGain">7,000c per kill<span class="sub"><span class="band b2">IP 13,500&ndash;40,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -507,7 +507,7 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">Ashen Nave<span class="sub">Nave Revenant &middot; 16,000 HP</span></div>
-    <div class="rowGain">21,000c per kill<span class="sub">IP 40,500&ndash;121,500</span></div>
+    <div class="rowGain">21,000c per kill<span class="sub"><span class="band b3">IP 40,500&ndash;121,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -516,7 +516,7 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">Flooded Undercroft<span class="sub">Undercroft Lurker &middot; 52,000 HP</span></div>
-    <div class="rowGain">65,000c per kill<span class="sub">IP 121,500&ndash;364,500</span></div>
+    <div class="rowGain">65,000c per kill<span class="sub"><span class="band b3">IP 121,500&ndash;364,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -525,7 +525,7 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">The Long Dark<span class="sub">Pale Sentinel &middot; 170,000 HP</span></div>
-    <div class="rowGain">200,000c per kill<span class="sub">IP 364,500&ndash;1,093,500</span></div>
+    <div class="rowGain">200,000c per kill<span class="sub"><span class="band b3">IP 364,500&ndash;1,093,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -534,7 +534,7 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row struggling">
     <div class="rowName">The Second Door<span class="sub">Sealed Warden &middot; 550,000 HP</span></div>
-    <div class="rowGain">620,000c per kill<span class="sub">IP 1,093,500&ndash;3,280,500</span></div>
+    <div class="rowGain">620,000c per kill<span class="sub"><span class="band b4">IP 1,093,500&ndash;3,280,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="15" readonly>
   <button>+</button><button>cap</button><button>&ctdot;</button>
@@ -543,31 +543,31 @@ footer button{background:none;border:none;color:var(--faint);
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row locked">
     <div class="rowName">Frostbound Wastes<span class="sub">Wastes Wight &middot; 1,650,000 HP</span></div>
-    <div class="rowGain">1,860,000c per kill<span class="sub">IP 3,280,500&ndash;9,841,500</span></div>
+    <div class="rowGain">1,860,000c per kill<span class="sub"><span class="band b4">IP 3,280,500&ndash;9,841,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
     <div class="rowName">The Sunken Archive<span class="sub">Archive Colossus &middot; 5,000,000 HP</span></div>
-    <div class="rowGain">5,600,000c per kill<span class="sub">IP 9,841,500&ndash;29,524,500</span></div>
+    <div class="rowGain">5,600,000c per kill<span class="sub"><span class="band b4">IP 9,841,500&ndash;29,524,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
     <div class="rowName">Obsidian Reach<span class="sub">Reach Devourer &middot; 15,000,000 HP</span></div>
-    <div class="rowGain">17,000,000c per kill<span class="sub">IP 29,524,500&ndash;88,573,500</span></div>
+    <div class="rowGain">17,000,000c per kill<span class="sub"><span class="band b5">IP 29,524,500&ndash;88,573,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
     <div class="rowName">The Hollow Spire<span class="sub">Spire Revenant &middot; 45,000,000 HP</span></div>
-    <div class="rowGain">50,000,000c per kill<span class="sub">IP 88,573,500&ndash;265,720,500</span></div>
+    <div class="rowGain">50,000,000c per kill<span class="sub"><span class="band b5">IP 88,573,500&ndash;265,720,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
     <div class="rowName">World's Edge<span class="sub">Edge Sentinel &middot; 135,000,000 HP</span></div>
-    <div class="rowGain">150,000,000c per kill<span class="sub">IP 265,720,500&ndash;797,161,500</span></div>
+    <div class="rowGain">150,000,000c per kill<span class="sub"><span class="band b5">IP 265,720,500&ndash;797,161,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
@@ -581,7 +581,7 @@ track. <b>locked</b>: no left edge, whole row at <code>--opacity-locked</code>,
 unlock condition. Three independent channels per state &mdash; edge, type, controls.</div>
 
 <div id="logHead">maintenance@dead-server:~$ <span class="cursor">&#9646;</span></div>
-<div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-plain">drop: Epic Sentry Halberd 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
+<div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-loot log-plain">drop: <span class="rar rar-epic">Epic Sentry Halberd</span> 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
 <footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>
 </main>
 </body>

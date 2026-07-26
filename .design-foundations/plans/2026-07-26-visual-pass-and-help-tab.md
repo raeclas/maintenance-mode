@@ -383,3 +383,52 @@ touch target — and the existing `?` button is retargeted to the Help tab.
 **Method note for Phase 3:** the relocation tables are the implementation
 contract, and they were leaky once. Phase 3 implements against the RENDERED
 strings, treating the tables as the intent and the mocks as the inventory.
+
+### Phase 2.5: Visual DNA v4 — colour lanes + full-Maple construction (Gate: Full)
+- [x] BUILD: DESIGN.md v4 + `boss.html` / `player.html` (2 attempts)
+- [x] REVIEW: FAIL → PASS. First pass caught a real internal contradiction —
+      the co-occurrence table said *"Boss: lane 2 only"* with a hard two-lane
+      cap, while the persistent `#tabs` nav painted all seven lane-3 accents
+      unconditionally on every surface, so Boss actually rendered seven hues.
+      Doc and pixels disagreed and a Phase 3 agent could not tell which was
+      authoritative. Resolved by amending the RULE, not the pixels: the
+      seven-hue foot-bar row is a **legend** — one row, one position, identical
+      everywhere, never adjacent to content, chroma ≤ .05. The `.05` choice had
+      already encoded "chrome is a separate tier"; v4 just never wrote the
+      consequence down. Deleting the row would have removed a real wayfinding
+      channel to fix a documentation defect. Second pass PASS; detector clean;
+      one Minor (Boss row missing its lane-4 note) fixed by the orchestrator.
+- [x] Committed
+Commit: (see below)
+Summary: DESIGN.md v4 opens four colour lanes — rarity ramp promoted to a
+visual lane, per-Warden identity hue, per-tab accent identity, zone/IP power
+bands — with 28 lane members solved rather than picked (each binary-searched in
+OKLCH to Y=0.27, the value that clears 4.5:1 on `--field`, so all 28 gate as one
+check). Construction pushed to full Maple weight: `--border-frame` 3px→4px, a
+new 2px `--bevel`, rivets, Warden name 36px→40px. Proved on `boss.html` (hero,
+Warden hue) and `player.html` (list surface, rarity plates).
+
+**Two live WCAG failures surfaced on the way:** `--rar-epic` at 4.15:1 and
+`--rar-mythic` at 4.00:1 on `--field` — un-gated through three design passes
+because `contrast.mjs` had no rarity pair in it at all. Lifted in v4 with hue
+and chroma preserved; `rarity.js` itself is deliberately NOT yet touched, since
+editing shipped code before the look is signed off would half-apply v4. Logged
+as behaviour change #8.
+
+**Coverage grew ~4×:** the checker went from 49 gated pairs to 190 + 16 L\*
+surface pairs. Three distinctions were added to `contrast.mjs` — color-mix
+resolution, L\*-separation gating for surfaces, and banned-and-failing vs
+banned-by-role. The first run threw four FALSE failures because the old model
+could not express "banned by role"; splitting the lists was the fix, not
+loosening a gate. It now also genuinely asserts the banned-failing pairs, which
+its own comment had always claimed and the code never did. Both review passes
+independently re-ran it and confirmed the diff is additive.
+
+**Root cause fixed one level down:** `.t-boss{--acc:…}` was unscoped and the tab
+buttons wear the same `.t-*` classes, so it was silently setting seven different
+`--acc` values on the seven chips — invisible today, a seven-hue trapdoor the
+moment anything inside a button read `--acc`. Scoped to `main.t-*`. A doc-only
+fix would have left it armed.
+
+**State at pause:** `style.css`, `rarity.js` and `index.html` are untouched. The
+DESIGN.md gate holds until the user confirms the direction on real pixels.

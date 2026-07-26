@@ -165,6 +165,116 @@
   --font-ui:Tahoma,"Segoe UI",Verdana,sans-serif;
   --font-body:var(--font-ui);   /* the one seam: this override retires the
                                    serif at all four of its shipped sites */
+
+  /* ══ LANE 1 — RARITY. Meaning: how many affixes an item rolled.
+        rarity.js's shipped hues, promoted from a text tint to a real plate.
+        Invents no new meaning — the ramp already existed, it just had no
+        surface. Two hexes are LIFTED (required behaviour change #8): both
+        were real WCAG 1.4.3 failures nobody had ever measured, because
+        contrast.mjs had no rarity pair at all until this phase. Hue and
+        chroma are preserved exactly; only lightness moves. ══ */
+  --rar-epic:#bc6ce2;    /* was #b061d6 — 4.15:1 on --field, FAIL */
+  --rar-mythic:#e86362;  /* was #d85454 — 4.00:1 on --field, FAIL */
+  /* An item plate: the tier's own hue mixed into --plate-foot, which lands it
+     between --panel and --field — a leaf RAISED out of the window body, which
+     is what an equipped item is. --dim / --recede / --faint are BANNED on
+     these grounds (4.04-4.63:1); a rarity plate carries --bone and its own
+     tier ink, and its hierarchy comes from size and weight instead. */
+  --rar-plate-common:color-mix(in oklab, var(--rar-common) 16%, var(--plate-foot));
+  --rar-plate-uncommon:color-mix(in oklab, var(--rar-uncommon) 16%, var(--plate-foot));
+  --rar-plate-rare:color-mix(in oklab, var(--rar-rare) 16%, var(--plate-foot));
+  --rar-plate-epic:color-mix(in oklab, var(--rar-epic) 16%, var(--plate-foot));
+  --rar-plate-legendary:color-mix(in oklab, var(--rar-legendary) 16%, var(--plate-foot));
+  --rar-plate-mythic:color-mix(in oklab, var(--rar-mythic) 16%, var(--plate-foot));
+  --rar-plate-origin:color-mix(in oklab, var(--rar-origin) 16%, var(--plate-foot));
+
+  /* ══ LANE 2 — WARDEN. Meaning: WHICH DOOR YOU ARE AT.
+        Ten doors, ten hues, on an even decagonal walk (36 deg apart, chroma
+        .09 — the loudest lane, because it appears alone on its own surface).
+        The walk starts 30 deg off gold so no door ever wears the client's own
+        colour. Qualitative, not ordinal: a door is a PLACE, not a magnitude —
+        magnitude is lane 4's job. Names: REMAKE-DESIGN.md's W1-W10 table. ══ */
+  --w1:#859554;   /* Vess           — Warden of the First Door */
+  --w2:#5a9b74;   /* Maren          — the Second Door (the frontier, this save) */
+  --w3:#3a9c99;   /* Korrin         — the Third */
+  --w4:#4a97b7;   /* Osei           — the Fourth */
+  --w5:#728ec6;   /* Thale          — the Fifth */
+  --w6:#9984c0;   /* Ilva           — the Sixth */
+  --w7:#b57ca6;   /* Domar          — the Seventh */
+  --w8:#c27a83;   /* Sef            — the Eighth */
+  --w9:#be7f5f;   /* Yara           — the Ninth */
+  --w10:#a88a4b;  /* The Last Warden— the Tenth */
+  /* The client sets this to the door you are standing at. Everything on the
+     Boss tab reads from it, so re-tinting a door is one assignment. */
+  --w-active:var(--w2);
+  /* SURFACES derived from the active door — checked by L* separation, never by
+     ratio (DESIGN.md v2's lesson: the +0.05 flare term crushes dark-on-dark
+     ratios toward 1.0, so 1.05:1 can be plainly visible). */
+  --w-frame:color-mix(in oklab, var(--w-active) 24%, var(--line));
+  --floor-glow:color-mix(in oklab, var(--w-active) 26%, var(--well));
+
+  /* ══ LANE 3 — TAB ACCENT. Meaning: WHICH ROOM OF THE CLIENT YOU ARE IN.
+        Hexagonal walk, chroma .05 — DELIBERATELY a third of the Warden lane's
+        saturation. Chrome must never out-shout content: a dusty frame beside a
+        saturated item name reads as a different CLASS of object, and that
+        saturation tier is what keeps the lanes apart where their hues are
+        close (--acc-player h260 sits 1 deg from --rar-rare h259; they share the
+        Player tab and never share an element). Body text stays neutral. ══ */
+  --acc-training:#689698;  /* the script console */
+  --acc-grind:#7d9478;     /* copper, growth — the one green, on a named cue */
+  --acc-player:#7c8fad;    /* you */
+  --acc-delve:#9e86a3;     /* the descent */
+  --acc-dungeon:#ad8483;   /* the difficulty ladder */
+  --acc-help:#9f8b6c;      /* the manual — paper */
+  /* Boss has no accent of its own: its room IS the door, so its accent is the
+     Warden's hue. That is what makes Boss the one surface carrying exactly one
+     identity hue rather than two. */
+  --acc-boss:var(--w-active);
+  /* --acc is the CURRENT surface's accent; each page sets it once on <main>. */
+  --acc:var(--acc-boss);
+
+  /* ══ LANE 4 — POWER BAND. Meaning: HOW DEEP / HOW STRONG.
+        Grind zone depth and gear IP already carried a power-band concept with
+        no colour. Five steps, cool -> hot, hue-only at constant luminance —
+        NOT an HSL lightness ramp (chapter-08 High: perceptual lightness varies
+        wildly across hues and the data gets misread).
+
+        This lane renders as a FILLED CHIP, not as ink. That is the whole
+        reason it does not collide with the three ink lanes: the chip ground
+        sits at L* ~16.5 while every ink lane sits at L* 59, so band and accent
+        are in different LUMINANCE tiers even where their hues are close. The
+        bright hex only ever draws the chip's 2px lip. ══ */
+  --band-1:#6890c4;  /* coldest — z1-z3   / the lowest IP band */
+  --band-2:#399ba0;  /* z4-z6 */
+  --band-3:#629b6e;  /* z7-z9 */
+  --band-4:#a38c4a;  /* z10-z12 */
+  --band-5:#c17d6b;  /* hottest — z13-z15 / the frontier IP band */
+  --band-1-chip:color-mix(in oklab, var(--band-1) 30%, var(--well));
+  --band-2-chip:color-mix(in oklab, var(--band-2) 30%, var(--well));
+  --band-3-chip:color-mix(in oklab, var(--band-3) 30%, var(--well));
+  --band-4-chip:color-mix(in oklab, var(--band-4) 30%, var(--well));
+  --band-5-chip:color-mix(in oklab, var(--band-5) 30%, var(--well));
+
+  /* ══ CONSTRUCTION PUSH — v3's carpentry, taken to full Maple weight ══ */
+  --border-frame:var(--space-3);   /* 3px -> 4px. A frame you could grab. */
+  --bevel:var(--space-1);          /* 1px hairline -> 2px. v3's own review Major
+                                      was "a 1px edge at 10 L* is a rumour"; the
+                                      same argument applies one step further. */
+  --rivet:var(--space-3);          /* the corner mark's arm — 4px */
+  --rivet-inset:var(--space-4);    /* how far in from the corner it sits */
+  --glyph-plate:26px;              /* the letter-glyph plate. An honest one-off:
+                                      2 x --fs-body + the plate's own bevel, the
+                                      smallest square that holds a 16px cap and
+                                      still clears nothing else on the row. */
+  --fs-warden:40px;                /* was 36. 1.54x over --fs-hero, 1.30x under
+                                      --fs-colossal — which stays 52px because
+                                      battle.js draws the BREACHED reveal there
+                                      and the DOM and canvas must agree. */
+  /* The Armory's zone column held a bare "z15"; it now holds a band CHIP, and
+     a chip has padding. Both shipped one-offs widen by the same 14px so the
+     grid still fits its narrowest legible width. */
+  --armory-zone-col:40px;
+  --armory-min:434px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--dim);font-family:var(--font-body);
@@ -768,20 +878,289 @@ section.game button:disabled{
   border-color:var(--edge-shade);font-weight:bold;
   box-shadow:inset var(--border-hairline) var(--border-hairline) var(--space-2) var(--edge-shade),
              inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-lit)}
+
+/* ── v4 base-CSS fallback ─────────────────────────────────────────────────
+   The band chip's MARKUP is emitted by shared helpers, so it reaches the four
+   surfaces this phase does not recompose. It degrades to plain mono text
+   there rather than rendering as an unstyled artefact.                     */
+.band{font-family:monospace;color:var(--bone)}
+
+/* ── 0. THE ROOM'S OWN COLOUR ──────────────────────────────────────────────
+   Each surface declares its accent ONCE, on <main>. Everything downstream
+   reads var(--acc), so re-skinning a tab is one assignment and no rule below
+   names a specific hue. Boss's accent is the active Warden's hue, which is
+   why Boss carries exactly one identity hue instead of two.
+
+   Scoped to main. on purpose: the tab buttons wear the same .t-* classes, so
+   an unscoped rule also set --acc on all seven of them — invisible today
+   (nothing inside a button reads --acc) and a seven-hue trapdoor the moment
+   anything did. Tier B's "exactly one lane-3 hue" is now true of the cascade
+   and not only of the render.                                            */
+main.t-boss{--acc:var(--acc-boss)}      main.t-training{--acc:var(--acc-training)}
+main.t-grind{--acc:var(--acc-grind)}    main.t-player{--acc:var(--acc-player)}
+main.t-delve{--acc:var(--acc-delve)}    main.t-dungeon{--acc:var(--acc-dungeon)}
+main.t-help{--acc:var(--acc-help)}
+
+/* ── 1. THE WINDOW, HEAVIER ────────────────────────────────────────────────
+   v3's frame was 3px with a 1px bevel. The v3 review's own Major was that a
+   1px edge at 10 L* "is not a bevel, it is a rumour"; the same argument taken
+   one step further gives a 4px frame with a 2px bevel and a 2px foot. The
+   frame itself is TINTED with the room's accent (24% into --line, L* ~29 —
+   ~20 L* over --panel, and checked by L* separation rather than by ratio,
+   because it is a surface).                                              */
+section.game{
+  border:var(--border-frame) solid var(--w-frame);
+  box-shadow:
+    inset var(--bevel) var(--bevel) 0 var(--edge-lit),
+    inset calc(var(--bevel) * -1) calc(var(--bevel) * -1) 0 var(--edge-shade),
+    0 var(--bevel) 0 var(--edge-shade);
+  padding:0 var(--space-7) var(--space-9);
+  margin:var(--space-9) 0}
+.t-training section.game,.t-grind section.game,.t-player section.game,
+.t-delve section.game,.t-dungeon section.game,.t-help section.game{
+  border-color:color-mix(in oklab, var(--acc) 24%, var(--line))}
+
+/* ── 2. THE TITLE BAR, AT FULL WEIGHT ─────────────────────────────────────
+   v3's signature move, pushed: the label steps from --fs-body to --fs-display,
+   the closing groove's lit line goes from 1px --edge-lit to 2px of the ROOM'S
+   ACCENT, and the bar carries four CORNER RIVETS.
+
+   The rivets are four background layers — a drawn mark, not a glyph, not an
+   image, categorically not a generated icon. FOUR, always, symmetric, always
+   complete: a missing or offset rivet reads as damage instantly, so the
+   construction makes that unrepresentable rather than merely discouraged.
+   This is the no-decay veto expressed as CSS.                            */
+h3,.frame{
+  --rv:linear-gradient(var(--edge-lit),var(--edge-lit));
+  background:
+    var(--rv) var(--rivet-inset) var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) top var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) left var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    var(--rv) right var(--rivet-inset) bottom var(--rivet-inset)/var(--rivet) var(--rivet) no-repeat,
+    linear-gradient(var(--field),var(--inset) var(--space-10));
+  border-bottom:var(--bevel) solid var(--edge-shade);
+  box-shadow:0 var(--bevel) 0 var(--acc),
+             inset 0 var(--bevel) 0 var(--edge-lit)}
+h3{display:flex;flex-wrap:wrap;align-items:center;column-gap:var(--space-5);
+  font-size:var(--fs-display);letter-spacing:.12em;
+  padding:var(--space-5) var(--space-7);
+  margin:var(--space-10) calc(var(--space-7) * -1) var(--space-8)}
+h3 .sub,h3 .caption{flex-basis:100%;margin-top:var(--space-4)}
+
+/* THE LETTER-GLYPH PLATE. The project's standing veto is on AI-GENERATED
+   icons; letter glyphs and hand-made marks are the named exception, and this
+   is the letter-glyph case: one capital in the UI face, on the CONTROL
+   construction shrunk to a square. It is TYPE on a plate, so there is no
+   raster, no path, no generated art anywhere in the file — build.mjs's own
+   external-reference assertion proves that mechanically.
+
+   It is also where gold's new job lives: the glyph plates are the client
+   speaking in its own voice, on every window, in every room.             */
+.glyph{display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:var(--glyph-plate);height:var(--glyph-plate);
+  font-family:var(--font-ui);font-weight:bold;font-size:var(--fs-display);
+  line-height:1;color:var(--gold);
+  background:linear-gradient(var(--field),var(--panel));
+  border:var(--border-hairline) solid var(--edge-shade);
+  border-radius:var(--radius-control);
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--border-hairline) 0 var(--edge-shade);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+
+/* ── 3. THE DOOR ──────────────────────────────────────────────────────────
+   The Warden's name-plate is the same construction one size up, and the name
+   is now set in the DOOR'S OWN HUE rather than in gold. That is the whole of
+   lane 2 in one declaration: gold is the client, the hue is the place, and a
+   door finally feels like somewhere rather than like the same panel with a
+   different string in it.
+
+   The plate GROUND stays neutral on purpose. A hue-tinted ground under its
+   own hue costs that hue its contrast (3.87:1, measured) — so the tint goes
+   on the frame, the groove and the floor glow, and the ink keeps a clean
+   ground. Ink and its own ground never share a hue.                      */
+.frame{padding:var(--space-9) var(--space-7) var(--space-8);
+  margin:0 calc(var(--space-7) * -1) var(--space-9)}
+#bossName{font-size:var(--fs-warden);color:var(--w-active)}
+.wallBtn.active{color:var(--w-active);border-color:var(--w-active)}
+
+/* ── 4. THE TAB ROW — TIER A, the navigation legend ───────────────────────
+   Re-fit to four columns per Phase 2's own accepted specimen (7 buttons lay
+   out 4+3; repeat(3,1fr) left an orphan alone on a third row).
+
+   Every chip carries a 2px inset bar in ITS OWN accent, so all seven rooms
+   are legible in the row at once — but the INK stays --dim until a chip is
+   active. Colour identifies the room; the pressed construction plus the ink
+   still identify the current one, so the accent is an added channel and not a
+   replacement for one.
+
+   THIS IS THE WHOLE OF TIER A (DESIGN.md ## The co-occurrence rule, amended
+   2026-07-26). #tabs is the ONLY element in the client permitted to show more
+   than one hue of one lane at the same time, and it is bounded: lane 3 only,
+   chroma <= .05, the 2px foot bar only, inactive ink stays --dim. --acc-tab is
+   set and read here and NOWHERE ELSE — that grep is the check. A second
+   multi-hue persistent element is an amendment to DESIGN.md, not a change made
+   in this file.
+
+   Everything OUTSIDE #tabs is Tier B and carries exactly ONE lane-3 hue: the
+   surface's own --acc, set once on <main> in block 2 above. So Boss renders one
+   identity hue on its surface (lane 2, via the --acc-boss alias) and the legend
+   above it, which is what the amended per-surface table says.               */
+#tabs{grid-template-columns:repeat(4,1fr)}
+/* The accent bar is the FOOT of the chip only. Drawn as a corner inset it
+   wrapped up the right-hand side and ate that edge's --edge-shade, which cost
+   the chip its bevel — the accent would have been buying colour with depth. */
+#tabs button{box-shadow:
+  inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+  inset calc(var(--border-hairline) * -1) 0 0 var(--edge-shade),
+  inset 0 calc(var(--space-1) * -1) 0 var(--acc-tab),
+  0 var(--space-1) 0 var(--edge-shade)}
+#tabs button.t-boss{--acc-tab:var(--acc-boss)}
+#tabs button.t-training{--acc-tab:var(--acc-training)}
+#tabs button.t-grind{--acc-tab:var(--acc-grind)}
+#tabs button.t-player{--acc-tab:var(--acc-player)}
+#tabs button.t-delve{--acc-tab:var(--acc-delve)}
+#tabs button.t-dungeon{--acc-tab:var(--acc-dungeon)}
+#tabs button.t-help{--acc-tab:var(--acc-help)}
+#tabs button.active{color:var(--acc-tab);border-color:var(--acc-tab);
+  background:linear-gradient(var(--panel),var(--field));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-shade),
+    inset calc(var(--border-hairline) * -1) 0 0 var(--edge-lit),
+    inset 0 calc(var(--space-1) * -1) 0 var(--acc-tab)}
+
+/* ── 5. LANE 1 ON THE SURFACE — an item is a PLATE in its own rarity ──────
+   The tier hue was a text tint and nothing else. It is now a raised plate:
+   the tier's own hue mixed 16% into --plate-foot, a 4px edge in the pure hue,
+   the item name in the hue, and the meta line in --bone.
+
+   --dim / --recede / --faint are BANNED on these grounds — they measure
+   4.04-4.63:1 there. Fixed by ROLE, not by value (the same call v2 made for
+   --recede on --field): the plate carries --bone, and its hierarchy comes
+   from size and weight instead of from a quieter colour. contrast.mjs
+   asserts the ban, and now FAILS if a banned pair ever starts passing.
+
+   Every plate keeps its tier NAME printed beside it. Colour is never the only
+   channel (chapter-08, Critical — ~10% of male users).                   */
+.slot,.stashRow,.scrapPill{--rp:var(--panel);--ri:var(--line-soft)}
+.r-common{--rp:var(--rar-plate-common);--ri:var(--rar-common)}
+.r-uncommon{--rp:var(--rar-plate-uncommon);--ri:var(--rar-uncommon)}
+.r-rare{--rp:var(--rar-plate-rare);--ri:var(--rar-rare)}
+.r-epic{--rp:var(--rar-plate-epic);--ri:var(--rar-epic)}
+.r-legendary{--rp:var(--rar-plate-legendary);--ri:var(--rar-legendary)}
+.r-mythic{--rp:var(--rar-plate-mythic);--ri:var(--rar-mythic)}
+.r-origin{--rp:var(--rar-plate-origin);--ri:var(--rar-origin)}
+.slot{background:var(--rp);border-left:var(--border-frame) solid var(--ri);
+  border-top:none;border-radius:var(--radius-control);
+  padding:var(--space-6) var(--space-7);margin-top:var(--space-5);
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade)}
+.slot.filled{border-left-color:var(--ri)}
+/* An EMPTY slot is a socket, not a plate — nothing is in it to raise. That is
+   the material carrying the state, exactly as a disabled control does. */
+.slot:not(.filled){background:var(--well);box-shadow:
+  inset var(--border-hairline) var(--border-hairline) var(--space-2) var(--edge-shade);
+  border-left-color:var(--line-soft)}
+.slotName{color:var(--bone);font-weight:bold;letter-spacing:.1em;
+  text-transform:uppercase;font-size:var(--fs-label);font-variant:normal}
+.itemMeta,.enhInfo,.affixItem{color:var(--bone)}
+.slotItem{font-size:var(--fs-body)}
+.stashRow{background:var(--rp);border-left:var(--space-2) solid var(--ri);
+  border-bottom:var(--border-hairline) solid var(--edge-shade);
+  box-shadow:inset 0 var(--border-hairline) 0 var(--edge-lit);
+  padding:var(--space-4) var(--space-5)}
+.stashRow .sInfo{color:var(--bone)}
+.scrapPill{background:var(--rp);color:var(--ri);border-color:var(--ri);
+  border-radius:var(--radius-socket);font-weight:bold}
+/* a drop logline names the item in its tier's hue — the same lane, in the
+   client's own console, which is where a drop is actually announced */
+.log-loot .rar{font-weight:bold}
+
+/* ── 6. LANE 4 ON THE SURFACE — a heat block, not ink ─────────────────────
+   The band is the one lane that is NOT ink, and that is deliberate: a filled
+   chip at L* ~16.5 sits in a different luminance tier from every ink lane, so
+   it cannot be mistaken for one even where the hues are close. Cut into the
+   surface as a socket, with a 2px lip of the pure band hue, carrying the
+   actual IP or zone number in --bone — the number is the redundant cue that
+   keeps the ordering readable without the colour.                        */
+.band{display:inline-block;background:var(--bc);color:var(--bone);
+  border-radius:var(--radius-socket);padding:0 var(--space-4);
+  font-size:var(--fs-label);letter-spacing:.04em;
+  box-shadow:inset 0 var(--space-1) 0 var(--bl),
+             inset var(--border-hairline) 0 var(--space-2) var(--edge-shade)}
+.b1{--bc:var(--band-1-chip);--bl:var(--band-1)}
+.b2{--bc:var(--band-2-chip);--bl:var(--band-2)}
+.b3{--bc:var(--band-3-chip);--bl:var(--band-3)}
+.b4{--bc:var(--band-4-chip);--bl:var(--band-4)}
+.b5{--bc:var(--band-5-chip);--bl:var(--band-5)}
+.amZone{text-align:center}
+
+/* ── 7. LANE 3 ON THE LADDER — the room's colour, not a fifth channel ─────
+   A live row's edge and name take the ROOM'S accent instead of gold. Nothing
+   else about the ladder moves: dormant is still a neutral edge with a dim
+   name, struggling is still --warn on both, locked still has NO edge, no
+   control, --opacity-locked and the literal word "locked". Six channels, all
+   six intact — the hue that fills the "live" slot is the only thing that
+   changed, and within a room it is constant.
+
+   --warn keeps "struggling" alone. No accent sits close enough to it to be
+   confused: the one that comes nearest is --acc-dungeon, and Dungeon is the
+   single tab with no struggling state.                                   */
+.row.active{border-left:var(--border-frame) solid var(--acc)}
+.row.active .rowName{color:var(--acc)}
+/* The Warden's own line carries the Warden's own hue — the door is speaking. */
+#dialogue{border-left-color:var(--w-active)}
+/* Light under THIS door: the arena's floor seam takes the Warden's hue, so the
+   canvas and the DOM agree on whose room it is. What the canvas draws with it
+   is DESIGN.md "## Canvas scene spec (v4)". */
+.canvasStub::after{background:
+  linear-gradient(var(--w-active),var(--w-active)) 0 100%/100% var(--border-hairline) no-repeat,
+  linear-gradient(transparent,var(--floor-glow))}
+.trophySet.started{border-left-color:var(--acc)}
+/* An UPGRADE is the client telling you something, and gold is the client's
+   voice — but the gold already lives in the row's own marker glyph. Letting it
+   also take the edge would cost the rarity lane its widest channel on the one
+   row that most needs it, so the edge stays rarity's and the glyph stays gold.
+   One fact, one slot. */
+.stashRow.upgrade{border-left-color:var(--ri)}
+/* border-color is a SHORTHAND and resets all four sides — it has to come
+   BEFORE the accent edge or it silently eats it. It did, and the ranked
+   Armory cells rendered with no accent at all until the render was read. */
+.amCell{border-color:var(--edge-shade);border-radius:var(--radius-socket);
+  border-left:var(--space-2) solid var(--acc)}
+.amCell.dormant{border-left-color:var(--line-soft)}
+/* MAXED stays gold. A completed thing is the client congratulating you, and
+   that is gold's job now — so gold and the accent read as two different
+   statements on the same row rather than as two shades of "on". */
+.amCell.max{border-left-color:var(--gold)}
+.pip.own{color:var(--gold);border-color:var(--gold)}
 </style>
 </head>
 <body>
-<main class="client">
-<div class="mockNote"><b>MOCK</b> &mdash; not the shipped client. Boss tab, recomposed against <b>DESIGN.md's Visual DNA v3</b> &mdash;
-    MapleStory's construction on this game's dark ramp, replacing v2's Art Deco
-    reading. Not one string, fact owner or block position changed &mdash; what
-    changed is that a panel is now a <b>window</b> (thick bevelled frame,
-    rounded, title bar, standing on a hard foot), anything you read from is a
-    <b>socket</b> cut into it, every control has a pressable top surface, and
-    the chrome is set in a compact bold sans with a hard 1px shadow instead of
-    a serif. No colour token moved. The arena is CANVAS-drawn, so block 3 is a
-    labelled placeholder &mdash; deliberately not a fake arena; what the canvas
-    should DRAW is specced in DESIGN.md <code>## Canvas scene spec</code>.
+<main class="client t-boss">
+<div class="mockNote"><b>MOCK</b> &mdash; not the shipped client. Boss tab, recomposed against <b>DESIGN.md's Visual DNA v4</b> &mdash;
+    v3's MapleStory construction taken to full weight, plus the amended colour
+    rule. Not one string, fact owner or block position changed. <b>Construction:</b>
+    the frame goes 3px&rarr;4px on a 2px bevel, every title bar carries four
+    <b>corner rivets</b> (four background layers &mdash; a drawn mark, always
+    four, always symmetric, always complete, because a missing one would read
+    as damage and the server is fine) and a <b>gold letter-glyph plate</b>
+    (one capital in the UI face on a shrunken control plate &mdash; <b>TYPE on a
+    plate, not an icon</b>; there is no raster, path or generated art anywhere
+    in this file and <code>build.mjs</code> asserts it), the title label steps
+    to 16px and the Warden's name to 40px. <b>Colour:</b> this surface carries
+    <b>exactly one</b> hue lane &mdash; <b>lane 2, the Warden</b>. Maren owns
+    <code>--w2</code>; it sets her name, the window frame, the name-plate's
+    closing groove, the active door chip and the arena's floor glow. Boss has
+    no tab accent of its own because <b>its room is the door</b>. Gold did not
+    leave, it changed job: it is now <b>the client's own voice</b> &mdash; the
+    glyph plates, the Descend fill, the log's event lines. The arena is
+    CANVAS-drawn, so block 3 is a labelled placeholder &mdash; deliberately not
+    a fake arena; what it should DRAW <i>per Warden hue</i> is specced in
+    DESIGN.md <code>## Canvas scene spec (v4)</code>.
     Two states are drawn, each under its own dashed
 <b>STATE</b> label; the repeated headings between them are the same block in a
 different state, not a duplicated fact. The second is <b>frontier broken</b>, the only state in which
@@ -799,10 +1178,11 @@ different state, not a duplicated fact. The second is <b>frontier broken</b>, th
   </div>
   <button class="helpBtn" title="Help">?</button>
 </header>
-<nav id="tabs" aria-label="Main"><button class="active" aria-current="page">Boss</button><button>Training</button><button>Grind</button><button>Player</button><button>Delve</button><button>Dungeon</button></nav>
+<nav id="tabs" aria-label="Main"><button class="t-boss active" aria-current="page">Boss</button><button class="t-training">Training</button><button class="t-grind">Grind</button><button class="t-player">Player</button><button class="t-delve">Delve</button><button class="t-dungeon">Dungeon</button><button class="t-help">Help</button></nav>
 <section class="game">
   <div class="frame">
     <div class="bossPanel">
+      <span class="glyph" aria-hidden="true">M</span>
       <div id="bossName">Maren</div>
       <div id="bossTitle">Warden of the Second Door</div>
     </div>
@@ -848,6 +1228,7 @@ different state, not a duplicated fact. The second is <b>frontier broken</b>, th
 <section class="game">
   <div class="frame">
     <div class="bossPanel">
+      <span class="glyph" aria-hidden="true">M</span>
       <div id="bossName">Maren</div>
       <div id="bossTitle">Warden of the Second Door</div>
     </div>
@@ -886,16 +1267,26 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
   <b>title bar</b>; the rowlist is a <b>socket</b> cut into the window body; the rows
   are <b>leaves</b> in it separated by two-tone grooves; the alloc controls are small
   pressable <b>plates</b> around a socketed readout. If this reads flat, the language
-  has failed and the remaining five surfaces would inherit the failure.</div>
-<section class="game">
-  <h3>Zones<span class="sub">&mdash; put bots on a zone. Their combined damage
+  has failed and the remaining five surfaces would inherit the failure.
+  <br><br><b>v4 adds the colour test.</b> This specimen is wrapped in Grind's own
+  room class, so it renders the <b>two-lane maximum</b> the co-occurrence rule
+  allows: <b>lane 3</b> (Grind's accent &mdash; the window frame, the title bar's
+  groove, the live row's edge and name) plus <b>lane 4</b> (the power band &mdash;
+  each zone's IP range in a filled heat chip, cold at z1, hot at z15). Note the
+  chip lane sits at L* ~16 while the accent sits at L* 59: they are in different
+  <b>luminance</b> tiers, which is what stops them competing, not their hues.
+  <b>The state ladder is the thing to check here</b> &mdash; live now wears the
+  ROOM's colour instead of gold, and <b>dormant / struggling / locked must still
+  read apart at 375px</b>. <code>--warn</code> still owns struggling alone.</div>
+<div class="t-grind"><section class="game">
+  <h3><span class="glyph" aria-hidden="true">Z</span>Zones<span class="sub">&mdash; put bots on a zone. Their combined damage
     has to clear the zone's hold number or they earn nothing at all. A zone they
     can hold kills up to 50 mobs a second; every kill pays copper and has a
     1-in-400 chance to drop a piece of gear. IP is the power band those drops
     roll in &mdash; deeper zones drop higher.</span></h3>
   <div class="rowlist"><div class="row dormant">
     <div class="rowName">Novice Meadow<span class="sub">Training Slime &middot; 12 HP</span></div>
-    <div class="rowGain">5c per kill<span class="sub">IP 10&ndash;30</span></div>
+    <div class="rowGain">5c per kill<span class="sub"><span class="band b1">IP 10&ndash;30</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -904,7 +1295,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">Webbed Ravine<span class="sub">Ravine Weaver &middot; 60 HP</span></div>
-    <div class="rowGain">20c per kill<span class="sub">IP 40&ndash;120</span></div>
+    <div class="rowGain">20c per kill<span class="sub"><span class="band b1">IP 40&ndash;120</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -913,7 +1304,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row active">
     <div class="rowName">Salt Flats<span class="sub">Salt Strider &middot; 250 HP</span></div>
-    <div class="rowGain">75c per kill<span class="sub">IP 150&ndash;450</span></div>
+    <div class="rowGain">75c per kill<span class="sub"><span class="band b1">IP 150&ndash;450</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="20" readonly>
   <button>+</button><button>cap</button><button>&ctdot;</button>
@@ -922,7 +1313,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:100%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">Cinder Steppe<span class="sub">Steppe Charger &middot; 700 HP</span></div>
-    <div class="rowGain">300c per kill<span class="sub">IP 600&ndash;1,800</span></div>
+    <div class="rowGain">300c per kill<span class="sub"><span class="band b2">IP 600&ndash;1,800</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -931,7 +1322,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">The Doorstep<span class="sub">Door Sentry &middot; 1,500 HP</span></div>
-    <div class="rowGain">2,250c per kill<span class="sub">IP 4,500&ndash;13,500</span></div>
+    <div class="rowGain">2,250c per kill<span class="sub"><span class="band b2">IP 4,500&ndash;13,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -940,7 +1331,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">The Threshold<span class="sub">Threshold Husk &middot; 5,000 HP</span></div>
-    <div class="rowGain">7,000c per kill<span class="sub">IP 13,500&ndash;40,500</span></div>
+    <div class="rowGain">7,000c per kill<span class="sub"><span class="band b2">IP 13,500&ndash;40,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -949,7 +1340,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">Ashen Nave<span class="sub">Nave Revenant &middot; 16,000 HP</span></div>
-    <div class="rowGain">21,000c per kill<span class="sub">IP 40,500&ndash;121,500</span></div>
+    <div class="rowGain">21,000c per kill<span class="sub"><span class="band b3">IP 40,500&ndash;121,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -958,7 +1349,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">Flooded Undercroft<span class="sub">Undercroft Lurker &middot; 52,000 HP</span></div>
-    <div class="rowGain">65,000c per kill<span class="sub">IP 121,500&ndash;364,500</span></div>
+    <div class="rowGain">65,000c per kill<span class="sub"><span class="band b3">IP 121,500&ndash;364,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -967,7 +1358,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">The Long Dark<span class="sub">Pale Sentinel &middot; 170,000 HP</span></div>
-    <div class="rowGain">200,000c per kill<span class="sub">IP 364,500&ndash;1,093,500</span></div>
+    <div class="rowGain">200,000c per kill<span class="sub"><span class="band b3">IP 364,500&ndash;1,093,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="0" readonly>
   <button>+</button>
@@ -976,7 +1367,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row struggling">
     <div class="rowName">The Second Door<span class="sub">Sealed Warden &middot; 550,000 HP</span></div>
-    <div class="rowGain">620,000c per kill<span class="sub">IP 1,093,500&ndash;3,280,500</span></div>
+    <div class="rowGain">620,000c per kill<span class="sub"><span class="band b4">IP 1,093,500&ndash;3,280,500</span></span></div>
     <div class="rowAlloc"><span class="allocMini">
   <button>&minus;</button><input value="15" readonly>
   <button>+</button><button>cap</button><button>&ctdot;</button>
@@ -985,38 +1376,38 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
     <div class="rowBar"><div class="rowFill" style="width:0%"></div></div>
   </div><div class="row locked">
     <div class="rowName">Frostbound Wastes<span class="sub">Wastes Wight &middot; 1,650,000 HP</span></div>
-    <div class="rowGain">1,860,000c per kill<span class="sub">IP 3,280,500&ndash;9,841,500</span></div>
+    <div class="rowGain">1,860,000c per kill<span class="sub"><span class="band b4">IP 3,280,500&ndash;9,841,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
     <div class="rowName">The Sunken Archive<span class="sub">Archive Colossus &middot; 5,000,000 HP</span></div>
-    <div class="rowGain">5,600,000c per kill<span class="sub">IP 9,841,500&ndash;29,524,500</span></div>
+    <div class="rowGain">5,600,000c per kill<span class="sub"><span class="band b4">IP 9,841,500&ndash;29,524,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
     <div class="rowName">Obsidian Reach<span class="sub">Reach Devourer &middot; 15,000,000 HP</span></div>
-    <div class="rowGain">17,000,000c per kill<span class="sub">IP 29,524,500&ndash;88,573,500</span></div>
+    <div class="rowGain">17,000,000c per kill<span class="sub"><span class="band b5">IP 29,524,500&ndash;88,573,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
     <div class="rowName">The Hollow Spire<span class="sub">Spire Revenant &middot; 45,000,000 HP</span></div>
-    <div class="rowGain">50,000,000c per kill<span class="sub">IP 88,573,500&ndash;265,720,500</span></div>
+    <div class="rowGain">50,000,000c per kill<span class="sub"><span class="band b5">IP 88,573,500&ndash;265,720,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div><div class="row locked">
     <div class="rowName">World's Edge<span class="sub">Edge Sentinel &middot; 135,000,000 HP</span></div>
-    <div class="rowGain">150,000,000c per kill<span class="sub">IP 265,720,500&ndash;797,161,500</span></div>
+    <div class="rowGain">150,000,000c per kill<span class="sub"><span class="band b5">IP 265,720,500&ndash;797,161,500</span></span></div>
     <div class="rowAlloc"></div>
     <div class="rowStat">locked &middot; needs 4 doors open, you have 1</div>
     
   </div></div>
-</section>
+</section></div>
 <div id="logHead">maintenance@dead-server:~$ <span class="cursor">&#9646;</span></div>
-<div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-plain">drop: Epic Sentry Halberd 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
+<div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-loot log-plain">drop: <span class="rar rar-epic">Epic Sentry Halberd</span> 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
 <footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>
 </main>
 </body>

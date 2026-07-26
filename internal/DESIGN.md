@@ -1,16 +1,495 @@
 # Design: Last Warmth
 
-> **v3, 2026-07-26 — read `# Visual DNA v3` FIRST.** The DNA, material and type
-> layers in BOTH the v1 body and the `# Visual DNA v2` section are superseded by
-> v3. Everything else in this file — every colour hex, the semantic tiers, the
-> dimension scale, the type-scale VALUES, the component inventory, the
-> state-ladder mechanics, the canvas token module, the motion budget — is
-> carried forward unchanged and is still the contract. Each superseding section
-> states exactly which paragraphs it replaces and which it does not.
+> **v4, 2026-07-26 — read `# Visual DNA v4` FIRST.** v4 supersedes v3's
+> **colour rule** and **construction weight**; it supersedes nothing else. v3
+> still owns the four constructions, the signature move, the type voice and the
+> archetype, and it is still the section that explains WHY the client looks like
+> a window. The v1 body and `# Visual DNA v2` remain superseded by v3.
 >
-> **Reading order:** `# Visual DNA v3` (current) → `# Visual DNA v2` (rejected,
-> kept for the record and because v3 re-uses four of its tokens) → the v1 body
-> (still the law for colour, tokens and components).
+> Everything not named in a supersede table — the semantic tiers, the dimension
+> scale, the type-scale values, the component inventory, the state-ladder
+> mechanics, the canvas token module, the motion budget, and the entire surface
+> ramp — is carried forward unchanged and is still the contract.
+>
+> **Reading order:** `# Visual DNA v4` (current — colour + weight) →
+> `# Visual DNA v3` (current — construction, type, archetype) →
+> `# Visual DNA v2` (rejected, kept for the record and because v3 re-uses four
+> of its tokens) → the v1 body (still the law for the base palette, the tokens
+> and the components).
+
+---
+
+# Visual DNA v4
+
+**Date:** 2026-07-26 · **Status:** proposed, evidence passing, awaiting the
+user's look sign-off.
+**Proved on:** `internal/mocks/boss.html` (hero surface, lane 2) and
+`internal/mocks/player.html` (list surface, lanes 1 + 3 + 4) →
+`internal/mocks/shots/{boss,player}-375.png`. The v3 renders are preserved as
+`boss-375-v3.png` / `boss-1280-v3.png`; the pre-v4 Player render is
+`player-375-v1.png`.
+
+## Why there is a v4
+
+v3 was accepted only provisionally — *"acceptable for now"* — and on further
+review the user said:
+
+> *"the UI itself is ok. maybe more stylised aesthetic is how i would have
+> preferred. adding colour where it could potentially add more flavour could be
+> nice as well."*
+
+Both halves are spent here, deliberately **before** the look propagates to the
+remaining five surfaces, so the revision costs one surface pair rather than
+seven.
+
+**The diagnosis, stated plainly.** v3 did exactly what it set out to do and
+moved not one hex — which was the right call for a construction pass and the
+wrong end state. The reason every surface still reads identical is not the
+carpentry, it is a rule written into v1 and carried through v2 and v3 unchanged:
+
+> *`warn`/`alert`/`copper` are functional-semantic accents and **never** enter
+> an identity role.* + *Gold is identity only.*
+
+Under that rule the client has exactly **one** identity colour for **ten doors,
+seven rooms, seven rarities and fifteen zones**. No amount of bevel fixes that,
+because the problem is not depth — it is that nothing on screen is allowed to
+be *about* anything.
+
+## The amended colour rule
+
+**Colour MAY carry identity.** That is the amendment, and the user made it
+explicitly. What survives it is the part that was load-bearing all along:
+
+> **No hue is decorative. Every hue attaches to a meaning the player can name,
+> in exactly one of four lanes. A hue with no fact behind it is not allowed on
+> screen.**
+
+### What gold is now
+
+Gold did not leave; it **changed job**. It stopped being *the* identity — which
+is what forced it to stand in for every kind of importance at once — and became
+**the client's own voice**:
+
+| Gold still owns | Gold no longer owns |
+|---|---|
+| the letter-glyph plates on every window | the Warden's name (→ lane 2) |
+| the primary action's fill (`#descendBtn`) | the active tab chip (→ lane 3) |
+| a maxed / complete state (`.amCell.max`, `.pip.own`, `--row-stat-maxed`) | the live row's edge and name (→ lane 3) |
+| the hero number and the log's event lines | the started trophy set's edge (→ lane 3) |
+| the upgrade marker glyph in the stash | the stash upgrade row's edge (→ lane 1) |
+
+That split is what lets a door and a room each own a hue without either of them
+competing with gold: **gold is the client talking about itself; a lane hue is
+the client talking about the world.**
+
+## The four colour lanes
+
+Every lane member is **solved, not picked**: binary search in OKLCH for the
+lightness yielding relative luminance **Y = 0.27**, the value that clears 4.5:1
+on `--field`, the lightest ground on the ramp. Consequence: every hue in every
+lane clears every ground *identically* (4.79–4.84:1 on `--field`, 6.14–6.20:1
+on `--well`). That is `chapter-08-color-science.md`'s Critical requirement —
+qualitative categories must not carry unequal perceptual weight — and it is why
+`contrast.mjs` can gate 28 new hues as one uniform check.
+
+**Chroma, not hue, is the lane separator.** Seven tabs + ten Wardens + seven
+rarities + five bands cannot all sit ≥45° apart on one wheel; that is
+arithmetic. So the lanes separate on a second axis instead.
+
+### Lane 1 — RARITY · *how many affixes an item rolled*
+
+`rarity.js`'s shipped hues, promoted from a text tint to a real plate. **Invents
+no new meaning** — the ramp already existed, it just had no surface.
+
+| Token | Hex | Tier | Note |
+|---|---|---|---|
+| `--rar-common` | `#b8b8b8` | Common, 0 affixes | unchanged |
+| `--rar-uncommon` | `#5fd35f` | Uncommon, 1 | unchanged |
+| `--rar-rare` | `#5a8bd6` | Rare, 2 | unchanged |
+| `--rar-epic` | `#bc6ce2` | Epic, 3 | **LIFTED** from `#b061d6` — 4.15:1 on `--field`, a real WCAG 1.4.3 failure |
+| `--rar-legendary` | `#e08a2e` | Legendary, 4 | unchanged |
+| `--rar-mythic` | `#e86362` | Mythic, 5 | **LIFTED** from `#d85454` — 4.00:1 on `--field` |
+| `--rar-origin` | `#e8df8a` | Origin, 6 | unchanged |
+
+Both lifts preserve OKLCH hue and chroma exactly and move only lightness. They
+were invisible until now because **`contrast.mjs` had no rarity pair at all** —
+the whole lane was un-gated. Required behaviour change **#8**.
+
+**Construction.** An item is a raised **plate**:
+`--rar-plate-<tier>: color-mix(in oklab, var(--rar-<tier>) 16%, var(--plate-foot))`,
+a `--border-frame` edge in the pure hue, the item name in the hue, the meta line
+in `--bone`. **An EMPTY slot is a socket, not a plate** — nothing is in it to
+raise, and that is the material carrying the state exactly as a disabled control
+does.
+
+**Where it attaches:** equipped gear plates, stash rows, scrap pills, drop
+loglines. **Item objects only, never chrome.**
+
+> **`--dim` / `--recede` / `--faint` are BANNED on a rarity plate** (4.04–4.63:1
+> there). Fixed by ROLE, not by value — the same call v2 made for `--recede` on
+> `--field`. A rarity plate carries `--bone` and its own tier ink, and takes its
+> hierarchy from size and weight instead. `contrast.mjs` records the ban.
+
+### Lane 2 — WARDEN · *which door you are at*
+
+Ten doors, ten hues, on an even **decagonal walk** (36° apart, chroma **.09** —
+the loudest lane, because it appears alone on its own surface). The walk starts
+30° off gold so no door ever wears the client's own colour. **Qualitative, not
+ordinal**: a door is a *place*, not a magnitude — magnitude is lane 4's job.
+
+| Token | Hex | Warden |
+|---|---|---|
+| `--w1` | `#859554` | Vess, Warden of the First Door |
+| `--w2` | `#5a9b74` | Maren — the Second (the frontier in the mock's save) |
+| `--w3` | `#3a9c99` | Korrin |
+| `--w4` | `#4a97b7` | Osei |
+| `--w5` | `#728ec6` | Thale |
+| `--w6` | `#9984c0` | Ilva |
+| `--w7` | `#b57ca6` | Domar |
+| `--w8` | `#c27a83` | Sef |
+| `--w9` | `#be7f5f` | Yara |
+| `--w10` | `#a88a4b` | The Last Warden |
+
+`--w-active` is set by the client to the door you are standing at; everything on
+the Boss tab reads from it, so re-tinting a door is **one assignment**.
+
+**Where it attaches:** the Warden's name (`--fs-warden`), the window frame
+(`--w-frame: color-mix(in oklab, var(--w-active) 24%, var(--line))`), the
+name-plate's closing groove, the active door chip, the Warden's own dialogue
+edge, and the arena's floor seam + `--floor-glow`.
+
+> **Ink and its own ground never share a hue.** A hue-tinted plate under its own
+> hue costs that hue its contrast — measured at **3.87:1** for `--w2` on a 16%
+> `--w2` plate. So the tint goes on the frame, the groove and the glow, and the
+> name-plate ground stays neutral. This is a general rule, not a Warden one.
+
+### Lane 3 — TAB ACCENT · *which room of the client you are in*
+
+Hexagonal walk, chroma **.05** — deliberately a third of the Warden lane's
+saturation. **Chrome must never out-shout content.**
+
+| Token | Hex | Room | The meaning |
+|---|---|---|---|
+| `--acc-boss` | `= var(--w-active)` | Boss | Boss has no accent of its own: **its room IS the door** |
+| `--acc-training` | `#689698` | Training | the script console |
+| `--acc-grind` | `#7d9478` | Grind | copper, growth — the one green, on a named content cue |
+| `--acc-player` | `#7c8fad` | Player | you |
+| `--acc-delve` | `#9e86a3` | Delve | the descent |
+| `--acc-dungeon` | `#ad8483` | Dungeon | the difficulty ladder |
+| `--acc-help` | `#9f8b6c` | Help | the manual — paper |
+
+Each surface declares `--acc` **once**, on `<main>`. Nothing downstream names a
+specific hue, so re-skinning a room is one assignment.
+
+**Lane 3 attaches in two places, and they are counted separately** (see
+`## The co-occurrence rule` — this split is the amendment the Phase 2.5 review
+forced, and it is the sentence v4 was missing):
+
+| | Where | How many lane-3 hues are on screen |
+|---|---|---|
+| **The legend** (`#tabs` only) | the tab chip's 2px foot bar | **all seven, always, on every surface** |
+| **The surface** (everything else) | the active chip's ink + border; the window frame tint; the `h3` title bar's closing groove; the live row's edge and name; the started trophy set's edge; the ranked Armory cell's edge | **exactly one** — the surface's own `--acc` |
+
+**Chrome only. Body text stays neutral.**
+
+### Lane 4 — POWER BAND · *how deep / how strong*
+
+Five steps, cool → hot, **hue-only at constant luminance** — not an HSL
+lightness ramp (`chapter-08`, High: perceptual lightness varies wildly across
+hues and the data gets misread).
+
+| Token | Hex | Band | Zones | Reads as |
+|---|---|---|---|---|
+| `--band-1` | `#6890c4` | coldest | z1–z3 | the shallow end |
+| `--band-2` | `#399ba0` | | z4–z6 | |
+| `--band-3` | `#629b6e` | | z7–z9 | |
+| `--band-4` | `#a38c4a` | | z10–z12 | |
+| `--band-5` | `#c17d6b` | hottest | z13–z15 | the frontier |
+
+**This lane renders as a FILLED CHIP, not as ink**, and that is the whole reason
+it does not collide with the three ink lanes: the chip ground
+(`--band-N-chip: color-mix(in oklab, var(--band-N) 30%, var(--well))`) sits at
+**L\* ≈16.5** while every ink lane sits at **L\* 59**. Band and accent are in
+different **luminance tiers** even where their hues are close. The bright hex
+only ever draws the chip's 2px lip.
+
+**Where it attaches:** a zone row's IP range, a gear or stash item's IP figure,
+the Armory's zone marker. **Only inside a chip. Never an edge, never a ground,
+never ink.**
+
+## The co-occurrence rule
+
+**AMENDED 2026-07-26**, after the Phase 2.5 review measured the rendered mocks
+against it and found the document wrong, not the pixels. The old rule read
+*"one chrome lane + at most one content lane per surface, hard cap: two"* and
+the Boss row read *"lane 2 only"* — while `boss-1280.png` plainly showed the
+persistent tab row carrying all seven lane-3 foot bars at once. Two statements
+in one document, one of them false. The amendment below picks the pixels,
+because the seven-hue row is a **legend** — a fixed colour key for seven
+destinations — and a legend is not identity competing on the surface. What the
+old rule was actually protecting is stated properly here instead of implied,
+and the legend is bounded so it cannot quietly grow into the thing the cap
+exists to stop.
+
+**Two tiers. They are counted separately, and only Tier B has a cap.**
+
+### Tier A — the navigation legend
+
+> **`#tabs`, and nothing else in the client, may show more than one hue of one
+> lane at the same time.**
+
+| Bound | Value | How a reader checks it |
+|---|---|---|
+| **Elements** | exactly one selector: `#tabs button` | grep `--acc-tab`. It is *set* on `#tabs button.t-*` and *read* in `#tabs button`'s box-shadow. Nowhere else, in any file. If a second selector ever sets or reads it, the bound is broken |
+| **Lanes** | lane 3 only | no `--w*`, `--rar-*` or `--band-*` token may appear inside a `#tabs` rule |
+| **Chroma** | ≤ **.05** — a third of lane 2's | the lane-3 table above is the whole legal set, and it is built at .05 |
+| **Geometry** | the chip's **2px foot bar** only. Inactive chips keep `--dim` ink and a neutral border | colour identifies the *room*; the pressed construction and the ink still identify the *current* room, so the legend is an added channel, never a replacement for one |
+| **Growth** | a second multi-hue persistent element is a **DESIGN.md amendment**, not an implementation choice | this row is the bound. Tier A is a closed set of one |
+
+**The one alias, stated rather than discovered.** `--acc-boss` is a lane-3
+token whose *value* is `var(--w-active)`. Lane membership is by **token**, not
+by hex — so the legend carries seven lane-3 members, exactly one of which is
+defined as an alias of lane 2. It is deliberate and it earns its keep: the Boss
+foot bar tells you which door you are standing at from inside any other room.
+No other lane-3 token may alias anything.
+
+### Tier B — the surface
+
+> **At most two lanes. Hard cap: two. Three lanes is a clown car.**
+
+**How to count a surface's lanes — three steps, in order:**
+
+1. **Skip `#tabs`.** It is Tier A, bounded above.
+2. **Skip lane 4.** It renders only as a filled chip whose ground sits at
+   **L\* ≈ 16.5** while every ink lane sits at **L\* 59** — a different
+   luminance tier, not a competing ink. The bright band hex only ever draws the
+   chip's 2px lip. *(This exemption used to be inferable from three separate
+   sentences and stated as a rule nowhere; the Phase 2.5 review logged that as
+   a Minor. It is a rule now.)*
+3. **Count the distinct lanes colouring ink, edges, frames, grooves or plates**
+   on everything that remains. That number is the surface's lane count, and it
+   must be **≤ 2**.
+
+Step 3 is what makes the table below true: **lane 3 contributes exactly one hue
+to Tier B** — the surface's own `--acc`, declared once on `<main>`. The
+seven-hue row lives in Tier A and is not counted here.
+
+| Surface | Tier B lanes | Count | Why not more |
+|---|---|---|---|
+| **Boss** | lane 2 (`--acc` aliases `--w-active`) · lane 4 in the Zones specimen's chips, exempt by step 2 | **1** | Boss's accent **is** the Warden's hue, so it carries exactly one identity hue rather than two |
+| **Player** | lane 3 (`--acc`) + lane 1 (items) · lane 4 in chips, exempt by step 2 | **2** | rarity and accent never share an element |
+| **Grind** | lane 3 (`--acc`) · lane 4 in chips, exempt by step 2 | **1** | |
+| **Training / Delve / Dungeon / Help** | lane 3 (`--acc`) | **1** | nothing on them has a rarity or a power band |
+
+**Mutually exclusive:** Warden ⟂ tab accent (Boss's accent is the Warden).
+Rarity ⟂ power band **on the same element** — they share a stash row but never a
+slot: rarity owns the name and the edge, the band owns the IP chip.
+
+### The honest limit, stated numerically
+
+Because the wheel is finite, some accent hues sit close to some rarity hues:
+
+| Accent | Nearest rarity | Gap |
+|---|---|---|
+| `--acc-player` (h260) | `--rar-rare` (h259) | **1°** |
+| `--acc-grind` (h140) | `--rar-uncommon` (h143) | **3°** |
+| `--acc-delve` (h320) | `--rar-epic` (h314) | **6°** |
+| `--acc-dungeon` (h20) | `--rar-mythic` (h23) | **3°** |
+
+Player is the surface where the first two actually co-occur. Three things keep
+them apart, and they are the reason the rule above is written as it is:
+
+1. **Chroma tier** — the accent is a third of rarity's saturation.
+2. **Element class** — the accent touches only chrome; rarity touches only items. They never share an element.
+3. **The word** — every item prints its tier name (`· Legendary ·`) beside the hue.
+
+Rotating the accent walk to maximise the minimum gap **was computed** (+33°,
+raising the worst gap to 9°) and **rejected**: it buys 8° and destroys every
+accent's meaning, which is the only thing that makes a hue legal here at all.
+
+## Colour is never the only channel
+
+`chapter-08-color-science.md`, Critical (~10% of male users). Every lane keeps a
+redundant cue that already existed and was not invented for this:
+
+| Lane | Redundant cue |
+|---|---|
+| Rarity | the tier name is printed as a word on every plate, row and pill |
+| Warden | the door's name and title are the largest type on the surface |
+| Tab accent | the pressed construction and the ink both still mark the current tab |
+| Power band | the IP number or zone index rides **inside** the chip |
+
+## The state ladder under v4 — six channels, none lost
+
+The plan that produced the ladder is the reason this section exists at all, and
+nothing in it moves. All six channels survive: **edge presence, type colour,
+control presence, unlock text, material lift, socket lit-ness.** The only thing
+that changed is **which hue fills the "live" slot**, and within a room it is
+constant.
+
+| State | Under v4 |
+|---|---|
+| **live** | lifted onto its own `--inset` → `--well` ground, **`--border-frame` edge in the ROOM'S accent**, name in the accent, controls present, filling bar (still `--gold`) |
+| **dormant** | flat in the socket, neutral edge, dim name, faint stat, control present reading 0, empty track |
+| **struggling** (Grind only) | flat, full opacity, **`--warn` edge and `--warn` stat — unchanged** |
+| **locked** | `--opacity-locked`, **unlit**, no edge, no control at all, and the row prints the word "locked" with its unlock condition |
+
+`--warn` still owns `struggling` alone. **No accent is placed where it could be
+mistaken for it:** the nearest is `--acc-dungeon`, and Dungeon is the single tab
+with no struggling state. Verified on the 375px render — the Grind specimen
+draws all four states side by side with both of Grind's lanes active.
+
+## Construction (v4) — v3's carpentry at full weight
+
+v3's four constructions (WINDOW / TITLE BAR / SOCKET / CONTROL) and all seven of
+its reproducibility rules are **carried forward unchanged**. What changes is
+amplitude:
+
+| | v3 | v4 |
+|---|---|---|
+| Window frame | `--border-frame` = 3px, in `--line` | **4px**, in the room's tinted `--w-frame` |
+| Bevel | 1px hairline | **`--bevel` = 2px** — v3's own review Major was "a 1px edge at 10 L\* is a rumour"; the same argument, one step on |
+| Title bar label | `--fs-body` (13px) | **`--fs-display` (16px)** |
+| Title bar groove | 1px `--edge-lit` | **2px of the room's accent** |
+| Warden's name | `--fs-warden` 36px, gold | **40px**, in the door's own hue |
+| Corner mark | none | **four rivets per title bar** |
+| Section mark | none | **a gold letter-glyph plate per title bar** |
+
+### The corner rivet
+
+Four `--edge-lit` squares drawn as **background layers** (v3 material rule 5:
+partial edges are background layers, not borders), inset `--rivet-inset` from
+each corner of every title bar.
+
+> **Four, always. Symmetric, always. Complete, always.** A missing, thinner or
+> offset rivet reads as damage instantly, so the construction makes that
+> *unrepresentable* rather than merely discouraged. This is the no-decay veto
+> expressed as CSS, and it is the same discipline v2's corner-bracket frame had.
+
+### The letter-glyph plate
+
+**One capital, in the UI face, on the CONTROL construction shrunk to a square**
+(`--glyph-plate`), in `--gold`. The letter is always the block's own initial, so
+it cannot drift into meaning something the heading does not already say.
+
+> **This is TYPE on a plate, not an icon.** The project's standing veto is on
+> *AI-generated* icons and names letter glyphs and hand-made marks as the
+> exception. There is no raster, no path and no generated art anywhere in the
+> emitted files, and `build.mjs`'s external-reference assertion proves it
+> mechanically rather than by claim.
+
+## Canvas scene spec (v4) — what the arena draws per Warden hue
+
+The arena stays a labelled canvas placeholder in the mock (it is CANVAS-drawn;
+faking it in HTML would be a lie about what the surface is). v3's Canvas scene
+spec is carried forward, with the Warden lane added:
+
+| Element | Token | What the hue does |
+|---|---|---|
+| floor band | `--floor-glow` (= 26% `--w-active` into `--well`) | light under **this** door — the room's own warmth, cool at Korrin's door and warm at Yara's |
+| floor seam | `--w-active` | the one hairline that says where the floor is; matches the DOM's frame so canvas and DOM agree whose room it is |
+| boss sprite rim / silhouette edge | `--w-active` | the Warden reads as belonging to the door, not as a sprite pasted into it |
+| damage cracks on the boss | `--w-active` at the crack's lit edge | progressive damage stays in the door's own key rather than importing a second hue |
+| hero sprite | unchanged — `--bone` / neutral | **you are not the door.** The player never takes a Warden hue; that separation is the point of the lane |
+| crit-tier damage numbers | unchanged — `--gold` / `--bone` | numbers are the client speaking, so they stay in gold's family |
+| `BREACHED` reveal | unchanged — `--fs-colossal` 52px, `--gold` | the peak is the client's own moment, not the door's |
+
+## Required behaviour changes (v4)
+
+v1's five, v2's #6 and v3's #7 all still stand. Added:
+
+8. **`rarity.js`'s `epic` and `mythic` colours are real WCAG 1.4.3 failures.**
+   `#b061d6` → `#bc6ce2` and `#d85454` → `#e86362` (4.15:1 and 4.00:1 on
+   `--field`). OKLCH hue and chroma preserved; lightness only. Applied in the
+   mocks' tokens, not yet in `rarity.js` — same posture as v2's
+   `--alloc-control` and `button:disabled` fixes.
+9. **The tab row is seven wide at `repeat(4,1fr)`.** Applied in the mocks this
+   phase, matching Phase 2's own accepted specimen
+   (`internal/mocks/tabrow-specimen.html`, variant B) and JOURNEY.md's IA.
+
+## Contrast evidence (v4) — computed, not asserted
+
+`node internal/mocks/contrast.mjs`, extended this phase to (a) resolve
+`color-mix(in oklab, …)` and `var()` alias tokens so every derived ground stays
+**computed rather than asserted**, (b) print **L\* beside every ratio**, and
+(c) gate the four lanes and a set of surface pairs by **L\* separation**.
+
+```
+all 190 gated pairs + 16 L* surface pairs pass       (was 49 — coverage GREW ~4x)
+```
+
+Not one previously-passing pair moved. The growth is entirely new coverage: the
+rarity lane had **zero** gated pairs before this phase, which is exactly how two
+live AA failures survived three design passes.
+
+The file now distinguishes three kinds of check, which v4 forced apart:
+
+| Kind | Instrument | Why |
+|---|---|---|
+| text | ratio ≥ 4.5:1 | WCAG 1.4.3 |
+| informational non-text (edges, chip lips) | ratio ≥ 3.0:1 | WCAG 1.4.11 |
+| **surfaces** (grounds, frames, plates, chips) | **L\* separation ≥ 4.0** | the v2 lesson: the `+0.05` flare term crushes dark-on-dark ratios toward 1.0, so `--rar-plate-origin` on `--panel` reads 1.29:1 and is plainly visible at 10.4 L\* apart |
+
+Two further distinctions the file did not previously have:
+
+- **Gradient stops inside one object** (`--panel` → `--plate-foot`, 2.6 L\*) are
+  reported under `FALL`, never gated. They are meant to be a soft fall, not a
+  perceptible step; gating them would assert that a window body should look like
+  a staircase, which is the opposite of "a gradient lights the TOP".
+- **Banned-and-failing** vs **banned-by-role**. The first (`--recede`/`--faint`
+  on `--field`) is now genuinely *asserted* — the run fails if one ever starts
+  passing, which is the check the comment always claimed and the code never
+  made. The second (the quiet tiers on a rarity plate) is a role rule that some
+  plates measure *above* 4.5 on, so it is reported, not asserted. Conflating
+  them produced four false failures on the first run of this phase.
+
+## Never (v4)
+
+Carried forward from v3 in full, **minus one amendment**, plus three:
+
+- **AMENDED — "no icon of any kind".** v3 banned every mark. v4 permits exactly
+  one: a **letter glyph in the UI face on a plate**. Still no raster, no path,
+  no drawn symbol, and above all **nothing generated**. The project veto is
+  unchanged and absolute.
+- **No hue without a fact.** A colour that does not attach to a named meaning in
+  one of the four lanes does not go on screen. This is the whole of the amended
+  rule, and it is the entry that stops v4 becoming decoration.
+- **Never more than two lanes in Tier B of one surface.** Counted by the
+  three-step procedure in `## The co-occurrence rule` (skip `#tabs`, skip
+  lane 4, count the rest). A hard cap, not a guideline. Three lanes is a clown
+  car.
+- **Never a second multi-hue element in the persistent chrome.** Tier A is a
+  closed set of exactly one: `#tabs button`'s 2px foot bar. A second element
+  showing several hues of one lane at once turns a legend into wallpaper, and
+  that is precisely the failure the Tier B cap is for. Adding one is an
+  amendment to this document, not an implementation choice.
+- **Never let a lane hue replace a state channel.** Colour identity is an
+  ADDITIONAL channel. If removing every hue from a surface would make its states
+  ambiguous, the surface is wrong — not the palette.
+- **No hue-tinted ground under its own hue.** Measured at 3.87:1. Tint the
+  frame, the groove and the glow; leave the ink a clean ground.
+
+## Open questions (v4)
+
+- **The rarity ramp's own luminances are uneven** — `--rar-uncommon` sits at
+  L\* 76 while `--rar-legendary` sits at L\* 65, so a lower tier is *brighter*
+  than a higher one and the plate grounds inherit that spread (L\* 12.8–17.8).
+  These are shipped game hexes and lane 1's charter is to invent no new meaning,
+  so only the two AA failures were touched. **Rebalancing the full ramp to a
+  monotone luminance ladder is a real improvement and a separate decision** —
+  it changes a colour players already recognise.
+- **`CSS_V3` and `CSS_V4` are still two strings behind two flags**, now scoped
+  to Boss and Player. The follow-up phase pastes both into `CSS`, drops the
+  flags and deletes the split. Marked with a `ponytail:` comment at the seam.
+- **Nothing here is applied to `style.css` or `rarity.js` yet.** v4 inherits
+  v1/v2/v3's position: the DESIGN.md gate holds until the user confirms the
+  direction on real pixels.
+- **Copy is deliberately untouched.** Phase 2 specified a 22-row copy
+  relocation and Phase 3 applies it. Cutting the teaching copy in the same pass
+  as the colour would have confounded the visual judgement, which is why the
+  mocks still carry their full explainer subs.
+
+---
 
 **Date:** 2026-07-25 · **Status:** LOCKED — contrast evidence passing (see report below); direction confirmed by the user 2026-07-25, closing DW-3.1. The 5 required code changes below were deferred by the same decision to a single integration pass after Phase 6; nothing in this document is applied to shipped code yet.
 **Archetype:** ~~Ruler + Sage~~ → **SUPERSEDED by v3: Everyman + Sage** (see `# Visual DNA v3 ## The archetype, re-derived rather than defended` — the Ruler reading produced the look the user rejected, so it was re-derived rather than defended) · **Register:** restrained/data-dense structure · expressive at: BREACHED reveal, enhance feedback, maxed/complete states
@@ -23,8 +502,20 @@
 
 # Visual DNA v3
 
-**Date:** 2026-07-26 · **Status:** proposed, evidence passing, awaiting the
-user's look sign-off. **This is a DIRECTION CHANGE, not a refinement.**
+> **PARTIALLY SUPERSEDED 2026-07-26 by `# Visual DNA v4`.** Three things below
+> are superseded and nothing else is: (1) **`## Gold discipline (v3)`** and the
+> v2 seven-item gold list it carries forward — see `# Visual DNA v4 ## What gold
+> is now`; (2) the **weights** in `## Material (v3)` (frame 3px, 1px bevel) and
+> the `--fs-warden` value in `## Type (v3)` — see `## Construction (v4)`; (3)
+> the `## Never (v3)` entry **"no icon of any kind"**, amended to permit a
+> letter glyph on a plate. Everything else in this section — the archetype, the
+> remix, the four constructions, the seven reproducibility rules, the signature
+> move, the type voice, the radius scale, the state ladder's channel model and
+> the ramp it inherits from v2 — is **current and still the contract.**
+
+**Date:** 2026-07-26 · **Status:** current for construction, type and
+archetype; colour rule and construction weights superseded by v4.
+**This is a DIRECTION CHANGE, not a refinement.**
 **Proved on:** `internal/mocks/boss.html` → `internal/mocks/shots/boss-375.png`.
 The rejected v2 render is preserved as `boss-375-deco.png` /
 `boss-1280-deco.png`; the pre-v2 render remains `boss-375-before.png`.
@@ -207,11 +698,31 @@ is warm, `--edge-shade` is a cool blue-black, never `#000`).
 1. **Raised or sunk, never flat.** Every surface is one of the four above.
    Rows inside a socket are the one exception and that is the point: a leaf in a
    socket is what keeps a 15-row list readable.
-2. **Never nest a bevel inside a bevel.** Carried forward verbatim from v2, and
-   it is the one Maple habit left at the door — Maple nests raised-in-raised
-   freely, and it is the nested-card tell (`ai-tells.md`: Fable 5's #1 measured
-   default, 6/6). The resource bar is therefore a *flat* band holding raised
-   chip plates, not a raised bar holding raised plates.
+2. **Never nest a bevel inside a bevel.** Carried forward from v2, and it is the
+   one Maple habit left at the door — Maple nests raised-in-raised freely, and
+   it is the nested-card tell (`ai-tells.md`: Fable 5's #1 measured default,
+   6/6). The resource bar is therefore a *flat* band holding raised chip plates,
+   not a raised bar holding raised plates.
+
+   **Restated precisely, 2026-07-26** — v3 wrote this rule loosely enough that
+   it forbade constructions v3's own mocks render, which the Phase 2.5 review
+   caught as a Minor (the deterministic detector's 24 `nested-cards` hits). The
+   ban is on **raised directly inside raised**. "Bevel" here means the complete
+   raised signature — the opposed pair (warm `--edge-lit` top-left + cool
+   `--edge-shade` bottom-right) *plus* a hard foot. A strip with only a lit top
+   hairline and a closing groove is not that, and neither is a flat leaf.
+
+   | Nesting | Legal? | The site on the rendered mocks |
+   |---|---|---|
+   | raised in **sunk** | yes | a CONTROL in a SOCKET; a `.band` chip inside a `.rowlist` row |
+   | **sunk** in raised | yes | a `.rowlist` SOCKET cut into the WINDOW body |
+   | raised on a **flat** carrier | yes | the resource bar's chips; the `.glyph` plate on the `h3` title-bar strip (a strip has no opposed pair and no foot, so it is a carrier, not a bevel) |
+   | flat leaf in either | yes | rule 1's stated exception — rows in a socket |
+   | **raised directly in raised** | **NO** | none, and that is the rule |
+
+   Both sites the detector flagged — chip-in-socket and glyph-on-title-bar —
+   are adjudicated **legal** here, on the record, rather than left as a silent
+   mismatch between the document and the pixels.
 3. **No blur except inward.** There is exactly one blurred shadow in the whole
    language — the socket's inner shadow — and it points into the surface. An
    outward blurred coloured shadow on a dark ground is the neon-glow tell AND
