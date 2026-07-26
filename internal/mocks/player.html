@@ -102,6 +102,14 @@
   /* The arena HP meter — the door seam of light (DESIGN.md "The arena draws
      a door, not a stage"). Aliases of already-gated colours: no new hex enters
      the palette, and the canvas agrees with the DOM on what gold means. */
+  /* Canvas damage skin. Documented in DESIGN.md since the visual pass and
+     never actually shipped into a stylesheet — battle.js had them hardcoded,
+     so tokenising the floaters against names that did not exist rendered every
+     damage number, crit and the BREACHED reveal in the #000 fallback. */
+  --gold-bright:#ffd700;
+  --crit-gold:#ffd54a;
+  --super-crit:#ff9a3c;
+  --dmg-text:#e8dcc0;
   --meter-fill-depletion:var(--gold);
   --meter-fill-depletion-crisis:var(--gold-bright);
   --meter-fill-cycle:var(--gold);      --meter-track-cycle:var(--space-1);

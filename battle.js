@@ -38,7 +38,15 @@ export function refreshTheme() {
   const cs = getComputedStyle(document.documentElement);
   for (const t of TOKENS) T[t] = cs.getPropertyValue(t).trim() || T[t] || "#000";
 }
-const c = t => T[t] || "#000";
+// Magenta, not #000. A black fallback is invisible on this ramp, so four
+// tokens that were documented but never shipped rendered every damage number
+// and the BREACHED reveal in silent black for two commits. A wrong colour you
+// cannot miss beats a wrong colour that looks deliberate.
+const c = t => {
+  const v = T[t];
+  if (!v) { console.warn(`battle.js: token ${t} is not defined in the stylesheet`); return "#ff00ff"; }
+  return v;
+};
 
 const floaters = []; // {x, y, alpha, text, size, color, scale, vx}
 let lastHitAt = 0;
