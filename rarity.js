@@ -7,9 +7,9 @@ export const RARITIES = [
   { id: "common",    name: "Common",    affixes: 0, weight: 1000, color: "#b8b8b8" },
   { id: "uncommon",  name: "Uncommon",  affixes: 1, weight: 300,  color: "#5fd35f" },
   { id: "rare",      name: "Rare",      affixes: 2, weight: 80,   color: "#5a8bd6" },
-  { id: "epic",      name: "Epic",      affixes: 3, weight: 18,   color: "#b061d6" },
+  { id: "epic",      name: "Epic",      affixes: 3, weight: 18,   color: "#bc6ce2" },
   { id: "legendary", name: "Legendary", affixes: 4, weight: 3.5,  color: "#e08a2e" },
-  { id: "mythic",    name: "Mythic",    affixes: 5, weight: 0.5,  color: "#d64a4a" },
+  { id: "mythic",    name: "Mythic",    affixes: 5, weight: 0.5,  color: "#e86362" },
   { id: "origin",    name: "Origin",    affixes: 6, weight: 0.04, color: "#e8df8a" },
 ];
 

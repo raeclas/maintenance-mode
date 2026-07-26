@@ -1,40 +1,293 @@
 /* dead-server theme — COLD neutrals (cooling server metal), gold = the last
    warmth left in the machine; bone = live output (still alive) */
-:root {
-  --gold: #c9a94b;
-  --gold-dim: #9a8a5a;  /* recessed gold — section headings, secondary marks */
-  --bone: #bcb2a2;      /* live output — kept warm on purpose */
-  --dim: #838a97;       /* secondary text — cool blue-grey reference */
-  --recede: #6e6e78;    /* quiet text — controls/labels that step back */
-  --faint: #55555e;     /* disabled / least-important */
-  --faintest: #4a4a52;  /* locked / off */
-  --bg: #0b0c10;
-  --panel: #13141a;
-  --inset: #17171c;     /* card inset — slot, trophy, delve tiles */
-  --field: #22222a;     /* input / button / track background */
-  --well: #101014;      /* deep well — canvas, export box */
-  --line: #262a34;      /* blue-grey hairline */
-  --line-soft: #1b1b22; /* inner hairline, quieter than --line */
-  /* semantic accents */
-  --risk: #7aa4d4;      /* cool blue — risk zone, tickets */
-  --warn: #b06a5a;      /* muted red — warnings, dev */
-  --alert: #d0553e;     /* brighter red — armed / confirm */
-  --copper: #d08a3e;    /* copper economy */
-  --live: #6bbf7a;      /* green — scripts, live cursor */
-  /* type scale — every element picks ONE role */
-  --fs-hero: 26px;      /* the one big number per view (depth) */
-  --fs-masthead: 20px;
-  --fs-display: 16px;
-  --fs-body: 13px;
-  --fs-small: 11px;
-  --fs-label: 10px;
-  --fs-micro: 9px;
+:root{
+  /* ── Phase 3 semantic colour (internal/DESIGN.md, LOCKED :root block) ── */
+  --gold:#c9a94b; --gold-dim:#9a8a5a; --on-gold:#0d0d10; --bone:#bcb2a2;
+  --dim:#838a97; --recede:#87878f; --faint:#808086; --faintest:#64646a;
+  /* SURFACE RAMP RESPREAD 2026-07-26 (Phase 1, review Major on DW-1.6).
+     The four grounds below were compressed into ~3 L* of each other, so no
+     amount of bevel could make a panel read as raised — bg->panel measured
+     3.09 L*, which is under the perceptual floor for a surface step. They are
+     respread across the full range the fixed text tokens allow, solved
+     numerically (ceilings: panel bound by --alert at L*8.23, --bg by --logline
+     at L*3.73, --field by --dim at L*13.94). bg->panel is now 5.17 L*.
+     --inset was LIGHTER than --panel while being named "recessed"; corrected.
+     Physical model, deepest first: well < bg < plate-foot < panel < field. */
+  --bg:#08090e;      /* was #0b0c10 — L* 2.4 */
+  --panel:#15161d;   /* was #13141a — L* 7.4, under the --alert ceiling */
+  --inset:#131319;   /* was #17171c — L* 6.1, now genuinely recessed */
+  --field:#22222a;   /* unchanged — already at the --dim ceiling */
+  --well:#05060a;    /* was #101014 — L* 1.4, the deepest surface on screen */
+  --line:#262a34; --line-soft:#1b1b22;
+  --risk:#7aa4d4; --warn:#b26f5f; --alert:#d25b44; --copper:#d08a3e; --live:#6bbf7a;
+  /* --logline (#598368) is RETIRED, Phase 3. It existed for exactly one
+     element — #logHead, the shell prompt — and that element no longer exists.
+     A token whose only consumer has been deleted is dead weight, and leaving it
+     would leave contrast.mjs gating a pair nothing renders. The shipped
+     style.css still carries the hardcoded #4e7a5e this token was minted to
+     replace; that hex dies with the element at integration. */
+  --level-muted:#5a7a5a;        /* Phase 4 semantic addition (was style.css:309) */
+  /* rarity ramp — rarity.js named tokens; mythic carries DESIGN.md's AA fix */
+  --rar-common:#b8b8b8; --rar-uncommon:#5fd35f; --rar-rare:#5a8bd6;
+  --rar-epic:#b061d6; --rar-legendary:#e08a2e; --rar-mythic:#d85454;
+  --rar-origin:#e8df8a;
+  /* ── Phase 3 state ladder ── */
+  --opacity-locked:.45;         /* locked rows ONLY — see the AA note in build.mjs */
+  /* ── Phase 3 type scale ── */
+  --fs-hero:26px; --fs-masthead:20px; --fs-display:16px; --fs-body:13px;
+  --fs-small:11px; --fs-label:10px; --fs-micro:9px;
+  /* The chrome face, as ONE seam rather than four scattered declarations.
+     v1/v2 set Georgia at four separate sites (body, tab, CTA, .cta); v3
+     supersedes the serif chrome, and a single token is the difference
+     between one override and four. Data stays monospace either way — that
+     register split is REMAKE-DESIGN.md §16's, not this pass's. */
+  --font-body:Georgia,serif;
+  /* THE DATA FACE. Was monospace at ~30 literal sites; DECIDED on rendered
+     pixels this phase (DW-3.9) and now the UI face everywhere.
+
+     The mono footprint was two prior reviews' unresolved watch item, and its
+     defence was that it carries REMAKE-DESIGN.md §16's "botter's toolkit"
+     register. Judged on internal/mocks/grind.html against
+     internal/mocks/grind-mono.html, which is this token flipped back and
+     nothing else, the defence does not hold: §16 is a NAMING register
+     (multiclient, packet-replay script, tick-rate exploit, proxies) and it
+     survives a font change completely intact. Column alignment does not need
+     mono either — font-variant-numeric:tabular-nums is already set on body,
+     and it holds in the UI face on both of the genuinely tabular blocks (the
+     crit ledger and the 45-cell Armory grid; crops in shots/crops/). And mono
+     costs real surface: Grind at 375px is 6,438px tall in mono against 5,734px
+     here, 11% shorter, with the live row's stat no longer wrapping.
+
+     The two mock-ANNOTATION classes (.mockNote, .stateLabel) keep the literal
+     monospace deliberately: commentary about the mock should not be in the
+     mock's own voice, and it is what lets the specimen change the surface
+     without changing the text describing it. Full reasoning: DESIGN.md
+     "## The data face (v4, Phase 3) — mono, decided on pixels". */
+  --font-data:var(--font-ui);
+  /* ── Phase 4 primitive dimension scale (derived from style.css's own px) ── */
+  --border-hairline:1px;
+  --space-1:2px; --space-2:3px; --space-3:4px; --space-4:6px;
+  --space-5:8px; --space-6:10px; --space-7:12px; --space-8:16px;
+  /* ── Phase 4 component tier ── */
+  --row-name:var(--bone); --row-name-active:var(--gold); --row-gain:var(--faint);
+  --row-stat:var(--bone); --row-stat-maxed:var(--gold);
+  --row-col-name:130px; --row-col-gain:100px;
+  --row-gap:var(--space-5); --row-gap-wrap:var(--space-3);
+  --row-pad:var(--space-4) var(--space-3);
+  --row-active-border:var(--space-2);
+  --chip-value:var(--bone); --chip-value-emphasis:var(--gold); --chip-label:var(--dim);
+  --chip-pad:var(--space-1) var(--space-8);
+  --chip-group-pad:var(--space-2) var(--space-1);
+  --meter-fill-cycle:var(--gold);      --meter-track-cycle:var(--space-1);
+  --meter-fill-progress:var(--gold-dim); --meter-track-progress:var(--space-2);
+  --meter-fill-progress-maxed:var(--gold);
+  --meter-fill-level:var(--level-muted); --meter-track-level:var(--space-5);
+  --meter-level-margin-top:var(--space-4); --meter-level-margin-bottom:var(--space-6);
+  /* --alloc-control was var(--recede). CORRECTED 2026-07-26 (Phase 1): the alloc
+     button's ground is --field, and --recede on --field measures 4.43:1 — a real
+     WCAG 1.4.3 failure nobody had checked, because DESIGN.md's Phase 3 audit
+     tested the text tiers against --bg/--panel/--inset and never against the
+     raised-control ground. --dim clears 4.55:1 at the same site and still
+     recedes against --alloc-value (gold), so the stated intent survives. */
+  --alloc-control:var(--dim); --alloc-value:var(--gold);
+  --alloc-pad:var(--space-3) var(--space-5); --alloc-gap:var(--space-2);
+  --alloc-input-pad:var(--space-2) var(--space-3);
+  --alloc-input-width:44px;
+  --arena-pad:var(--space-5) var(--space-7) var(--space-6);
+  --arena-margin:var(--space-5) 0;
+  --arena-controls-margin:var(--space-5) 0 var(--space-3);
+  --tab-idle:var(--dim); --tab-active:var(--gold); --tab-locked:var(--faintest);
+  --afford-accent:var(--gold);
+  /* ── honest one-offs (DW-6.2): each is a single non-scale value with a source ── */
+  --tab-pad:7px;          /* DESIGN.md's own named one-off — style.css:167 */
+  --chip-radius:5px;      /* DESIGN.md's own named one-off — style.css:194 */
+  --chip-lbl-nudge:1px;   /* DESIGN.md's own named one-off — style.css:205 */
+  --touch-min:44px;       /* WCAG 2.5.8 floor; DESIGN.md flags alloc buttons under it */
+  --page-max:600px;       /* shipped page width — style.css:46 */
+  --log-max-h:180px;      /* shipped log height — style.css:143 */
+  --armory-zone-col:26px; /* shipped Armory zone column — style.css:396 */
+  --stash-mark-col:14px;  /* shipped stash marker column — style.css:379 */
+  --ip-dial:72px;         /* shipped IP dial width — style.css:487 */
+  --armory-min:420px;     /* narrowest width at which a 3-column Armory row can
+                             still print an entry NAME rather than an ellipsis;
+                             below it the grid scrolls inside its own container
+                             rather than truncating (the plan's own edge case) */
+  /* ── carried forward from v2, values UNCHANGED, purpose re-pointed:
+        v2 used these to LIGHT a flat plate; v3 uses them to BEVEL a frame.
+        Same hexes, same gates, different carpentry. ── */
+  --plate-foot:#101015;   /* a plate's foot. DARKER than --panel on purpose: the
+                             gradient lights the TOP, so no text ever sits on a
+                             ground lighter than the AA-verified --panel.
+                             L* 4.8 — 2.6 L* below --panel (was 2.06) */
+  --edge-lit:#413d37;     /* warm bevel highlight — light from above (ch09
+                             hue-shifted highlights: warmer, never white).
+                             L* 26: 18.6 L* above --panel. Was #2d2a26 at 10.8
+                             L*, which is where the review's Major came from —
+                             a 1px edge at 10 L* on a dark ramp is not a bevel,
+                             it is a rumour. */
+  --edge-shade:#020308;   /* cool bevel shade, L* 0.9. Tinted blue-black, never
+                             pure #000 (ai-tells colour rule, still held) */
+  --floor-glow:#17140d;   /* warm dark. Light under the door: the arena's floor
+                             band only, never a text ground */
+  /* ── display type: two steps ABOVE the existing --fs-hero (26px). Values
+        unchanged from v2; what changed is that they are no longer set in a
+        serif — see --font-ui. ── */
+  --fs-warden:36px;       /* the Warden's name — the identity, 1.38x over hero */
+  --fs-colossal:52px;     /* the once-per-screen peak; the same 52px battle.js
+                             already draws the BREACHED reveal at, so DOM and
+                             canvas finally agree where the peak is */
+  /* ── display-tier spacing: the scale had nothing above 16px, which is why
+        every block read as one texture. Append-only, same derivation rule ── */
+  --space-9:24px; --space-10:32px;
+
+  /* ══ v3 ADDITIONS — the whole of the direction change, in six values ══ */
+
+  /* RADIUS. v2 carried an explicit no-radius rule, inherited from Swiss/Deco.
+     v3 supersedes it: MapleStory is round, and a frame with square corners
+     reads as a div with a border rather than as an object. Three steps, not
+     one, because the window / the control / the socket are three different
+     objects and a single radius is the shadcn-default tell. */
+  --radius-window:8px;    /* the window frame — the biggest object on screen */
+  --radius-control:5px;   /* buttons, tabs, chip plates. Matches --chip-radius,
+                             which the shipped CSS already carries as its own
+                             named one-off: the value was always here, it just
+                             had no system to belong to */
+  --radius-socket:3px;    /* wells, tracks, inputs — things CUT INTO a surface
+                             read tighter than things sitting on one */
+
+  /* THE FRAME. A hairline is a rule; 3px is a frame you could grab. Aliased
+     onto the existing scale rather than minted as a new primitive. */
+  --border-frame:var(--space-2);
+
+  /* THE VOICE. Georgia leaves the chrome — it is the single most bookish
+     thing on the page and it is what the user means by "the script".
+     Tahoma is Matthew Carter's small-size screen face: narrow, large
+     x-height, hinted for exactly the 10-13px band this UI lives in
+     (chapter-03-typography.md's own medium-form argument — the same one
+     that put Georgia here for prose, pointed at dense chrome instead).
+     It is also, historically, the face early-2000s Windows game clients
+     shipped their chrome in. System stack only: no webfont, no external
+     reference. Arial/Helvetica are deliberately absent — both are on
+     ai-tells.md's overused-font list, Tahoma and Verdana are not. */
+  --font-ui:Tahoma,"Segoe UI",Verdana,sans-serif;
+  --font-body:var(--font-ui);   /* the one seam: this override retires the
+                                   serif at all four of its shipped sites */
+
+  /* ══ LANE 1 — RARITY. Meaning: how many affixes an item rolled.
+        rarity.js's shipped hues, promoted from a text tint to a real plate.
+        Invents no new meaning — the ramp already existed, it just had no
+        surface. Two hexes are LIFTED (required behaviour change #8): both
+        were real WCAG 1.4.3 failures nobody had ever measured, because
+        contrast.mjs had no rarity pair at all until this phase. Hue and
+        chroma are preserved exactly; only lightness moves. ══ */
+  --rar-epic:#bc6ce2;    /* was #b061d6 — 4.15:1 on --field, FAIL */
+  --rar-mythic:#e86362;  /* was #d85454 — 4.00:1 on --field, FAIL */
+  /* An item plate: the tier's own hue mixed into --plate-foot, which lands it
+     between --panel and --field — a leaf RAISED out of the window body, which
+     is what an equipped item is. --dim / --recede / --faint are BANNED on
+     these grounds (4.04-4.63:1); a rarity plate carries --bone and its own
+     tier ink, and its hierarchy comes from size and weight instead. */
+  --rar-plate-common:color-mix(in oklab, var(--rar-common) 16%, var(--plate-foot));
+  --rar-plate-uncommon:color-mix(in oklab, var(--rar-uncommon) 16%, var(--plate-foot));
+  --rar-plate-rare:color-mix(in oklab, var(--rar-rare) 16%, var(--plate-foot));
+  --rar-plate-epic:color-mix(in oklab, var(--rar-epic) 16%, var(--plate-foot));
+  --rar-plate-legendary:color-mix(in oklab, var(--rar-legendary) 16%, var(--plate-foot));
+  --rar-plate-mythic:color-mix(in oklab, var(--rar-mythic) 16%, var(--plate-foot));
+  --rar-plate-origin:color-mix(in oklab, var(--rar-origin) 16%, var(--plate-foot));
+
+  /* ══ LANE 2 — WARDEN. Meaning: WHICH DOOR YOU ARE AT.
+        Ten doors, ten hues, on an even decagonal walk (36 deg apart, chroma
+        .09 — the loudest lane, because it appears alone on its own surface).
+        The walk starts 30 deg off gold so no door ever wears the client's own
+        colour. Qualitative, not ordinal: a door is a PLACE, not a magnitude —
+        magnitude is lane 4's job. Names: REMAKE-DESIGN.md's W1-W10 table. ══ */
+  --w1:#859554;   /* Vess           — Warden of the First Door */
+  --w2:#5a9b74;   /* Maren          — the Second Door (the frontier, this save) */
+  --w3:#3a9c99;   /* Korrin         — the Third */
+  --w4:#4a97b7;   /* Osei           — the Fourth */
+  --w5:#728ec6;   /* Thale          — the Fifth */
+  --w6:#9984c0;   /* Ilva           — the Sixth */
+  --w7:#b57ca6;   /* Domar          — the Seventh */
+  --w8:#c27a83;   /* Sef            — the Eighth */
+  --w9:#be7f5f;   /* Yara           — the Ninth */
+  --w10:#a88a4b;  /* The Last Warden— the Tenth */
+  /* The client sets this to the door you are standing at. Everything on the
+     Boss tab reads from it, so re-tinting a door is one assignment. */
+  --w-active:var(--w2);
+  /* SURFACES derived from the active door — checked by L* separation, never by
+     ratio (DESIGN.md v2's lesson: the +0.05 flare term crushes dark-on-dark
+     ratios toward 1.0, so 1.05:1 can be plainly visible). */
+  --w-frame:color-mix(in oklab, var(--w-active) 24%, var(--line));
+  --floor-glow:color-mix(in oklab, var(--w-active) 26%, var(--well));
+
+  /* ══ LANE 3 — TAB ACCENT. Meaning: WHICH ROOM OF THE CLIENT YOU ARE IN.
+        Hexagonal walk, chroma .05 — DELIBERATELY a third of the Warden lane's
+        saturation. Chrome must never out-shout content: a dusty frame beside a
+        saturated item name reads as a different CLASS of object, and that
+        saturation tier is what keeps the lanes apart where their hues are
+        close (--acc-player h260 sits 1 deg from --rar-rare h259; they share the
+        Player tab and never share an element). Body text stays neutral. ══ */
+  --acc-training:#689698;  /* the script console */
+  --acc-grind:#7d9478;     /* copper, growth — the one green, on a named cue */
+  --acc-player:#7c8fad;    /* you */
+  --acc-delve:#9e86a3;     /* the descent */
+  --acc-dungeon:#ad8483;   /* the difficulty ladder */
+  --acc-help:#9f8b6c;      /* the manual — paper */
+  /* Boss has no accent of its own: its room IS the door, so its accent is the
+     Warden's hue. That is what makes Boss the one surface carrying exactly one
+     identity hue rather than two. */
+  --acc-boss:var(--w-active);
+  /* --acc is the CURRENT surface's accent; each page sets it once on <main>. */
+  --acc:var(--acc-boss);
+
+  /* ══ LANE 4 — POWER BAND. Meaning: HOW DEEP / HOW STRONG.
+        Grind zone depth and gear IP already carried a power-band concept with
+        no colour. Five steps, cool -> hot, hue-only at constant luminance —
+        NOT an HSL lightness ramp (chapter-08 High: perceptual lightness varies
+        wildly across hues and the data gets misread).
+
+        This lane renders as a FILLED CHIP, not as ink. That is the whole
+        reason it does not collide with the three ink lanes: the chip ground
+        sits at L* ~16.5 while every ink lane sits at L* 59, so band and accent
+        are in different LUMINANCE tiers even where their hues are close. The
+        bright hex only ever draws the chip's 2px lip. ══ */
+  --band-1:#6890c4;  /* coldest — z1-z3   / the lowest IP band */
+  --band-2:#399ba0;  /* z4-z6 */
+  --band-3:#629b6e;  /* z7-z9 */
+  --band-4:#a38c4a;  /* z10-z12 */
+  --band-5:#c17d6b;  /* hottest — z13-z15 / the frontier IP band */
+  --band-1-chip:color-mix(in oklab, var(--band-1) 30%, var(--well));
+  --band-2-chip:color-mix(in oklab, var(--band-2) 30%, var(--well));
+  --band-3-chip:color-mix(in oklab, var(--band-3) 30%, var(--well));
+  --band-4-chip:color-mix(in oklab, var(--band-4) 30%, var(--well));
+  --band-5-chip:color-mix(in oklab, var(--band-5) 30%, var(--well));
+
+  /* ══ CONSTRUCTION PUSH — v3's carpentry, taken to full Maple weight ══ */
+  --border-frame:var(--space-3);   /* 3px -> 4px. A frame you could grab. */
+  --bevel:var(--space-1);          /* 1px hairline -> 2px. v3's own review Major
+                                      was "a 1px edge at 10 L* is a rumour"; the
+                                      same argument applies one step further. */
+  --rivet:var(--space-3);          /* the corner mark's arm — 4px */
+  --rivet-inset:var(--space-4);    /* how far in from the corner it sits */
+  --glyph-plate:26px;              /* the letter-glyph plate. An honest one-off:
+                                      2 x --fs-body + the plate's own bevel, the
+                                      smallest square that holds a 16px cap and
+                                      still clears nothing else on the row. */
+  --fs-warden:40px;                /* was 36. 1.54x over --fs-hero, 1.30x under
+                                      --fs-colossal — which stays 52px because
+                                      battle.js draws the BREACHED reveal there
+                                      and the DOM and canvas must agree. */
+  /* The Armory's zone column held a bare "z15"; it now holds a band CHIP, and
+     a chip has padding. Both shipped one-offs widen by the same 14px so the
+     grid still fits its narrowest legible width. */
+  --armory-zone-col:40px;
+  --armory-min:434px;
 }
 * { box-sizing: border-box; }
 body {
   background: var(--bg);
   color: var(--dim);
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-size: var(--fs-body);
   /* live numbers tick in place, no width jitter — the idle-game essential */
   font-variant-numeric: tabular-nums;
@@ -50,7 +303,7 @@ main { width: 600px; max-width: 96vw; padding: 18px 0 40px; }
 #bossTitle { font-size: var(--fs-small); font-style: italic; }
 #record { margin-top: 2px; }
 /* caption role — secondary status text (record, cooldown, projection, ...) */
-.caption { font-family: monospace; font-size: var(--fs-small); color: var(--recede); }
+.caption { font-family: var(--font-data); font-size: var(--fs-small); color: var(--recede); }
 /* boss-tab zones — group the flat element list into fight / progress */
 .arena { border: 1px solid var(--line); background: var(--panel); padding: 8px 12px 10px; margin: 8px 0; }
 .arena #battle { display: block; max-width: 100%; height: auto; margin: 0 auto; }
@@ -74,9 +327,9 @@ canvas {
 }
 #pullBtn {
   background: var(--gold);
-  color: #0d0d10;
+  color: var(--on-gold);
   border: none;
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-variant: small-caps;
   letter-spacing: .1em;
   font-size: var(--fs-display);
@@ -84,8 +337,8 @@ canvas {
   cursor: pointer;
 }
 #pullBtn:disabled { background: #3a3a44; color: var(--recede); cursor: default; }
-#depth { color: var(--gold); font-size: var(--fs-hero); font-family: monospace; min-width: 90px; }
-#ticketGain { font-size: var(--fs-small); font-family: monospace; color: var(--risk); margin-left: 8px; }
+#depth { color: var(--gold); font-size: var(--fs-hero); font-family: var(--font-data); min-width: 90px; }
+#ticketGain { font-size: var(--fs-small); font-family: var(--font-data); color: var(--risk); margin-left: 8px; }
 #projection { color: var(--gold); min-height: 16px; margin: -4px 0 4px; }
 
 #dialogue {
@@ -127,15 +380,18 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
 
 /* the chat window's head — construction lands with the style.css pass */
 #logHead {
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-micro);
   letter-spacing: .04em;
-  color: #4e7a5e;
+  /* was #4e7a5e — 3.97:1 on --bg, a real WCAG 1.4.3 failure, and a green that
+     belonged to the retired shell prompt. The chat head is neutral chrome:
+     DESIGN.md gives the window no lane hue. */
+  color: var(--dim);
   border-top: 1px solid var(--line);
   padding: 8px 0 3px;
 }
 #log {
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-small);
   max-height: 180px;
   overflow-y: auto;
@@ -158,7 +414,7 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   background: var(--panel);
   border: 1px solid var(--line);
   color: var(--dim);
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-variant: small-caps;
   letter-spacing: .08em;
   font-size: var(--fs-body);
@@ -198,16 +454,16 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   border-left: 1px solid var(--line);
 }
 .chip:first-child { border-left: none; }
-.chipVal { font-family: monospace; font-size: var(--fs-display); color: var(--bone); }
+.chipVal { font-family: var(--font-data); font-size: var(--fs-display); color: var(--bone); }
 .chipVal b { color: var(--gold); font-weight: normal; }
-.chipLbl { font-size: var(--fs-micro); font-family: monospace; letter-spacing: .12em; color: var(--dim); text-transform: uppercase; margin-top: 1px; }
+.chipLbl { font-size: var(--fs-micro); font-family: var(--font-data); letter-spacing: .12em; color: var(--dim); text-transform: uppercase; margin-top: 1px; }
 .copper, .copper b { color: var(--copper) !important; }
 .tickets, .tickets b { color: var(--risk) !important; }
 #gmPanel .gmRow {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-small);
   padding: 3px 0;
   border-top: 1px solid var(--line-soft);
@@ -215,7 +471,7 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
 #gmPanel .gmRow .tl { flex: 1; }
 #gmPanel button { min-width: 90px; }
 #gmPanel h3 { border-top: none; padding-top: 0; margin-top: 4px; }
-#tierAtk, #tierSpeed { background: var(--field); color: var(--bone); border: 1px solid var(--line); font-family: monospace; font-size: var(--fs-small); }
+#tierAtk, #tierSpeed { background: var(--field); color: var(--bone); border: 1px solid var(--line); font-family: var(--font-data); font-size: var(--fs-small); }
 
 section.game {
   border: 1px solid var(--line);
@@ -243,7 +499,7 @@ section.game button {
   background: var(--field);
   color: var(--bone);
   border: 1px solid var(--line);
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-small);
   padding: 4px 10px;
   cursor: pointer;
@@ -252,7 +508,7 @@ section.game button:hover:not(:disabled) { border-color: var(--gold); color: var
 section.game button:disabled { color: var(--faint); cursor: default; }
 
 .rig { display: flex; gap: 8px; flex-wrap: wrap; }
-.assignLine { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: var(--fs-small); font-family: monospace; margin-bottom: 6px; }
+.assignLine { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: var(--fs-small); font-family: var(--font-data); margin-bottom: 6px; }
 .barTrack { height: 8px; background: var(--field); margin-top: 4px; }
 .barFill { height: 100%; background: var(--gold); width: 0; }
 
@@ -265,7 +521,7 @@ section.game button:disabled { color: var(--faint); cursor: default; }
   align-items: center;
   padding: 6px 4px;
   border-bottom: 1px solid var(--line-soft);
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-small);
   position: relative;
 }
@@ -283,7 +539,7 @@ section.game button:disabled { color: var(--faint); cursor: default; }
   background: var(--inset);
   color: var(--gold);
   border: 1px solid var(--line);
-  font-family: monospace;
+  font-family: var(--font-data);
   padding: 3px 4px;
   font-size: var(--fs-small);
 }
@@ -302,22 +558,22 @@ section.game button:disabled { color: var(--faint); cursor: default; }
 .seg button { border-radius: 0; }
 .seg button.active { color: var(--gold); border-color: var(--gold); }
 
-.toggleLine { font-size: var(--fs-small); font-family: monospace; color: var(--dim); display: block; margin: 6px 0; }
+.toggleLine { font-size: var(--fs-small); font-family: var(--font-data); color: var(--dim); display: block; margin: 6px 0; }
 .popTrack { margin: 6px 0 10px; }
-.popTrack .barFill { background: #5a7a5a; }
+.popTrack .barFill { background: var(--level-muted); }
 .assign input[type="number"] {
   width: 52px;
   background: var(--field);
   color: var(--gold);
   border: 1px solid var(--line);
-  font-family: monospace;
+  font-family: var(--font-data);
   padding: 2px 4px;
 }
-.autoSalv { font-size: var(--fs-small); font-family: monospace; margin-left: 10px; }
+.autoSalv { font-size: var(--fs-small); font-family: var(--font-data); margin-left: 10px; }
 #stashHead { display: flex; align-items: center; gap: 8px; }
 
 /* dense zone table (ITRTG-style: numbers in columns) */
-.ztable { width: 100%; border-collapse: collapse; font-family: monospace; font-size: var(--fs-small); }
+.ztable { width: 100%; border-collapse: collapse; font-family: var(--font-data); font-size: var(--fs-small); }
 .ztable th {
   color: var(--recede);
   font-weight: normal;
@@ -332,7 +588,7 @@ section.game button:disabled { color: var(--faint); cursor: default; }
 .ztable .sub, .sub {
   color: var(--recede);
   font-size: var(--fs-label);
-  font-family: monospace;
+  font-family: var(--font-data);
   font-style: italic;
   font-variant: normal;
   text-transform: none;
@@ -367,11 +623,11 @@ section.game button:disabled { color: var(--faint); cursor: default; }
 }
 .slot:first-child { margin-top: 0; }
 .slotName { font-variant: small-caps; color: var(--recede); font-size: var(--fs-small); letter-spacing: 0.5px; }
-.slotItem { font-size: var(--fs-small); font-family: monospace; }
-.enhInfo { font-size: var(--fs-label); font-family: monospace; color: var(--recede); }
+.slotItem { font-size: var(--fs-small); font-family: var(--font-data); }
+.enhInfo { font-size: var(--fs-label); font-family: var(--font-data); color: var(--recede); }
 #stashHead { margin-top: 8px; }
 /* stash — scannable grid: ▲ upgrade marker · name · actions / info line */
-#stashList { font-family: monospace; font-size: var(--fs-small); margin-top: 6px; }
+#stashList { font-family: var(--font-data); font-size: var(--fs-small); margin-top: 6px; }
 .stashRow {
   display: grid;
   grid-template-columns: 14px 1fr auto;
@@ -392,7 +648,7 @@ section.game button:disabled { color: var(--faint); cursor: default; }
 /* the Armory grid — zone rows × 3 slot cells (weapon/armor/charm) */
 #armoryGrid { display: flex; flex-direction: column; gap: 3px; }
 .amRow { display: grid; grid-template-columns: 26px repeat(3, 1fr); gap: 4px; align-items: stretch; }
-.amZone { font-family: monospace; font-size: var(--fs-label); color: var(--recede); align-self: center; text-align: right; }
+.amZone { font-family: var(--font-data); font-size: var(--fs-label); color: var(--recede); align-self: center; text-align: right; }
 .amCell {
   border: 1px solid var(--line); border-left: 2px solid var(--gold-dim);
   background: var(--panel); padding: 4px 6px 5px;
@@ -401,7 +657,7 @@ section.game button:disabled { color: var(--faint); cursor: default; }
 .amCell.dim { border-left-color: var(--line); opacity: .5; }
 .amCell.max { border-left-color: var(--gold); background: rgba(201, 169, 75, .07); }
 .amName { font-size: var(--fs-label); color: var(--bone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.amRank { font-family: monospace; font-size: var(--fs-micro); color: var(--dim); }
+.amRank { font-family: var(--font-data); font-size: var(--fs-micro); color: var(--dim); }
 .amCell.max .amRank { color: var(--gold); }
 .amBar { height: 3px; background: var(--line-soft); overflow: hidden; }
 .amBar > span { display: block; height: 100%; background: var(--gold-dim); }
@@ -410,7 +666,7 @@ section.game button:disabled { color: var(--faint); cursor: default; }
 #devPanel {
   border: 1px dashed #6e3a32;
   color: var(--warn);
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-small);
   padding: 6px;
   margin-bottom: 10px;
@@ -423,7 +679,7 @@ section.game button:disabled { color: var(--faint); cursor: default; }
   background: var(--field);
   color: var(--warn);
   border: 1px solid #6e3a32;
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-small);
   cursor: pointer;
 }
@@ -452,7 +708,7 @@ footer { text-align: center; margin-top: 18px; }
   border: none;
   color: var(--faint);
   font-size: var(--fs-label);
-  font-family: monospace;
+  font-family: var(--font-data);
   cursor: pointer;
   text-decoration: underline;
 }
@@ -515,13 +771,13 @@ footer { text-align: center; margin-top: 18px; }
   padding: 1px 8px;
   margin: 0 4px 4px 0;
   font-size: var(--fs-small);
-  font-family: monospace;
+  font-family: var(--font-data);
 }
 
 /* --- Ban Wave (rebirth) --- */
 .scripts, .scripts b { color: var(--live) !important; }
 #banWave { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-#banWaveInfo { font-size: var(--fs-small); font-family: monospace; flex: 1; min-width: 180px; }
+#banWaveInfo { font-size: var(--fs-small); font-family: var(--font-data); flex: 1; min-width: 180px; }
 #banWaveInfo .warn { color: var(--copper); }
 #banWaveBtn.armed { border-color: var(--alert); color: var(--alert); }
 
@@ -530,7 +786,7 @@ footer { text-align: center; margin-top: 18px; }
   background: none;
   border: 1px solid var(--line);
   color: var(--dim);
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-body);
   width: 26px;
   height: 26px;
@@ -585,7 +841,7 @@ footer { text-align: center; margin-top: 18px; }
   background: var(--panel);
   border: 1px solid var(--gold);
   color: var(--gold);
-  font-family: Georgia, serif;
+  font-family: var(--font-body);
   font-variant: small-caps;
   letter-spacing: .1em;
   font-size: var(--fs-display);
@@ -596,7 +852,7 @@ footer { text-align: center; margin-top: 18px; }
 #descendBtn:hover { background: var(--gold); color: #0d0d10; }
 
 /* --- boss Trophy cabinet: one 7-piece set per Warden --- */
-#trophySet { color: var(--gold); font-family: monospace; font-size: var(--fs-small); }
+#trophySet { color: var(--gold); font-family: var(--font-data); font-size: var(--fs-small); }
 #trophyCabinet { display: flex; flex-direction: column; gap: 8px; }
 .trophySet {
   padding: 6px 10px;
@@ -607,12 +863,12 @@ footer { text-align: center; margin-top: 18px; }
 .trophySetHead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
 .trophySetName { font-weight: 600; color: var(--bone); font-size: var(--fs-small); }
 .trophySet.complete .trophySetName { color: var(--gold); }
-.trophySetProg { font-family: monospace; font-size: var(--fs-small); color: var(--dim); }
+.trophySetProg { font-family: var(--font-data); font-size: var(--fs-small); color: var(--dim); }
 .trophySet.complete .trophySetProg { color: var(--gold); }
 .pips { display: flex; flex-wrap: wrap; gap: 4px; }
 .pip {
   font-size: var(--fs-label);
-  font-family: monospace;
+  font-family: var(--font-data);
   padding: 2px 7px;
   border: 1px solid var(--line);
   cursor: help;
@@ -621,7 +877,7 @@ footer { text-align: center; margin-top: 18px; }
 .pip.miss { color: var(--faintest); }
 
 /* --- Dungeon delve --- */
-#delveState { font-family: monospace; font-size: var(--fs-body); margin-bottom: 4px; }
+#delveState { font-family: var(--font-data); font-size: var(--fs-body); margin-bottom: 4px; }
 #delveState b { color: var(--gold); }
 #delveHaul { color: var(--copper); min-height: 14px; margin-bottom: 8px; }
 #delveControls { margin: 6px 0; }
@@ -633,7 +889,7 @@ footer { text-align: center; margin-top: 18px; }
   background: var(--panel);
   border: 1px solid var(--line);
   color: var(--dim);
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-small);
   padding: 4px 10px;
   cursor: pointer;
@@ -649,7 +905,7 @@ footer { text-align: center; margin-top: 18px; }
   background: var(--well);
   color: var(--dim);
   border: 1px solid var(--line);
-  font-family: monospace;
+  font-family: var(--font-data);
   font-size: var(--fs-label);
   resize: vertical;
 }
@@ -667,7 +923,7 @@ section.game button.affordable { border-color: var(--gold); color: var(--gold); 
 .sat { color: var(--gold); }
 
 /* --- Delve: idle depth engine --- */
-#delveState { font-family: monospace; font-size: var(--fs-body); color: var(--bone); margin-bottom: 2px; }
+#delveState { font-family: var(--font-data); font-size: var(--fs-body); color: var(--bone); margin-bottom: 2px; }
 #delveState b { color: var(--gold); }
-#delveCache { font-family: monospace; font-size: var(--fs-body); color: var(--bone); margin-bottom: 8px; }
+#delveCache { font-family: var(--font-data); font-size: var(--fs-body); color: var(--bone); margin-bottom: 8px; }
 #delveCache b { color: var(--gold); }
