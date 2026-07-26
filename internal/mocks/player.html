@@ -24,7 +24,20 @@
   /* ── Phase 3 semantic colour (internal/DESIGN.md, LOCKED :root block) ── */
   --gold:#c9a94b; --gold-dim:#9a8a5a; --on-gold:#0d0d10; --bone:#bcb2a2;
   --dim:#838a97; --recede:#87878f; --faint:#808086; --faintest:#64646a;
-  --bg:#0b0c10; --panel:#13141a; --inset:#17171c; --field:#22222a; --well:#101014;
+  /* SURFACE RAMP RESPREAD 2026-07-26 (Phase 1, review Major on DW-1.6).
+     The four grounds below were compressed into ~3 L* of each other, so no
+     amount of bevel could make a panel read as raised — bg->panel measured
+     3.09 L*, which is under the perceptual floor for a surface step. They are
+     respread across the full range the fixed text tokens allow, solved
+     numerically (ceilings: panel bound by --alert at L*8.23, --bg by --logline
+     at L*3.73, --field by --dim at L*13.94). bg->panel is now 5.17 L*.
+     --inset was LIGHTER than --panel while being named "recessed"; corrected.
+     Physical model, deepest first: well < bg < plate-foot < panel < field. */
+  --bg:#08090e;      /* was #0b0c10 — L* 2.4 */
+  --panel:#15161d;   /* was #13141a — L* 7.4, under the --alert ceiling */
+  --inset:#131319;   /* was #17171c — L* 6.1, now genuinely recessed */
+  --field:#22222a;   /* unchanged — already at the --dim ceiling */
+  --well:#05060a;    /* was #101014 — L* 1.4, the deepest surface on screen */
   --line:#262a34; --line-soft:#1b1b22;
   --risk:#7aa4d4; --warn:#b26f5f; --alert:#d25b44; --copper:#d08a3e; --live:#6bbf7a;
   --logline:#598368;
@@ -57,7 +70,13 @@
   --meter-fill-progress-maxed:var(--gold);
   --meter-fill-level:var(--level-muted); --meter-track-level:var(--space-5);
   --meter-level-margin-top:var(--space-4); --meter-level-margin-bottom:var(--space-6);
-  --alloc-control:var(--recede); --alloc-value:var(--gold);
+  /* --alloc-control was var(--recede). CORRECTED 2026-07-26 (Phase 1): the alloc
+     button's ground is --field, and --recede on --field measures 4.43:1 — a real
+     WCAG 1.4.3 failure nobody had checked, because DESIGN.md's Phase 3 audit
+     tested the text tiers against --bg/--panel/--inset and never against the
+     raised-control ground. --dim clears 4.55:1 at the same site and still
+     recedes against --alloc-value (gold), so the stated intent survives. */
+  --alloc-control:var(--dim); --alloc-value:var(--gold);
   --alloc-pad:var(--space-3) var(--space-5); --alloc-gap:var(--space-2);
   --alloc-input-pad:var(--space-2) var(--space-3);
   --alloc-input-width:44px;
@@ -150,7 +169,10 @@ button{background:var(--field);color:var(--bone);
   font-size:var(--fs-small);padding:var(--space-3) var(--space-6);
   min-height:var(--touch-min);cursor:pointer;text-align:left}
 button.affordable{border-color:var(--afford-accent);color:var(--afford-accent)}
-button:disabled{color:var(--faint);cursor:default}
+/* A disabled control is NOT raised — it drops to the panel ground. That is the
+   material language carrying a state, and it also fixes a real WCAG 1.4.3
+   failure: --faint on --field measures 4.02:1, on --panel it clears 4.68:1. */
+button:disabled{color:var(--faint);cursor:default;background:var(--panel)}
 .rig{display:grid;gap:var(--space-5);grid-template-columns:1fr}
 @media (min-width:561px){.rig{grid-template-columns:1fr 1fr}}
 
@@ -226,11 +248,10 @@ button:disabled{color:var(--faint);cursor:default}
   margin:0 auto var(--space-4)}
 .wallBtn{white-space:nowrap;text-align:center}
 .wallBtn.active{color:var(--gold);border-color:var(--gold);background:var(--line-soft)}
-.arena{border:var(--border-hairline) solid var(--line);background:var(--panel);
-  padding:var(--arena-pad);margin:var(--arena-margin)}
-/* No border: --well against the arena's --panel is already a value step, and a
-   bordered box inside a bordered box is the rule line Tufte tells you to
-   delete (checklists.md, "unnecessary rule lines"). */
+/* .arena (the bordered box) is GONE — v2 made the canvas region itself the
+   well, so the wrapper had no styling left and was purely a nested box for
+   detect.mjs to flag. DESIGN.md's Arena component spec already noted the class
+   was a naming ambiguity doing nothing but "bordered panel". */
 .canvasStub{background:var(--well);
   aspect-ratio:16/7;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:var(--space-3);text-align:center;padding:var(--space-6)}
@@ -238,7 +259,7 @@ button:disabled{color:var(--faint);cursor:default}
   letter-spacing:.12em;text-transform:uppercase}
 .canvasStub .v{font-family:monospace;font-size:var(--fs-small);color:var(--faint);
   max-width:44ch;line-height:1.6}
-.arena .controls{display:flex;align-items:baseline;flex-wrap:wrap;
+.controls{display:flex;align-items:baseline;flex-wrap:wrap;
   gap:var(--space-3) var(--space-7);margin:var(--arena-controls-margin)}
 #depth{color:var(--gold);font-size:var(--fs-hero);font-family:monospace}
 .caption{font-family:monospace;font-size:var(--fs-small);color:var(--recede);
@@ -830,6 +851,7 @@ idle): neutral left edge, dim name, faint stat, control present reading 0, empty
 track. <b>locked</b>: no left edge, whole row at <code>--opacity-locked</code>,
 <b>no allocation control at all</b>, and the row says the word "locked" and its
 unlock condition. Three independent channels per state &mdash; edge, type, controls.</div>
+
 <div id="logHead">maintenance@dead-server:~$ <span class="cursor">&#9646;</span></div>
 <div id="log"><div class="logline log-event">&#9733; W1 BREACHED &mdash; Vess</div><div class="logline log-loot log-event">&#9670; Vess's Latch dropped &middot; +4% speed</div><div class="logline log-plain">drop: Epic Sentry Halberd 11,200IP &middot; stashed</div><div class="logline log-dim">While you were away (3h): +48,200 copper, 6 drops.</div></div>
 <footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>

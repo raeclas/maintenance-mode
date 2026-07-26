@@ -41,7 +41,20 @@ const TOKENS = `
   /* ── Phase 3 semantic colour (internal/DESIGN.md, LOCKED :root block) ── */
   --gold:#c9a94b; --gold-dim:#9a8a5a; --on-gold:#0d0d10; --bone:#bcb2a2;
   --dim:#838a97; --recede:#87878f; --faint:#808086; --faintest:#64646a;
-  --bg:#0b0c10; --panel:#13141a; --inset:#17171c; --field:#22222a; --well:#101014;
+  /* SURFACE RAMP RESPREAD 2026-07-26 (Phase 1, review Major on DW-1.6).
+     The four grounds below were compressed into ~3 L* of each other, so no
+     amount of bevel could make a panel read as raised — bg->panel measured
+     3.09 L*, which is under the perceptual floor for a surface step. They are
+     respread across the full range the fixed text tokens allow, solved
+     numerically (ceilings: panel bound by --alert at L*8.23, --bg by --logline
+     at L*3.73, --field by --dim at L*13.94). bg->panel is now 5.17 L*.
+     --inset was LIGHTER than --panel while being named "recessed"; corrected.
+     Physical model, deepest first: well < bg < plate-foot < panel < field. */
+  --bg:#08090e;      /* was #0b0c10 — L* 2.4 */
+  --panel:#15161d;   /* was #13141a — L* 7.4, under the --alert ceiling */
+  --inset:#131319;   /* was #17171c — L* 6.1, now genuinely recessed */
+  --field:#22222a;   /* unchanged — already at the --dim ceiling */
+  --well:#05060a;    /* was #101014 — L* 1.4, the deepest surface on screen */
   --line:#262a34; --line-soft:#1b1b22;
   --risk:#7aa4d4; --warn:#b26f5f; --alert:#d25b44; --copper:#d08a3e; --live:#6bbf7a;
   --logline:#598368;
@@ -74,7 +87,13 @@ const TOKENS = `
   --meter-fill-progress-maxed:var(--gold);
   --meter-fill-level:var(--level-muted); --meter-track-level:var(--space-5);
   --meter-level-margin-top:var(--space-4); --meter-level-margin-bottom:var(--space-6);
-  --alloc-control:var(--recede); --alloc-value:var(--gold);
+  /* --alloc-control was var(--recede). CORRECTED 2026-07-26 (Phase 1): the alloc
+     button's ground is --field, and --recede on --field measures 4.43:1 — a real
+     WCAG 1.4.3 failure nobody had checked, because DESIGN.md's Phase 3 audit
+     tested the text tiers against --bg/--panel/--inset and never against the
+     raised-control ground. --dim clears 4.55:1 at the same site and still
+     recedes against --alloc-value (gold), so the stated intent survives. */
+  --alloc-control:var(--dim); --alloc-value:var(--gold);
   --alloc-pad:var(--space-3) var(--space-5); --alloc-gap:var(--space-2);
   --alloc-input-pad:var(--space-2) var(--space-3);
   --alloc-input-width:44px;
@@ -96,7 +115,39 @@ const TOKENS = `
   --armory-min:420px;     /* narrowest width at which a 3-column Armory row can
                              still print an entry NAME rather than an ellipsis;
                              below it the grid scrolls inside its own container
-                             rather than truncating (the plan's own edge case) */
+                             rather than truncating (the plan's own edge case) */`;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   VISUAL DNA v2 tokens — internal/DESIGN.md "## Visual DNA v2".
+   Injected INTO the same :root block (a second :root would slip past the
+   assertion's strip regex), and only on the surface Phase 1 recomposes.
+   ───────────────────────────────────────────────────────────────────────── */
+const TOKENS_V2 = `
+  /* ── v2 material: three elevations, built not coloured ── */
+  --plate-foot:#101015;   /* a plate's foot. DARKER than --panel on purpose: the
+                             gradient lights the TOP, so no text ever sits on a
+                             ground lighter than the AA-verified --panel.
+                             L* 4.8 — 2.6 L* below --panel (was 2.06) */
+  --edge-lit:#413d37;     /* warm bevel highlight — light from above (ch09
+                             hue-shifted highlights: warmer, never white).
+                             L* 26: 18.6 L* above --panel. Was #2d2a26 at 10.8
+                             L*, which is where the review's Major came from —
+                             a 1px edge at 10 L* on a dark ramp is not a bevel,
+                             it is a rumour. */
+  --edge-shade:#020308;   /* cool bevel shade, L* 0.9. Tinted blue-black, never
+                             pure #000 (ai-tells colour rule, still held) */
+  --floor-glow:#17140d;   /* warm dark. Light under the door: the arena's floor
+                             band only, never a text ground */
+  /* ── v2 display type: two steps ABOVE the existing --fs-hero (26px) ── */
+  --fs-warden:36px;       /* the Warden's name — the identity, 1.38x over hero */
+  --fs-colossal:52px;     /* the once-per-screen peak; the same 52px battle.js
+                             already draws the BREACHED reveal at, so DOM and
+                             canvas finally agree where the peak is */
+  /* ── v2 display-tier spacing: the scale had nothing above 16px, which is why
+        every block read as one texture. Append-only, same derivation rule ── */
+  --space-9:24px; --space-10:32px;`;
+
+const TOKENS_END = `
 }`;
 
 /* The one breakpoint. DESIGN.md names 560px as a real value belonging to a
@@ -174,7 +225,10 @@ button{background:var(--field);color:var(--bone);
   font-size:var(--fs-small);padding:var(--space-3) var(--space-6);
   min-height:var(--touch-min);cursor:pointer;text-align:left}
 button.affordable{border-color:var(--afford-accent);color:var(--afford-accent)}
-button:disabled{color:var(--faint);cursor:default}
+/* A disabled control is NOT raised — it drops to the panel ground. That is the
+   material language carrying a state, and it also fixes a real WCAG 1.4.3
+   failure: --faint on --field measures 4.02:1, on --panel it clears 4.68:1. */
+button:disabled{color:var(--faint);cursor:default;background:var(--panel)}
 .rig{display:grid;gap:var(--space-5);grid-template-columns:1fr}
 ${BP}{.rig{grid-template-columns:1fr 1fr}}
 
@@ -250,11 +304,10 @@ ${BP}{
   margin:0 auto var(--space-4)}
 .wallBtn{white-space:nowrap;text-align:center}
 .wallBtn.active{color:var(--gold);border-color:var(--gold);background:var(--line-soft)}
-.arena{border:var(--border-hairline) solid var(--line);background:var(--panel);
-  padding:var(--arena-pad);margin:var(--arena-margin)}
-/* No border: --well against the arena's --panel is already a value step, and a
-   bordered box inside a bordered box is the rule line Tufte tells you to
-   delete (checklists.md, "unnecessary rule lines"). */
+/* .arena (the bordered box) is GONE — v2 made the canvas region itself the
+   well, so the wrapper had no styling left and was purely a nested box for
+   detect.mjs to flag. DESIGN.md's Arena component spec already noted the class
+   was a naming ambiguity doing nothing but "bordered panel". */
 .canvasStub{background:var(--well);
   aspect-ratio:16/7;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:var(--space-3);text-align:center;padding:var(--space-6)}
@@ -262,7 +315,7 @@ ${BP}{
   letter-spacing:.12em;text-transform:uppercase}
 .canvasStub .v{font-family:monospace;font-size:var(--fs-small);color:var(--faint);
   max-width:44ch;line-height:1.6}
-.arena .controls{display:flex;align-items:baseline;flex-wrap:wrap;
+.controls{display:flex;align-items:baseline;flex-wrap:wrap;
   gap:var(--space-3) var(--space-7);margin:var(--arena-controls-margin)}
 #depth{color:var(--gold);font-size:var(--fs-hero);font-family:monospace}
 .caption{font-family:monospace;font-size:var(--fs-small);color:var(--recede);
@@ -422,6 +475,194 @@ footer button{background:none;border:none;color:var(--faint);
     transition-duration:.01ms !important;scroll-behavior:auto !important}
 }`;
 
+/* ═════════════════════════════════════════════════════════════════════════
+   VISUAL DNA v2 — material, frame, ornament, display type.
+   internal/DESIGN.md "## Visual DNA v2" is the spec; this is its execution.
+
+   Scoped to the Boss mock, because Phase 1's scope is one recomposed surface
+   and the other five must emit byte-identical. Adds ZERO animation (the motion
+   budget is untouched), ZERO raster assets, ZERO icons, ZERO external refs:
+   every mark below is a gradient, a border or a rotated square.
+
+   ponytail: two CSS strings instead of one until the look is signed off —
+   Phase 3 pastes this into CSS, drops the `v2` flag, and deletes the split.
+   ═════════════════════════════════════════════════════════════════════════ */
+const CSS_V2 = `
+/* ── 1. MATERIAL ───────────────────────────────────────────────────────────
+   Three elevations. Each is a CONSTRUCTION, not a colour — which is what
+   makes it reproducible on a surface nobody has drawn yet.
+
+   PLATE  (raised)   : 2px warm --edge-lit lip, gradient falling from --panel
+                       to --plate-foot, 1px cool --edge-shade foot, --line
+                       hairline frame. Sits 5.2 L* above the page.
+   WELL   (recessed) : the --well ground (BELOW page level) with a 2px lit foot
+                       — light from above falls on the far wall of a recess,
+                       and the near wall is already the darkest thing on
+                       screen, so there is nothing left to shade it with.
+   LEAF   (flat)     : no bevel, no gradient. Lives IN a well or ON a plate;
+                       separated by hairlines alone. Density surfaces stay
+                       leaves — that is what keeps a 15-row list readable.
+
+   The lip is --space-1 (2px), not 1px. A 1px edge at 10 L* was the review's
+   Major: present in the CSS, invisible on the render. 2px at 18.6 L* reads. */
+section.game{
+  background:linear-gradient(var(--panel),var(--plate-foot));
+  box-shadow:inset 0 var(--space-1) 0 var(--edge-lit),
+             inset 0 calc(var(--border-hairline) * -1) 0 var(--edge-shade);
+  padding:var(--space-9) var(--space-7) var(--space-10);
+  margin:var(--space-9) 0}
+
+/* WELL. Used by the arena, the dialogue, and — the point of this pass — every
+   ROWLIST, so a list-heavy surface gets its depth from the list itself rather
+   than from a frame it does not have. */
+.canvasStub,#dialogue,.rowlist{background:var(--well);
+  box-shadow:inset 0 calc(var(--space-1) * -1) 0 var(--edge-lit)}
+.rowlist{border-top:var(--border-hairline) solid var(--edge-shade);
+  margin:var(--space-5) 0 var(--space-6)}
+
+/* Controls are small plates: same lit-top/dark-foot rule, one step brighter.
+   Scoped — the footer's export/wipe are text links, not controls, and must not
+   inherit a raise. A DISABLED control loses its raise entirely: the material
+   itself carries the state, and --faint only clears AA off the --field ground. */
+section.game button,.helpBtn,.chipGroup{
+  background:linear-gradient(var(--field),var(--panel));
+  box-shadow:inset 0 var(--space-1) 0 var(--edge-lit),
+             inset 0 calc(var(--border-hairline) * -1) 0 var(--edge-shade)}
+section.game button:disabled{background:var(--panel);box-shadow:none}
+
+/* ── 2. FRAME — the signature move ─────────────────────────────────────────
+   Four gold corner brackets on a hairline frame, EXACTLY ONE PER SURFACE,
+   around the one thing the surface is about. Eight background layers, no
+   extra markup, no icon, no image.
+
+   The no-decay rule lives here: a frame is always four corners, always
+   symmetric, always complete. A missing or broken bracket would read as
+   damage instantly, so the construction makes it unrepresentable.
+
+   No fill layer. A frame is a frame — it sits transparently on its parent's
+   plate. The 9th panel->plate-foot gradient this rule used to carry was a
+   second application of the construction its own parent already had (review
+   Minor): invisible only because the colours matched, and a bevel-inside-a-
+   bevel by the letter of material rule 2.                                  */
+.frame{position:relative;--br:linear-gradient(var(--gold),var(--gold));
+  border:var(--border-hairline) solid var(--line);
+  padding:var(--space-10) var(--space-7) var(--space-9);
+  background:
+    var(--br) 0 0/var(--space-9) var(--space-1) no-repeat,
+    var(--br) 0 0/var(--space-1) var(--space-9) no-repeat,
+    var(--br) 100% 0/var(--space-9) var(--space-1) no-repeat,
+    var(--br) 100% 0/var(--space-1) var(--space-9) no-repeat,
+    var(--br) 0 100%/var(--space-9) var(--space-1) no-repeat,
+    var(--br) 0 100%/var(--space-1) var(--space-9) no-repeat,
+    var(--br) 100% 100%/var(--space-9) var(--space-1) no-repeat,
+    var(--br) 100% 100%/var(--space-1) var(--space-9) no-repeat}
+
+/* ── 3. ORNAMENT ──────────────────────────────────────────────────────────
+   A hairline that fades in from nothing, a gold lozenge, a hairline that
+   fades out. The lozenge is a rotated square — a drawn mark, not a glyph and
+   not a generated icon. Used to CLOSE an identity block and to open a
+   section heading; never as filler between arbitrary elements.             */
+.ornRule{display:flex;align-items:center;justify-content:center;
+  gap:var(--space-5);margin:var(--space-6) 0 0}
+.ornRule::before,.ornRule::after{content:"";height:var(--border-hairline);width:35%}
+.ornRule::before{background:linear-gradient(90deg,transparent,var(--gold-dim))}
+.ornRule::after{background:linear-gradient(90deg,var(--gold-dim),transparent)}
+.ornRule i{flex:none;width:var(--space-4);height:var(--space-4);
+  transform:rotate(45deg);background:var(--gold)}
+
+/* Section headings inherit the ornament: the lozenge leads, the rule runs out
+   to the right. Replaces the naked border-top. */
+h3{border-top:none;padding-top:0;display:flex;flex-wrap:wrap;align-items:center;
+  gap:var(--space-5);margin:var(--space-10) 0 var(--space-5);
+  font-size:var(--fs-body);letter-spacing:.16em;color:var(--gold-dim)}
+h3::before{content:"";flex:none;width:var(--space-4);height:var(--space-4);
+  transform:rotate(45deg);background:var(--gold-dim)}
+h3 .sub{flex-basis:100%}
+
+/* ── 4. DISPLAY TYPE ──────────────────────────────────────────────────────
+   Gold text is engraved, never lit: a 1px offset in --edge-shade reads as
+   metal cut into a plate. A glow would read as neon-on-dark (an AI tell) and
+   as a screen in trouble (decay). Offset down, never out.                  */
+#bossName{font-size:var(--fs-warden);letter-spacing:.07em;line-height:1.1;
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade);overflow-wrap:anywhere}
+#bossTitle{font-size:var(--fs-body);color:var(--bone);margin-top:var(--space-4);
+  letter-spacing:.02em}
+.bossPanel{margin:0}
+#depth{letter-spacing:.03em;line-height:1;
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade)}
+/* The peak. Georgia at 52px is exactly what battle.js already draws the canvas
+   BREACHED reveal at, so the DOM and the canvas agree on where the peak is.
+   Copy is Phase 5's, unchanged, including its case. */
+#depth.breached{font-size:var(--fs-colossal);font-family:Georgia,serif;
+  letter-spacing:.05em}
+
+/* ── 5. GOLD DISCIPLINE ───────────────────────────────────────────────────
+   Gold is identity only: the Warden's name, the one hero number, the frame,
+   the ornament, the active edge, the primary action. It is NOT a body or
+   caption colour — #projection carried gold on a sentence, which is the
+   single reason none of the other four golds read as special.              */
+#projection{color:var(--bone)}
+.wallLbl{color:var(--recede);margin-bottom:var(--space-5)}
+
+/* ── 6. THE ARENA — a well, with light under the door ─────────────────────
+   The one pictorial hint in the DOM: a warm band at the floor line and a
+   gold-dim seam beneath it. Everything else about the scene is the canvas
+   spec in DESIGN.md; the DOM's job is to frame the aperture, not fake it.  */
+/* The arena is now a pure layout wrapper — no border, no fill. The canvas
+   region IS the well; a bordered box around a well is the redundant rule line
+   Tufte tells you to delete AND the nested-box shape detect.mjs flags. One
+   nesting level: section plate -> canvas well. */
+.canvasStub{position:relative;aspect-ratio:16/10;margin:var(--space-8) 0 0}
+/* The floor line is a background LAYER, not a border. A bordered box inside a
+   bordered box is both the rule line Tufte tells you to delete and the
+   nested-card tell detect.mjs flags (ai-tells.md: Fable 5's #1 default, 6/6).
+   The arena is the well; the canvas is its floor — one box, not two. */
+.canvasStub::after{content:"";position:absolute;left:0;right:0;bottom:0;height:24%;
+  pointer-events:none;
+  background:linear-gradient(var(--gold-dim),var(--gold-dim))
+               0 100%/100% var(--border-hairline) no-repeat,
+             linear-gradient(transparent,var(--floor-glow))}
+.canvasStub .k,.canvasStub .v{position:relative;z-index:1}
+.controls{border-top:var(--border-hairline) solid var(--line);
+  padding-top:var(--space-7);margin:var(--space-8) 0 var(--space-5);
+  gap:var(--space-4) var(--space-7)}
+
+/* ── 7. NAV + WALL SELECTOR — a seam, not a border swap ───────────────────
+   An MMO client's active tab is lit along its top edge. That is a second,
+   positional channel on top of the existing colour one.                    */
+#tabs button{letter-spacing:.14em;font-size:var(--fs-small)}
+#tabs button.active{box-shadow:inset 0 var(--space-1) 0 var(--gold),
+  inset 0 calc(var(--border-hairline) * -1) 0 var(--edge-shade)}
+.wallBtn.active{box-shadow:inset 0 var(--space-1) 0 var(--gold),
+  inset 0 calc(var(--border-hairline) * -1) 0 var(--edge-shade)}
+
+/* ── 8. PRIMARY ACTION — the deco double rule ─────────────────────────────
+   Gold hairline, a gap of ground, a second gold-dim rule inside it. Two
+   concentric rules is the oldest "this one matters" mark there is, and it
+   distinguishes the CTA from the frame without spending a second frame.    */
+#descendBtn{background:var(--panel);font-size:var(--fs-masthead);
+  letter-spacing:.18em;padding:var(--space-9) var(--space-6);
+  margin:var(--space-8) 0 0;
+  box-shadow:inset 0 0 0 var(--space-3) var(--panel),
+             inset 0 0 0 var(--space-4) var(--gold-dim)}
+
+/* ── 9. STORY — recessed, so the voice sits behind the glass ──────────────  */
+#dialogue{border-left-color:var(--gold-dim);
+  font-size:var(--fs-display);line-height:1.6;color:var(--bone);
+  padding:var(--space-9) var(--space-7);margin:var(--space-9) 0 0}
+
+/* ── 10. THE LADDER, UNFLATTENED ──────────────────────────────────────────
+   The four state channels (edge colour, type colour, control presence,
+   unlock text) are untouched. Material adds a FIFTH: only a live row carries
+   the lit top edge. Richer look, one more channel, none lost.              */
+.rowlist .row.active{box-shadow:inset 0 var(--border-hairline) 0 var(--edge-lit)}
+
+/* ── 11. CHROME BAND ──────────────────────────────────────────────────────  */
+#resbar{padding:var(--space-5) var(--space-3);margin-bottom:var(--space-9);
+  box-shadow:inset 0 calc(var(--border-hairline) * -1) 0 var(--gold-dim)}
+main.client{padding:var(--space-9) var(--space-5) var(--space-10)}
+`;
+
 /* ─────────────────────────────────────────────────────────────────────────
    Shared chrome
    ───────────────────────────────────────────────────────────────────────── */
@@ -454,7 +695,7 @@ const log = lines => `<div id="logHead">maintenance@dead-server:~$ <span class="
 <div id="log">${lines.map(([cls, t]) => `<div class="logline ${cls}">${t}</div>`).join("")}</div>
 <footer><button>export save</button> &middot; <button>wipe save (dev)</button></footer>`;
 
-const page = ({ title, tab, note, body, skipChip }) => `<!doctype html>
+const page = ({ title, tab, note, body, skipChip, v2 = false, ladderExtra = "" }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -470,7 +711,7 @@ const page = ({ title, tab, note, body, skipChip }) => `<!doctype html>
   Self-contained: no external stylesheet, font, script or image.
   Generated by internal/mocks/build.mjs — edit that, not this file.
 -->
-<style>${TOKENS}${CSS}</style>
+<style>${TOKENS}${v2 ? TOKENS_V2 : ""}${TOKENS_END}${CSS}${v2 ? CSS_V2 : ""}</style>
 </head>
 <body>
 <main class="client">
@@ -479,6 +720,7 @@ ${resbar(skipChip)}
 ${tabs(tab)}
 ${body}
 <div class="mockNote">${LADDER}</div>
+${ladderExtra}
 ${log([
   ["log-event", "&#9733; W1 BREACHED &mdash; Vess"],
   ["log-loot log-event", "&#9670; Vess's Latch dropped &middot; +4% speed"],
@@ -527,32 +769,105 @@ const row = ({ cls = "", name, sub = "", gain = "", gainSub = "", allocHtml = ""
   </div>`;
 
 /* ─────────────────────────────────────────────────────────────────────────
+   3. GRIND — data hoisted ABOVE the Boss section so the Boss mock's material
+   specimen can render THE ACTUAL GRIND FRAGMENT rather than a lookalike.
+   Grind is the honest test of a material language: no hero, no frame, no
+   display type. If the language cannot make Grind look built, it is a
+   boss-tab trick. Same array, same helper, same section — used twice.
+   ───────────────────────────────────────────────────────────────────────── */
+const ZONES = [
+  ["Novice Meadow", "Training Slime", "12", "5", "10&ndash;30"],
+  ["Webbed Ravine", "Ravine Weaver", "60", "20", "40&ndash;120"],
+  ["Salt Flats", "Salt Strider", "250", "75", "150&ndash;450"],
+  ["Cinder Steppe", "Steppe Charger", "700", "300", "600&ndash;1,800"],
+  ["The Doorstep", "Door Sentry", "1,500", "2,250", "4,500&ndash;13,500"],
+  ["The Threshold", "Threshold Husk", "5,000", "7,000", "13,500&ndash;40,500"],
+  ["Ashen Nave", "Nave Revenant", "16,000", "21,000", "40,500&ndash;121,500"],
+  ["Flooded Undercroft", "Undercroft Lurker", "52,000", "65,000", "121,500&ndash;364,500"],
+  ["The Long Dark", "Pale Sentinel", "170,000", "200,000", "364,500&ndash;1,093,500"],
+  ["The Second Door", "Sealed Warden", "550,000", "620,000", "1,093,500&ndash;3,280,500"],
+  ["Frostbound Wastes", "Wastes Wight", "1,650,000", "1,860,000", "3,280,500&ndash;9,841,500"],
+  ["The Sunken Archive", "Archive Colossus", "5,000,000", "5,600,000", "9,841,500&ndash;29,524,500"],
+  ["Obsidian Reach", "Reach Devourer", "15,000,000", "17,000,000", "29,524,500&ndash;88,573,500"],
+  ["The Hollow Spire", "Spire Revenant", "45,000,000", "50,000,000", "88,573,500&ndash;265,720,500"],
+  ["World's Edge", "Edge Sentinel", "135,000,000", "150,000,000", "265,720,500&ndash;797,161,500"],
+];
+const zoneRow = (z, i) => {
+  const [name, mob, hp, copper, ip] = z;
+  const common = { name, sub: `${mob} &middot; ${hp} HP`, gain: `${copper}c per kill`, gainSub: `IP ${ip}` };
+  if (i >= 10) return row({ ...common, cls: "locked", stat: "locked &middot; needs 4 doors open, you have 1" });
+  if (i === 2) return row({ ...common, cls: "active", allocHtml: alloc(20),
+    stat: "50 kills/s &middot; at the 50/s cap &middot; 4,650c/s (&times;1.24 from gear, trophies and Armory) &middot; overkill &times;125.1 &rarr; drops roll 3 bands higher (up to 3)", fill: 100 });
+  if (i === 9) return row({ ...common, cls: "struggling", allocHtml: alloc(15),
+    stat: "too weak to hold &mdash; 1,172,556 damage/s of the 1,700,000 this zone needs", fill: 0 });
+  return row({ ...common, cls: "dormant", allocHtml: alloc(0, []), stat: "no bots here", fill: 0 });
+};
+
+const zonesSection = `<section class="game">
+  <h3>Zones<span class="sub">&mdash; put bots on a zone. Their combined damage
+    has to clear the zone's hold number or they earn nothing at all. A zone they
+    can hold kills up to 50 mobs a second; every kill pays copper and has a
+    1-in-400 chance to drop a piece of gear. IP is the power band those drops
+    roll in &mdash; deeper zones drop higher.</span></h3>
+  <div class="rowlist">${ZONES.map(zoneRow).join("")}</div>
+</section>`;
+
+/* ─────────────────────────────────────────────────────────────────────────
    1. BOSS
    ───────────────────────────────────────────────────────────────────────── */
-const boss = page({
-  title: "Boss", tab: "boss",
-  note: `Boss tab. The arena is CANVAS-drawn, so block 3 is a labelled
-    placeholder &mdash; deliberately not a fake arena. ${TWO_STATES} The second
-    is <b>frontier broken</b>, the only state in which this tab's specced
-    primary action, Descend, exists. Three renders of "how much HP is left"
-    become one: the canvas keeps the bar and drops its own % label (which also
-    kills the 1.23:1 legibility defect DESIGN.md found in <code>drawBars()</code>),
-    the readout keeps the number, and the record line keeps only its Combat Power
-    pointer. The monument is gone too &mdash; it listed the same opened doors the
-    wall selector above it already lists, and the selector is also the control.`,
-  body: `<section class="game">
-  <div class="bossPanel">
-    <div id="bossName">Maren</div>
-    <div id="bossTitle">Warden of the Second Door</div>
-  </div>
+// Block 1 of the JOURNEY spec, recomposed as the hero it is: the Warden's
+// frame. Same two facts, same two strings, same owner — a name that renders at
+// --fs-warden inside a bracketed frame is the SAME fact as a name that renders
+// at caption size, so nothing moved between owners.
+const warden = `<div class="frame">
+    <div class="bossPanel">
+      <div id="bossName">Maren</div>
+      <div id="bossTitle">Warden of the Second Door</div>
+      <div class="ornRule"><i aria-hidden="true"></i></div>
+    </div>
+  </div>`;
 
-  <div class="wallLbl">Doors you've opened</div>
+const wallSelect = second => `<div class="wallLbl">Doors you've opened</div>
   <div class="wallScroll"><div id="wallSelect">
     <button class="wallBtn">W1 Vess &middot; farming</button>
-    <button class="wallBtn active">W2 Maren &middot; fighting</button>
-  </div></div>
+    <button class="wallBtn active">W2 Maren &middot; ${second}</button>
+  </div></div>`;
 
-  <div class="arena">
+// Boss has no rowlist, so the state ladder has no surface here to prove itself
+// on. It is drawn in the ANNOTATION layer instead — dashed, labelled, using
+// Grind's own verbatim rows — so the reviewer can check on real pixels that a
+// richer material language did not flatten a channel. Never product copy.
+const MATERIAL_SPECIMEN = `
+<div class="stateLabel">specimen &mdash; grind's real rowlist under v2 material
+  (not a boss-tab block)</div>
+<div class="mockNote"><b>Grind is the honest test of a material language</b> &mdash;
+  no hero, no frame, no display type, 15 rows. This is <b>the same section, the same
+  rows and the same copy <code>grind.html</code> renders</b>: one shared constant used
+  twice, not a lookalike. What has to read here is <b>depth, without a single
+  hero-only treatment</b>. The section is a <b>plate</b> (2px lit lip, gradient
+  falling to <code>--plate-foot</code>); the rowlist is a <b>well</b> cut below page
+  level with a lit foot; the rows are flat <b>leaves</b> in it; the alloc controls are
+  small raised plates. If this reads flat, the language has failed and Phase 3 would
+  have inherited the failure on five surfaces.</div>
+${zonesSection}`;
+
+const boss = page({
+  title: "Boss", tab: "boss", v2: true, ladderExtra: MATERIAL_SPECIMEN,
+  note: `Boss tab, recomposed against <b>DESIGN.md's Visual DNA v2</b>. Not one
+    string, fact owner or block position changed &mdash; what changed is the
+    material (three built elevations instead of one flat rect), the frame (the
+    signature move: four gold corner brackets, once per surface, around the
+    Warden), the ornament, and a display type tier that finally puts the
+    identity above the readout. The arena is CANVAS-drawn, so block 3 is a
+    labelled placeholder &mdash; deliberately not a fake arena; what the canvas
+    should DRAW is specced in DESIGN.md <code>## Canvas scene spec</code>.
+    ${TWO_STATES} The second is <b>frontier broken</b>, the only state in which
+    this tab's specced primary action, Descend, exists.`,
+  body: `<section class="game">
+  ${warden}
+
+  ${wallSelect("fighting")}
+
     <div class="canvasStub">
       <div class="k">canvas region &mdash; not renderable in HTML</div>
       <div class="v">Boss HP bar draining as a proportion, <b>with no % label of
@@ -568,7 +883,6 @@ const boss = page({
     </div>
     <div id="projection" class="caption">Crits &times;1.16 average damage &mdash;
       10.0% of hits crit for &times;2, and 20.0% of those crit again for &times;5.</div>
-  </div>
 
   <div class="progress">
     <div class="caption">Combat Power 2,481,600/s &mdash; full breakdown on the
@@ -581,23 +895,16 @@ const boss = page({
 
 <div class="stateLabel">state &mdash; frontier broken (the only state with a Descend action)</div>
 <section class="game">
-  <div class="bossPanel">
-    <div id="bossName">Maren</div>
-    <div id="bossTitle">Warden of the Second Door</div>
-  </div>
-  <div class="wallLbl">Doors you've opened</div>
-  <div class="wallScroll"><div id="wallSelect">
-    <button class="wallBtn">W1 Vess &middot; farming</button>
-    <button class="wallBtn active">W2 Maren &middot; farming</button>
-  </div></div>
-  <div class="arena">
+  ${warden}
+
+  ${wallSelect("farming")}
+
     <div class="controls">
-      <span id="depth">BREACHED</span>
+      <span id="depth" class="breached">BREACHED</span>
       <span class="caption">The door is open. Keep fighting it for set pieces:
         one roll every 30s, 25% chance each of a piece you don't own yet.
         1 of 7 recovered &mdash; see the set on the Player tab.</span>
     </div>
-  </div>
   <div class="progress">
     <div class="caption">The door stands open.</div>
     <button id="descendBtn">Descend to the next door &rarr;</button>
@@ -692,52 +999,15 @@ const training = page({
 </section>`,
 });
 
-/* ─────────────────────────────────────────────────────────────────────────
-   3. GRIND
-   ───────────────────────────────────────────────────────────────────────── */
-const ZONES = [
-  ["Novice Meadow", "Training Slime", "12", "5", "10&ndash;30"],
-  ["Webbed Ravine", "Ravine Weaver", "60", "20", "40&ndash;120"],
-  ["Salt Flats", "Salt Strider", "250", "75", "150&ndash;450"],
-  ["Cinder Steppe", "Steppe Charger", "700", "300", "600&ndash;1,800"],
-  ["The Doorstep", "Door Sentry", "1,500", "2,250", "4,500&ndash;13,500"],
-  ["The Threshold", "Threshold Husk", "5,000", "7,000", "13,500&ndash;40,500"],
-  ["Ashen Nave", "Nave Revenant", "16,000", "21,000", "40,500&ndash;121,500"],
-  ["Flooded Undercroft", "Undercroft Lurker", "52,000", "65,000", "121,500&ndash;364,500"],
-  ["The Long Dark", "Pale Sentinel", "170,000", "200,000", "364,500&ndash;1,093,500"],
-  ["The Second Door", "Sealed Warden", "550,000", "620,000", "1,093,500&ndash;3,280,500"],
-  ["Frostbound Wastes", "Wastes Wight", "1,650,000", "1,860,000", "3,280,500&ndash;9,841,500"],
-  ["The Sunken Archive", "Archive Colossus", "5,000,000", "5,600,000", "9,841,500&ndash;29,524,500"],
-  ["Obsidian Reach", "Reach Devourer", "15,000,000", "17,000,000", "29,524,500&ndash;88,573,500"],
-  ["The Hollow Spire", "Spire Revenant", "45,000,000", "50,000,000", "88,573,500&ndash;265,720,500"],
-  ["World's Edge", "Edge Sentinel", "135,000,000", "150,000,000", "265,720,500&ndash;797,161,500"],
-];
-const zoneRow = (z, i) => {
-  const [name, mob, hp, copper, ip] = z;
-  const common = { name, sub: `${mob} &middot; ${hp} HP`, gain: `${copper}c per kill`, gainSub: `IP ${ip}` };
-  if (i >= 10) return row({ ...common, cls: "locked", stat: "locked &middot; needs 4 doors open, you have 1" });
-  if (i === 2) return row({ ...common, cls: "active", allocHtml: alloc(20),
-    stat: "50 kills/s &middot; at the 50/s cap &middot; 4,650c/s (&times;1.24 from gear, trophies and Armory) &middot; overkill &times;125.1 &rarr; drops roll 3 bands higher (up to 3)", fill: 100 });
-  if (i === 9) return row({ ...common, cls: "struggling", allocHtml: alloc(15),
-    stat: "too weak to hold &mdash; 1,172,556 damage/s of the 1,700,000 this zone needs", fill: 0 });
-  return row({ ...common, cls: "dormant", allocHtml: alloc(0, []), stat: "no bots here", fill: 0 });
-};
-
 const grind = page({
   title: "Grind", tab: "grind",
   note: `Grind tab, all 15 zones, four states side by side: <b>Salt Flats</b>
     live and held, <b>The Second Door</b> live and failing (DESIGN.md's REQUIRED
     struggling state, which the shipped build still renders identically to
     locked), eight dormant zones, five locked zones with no controls at all.`,
-  body: `<section class="game">
-  <h3>Zones<span class="sub">&mdash; put bots on a zone. Their combined damage
-    has to clear the zone's hold number or they earn nothing at all. A zone they
-    can hold kills up to 50 mobs a second; every kill pays copper and has a
-    1-in-400 chance to drop a piece of gear. IP is the power band those drops
-    roll in &mdash; deeper zones drop higher.</span></h3>
-  <div class="rowlist">${ZONES.map(zoneRow).join("")}</div>
-</section>`,
+  body: zonesSection,
 });
+
 
 /* ─────────────────────────────────────────────────────────────────────────
    4. PLAYER

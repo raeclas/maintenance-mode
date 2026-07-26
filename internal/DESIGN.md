@@ -1,10 +1,518 @@
 # Design: Last Warmth
+
+> **v2, 2026-07-26 — read `## Visual DNA v2` FIRST.** The DNA, material and type
+> layers below were superseded by Phase 1 of
+> `.design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md`. Everything
+> else in this file — token NAMES, the semantic tiers, the dimension scale, the
+> component inventory, the state-ladder mechanics, the canvas token module, the
+> motion budget — is carried forward unchanged and is still the contract. The v2
+> section states exactly which paragraphs it replaces and which it does not.
+
 **Date:** 2026-07-25 · **Status:** LOCKED — contrast evidence passing (see report below); direction confirmed by the user 2026-07-25, closing DW-3.1. The 5 required code changes below were deferred by the same decision to a single integration pass after Phase 6; nothing in this document is applied to shipped code yet.
 **Archetype:** Ruler + Sage (stretch pairing, `archetypes.md`) · **Register:** restrained/data-dense structure · expressive at: BREACHED reveal, enhance feedback, maxed/complete states
 **Grounding:** a 2000s MMO raid client's UI chrome (gold small-caps headers, gear-slot panels, boss-frames) + a mid-2000s botting-forum/sysadmin console (monospace stat rows, tabular numerics) — restated directly from `REMAKE-DESIGN.md` §16's own three-register lexicon, not invented for this pass
 **DNA:** systematization pass, not a fresh divergent generation — see `## Why this isn't a diverge/critique/converge pass` below
 **Composition:** existing, unchanged — dense stat rows (`.rowlist`, the Armory grid, Trophy pips), bordered panels (`section.game`), no cards, no radius, no shadows (already the correct "Data-Dense Professional" discipline for this content). **Dead-CSS list, extended per review round 3 (grepped every name below across `index.html` + every `.js` file — zero references, confirmed independently, not taken on the prior review's word):** `.ztable`, `#pullBtn` / `#pullBtn:disabled` (the retired pull-to-attempt mechanic), `#ticketGain`, `#tierAtk`/`#tierSpeed`, `#gmSec`/`#gmPanel` (the retired GM tab/ticket economy), `.tier-risk`/`.tier-nightmare` (found in this pass — not in the review's own list, but the same class of orphan). None of these render, so none carry a live contrast obligation, but their selectors and any hardcoded hex inside them are named here so this document never again cites one as a shipped fact (the exact error DW-3.3's gold-CTA citation made last round — corrected below).
 **Pins:** none — this phase systematizes an already-shipped, already-approved look; nothing was pinned because nothing was dealt
+
+---
+
+# Visual DNA v2
+
+**Date:** 2026-07-26 · **Status:** proposed, evidence passing, awaiting the
+user's look sign-off (Phase 1 of the visual-pass plan).
+**Proved on:** `internal/mocks/boss.html` → `internal/mocks/shots/boss-375.png`
+(the pre-v2 render is preserved as `boss-375-before.png` for the side-by-side).
+
+## Why there is a v2 at all
+
+The previous plan delivered exactly what it scoped and deliberately excluded
+changing the look. The user saw the result and said it is cleaner but not
+beautiful — *"I was expecting more of a visual difference."* That verdict is
+correct, and the cause is nameable:
+
+**The archetype's own primary family was never implemented.** DESIGN.md's
+archetype is Ruler + Sage. Per `archetypes.md` Part C, Ruler's *primary*
+families are **Art Deco / Luxury** and **Swiss**; Data-Dense Professional is a
+*stretch* family. The shipped look was 100% Data-Dense Pro. Art Deco's own
+definition — *"deep base + metallic accent · fine rules and frame ornaments ·
+letterspaced caps · strict symmetry · generous vertical rhythm"* — describes the
+intended product almost exactly, and none of it existed except the palette.
+**The palette was already Art Deco; the composition never was.** Every container
+on the page was the same object: a rectangle, one `--panel` fill, one `--line`
+hairline, uniform padding. There was no depth, no frame, no ornament, no display
+type, and no spacing step above 16px — which is why six structurally different
+blocks read as one texture.
+
+## What v2 supersedes and what it carries forward
+
+| Section below | Status under v2 |
+|---|---|
+| `## Direction` | **Superseded** — see `## Direction (v2)`. Same feeling, different expression. |
+| `## Signature move` | **Superseded** — the gold/bone role split is *retained verbatim as a colour rule* but is no longer the signature; see `## Signature move (v2)`. |
+| `## Expressive moments` | **Amended** — the three moments stand; a fourth (the Warden's identity) is added. |
+| `## Type` — the scale table | **Extended, not replaced.** All seven `--fs-*` steps keep their names and values. Two steps are ADDED above the top. |
+| `## Type` — Georgia / mono register split | **Carried forward unchanged.** Still correct, still defended by `chapter-03-typography.md`'s own worked example. |
+| `## Color tokens` — every hex, the semantic table, the ladder maths, the neighbour-contrast evidence | **Carried forward unchanged. Not one existing hex moved.** Four new tokens are appended. |
+| `## Color tokens` — the live/dormant/locked model + the 5 required behaviour changes | **Carried forward unchanged**, plus one *new* required change (below). |
+| The `:root` block | **Appended to**, never edited. |
+| `## Canvas token module` | **Carried forward unchanged**; v2 adds `## Canvas scene spec`, which says what to DRAW with those tokens. It did not previously exist. |
+| `## Motion budget` | **Carried forward unchanged. v2 adds zero animation.** The hard veto on ceremony is why richness here is material, not motion. |
+| `## Component specs` (token tiers, dimension scale, Row / Rowlist / Chip / Meter / Arena / Allocation / `.caption` / Tab / Affordability) | **Carried forward unchanged.** v2 restyles these components; it renames, merges and removes nothing. |
+| `## Never` | **Extended** — see `## Never (v2 additions)`. |
+
+## Direction (v2)
+
+The client is a maintained instrument, not a document. Its surfaces are made of
+something: plates with a lit top edge and a dark foot, wells you look down into,
+and a single gold frame around the thing that matters. Gold is the metal in the
+chrome, not the ink in the text. The dense stat rows keep their Bloomberg
+discipline — the content is tables and it wins that vote — but the identity, the
+peaks and the primary actions are set with the ceremony an MMO raid client
+actually had. **The feeling is absence, never disrepair:** the frames are
+complete, the rules are straight, the metal is clean. Nobody else is online; the
+server is fine.
+
+**The remix** (`design-dna.md` §Remix Rules):
+
+```
+BASE       Data-Dense Professional   (content pressure: dense tables/numbers)
+BORROWS    Composition + Type voice  from Art Deco / Luxury (Ruler's own primary)
+KEEPS      Colour strategy + Motion  from the base — unchanged, not renegotiated
+DOMINANT   Composition — the frame/material/rule language is where the identity lives
+```
+
+Remix rule 4 is honoured: colour strategy does **not** borrow. Moving colour and
+composition together would unmoor the base, and the palette is not the problem.
+
+**Grounding (v2):** *an Art Deco elevator-car door's brass inlay and corner
+plates* + *a 2000s MMO raid client's boss frame*. Both are metal edges around
+something you are watching; one has ornament discipline the other never had. The
+direction that satisfies both is a frame that is precise, symmetrical and
+**complete** — which is also the mechanical answer to the no-decay veto, because
+a complete frame cannot read as a broken one.
+
+## Signature move (v2)
+
+**The Warden's frame.** Four gold corner brackets on a hairline frame, with
+**exactly one frame per surface**, drawn around the one thing that surface is
+about. On Boss it is the Warden's identity. On a surface with no hero it is drawn
+around nothing — the discipline is what makes it a signature instead of a
+texture, and "one per surface" is the rule a second designer needs.
+
+Construction: eight background layers (a horizontal arm and a vertical arm per
+corner), no extra markup, no pseudo-element, no image, no icon.
+
+```css
+.frame{position:relative;--br:linear-gradient(var(--gold),var(--gold));
+  border:var(--border-hairline) solid var(--line);
+  padding:var(--space-10) var(--space-7) var(--space-9);
+  background:
+    var(--br) 0 0/var(--space-9) var(--space-1) no-repeat,
+    var(--br) 0 0/var(--space-1) var(--space-9) no-repeat,
+    var(--br) 100% 0/var(--space-9) var(--space-1) no-repeat,
+    var(--br) 100% 0/var(--space-1) var(--space-9) no-repeat,
+    var(--br) 0 100%/var(--space-9) var(--space-1) no-repeat,
+    var(--br) 0 100%/var(--space-1) var(--space-9) no-repeat,
+    var(--br) 100% 100%/var(--space-9) var(--space-1) no-repeat,
+    var(--br) 100% 100%/var(--space-1) var(--space-9) no-repeat}
+```
+
+**No fill layer.** A frame is a frame — it sits transparently on its parent's
+plate. This rule originally carried a 9th `--panel` → `--plate-foot` gradient
+layer, which was a second application of the construction its own parent already
+had: invisible only because the colours matched, and a bevel-inside-a-bevel by
+the letter of material rule 2. Removed (review Minor).
+
+**The frame is always four corners, always symmetric, always complete.** A
+missing, thinner, or offset bracket reads as damage instantly — so the
+construction makes that unrepresentable rather than merely discouraged.
+
+The v1 signature (gold/bone are the only identity-tier warms; `warn`/`alert`/
+`copper` are functional accents that never enter an identity role) is **retained
+in full as a colour rule** under `## Gold discipline (v2)`. It stopped being the
+*signature* because a rule about which hue goes where is not a move a viewer can
+see; the frame is.
+
+## Material and depth (v2) — the language, stated so a second surface can be built from it
+
+This is the section that did not exist. It is written as three constructions,
+not as three colours, so a surface nobody has drawn yet can be built from it.
+
+**Light comes from above. Always.** Highlights are warm, shadows are cool
+(`chapter-09-color-theory.md`, hue-shifted shadows and highlights — never a
+black or white overlay).
+
+### First: the surface ramp had to be respread
+
+*Corrected after the Phase 1 review's Major.* The first version of this section
+was correct in construction and invisible in practice, for a measurable reason:
+**the four grounds were compressed into ~3 L\* of each other.** `--bg` → `--panel`
+measured **3.09 L\***, which is under the perceptual floor for a surface step. No
+bevel can make a panel read as raised when the panel and the page are the same
+colour to the eye. `--inset` was also *lighter* than `--panel` while being named
+"recessed" — a latent inversion nobody had caught.
+
+The ramp is respread across the full range the **fixed text tokens** allow. The
+ceilings are not taste, they are solved: each ground can only be as light as its
+worst text token permits at 4.5:1.
+
+| Ground | Ceiling | Bound by | Chosen | L\* |
+|---|---|---|---|---|
+| `--well` | — (darker is always safe) | — | `#05060a` | 1.4 |
+| `--bg` | L\* 3.73 | `--logline` | `#08090e` | 2.4 |
+| `--plate-foot` | L\* 8.52 | `--faint` | `#101015` | 4.8 |
+| `--inset` | L\* 8.52 | `--faint` | `#131319` | 6.1 |
+| `--panel` | L\* 8.23 | `--alert` | `#15161d` | 7.4 |
+| `--field` | L\* 13.94 | `--dim` | `#22222a` (unchanged) | 13.5 |
+
+**Physical model, deepest first: `well < bg < plate-foot < panel < field`.** A
+well is cut *below* page level; a plate sits *above* it; a control sits above
+that. Result: `--bg` → `--panel` goes **3.09 → 5.17 L\***, and `--edge-lit` →
+`--panel` goes **10.8 → 18.6 L\***.
+
+> **The lesson for anyone extending this:** on a dark ramp, WCAG contrast
+> *ratio* is the wrong instrument for judging whether two surfaces look
+> different — the `+0.05` flare term crushes every ratio between dark grounds
+> toward 1.0 (`--plate-foot` on `--panel` is 1.05:1 and clearly visible).
+> **Judge surface separation in L\*, and gate text in ratio.** Both numbers are
+> printed by `contrast.mjs`.
+
+### The three elevations
+
+| Elevation | What it is | Construction | Used for |
+|---|---|---|---|
+| **Plate** (raised) | Something sitting ON the page | **2px** warm `--edge-lit` lip at the top, vertical gradient `--panel` → `--plate-foot`, `1px` cool `--edge-shade` inset at the bottom, `--line` hairline frame | `section.game`, and (one step brighter, `--field` → `--panel`) every control: buttons, tabs, chip groups |
+| **Well** (recessed) | Something the client is looking INTO or reading FROM | the `--well` ground (below page level) with a **2px** `--edge-lit` inset at the **foot** | **every rowlist**, the canvas region, the dialogue block |
+| **Leaf** (flat) | Something living IN a well or ON a plate | no bevel, no gradient, no second border. Separated from its siblings by hairlines alone | rows, Armory cells, trophy sets, stash rows — every density surface |
+
+```css
+/* PLATE */  background:linear-gradient(var(--panel),var(--plate-foot));
+             box-shadow:inset 0 var(--space-1) 0 var(--edge-lit),
+                        inset 0 calc(var(--border-hairline) * -1) 0 var(--edge-shade);
+/* WELL  */  background:var(--well);
+             box-shadow:inset 0 calc(var(--space-1) * -1) 0 var(--edge-lit);
+/* LEAF  */  /* nothing. That is the point. */
+```
+
+**The lip is `--space-1` (2px), not 1px.** A 1px edge at 10 L\* was the review's
+Major: present in the CSS, absent from the render.
+
+**Why the well has no top shade.** For a recess lit from above, the near (top)
+inner wall is occluded and the far (bottom) inner wall catches light. The well
+ground is already the darkest surface on screen, so there is nothing left to
+shade the top with — the darkness *is* the shadow. Only the lit foot is drawn.
+This is why the well construction is not simply "the plate, inverted."
+
+### The rules that make it reproducible
+
+1. **A gradient always lights the TOP.** `--plate-foot` is *darker* than
+   `--panel`, never lighter. This is a legibility rule disguised as a lighting
+   rule: it guarantees no text ever sits on a ground lighter than the
+   AA-verified `--panel`, so a plate can be introduced anywhere without
+   re-deriving contrast. A "lit from below" plate is illegal.
+2. **Never nest a bevel inside a bevel.** A plate holds leaves; a well holds
+   content. Two beveled boxes inside each other is the nested-card tell
+   (`ai-tells.md`: Fable 5's #1 measured default, 6/6) and Tufte's redundant
+   rule line at the same time. `detect.mjs` catches it — it caught exactly this
+   during Phase 1, on `.canvasStub`, and the fix was to delete the inner border,
+   not to keep it.
+3. **Edges are drawn as background layers, not borders,** whenever the mark is
+   partial (a corner bracket, a floor line, a seam). Borders are for complete
+   rectangles only. This is what keeps rule 2 satisfiable.
+4. **A disabled control is not raised.** It drops to a flat `--panel` ground and
+   loses its bevel. The material carries the state — and it is also the only way
+   `--faint` clears AA on a control (see `## The on-field text rule`).
+5. **A live row carries the lit top edge; a dormant, struggling or locked row
+   does not.** Material is a *fifth* state channel added on top of the four the
+   ladder already had. It may never replace one.
+6. **A rowlist is a well.** This is the rule that makes the language work on a
+   hero-less surface. Training, Grind, Delve and Dungeon have no frame and no
+   display type — their depth comes from the list being visibly *cut into* the
+   plate, with flat leaf rows inside it and raised controls sitting above it.
+   Three elevations in one component, no ornament required. **Verified on
+   pixels, not asserted:** `boss.html` renders Grind's real 15-row section — the
+   same shared constant `grind.html` uses, not a lookalike — as a labelled
+   specimen, cropped at native resolution for the review.
+7. **A wrapper with no styling left is deleted, not overridden.** `.arena` was a
+   bordered box around the canvas; once the canvas region itself became the
+   well, the wrapper had nothing to do but be a nested box for `detect.mjs` to
+   flag. It is gone from the markup, and `.arena .controls` became `.controls`.
+   (DESIGN.md's own Arena component spec had already flagged the class as a
+   naming ambiguity that only ever meant "bordered panel".)
+
+### Ornament
+
+A hairline that fades in from nothing, a gold lozenge, a hairline that fades
+out. The lozenge is a **rotated square** — a drawn mark, not a glyph, not a font
+character, and categorically not a generated icon.
+
+```css
+.ornRule{display:flex;align-items:center;justify-content:center;gap:var(--space-5)}
+.ornRule::before,.ornRule::after{content:"";height:var(--border-hairline);width:35%}
+.ornRule::before{background:linear-gradient(90deg,transparent,var(--gold-dim))}
+.ornRule::after {background:linear-gradient(90deg,var(--gold-dim),transparent)}
+.ornRule i{flex:none;width:var(--space-4);height:var(--space-4);
+  transform:rotate(45deg);background:var(--gold)}
+```
+
+**Where ornament is allowed:** closing an identity block (centred, both arms),
+and opening a section heading (`h3`, lozenge leading, no arms — the heading text
+is the rule). **Nowhere else.** Ornament between arbitrary elements is filler,
+and filler is the thing that starts reading as ruin.
+
+### Rhythm
+
+The dimension scale had nothing above `--space-8` (16px), which is the second
+reason every block read as one texture: a 600px column with a 16px maximum gap
+has no way to say "these two things are far apart." Two steps are appended, by
+the same derivation rule (what the layout actually needs, named honestly):
+
+```css
+--space-9:24px;   /* block padding, frame bracket arm, section rhythm */
+--space-10:32px;  /* the outer breath: section padding-bottom, heading lead-in */
+```
+
+## Type (v2) — the display tier
+
+The seven existing steps keep their names, values and uses. **Two are appended
+above the top, and nothing below moves.**
+
+| Token | Px | Ratio to next step | Used for | Status |
+|---|---|---|---|---|
+| `--fs-colossal` | **52** | 1.44× | the once-per-screen peak: `BREACHED` | **NEW** |
+| `--fs-warden` | **36** | 1.38× | the Warden's name — the identity | **NEW** |
+| `--fs-hero` | 26 | 1.30× | the one big number per view | unchanged |
+| `--fs-masthead` | 20 | 1.25× | primary action label (was: boss name) | unchanged value, re-pointed |
+| `--fs-display` | 16 | 1.23× | section `h2`, story/dialogue | unchanged |
+| `--fs-body` | 13 | 1.18× | body text, `h3` | unchanged |
+| `--fs-small` | 11 | 1.10× | captions, mono stat rows, control labels | unchanged |
+| `--fs-label` | 10 | 1.11× | chip labels, micro-headers | unchanged |
+| `--fs-micro` | 9 | — | log header chrome | unchanged |
+
+The two new steps use **larger ratios (1.44×, 1.38×) than the existing scale's
+1.1–1.3×** on purpose — step-skipping for dominance (`techniques.md`, Ch 7: "jump
+steps in the scale when adjacent sizes look too similar"). A 20px name above a
+26px number is not a hierarchy; it is an inversion, and it was the single most
+visible defect in the pre-v2 render.
+
+`--fs-colossal` is **52px because `battle.js` already draws the canvas BREACHED
+reveal at 52px Georgia.** The DOM and the canvas now agree on where the peak is,
+which they previously did not.
+
+**Display treatment.** Gold display text is **engraved, never lit**:
+`text-shadow:0 var(--border-hairline) 0 var(--edge-shade)` — a 1px offset down,
+reading as metal cut into a plate. **A glow is banned**: it is the neon-on-dark
+AI tell (`ai-tells.md`) and it reads as a screen in trouble, which is the one
+thing this client must never look like. Offset down, never out.
+
+Tracking: `.07em` on `--fs-warden`, `.18em` on the primary action, `.14em` on tab
+labels — letterspaced caps are Art Deco's own label device and the existing
+small-caps chrome already used the technique at smaller sizes.
+
+## Gold discipline (v2)
+
+Gold is **identity only**. The complete list of things allowed to be gold:
+
+1. the Warden's name, 2. the one hero number per view, 3. the frame's brackets,
+4. the ornament lozenge, 5. an active edge (tab seam, active row, active wall),
+6. the primary action, 7. a maxed / complete state (the v1 expressive moment).
+
+Everything else is `--bone`, `--dim` or `--recede`. **`#projection` — a
+*sentence* — carried `--gold` and is the single reason none of the other four
+golds read as special.** It is now `--bone`. Gold used less reads as gold used
+more; this costs nothing and buys the whole frame.
+
+The v1 role split is retained verbatim: `warn`/`alert`/`copper` are
+functional-semantic accents and **never** enter roles 1–7 above.
+
+## The on-field text rule (a real AA failure this pass surfaced)
+
+Not on the done-when list; found by computing every text token against every
+ground it can actually render on rather than only against `--bg`/`--panel`/
+`--inset`, which is all the Phase 3 audit checked.
+
+```
+--recede on --field : 4.43:1  FAIL   (WCAG 1.4.3, 4.5:1)
+--faint  on --field : 4.02:1  FAIL
+```
+
+Both were live: `--alloc-control` resolved to `--recede` on the alloc buttons,
+and `button:disabled` set `--faint`, both over `--field` — the raised-control
+ground, which is lighter than every ground the audit tested. The rule:
+
+> **`--recede` and `--faint` are panel-family text and may never be set on
+> `--field`.** On a control ground the quiet colour is `--dim` (4.55:1).
+
+**Fixed by role, not by value** — brightening `--faint` enough to clear 4.5:1 on
+`--field` requires luminance ≥0.249, which is `--dim`'s own 0.252, collapsing the
+text hierarchy entirely. So:
+
+- **REQUIRED (applied in the mocks, not yet in `style.css`):**
+  `--alloc-control: var(--recede)` → `var(--dim)`. Still recedes against
+  `--alloc-value` (gold), so the stated intent survives.
+- **REQUIRED (applied in the mocks, not yet in `style.css`):**
+  `button:disabled` gains `background: var(--panel)` and loses its bevel — the
+  material rule 4 above. `--faint` on `--panel` clears 4.68:1.
+
+This is required behaviour change **#6**, appended to the five already listed
+under `## Color tokens`.
+
+## Colour tokens (v2 additions)
+
+**No TEXT token moved.** Four grounds were respread (see the ramp table above)
+and four tokens appended:
+
+```css
+/* CHANGED — the four grounds, respread. Every text token is unmoved; these are
+   backgrounds only, and every pair is re-gated below. */
+--bg:#08090e;          /* was #0b0c10 */
+--panel:#15161d;       /* was #13141a */
+--inset:#131319;       /* was #17171c — was LIGHTER than --panel while named
+                          "recessed"; corrected */
+--well:#05060a;        /* was #101014 */
+/* --field:#22222a unchanged — already sat at its --dim ceiling */
+
+/* NEW */
+--plate-foot:#101015;  /* a plate's foot — DARKER than --panel by construction */
+--edge-lit:#413d37;    /* warm bevel lip (hue ~30deg), L* 26 — 18.6 L* over panel */
+--edge-shade:#020308;  /* cool bevel shade, L* 0.9 — tinted, never pure #000 */
+--floor-glow:#17140d;  /* warm dark: light under the door. Canvas floor band ONLY,
+                          never a text ground */
+--fs-warden:36px; --fs-colossal:52px;
+--space-9:24px;   --space-10:32px;
+```
+
+`--edge-lit`/`--edge-shade`/`--floor-glow` are decorative bevel and atmosphere —
+WCAG 1.4.11 does not apply (the same precedent this file already set for `--line`
+and `--line-soft`). Reported anyway: `--edge-lit` on `--panel` 1.67:1 (was 1.29),
+`--edge-shade` on `--panel` 1.14:1, `--floor-glow` on `--well` 1.10:1.
+
+`--plate-foot` **is** a text ground and is gated at 4.5:1 for every text token.
+
+### Contrast evidence (v2) — computed, not asserted
+
+`node internal/mocks/contrast.mjs` — parses the `:root` that actually shipped in
+`boss.html` (rather than keeping a second, driftable copy of the hexes),
+computes every allowed text/ground pair at 4.5:1 and every non-text pair at
+3.0:1, and **exits non-zero on any miss**. Result: **48/48 gated pairs PASS.**
+
+```
+Every text token on every ground it can render on — all PASS:
+  --bg          gold 8.77  gold-dim 5.83  bone 9.50  dim 5.73  recede 5.58  faint 5.07
+  --panel       gold 7.95  gold-dim 5.29  bone 8.61  dim 5.19  recede 5.06  faint 4.59
+  --plate-foot  gold 8.37  gold-dim 5.56  bone 9.06  dim 5.46  recede 5.32  faint 4.83
+  --inset       gold 8.16  gold-dim 5.43  bone 8.84  dim 5.33  recede 5.19  faint 4.71
+  --well        gold 8.93  gold-dim 5.94  bone 9.67  dim 5.83  recede 5.68  faint 5.16
+  --field       gold 6.96  gold-dim 4.63  bone 7.54  dim 4.55   (recede/faint BANNED)
+
+  Every previously-fixed pair, re-measured, none regressed:
+  recede@panel 5.06  faint@panel 4.59  faintest@panel 3.07 (non-text 3.0 floor)
+  warn@panel 4.58    alert@panel 4.57  logline@bg 4.61     --rar-mythic unmoved
+
+  v2 additions — a rowlist is a well, so row accents now render on --well:
+  warn@well 5.14   copper@well 7.12   warn@plate-foot 4.82
+
+Banned pairings, printed every run so they cannot be quietly "fixed" by
+brightening a token instead of changing the role:
+  recede on --field 4.43   faint on --field 4.02
+```
+
+**Every previously-fixed pair moved by 0.05–0.10 and none crossed its floor.**
+`--faintest` on `--panel` is the tightest at 3.07:1 (was 3.13) — it is the
+`.locked` tab only, at the non-text 3.0 floor, and `contrast.mjs` gates it on
+every run, so any future drift fails the build rather than shipping.
+
+## Canvas scene spec — what the arena should DRAW
+
+The arena stays a labelled placeholder in the mock (it is canvas, not CSS), but
+it is the hero element of the hero tab and it was the emptiest box on the page.
+`JOURNEY.md` says what it must *convey*; this says what it should *look like*.
+`battle.js` consumes it through the existing `theme()` bridge — no new token
+mechanism.
+
+**The arena draws a door, not a stage.** Back to front:
+
+| Layer | What | Drawn with |
+|---|---|---|
+| Ground | `--well`, with a warm band rising from the floor line — light escaping under the door | `--well` → `--floor-glow` vertical gradient, bottom ~24% |
+| The door | a tall leaf occupying the centre ~60% of the frame, floor to top edge, with two vertical inlay rules — an Art Deco door leaf | `--field` fill, `--line` edge, `--gold-dim` inlay |
+| **The HP meter** | **the door's own vertical seam of light**, full height at 100%, shortening from the top down as HP drains. Same Depletion semantics as today (one-shot per wall, never refills mid-fight) — only the FORM changes | `--meter-fill-depletion`, swapping to `--meter-fill-depletion-crisis` under 15%, when the floor band also doubles |
+| The Warden | a silhouette standing **in front of** the door, ~55% of frame height, flat dark mass with a rim-light on the side facing the floor glow | `--bg` mass, `--gold-dim` rim |
+| The player | a small silhouette at the lower-left, ~18% of frame height. **The scale difference is the story** | `--bg` mass, `--bone` rim |
+| Damage | crit-tier floaters rising from the Warden's midline | the existing `--dmg-text`/`--crit-gold`/`--super-crit` canvas tokens, unchanged |
+| BREACHED | the door leaf parts by ~14% of its width; the well behind it fills with light; `--fs-colossal` Georgia over it | `--gold-bright`, the existing 6s non-blocking reveal, unchanged |
+
+**The no-decay rule, mechanically:** the Warden's progressive damage is drawn as
+**fracture lines of LIGHT coming through the silhouette**, never as chips,
+notches or missing material. Light-through reads as "something is giving way";
+material-removed reads as "this is broken." Nothing in the client's own chrome —
+frames, rules, plates — ever fractures at all. Damage happens to the Warden. The
+client is fine.
+
+**No ornament inside the canvas.** The frame around the aperture carries the
+ornament; the canvas is the one place this design is allowed to be pictorial, and
+mixing the two makes both look like decoration.
+
+**Aperture ratio changed 16/7 → 16/10.** A letterbox cannot hold a door and a
+standing figure. This is a DOM change (`.canvasStub`) and a canvas-sizing note,
+not a semantics change.
+
+**The aperture IS the well.** `.canvasStub` carries the well construction
+directly; the `.arena` wrapper that used to box it is deleted (material rule 7).
+One nesting level: section plate → canvas well. The floor band and the gold-dim
+floor line are background *layers* on the well, not borders (material rule 3).
+
+## Expressive moments (v2)
+
+The three v1 moments stand unchanged (BREACHED reveal, enhance feedback,
+maxed/complete states). One is added:
+
+- **The Warden's identity** — the framed name at `--fs-warden`, the ornament
+  closing it. Amplitude: the highest on any non-transient surface, because it is
+  the only permanent thing on the tab that is about a *person* rather than a
+  number. It is a static moment, not an animated one: **v2 adds zero motion.**
+
+## Never (v2 additions)
+
+Carried forward in full, plus:
+
+- **No glow on gold, ever** — display gold is engraved (1px offset down in
+  `--edge-shade`). A glow is the neon-on-dark tell and it reads as a failing
+  screen.
+- **No texture, grain, scanline or CRT overlay.** Considered explicitly and
+  rejected: a scanline reads as a monitor in trouble, and grain reads as dust.
+  The material comes from bevel and frame, which are signs of *maintenance*.
+- **No asymmetric, partial or "weathered" frame.** Four corners, complete.
+- **No second frame on a surface.** One per surface or it is texture.
+- **No bevel inside a bevel** (rule 2 above) — the nested-card tell.
+- **No ornament as filler** between arbitrary elements.
+- **No raster asset and no icon of any kind**, generated or otherwise. Every mark
+  in v2 is a gradient, a border, a rotated square or a letterform. `internal/art/`
+  was available and deliberately not used: nothing here needs a bitmap, and a
+  bitmap corner bracket would be worse, heavier and untokenizable.
+- **No lit-from-below plate** (rule 1 above) — it is a legibility failure wearing
+  a lighting mistake.
+
+## Open questions (v2)
+
+- **The other five surfaces have the new ramp but not the v2 construction.** The
+  surface respread lives in the shared `TOKENS` (it is a correction to locked
+  tokens and a root cause, so scoping it to one page would have been a symptom
+  fix); `CSS_V2` — the lip, the well, the frame, the ornament, the display type
+  — is still Boss-only. So `grind.html` today shows what the ramp alone buys and
+  `boss.html`'s specimen shows what the ramp **plus** the construction buys; the
+  gap between those two renders is exactly Phase 3's remaining work. Phase 3
+  pastes `CSS_V2` into the shared `CSS`, drops the `v2` flag, and deletes the
+  split. Marked with a `ponytail:` comment at the seam.
+- **Nothing here is applied to `style.css` yet.** v2 inherits v1's position: the
+  DESIGN.md gate holds until the user confirms the direction on real pixels. The
+  CSS above is paste-ready.
+- **Required behaviour change #6** (the on-field text rule) is a genuine live AA
+  failure in the shipped `style.css`, independent of whether the look is
+  approved. It should ship even if v2 does not.
+
+---
 
 ## Direction
 
