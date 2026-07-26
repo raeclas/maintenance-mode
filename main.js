@@ -633,6 +633,10 @@ for (const m of inst.MECHANICS) {
   const input = row.querySelector("input");
   const setParty = n => {
     if (state.instance.running) return; // the party is locked once they're inside
+    // Same defect as the zone rows had: the duty's <input> disables itself
+    // when the duty is locked, but the ± / max / 0 buttons stayed clickable
+    // and wrote through. Gate the setter, not each control.
+    if (!inst.dutyUnlocked(state, m)) return;
     const others = inst.DUTIES.reduce((s, d) => s + (d === m.duty ? 0 : state.instance.party[d] || 0), 0);
     state.instance.party[m.duty] = Math.max(0, Math.min(Math.floor(n) || 0, Math.floor(state.bots.pop) - others));
   };
@@ -992,7 +996,12 @@ function render() {
     const n = (state.bots.alloc.zones[i] || 0) * scale;
     const zr = unlocked ? bots.botZoneRates(state.bots, i, n, d) : { held: false, kps: 0 };
     zoneRows[i].classList.toggle("active", unlocked && n > 0 && zr.held);
-    zoneRows[i].classList.toggle("locked", !unlocked || (n > 0 && !zr.held));
+    // Three states, not two. A zone you cannot reach and a zone you are
+    // actively failing to hold used to share `locked` and its 0.45 dim, so a
+    // live squad losing money looked exactly like content you have not
+    // unlocked. `struggling` is live-and-failing: full opacity, --warn edge.
+    zoneRows[i].classList.toggle("locked", !unlocked);
+    zoneRows[i].classList.toggle("struggling", unlocked && n > 0 && !zr.held);
     const stat = $(`zs${i}`);
     if (!unlocked) {
       stat.textContent = `[LOCKED] break W${farm.zoneUnlockClears(i)}`;
@@ -1003,7 +1012,11 @@ function render() {
     } else {
       const sat = farm.saturation(zr.squadDps, z.mobHp), bias = farm.lootBias(sat);
       const satTerm = bias > 0 ? ` · <span class="sat">SAT ×${sat.toFixed(1)} → +${bias} bands</span>` : "";
-      stat.innerHTML = `${zr.kps.toFixed(2)} kills/s${zr.kps >= farm.KILL_CAP ? " · CAP" : ""} · ${fmt(zr.copperPerSec)}c/s${satTerm}`;
+      // The copper multiplier rides as its own visible term. The rate is the
+      // final banked number now, and guideline 5 wants the whole product shown,
+      // not a total with a factor folded invisibly into it.
+      const multTerm = zr.copperMult > 1.005 ? ` (×${zr.copperMult.toFixed(2)})` : "";
+      stat.innerHTML = `${zr.kps.toFixed(2)} kills/s${zr.kps >= farm.KILL_CAP ? " · CAP" : ""} · ${fmt(zr.copperPerSec)}c/s${multTerm}${satTerm}`;
     }
     // kill-cycle bar: integrate phase incrementally (speed = kps, one fill per
     // kill). NOT frac(now×kps) — that spins wildly whenever kps drifts (pop

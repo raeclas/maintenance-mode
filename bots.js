@@ -113,8 +113,23 @@ export function freeBots(b) {
 
 // Hard-clamped to the bots actually available. Bans can still drag pop
 // below committed numbers afterwards — effScale covers that case.
+// Is this allocation target open yet? Zones gate on door progress, the script
+// ladders on their own unlocked count, the enhance squad not at all.
+export function allocUnlocked(state, key) {
+  const [group, idx] = key.split(".");
+  if (idx === undefined) return true;              // enh — no ladder
+  if (group === "zones") return zoneUnlocked(state.cleared?.length, Number(idx));
+  return Number(idx) < (state.bots[group]?.unlocked ?? 0);
+}
+
 export function setAlloc(state, key, n) {
   const b = state.bots;
+  // The gate lives HERE, not in the wiring. A locked row used to accept input
+  // and silently discard it — the number went in, the bots never moved, and
+  // nothing said why. Every path (the ± buttons, cap, max, zero, and the
+  // typed input) routes through this function, so one guard closes all of them
+  // and any future caller too.
+  if (!allocUnlocked(state, key)) return;
   const { arr, k } = allocRef(b, key);
   n = Math.max(0, Math.floor(n) || 0);
   const others = allocTotal(b) - arr[k];
@@ -147,11 +162,18 @@ export function botZoneRates(b, zi, n, player) {
   const squadDps = n * botDps(b, player);
   const held = squadDps >= z.gate;
   const kps = held ? Math.min(MAX_FILLS_PER_S, squadDps / z.mobHp) : 0;
+  // copperPerSec is the FINAL rate — the multiplier is folded in here rather
+  // than at credit time. It used to be the base, so the client printed a
+  // number the player never actually banked, and the sim under-counted zone
+  // income by the same factor. copperMult is returned alongside so a display
+  // can show the term instead of hiding it inside the product.
+  const copperMult = player.copperMult || 1;
   return {
     held,
     squadDps,
     kps,
-    copperPerSec: kps * z.copper,
+    copperMult,
+    copperPerSec: kps * z.copper * copperMult,
   };
 }
 
@@ -225,7 +247,7 @@ function tickChunk(state, dtS, onEvent, rng) {
     if (n <= 0 || !zoneUnlocked(state.cleared?.length, zi)) continue; // locked by boss progress
     const r = botZoneRates(b, zi, n, player);
     if (!r.held) continue;
-    state.copper += r.copperPerSec * dtS * (player.copperMult || 1); // +copper affixes
+    state.copper += r.copperPerSec * dtS; // copperMult already folded into the rate
     const np = r.kps * dtS * DROP_CHANCE * delveBonus(state, "loot"); // Delve "salvage beacon" → +drops
     let drops = Math.floor(np) + (rng() < np - Math.floor(np) ? 1 : 0);
     const bias = lootBias(saturation(r.squadDps, zones[zi].mobHp)); // over-farm → richer loot

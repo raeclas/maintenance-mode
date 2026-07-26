@@ -129,15 +129,21 @@ function drawBars(state) {
   ctx.fillRect(20, H - 30, W - 40, 14);
   ctx.fillStyle = remain <= 0 ? "#3d3a26" : remain < 0.15 ? "#ffd700" : "#c9a94b";
   ctx.fillRect(20, H - 30, (W - 40) * remain, 14);
-  ctx.fillStyle = "#0d0d10";
-  ctx.font = "bold 10px monospace";
-  ctx.textAlign = "left";
-  if (state.boss.broken) ctx.fillText("BREACHED", 24, H - 19);
-  if (!state.boss.broken) {
-    ctx.fillStyle = "#0d0d10";
-    ctx.textAlign = "right";
-    ctx.fillText(`${(remain * 100).toFixed(1)}%`, W - 24, H - 19);
-  }
+  // The in-bar text is GONE, and the contrast defect went with it.
+  //
+  // It drew "{n}%" right-aligned at the bar's right end in #0d0d10. The fill
+  // grows from the LEFT, so for all but the first few percent of a fight that
+  // text sat on the empty #22222a track: 1.23:1, illegible, on the hero
+  // element of the hero tab. BREACHED had the same problem — at remain 0 the
+  // fill has no width, so it too rendered near-black on the track.
+  //
+  // Recolouring is the wrong fix twice over. No single colour clears both
+  // grounds the label can land on (dark-on-gold and light-on-track are
+  // opposite requirements), and #depth in the DOM already prints BOTH strings
+  // verbatim — main.js:872 "BREACHED", main.js:879 the same percentage. So
+  // this was a duplicated fact as well as an unreadable one, and JOURNEY.md
+  // gives every fact exactly one owner. The bar is the picture; #depth is the
+  // number. That is also what this function's own comment always claimed.
 }
 
 export function renderBattle(state) {
