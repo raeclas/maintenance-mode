@@ -626,6 +626,10 @@ h3 .sub{flex-basis:100%}
 .controls{border-top:var(--border-hairline) solid var(--line);
   padding-top:var(--space-7);margin:var(--space-8) 0 var(--space-5);
   gap:var(--space-4) var(--space-7)}
+/* BREACHED is the wall's peak moment — centre it and let it own the row
+   rather than sitting flush-left in a baseline flex line. */
+.controls:has(.breached){flex-direction:column;align-items:center;
+  text-align:center}
 
 /* ── 7. NAV + WALL SELECTOR — a seam, not a border swap ───────────────────
    An MMO client's active tab is lit along its top edge. That is a second,
@@ -797,7 +801,7 @@ const zoneRow = (z, i) => {
   const common = { name, sub: `${mob} &middot; ${hp} HP`, gain: `${copper}c per kill`, gainSub: `IP ${ip}` };
   if (i >= 10) return row({ ...common, cls: "locked", stat: "locked &middot; needs 4 doors open, you have 1" });
   if (i === 2) return row({ ...common, cls: "active", allocHtml: alloc(20),
-    stat: "50 kills/s &middot; at the 50/s cap &middot; 4,650c/s (&times;1.24 from gear, trophies and Armory) &middot; overkill &times;125.1 &rarr; drops roll 3 bands higher (up to 3)", fill: 100 });
+    stat: "50 kills/s CAPPED &middot; 5,766c/s (&times;1.24) &middot; overkill &times;125.1", fill: 100 });
   if (i === 9) return row({ ...common, cls: "struggling", allocHtml: alloc(15),
     stat: "too weak to hold &mdash; 1,172,556 damage/s of the 1,700,000 this zone needs", fill: 0 });
   return row({ ...common, cls: "dormant", allocHtml: alloc(0, []), stat: "no bots here", fill: 0 });
@@ -901,9 +905,7 @@ const boss = page({
 
     <div class="controls">
       <span id="depth" class="breached">BREACHED</span>
-      <span class="caption">The door is open. Keep fighting it for set pieces:
-        one roll every 30s, 25% chance each of a piece you don't own yet.
-        1 of 7 recovered &mdash; see the set on the Player tab.</span>
+      <span class="caption">Set pieces 1 of 7 &mdash; on the Player tab.</span>
     </div>
   <div class="progress">
     <div class="caption">The door stands open.</div>

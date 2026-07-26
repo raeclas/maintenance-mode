@@ -579,6 +579,10 @@ h3 .sub{flex-basis:100%}
 .controls{border-top:var(--border-hairline) solid var(--line);
   padding-top:var(--space-7);margin:var(--space-8) 0 var(--space-5);
   gap:var(--space-4) var(--space-7)}
+/* BREACHED is the wall's peak moment — centre it and let it own the row
+   rather than sitting flush-left in a baseline flex line. */
+.controls:has(.breached){flex-direction:column;align-items:center;
+  text-align:center}
 
 /* ── 7. NAV + WALL SELECTOR — a seam, not a border swap ───────────────────
    An MMO client's active tab is lit along its top edge. That is a second,
@@ -702,9 +706,7 @@ different state, not a duplicated fact. The second is <b>frontier broken</b>, th
 
     <div class="controls">
       <span id="depth" class="breached">BREACHED</span>
-      <span class="caption">The door is open. Keep fighting it for set pieces:
-        one roll every 30s, 25% chance each of a piece you don't own yet.
-        1 of 7 recovered &mdash; see the set on the Player tab.</span>
+      <span class="caption">Set pieces 1 of 7 &mdash; on the Player tab.</span>
     </div>
   <div class="progress">
     <div class="caption">The door stands open.</div>
@@ -760,7 +762,7 @@ unlock condition. Three independent channels per state &mdash; edge, type, contr
   <button>&minus;</button><input value="20" readonly>
   <button>+</button><button>cap</button><button>&ctdot;</button>
 </span></div>
-    <div class="rowStat">50 kills/s &middot; at the 50/s cap &middot; 4,650c/s (&times;1.24 from gear, trophies and Armory) &middot; overkill &times;125.1 &rarr; drops roll 3 bands higher (up to 3)</div>
+    <div class="rowStat">50 kills/s CAPPED &middot; 5,766c/s (&times;1.24) &middot; overkill &times;125.1</div>
     <div class="rowBar"><div class="rowFill" style="width:100%"></div></div>
   </div><div class="row dormant">
     <div class="rowName">Cinder Steppe<span class="sub">Steppe Charger &middot; 700 HP</span></div>
