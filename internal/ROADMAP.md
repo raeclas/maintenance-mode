@@ -42,38 +42,52 @@ page to 434px.
 `npm test` and `npm run sim` green throughout, `baseline.json` unchanged — no
 gameplay code moved in any of the six.
 
-### THE QUEUE — 6 of 8 integration defects still open
+### THE QUEUE — CLOSED. All 8 integration defects are fixed.
 
-All are real defects in the SHIPPED game, independent of any redesign. **#6
-(`#logHead` `#4e7a5e`) and #8 (`rarity.js` mythic) were closed** during the
-integration pass — #6 by deleting the element with the shell prompt, #8 by
-lifting epic AND mythic to their v4 values.
+`#6` and `#8` closed during the integration pass; the other six in `a85c8d1`.
+Kept here as the record of what they were, because several were long-lived and
+the reasoning is worth not re-deriving.
 
-1. **`battle.js:132`** draws the boss HP label `#0d0d10` on the `#22222a`
-   track — **1.23:1**. Legible only where the gold fill sits behind it, so it
-   degrades as HP drops. The hero element of the hero tab.
-2. **`bots.js:154` copper is BASE, not final.** `copperPerSec = kps * z.copper`;
-   `player.copperMult` is applied separately at credit time (`bots.js:228`), so
-   the client prints a rate the player never banks. **The only defect here that
-   lies about a number the player optimises against.** A faucet display —
-   re-run the sim in the same commit.
-3. **`bots.js:116` `setAlloc` has no lock gate** — locked rows accept
-   allocation input and silently discard it.
-4. **`main.js:634` `setParty` checks `running` but never `dutyUnlocked`** —
-   Dungeon duty buttons stay clickable while their sibling `<input>` correctly
-   disables.
-5. **`main.js:995` conflates two states** — `toggle("locked", !unlocked || (n > 0
-   && !zr.held))` gives a genuinely locked zone and a live manned zone that
-   cannot hold identical treatment. Split into `locked` and a `struggling`
-   class at full opacity with `--warn`. DESIGN.md already specs `struggling`.
-6. ~~`style.css` `#logHead`~~ — **CLOSED**, element deleted with the shell prompt.
-7. **`style.css:888,891` `.pip.miss`** uses `--faintest` (3.04:1) on genuine
-   10px text, and `cursor: help` promises a tooltip that does not exist.
-8. ~~`rarity.js` mythic~~ — **CLOSED**, epic and mythic both lifted to v4.
+1. **Boss HP label, 1.23:1** — `battle.js` drew the percentage right-aligned at
+   the bar's right end in `#0d0d10` while the fill grows from the LEFT, so it
+   sat on the empty `#22222a` track for most of a fight. **Deleted rather than
+   recoloured:** no single colour clears both grounds it can land on, and
+   `#depth` already prints both that percentage and `BREACHED` verbatim
+   (`main.js:872`, `:879`). It was a duplicated fact as well as an unreadable
+   one. The bar is the picture, `#depth` is the number.
+2. **Copper rate was BASE, not final** — `copperMult` was applied at credit
+   time, so the client printed a rate the player never banked. Folded into
+   `botZoneRates`; the Grind row shows the multiplier as its own trailing term.
+   No baseline drift: the sim consumed the same base figure, but its EV gear
+   model rolls only `atkFlat`/`atkPct`, so `copperMult` is always 1 there.
+   **The sim's copper income is a lower bound by construction.**
+3. **`setAlloc` had no lock gate** — locked rows took input and silently
+   discarded it. Gated in `setAlloc` itself, so every path (± / cap / max /
+   zero / typed input, and any future caller) is covered by one guard.
+4. **`setParty` ignored `dutyUnlocked`** — same defect in the Dungeon; the
+   `<input>` disabled itself while the buttons wrote through. Gated the setter.
+5. **Grind conflated `locked` with live-and-failing** — both got 0.45 dim, so a
+   squad losing money looked like unreachable content. Split out `struggling`
+   (full opacity, `--warn`). DESIGN.md had specified it; the CSS lived in the
+   mock's base block and had never been ported.
+6. **`#logHead` `#4e7a5e`** (3.97:1) — closed by deleting the element with the
+   shell prompt.
+7. **`.pip.miss`** `--faintest` (3.04:1) on 10px text → `--faint` (4.68:1), and
+   `cursor: help` dropped — it promised a tooltip `main.js` never renders.
+8. **`rarity.js` mythic** — closed; epic AND mythic lifted to their v4 values.
 
-Dead CSS confirmed by grep, safe to delete: `.ztable`, `#pullBtn`,
-`#ticketGain`, `#tierAtk`/`#tierSpeed`, `#gmSec`/`#gmPanel`,
-`.tier-risk`/`.tier-nightmare`.
+**Dead CSS deleted** in the same commit: `#pullBtn`, `#ticketGain`, `#gmSec`,
+`#gmPanel`, `#tierAtk`, `#tierSpeed`, `.ztable`.
+
+**Two corrections to the old "confirmed by grep, safe to delete" list — it was
+wrong, and in an instructive way.** `.tier-risk` and `.tier-nightmare` are
+LIVE: `main.js` builds them as `` `tier-${enh.zone(item.plus)}` ``, so a grep
+for the literal class name cannot see them. And `.ztable .sub, .sub` is a
+shared selector — `.sub` is used everywhere, so only the `.ztable` half went.
+**Composed class names and shared selectors are exactly what a literal grep
+misses**; the same failure mode as the copy sweep that walked a table instead
+of the rendered output.
+
 
 ### Open with the user, not with the code
 
@@ -106,14 +120,14 @@ Dead CSS confirmed by grep, safe to delete: `.ztable`, `#pullBtn`,
   and produced a tutorial in every HUD. Fixed terms → ledger table, state →
   short line, mechanic explanation → Help.
 
-## Where the build stands (game code as of `78e900a`)
+## Where the build stands (game code as of `a85c8d1`)
 
 Playable arc: intro attempt 0.0008% → unlock → bot swarm economy → gear/
 Armory ranks → Warden health whittles down at Combat Power → Dungeon runs
 spend the swarm for loot. W1 breaks at **11.8h (sim EV)**; sim flags it as
 slightly under the 12h–2d target — deep Wardens stretch far longer.
 
-All on `staging` (Pages serves it); **`main` lags 94 commits** pending user
+All on `staging` (Pages serves it); **`main` lags 96 commits** pending user
 approval — fast-forward main once the current staging build is approved.
 
 Tabs, in unlock order: **Boss · Training · Grind · Player · Delve · Dungeon ·
