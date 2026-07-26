@@ -231,4 +231,46 @@ Dungeon still needs both idle and in-progress states.
 
 ## Execution log
 
-_(populated by `/design-for-ai:build`)_
+### Phase 1: Visual DNA + Boss surface (Gate: Full)
+- [x] BUILD v2 (Art Deco reading of Ruler+Sage) — commit `9bc43b4`
+- [x] REVIEW v2: PASS with one Major — the material/depth layer was
+      imperceptible, and since frame + display type are hero-only, the five
+      list surfaces would have inherited only the invisible half. Closed:
+      the whole surface stack was compressed into ~3 L\* (`bg→panel` 3.09,
+      under the perceptual floor), `--inset` was *lighter* than `--panel`
+      while named "recessed", and the instrument was wrong — WCAG's `+0.05`
+      flare term crushes dark-on-dark ratios toward 1.0, so a 1.04:1 surface
+      pair read as fine when it meant invisible. **Surface separation is an
+      L\* question; only text is a ratio question.** Ramp respread to 5.17 L\*.
+- [x] USER REJECTED v2: *"something about the script and styling irks me
+      still — the early MMO UI vibe isn't there."*
+- [x] Copy fixes from the same review pass — commits `eba1698`, `9e2f394`,
+      `3b3f681`. Four blocks hand-fixed, all one root cause: Phase 5 of the
+      previous plan wrote PROSE for content that is TABLES, because its brief
+      said "spell out numbers and consequences". Also surfaced a real defect
+      — `bots.js:154` computes `copperPerSec` as base, `copperMult` is applied
+      at credit time, so the shipped game prints a copper rate the player
+      never banks (integration-pass item #8).
+- [x] BUILD v3 (MapleStory construction on the dark ramp) — commit `066b5ec`
+- [x] USER: **"acceptable for now"** — qualified acceptance, NOT sign-off.
+      Treat the direction as provisional; revisit before it is spent on all
+      six surfaces if the user's read changes.
+
+**Why v3 works where v2 did not:** the archetype was re-derived rather than
+defended. Ruler's documented gravity — deep tones, formal symmetry, serifs,
+luxury restraint — describes a bank, and it produced a look rejected twice.
+**Everyman + Sage** is the honest read: this client's relationship with its
+last player is belonging, not prestige, and a warm perfectly-working client
+with nobody in it is a sadder object than a cold austere one. Everyman's
+Playful Geometric family legitimately supplies the chunky rounded
+construction; Data-Dense Professional stays the base because the content is
+still tables; Sage keeps the fully-displayed numbers.
+
+**State at pause:** only `boss.html` carries v3. The other five took a single
+`--font-body` token line and nothing else. The Grind specimen inside
+`boss.html` is the list-surface preview.
+
+**Carried forward, recorded not hidden:** Maple's alternating row stripes are
+skipped — on this ramp the only legal alternation is ~1 L\*, invisible, and
+brightening the ground to make it visible would open un-gated accent pairs
+for a stripe nobody can perceive.
