@@ -1550,6 +1550,31 @@ mixing the two makes both look like decoration.
 standing figure. This is a DOM change (`.canvasStub`) and a canvas-sizing note,
 not a semantics change.
 
+**IMPLEMENTED 2026-07-26, with four deviations found on the rendered canvas.**
+This section was written against mocks and had never been run; `battle.js` was
+still drawing v1 hexes, which is the real reason the arena looked foreign.
+Two things it cites did not exist and were built: the `theme()` bridge (it
+reads the tokens off the document, so canvas and DOM cannot disagree), and
+`--meter-fill-depletion` / `-crisis` (aliases of `--gold` / `--gold-bright`,
+so no new hex entered the palette).
+
+1. **The floor glow is a gradient in BOTH directions, not a fill below the
+   line.** Filling everything under `FLOOR` with `--floor-glow` made a flat
+   olive slab that read as carpet. Light pools at the seam and falls off.
+2. **The Warden stands off the door's centre**, not on it — centred, the mass
+   completely occluded the seam of light, hiding the HP meter behind the thing
+   whose HP it is.
+3. **The Warden has two lit eyes** in `--w-active`. "Flat dark mass" taken
+   literally is a void with no character; the sprite this replaced at least
+   looked back at you. Two pixels of the door's own hue, still light-through
+   rather than detail-on-the-mass.
+4. **Floaters spawn above the silhouette**, not at its midline — inside the
+   mass their outline (`--well`) had nothing to separate them from.
+
+**Still open on taste:** the composition reads more as "panels with a lit seam"
+than as a door, and the areas outside the leaves are dead. Not a spec failure —
+a judgement the user has not made yet.
+
 **The aperture IS the well.** `.canvasStub` carries the well construction
 directly; the `.arena` wrapper that used to box it is deleted (material rule 7).
 One nesting level: section plate → canvas well. The floor band and the gold-dim

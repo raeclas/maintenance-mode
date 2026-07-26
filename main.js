@@ -4,7 +4,7 @@ import { load, save, wipe, exportSave } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { bosses, getBoss } from "./bosses.js";
 import { drain, farmTick, timeToKill } from "./pull.js";
-import { initBattle, renderBattle, notifyBreak, notifyEnhance } from "./battle.js";
+import { initBattle, renderBattle, notifyBreak, notifyEnhance, refreshTheme } from "./battle.js";
 import { derive } from "./stats.js";
 import { critFactor } from "./crits.js";
 import * as bots from "./bots.js";
@@ -50,6 +50,7 @@ function farmRecord() { return { hp: 0, broken: true, nearSaid: true, farmCarry:
 function setWardenHue(wall) {
   const w = Math.max(1, Math.min(10, wall | 0)); // walls are 1-indexed; --w1..--w10
   document.documentElement.style.setProperty("--w-active", `var(--w${w})`);
+  refreshTheme(); // the canvas reads --floor-glow and --w-active off the document
 }
 
 function refreshBoss() {
@@ -950,10 +951,13 @@ function render() {
     rigBtns[u.id].textContent = `${fmt(cost)}c`;
     buyState(rigBtns[u.id], state.copper >= cost);
   }
+  // script and clock now live on their own rig rows, so repeating them here
+  // was the same fact printed twice on one surface. What is left is the only
+  // thing this line ever owned: attrition, and the shortfall when committed
+  // bots exceed the population bans have left you.
   const scale = bots.effScale(b);
   const scaled = scale < 0.995 ? ` · short ${((1 - scale) * 100).toFixed(0)}%` : "";
-  $("rigStats").textContent =
-    `script ×${bots.botPower(b).toFixed(2)} · clock ×${bots.botSpeed(b).toFixed(2)} · lost to bans ${Math.floor(b.banned)}${scaled}`;
+  $("rigStats").textContent = `lost to bans ${Math.floor(b.banned)}${scaled}`;
   $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
 

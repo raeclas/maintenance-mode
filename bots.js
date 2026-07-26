@@ -107,11 +107,15 @@ export const RIG = [
   { id: "create", name: "account creator", base: 500, growth: 1.7,
     at: b => `${Math.round(createRate(b))}/h`,
     step: () => `+${Math.round(CREATE_PER_H * CREATE_PER_RANK)}/h` },
+  // NOT "atk"/"haste" — those are the CHARACTER's stats on the Player tab and
+  // these are different numbers. A bot borrows 10% of your atk and 10% of your
+  // hits/s; script and clock are the multipliers on top of that borrowed pair.
+  // "script" and "clock" are the words the rig readout already used.
   { id: "power", name: "script version", base: 200, growth: 1.6,
-    at: b => `×${botPower(b).toFixed(2)} atk`,
-    step: () => `+${POWER_PER_RANK.toFixed(2)} atk` },
+    at: b => `script ×${botPower(b).toFixed(2)}`,
+    step: () => `+${POWER_PER_RANK.toFixed(2)} script` },
   { id: "speed", name: "overclock", base: 300, growth: 1.7,
-    at: b => `×${botSpeed(b).toFixed(2)} clock`,
+    at: b => `clock ×${botSpeed(b).toFixed(2)}`,
     step: () => `+${SPEED_PER_RANK.toFixed(2)} clock` },
 ];
 export const RIG_BY_ID = Object.fromEntries(RIG.map(u => [u.id, u]));

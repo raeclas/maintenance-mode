@@ -99,6 +99,11 @@
   --chip-value:var(--bone); --chip-value-emphasis:var(--gold); --chip-label:var(--dim);
   --chip-pad:var(--space-1) var(--space-8);
   --chip-group-pad:var(--space-2) var(--space-1);
+  /* The arena HP meter — the door seam of light (DESIGN.md "The arena draws
+     a door, not a stage"). Aliases of already-gated colours: no new hex enters
+     the palette, and the canvas agrees with the DOM on what gold means. */
+  --meter-fill-depletion:var(--gold);
+  --meter-fill-depletion-crisis:var(--gold-bright);
   --meter-fill-cycle:var(--gold);      --meter-track-cycle:var(--space-1);
   --meter-fill-progress:var(--gold-dim); --meter-track-progress:var(--space-2);
   --meter-fill-progress-maxed:var(--gold);
@@ -1354,18 +1359,18 @@ section.game.locked .glyph{color:var(--faint);background:var(--panel);
       <span class="rowStat">rank 3</span>
       <button class="affordable">12,069c</button>
     </div><div class="row">
-      <span class="rowName">script version<div class="sub">&times;1.75 atk</div></span>
-      <span class="rowGain">+0.25 atk/rank</span>
+      <span class="rowName">script version<div class="sub">script &times;1.75</div></span>
+      <span class="rowGain">+0.25 script/rank</span>
       <span class="rowStat">rank 5</span>
       <button class="affordable">819c</button>
     </div><div class="row">
-      <span class="rowName">overclock<div class="sub">&times;1.80 clock</div></span>
+      <span class="rowName">overclock<div class="sub">clock &times;1.80</div></span>
       <span class="rowGain">+0.20 clock/rank</span>
       <span class="rowStat">rank 4</span>
       <button class="affordable">2,506c</button>
     </div>
   </div>
-  <div class="sub">lost in the Dungeon 47</div>
+  <div class="sub">lost to bans 47</div>
   <div class="barTrack"><div class="barFill" style="width:93%"></div></div>
   
   <div class="sub">231 of 248 slots filled</div>

@@ -115,6 +115,11 @@ const TOKENS = `
   --chip-value:var(--bone); --chip-value-emphasis:var(--gold); --chip-label:var(--dim);
   --chip-pad:var(--space-1) var(--space-8);
   --chip-group-pad:var(--space-2) var(--space-1);
+  /* The arena HP meter — the door seam of light (DESIGN.md "The arena draws
+     a door, not a stage"). Aliases of already-gated colours: no new hex enters
+     the palette, and the canvas agrees with the DOM on what gold means. */
+  --meter-fill-depletion:var(--gold);
+  --meter-fill-depletion-crisis:var(--gold-bright);
   --meter-fill-cycle:var(--gold);      --meter-track-cycle:var(--space-1);
   --meter-fill-progress:var(--gold-dim); --meter-track-progress:var(--space-2);
   --meter-fill-progress-maxed:var(--gold);
@@ -1821,8 +1826,8 @@ const training = page({
   <div class="rowlist">
     ${[["multiclient", "248 slots", "+50 slots", 4, "119,647c", false],
        ["account creator", "240/h", "+30/h", 3, "12,069c", true],
-       ["script version", "&times;1.75 atk", "+0.25 atk", 5, "819c", true],
-       ["overclock", "&times;1.80 clock", "+0.20 clock", 4, "2,506c", true]]
+       ["script version", "script &times;1.75", "+0.25 script", 5, "819c", true],
+       ["overclock", "clock &times;1.80", "+0.20 clock", 4, "2,506c", true]]
       .map(([name, at, step, rank, cost, afford]) => `<div class="row">
       <span class="rowName">${name}<div class="sub">${at}</div></span>
       <span class="rowGain">${step}/rank</span>
@@ -1830,7 +1835,7 @@ const training = page({
       <button${afford ? ` class="affordable"` : ""}>${cost}</button>
     </div>`).join("")}
   </div>
-  <div class="sub">lost in the Dungeon 47</div>
+  <div class="sub">lost to bans 47</div>
   <div class="barTrack"><div class="barFill" style="width:93%"></div></div>
   ${/* RELOCATED (Phase 2 table, Training/#popFill row): only the differentiation
         clause moves — "this bar is every bot you own; the counter at the top of
