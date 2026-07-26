@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tab row specimen &mdash; DW-2.4 (Phase 2, seven-tab re-fit)</title>
+<style>
+/* Tokens copied verbatim from internal/mocks/build.mjs TOKENS + TOKENS_V3 —
+   only the subset the tab button and page-shell rules actually reference.
+   Not a new palette: reuse, per the phase's own token-reuse rule. */
+:root{
+  --gold:#c9a94b; --gold-dim:#9a8a5a; --on-gold:#0d0d10; --bone:#bcb2a2;
+  --dim:#838a97; --recede:#87878f; --faint:#808086; --faintest:#64646a;
+  --bg:#08090e; --panel:#15161d; --inset:#131319; --field:#22222a; --well:#05060a;
+  --line:#262a34; --line-soft:#1b1b22;
+  --fs-body:13px; --fs-small:11px; --fs-label:10px;
+  --font-ui:Tahoma,"Segoe UI",Verdana,sans-serif; --font-body:var(--font-ui);
+  --border-hairline:1px;
+  --space-1:2px; --space-2:3px; --space-3:4px; --space-4:6px;
+  --space-5:8px; --space-6:10px; --space-7:12px; --space-8:16px;
+  --radius-control:5px; --border-frame:var(--space-2);
+  --edge-lit:#413d37; --edge-shade:#020308;
+  --tab-idle:var(--dim); --tab-active:var(--gold); --tab-locked:var(--faintest);
+  --tab-pad:7px; --touch-min:44px; --page-max:600px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--dim);font-family:var(--font-body);
+  font-size:var(--fs-body);line-height:1.45}
+main.client{width:100%;max-width:var(--page-max);
+  padding:var(--space-7) var(--space-5) var(--space-8);margin:0 auto}
+.stateLabel{border:var(--border-hairline) dashed var(--recede);color:var(--recede);
+  font-family:monospace;font-size:var(--fs-label);letter-spacing:.08em;
+  text-transform:uppercase;padding:var(--space-2) var(--space-5);
+  margin:var(--space-7) 0 var(--space-3);display:block}
+
+/* ── shared button carpentry (v3, unchanged from build.mjs CSS_V3 §4) ── */
+#tabsA button,#tabsB button{
+  font-family:var(--font-ui);font-weight:bold;font-size:var(--fs-small);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--tab-idle);
+  border:var(--border-hairline) solid var(--edge-shade);
+  border-radius:var(--radius-control);
+  background:linear-gradient(var(--field),var(--panel));
+  box-shadow:
+    inset var(--border-hairline) var(--border-hairline) 0 var(--edge-lit),
+    inset calc(var(--border-hairline) * -1) calc(var(--border-hairline) * -1) 0 var(--edge-shade),
+    0 var(--space-1) 0 var(--edge-shade);
+  text-shadow:0 var(--border-hairline) 0 var(--edge-shade);
+  padding:var(--tab-pad);min-height:var(--touch-min);text-align:center;cursor:pointer}
+#tabsA button.active,#tabsB button.active{color:var(--tab-active);border-color:var(--gold);
+  background:linear-gradient(var(--panel),var(--field))}
+#tabsA button.locked,#tabsB button.locked{color:var(--tab-locked);background:var(--panel);
+  box-shadow:none;border-color:var(--line-soft);text-shadow:none;cursor:default}
+
+/* ── VARIANT A (rejected): the shipped 6-tab grid, merely extended to 7.
+   repeat(3,1fr) places 7 items as 3+3+1 — an orphan button alone on its own
+   row, 2/3 of that row empty. "Extended, not re-fitted" — the plan's own
+   phrase for what NOT to do. ── */
+#tabsA{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-3);
+  margin-bottom:var(--space-6)}
+
+/* ── VARIANT B (chosen): re-fit to 4 columns. 7 buttons lay out 4+3, every
+   row full-width-consistent, no orphan cell wider than its siblings, no
+   scroll. Help sits last, same construction as the six gameplay tabs — the
+   plan's own Assumption ("a real tab in the row"), not a demoted utility
+   link. ── */
+#tabsB{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);
+  margin-bottom:var(--space-6)}
+</style>
+</head>
+<body>
+<main class="client">
+<span class="stateLabel">DW-2.4 evidence — variant A: REJECTED (repeat(3,1fr), merely extended)</span>
+<nav id="tabsA" aria-label="Main (variant A)">
+  <button class="active" aria-current="page">Boss</button>
+  <button>Training</button>
+  <button>Grind</button>
+  <button>Player</button>
+  <button>Delve</button>
+  <button>Dungeon</button>
+  <button>Help</button>
+</nav>
+
+<span class="stateLabel">DW-2.4 evidence — variant B: CHOSEN (repeat(4,1fr), re-fit for seven)</span>
+<nav id="tabsB" aria-label="Main (variant B)">
+  <button class="active" aria-current="page">Boss</button>
+  <button>Training</button>
+  <button>Grind</button>
+  <button>Player</button>
+  <button>Delve</button>
+  <button>Dungeon</button>
+  <button>Help</button>
+</nav>
+</main>
+</body>
+</html>

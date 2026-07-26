@@ -129,44 +129,59 @@ the plan's constraint, this is IA, not a bug to normalize.
 ```
 Hub (persistent chrome — not a tab; always visible once state.unlocked)
 ├── resource bar (Combat Power · bots · copper · scripts chips)
-├── tab nav (6 buttons, "???" label pre-unlock)
-├── help modal
+├── tab nav (7 buttons, "???" label pre-unlock — Help never locked)
 ├── activity log ("maintenance@dead-server:~$")
 └── footer (export / wipe save)
 
-Spokes (six tabs — unlock condition in main.js checkUnlocks()):
+Spokes (seven tabs — unlock condition in main.js checkUnlocks(), Help
+always open — `.design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md`
+Phase 2):
 ├── Boss        [always open — entry point]
 │   └── wall selector (local nav, appears once `maxWall>1` — i.e. after the first wall clear)
 ├── Training     [opens: state.unlocked — first login tick]
-│   └── Ban Wave section (sub-panel inside Training, not a 7th tab;
+│   └── Ban Wave section (sub-panel inside Training, not a separate tab;
 │       opens: cleared.length≥1 OR rebirths≥1)
 ├── Grind        [opens: features.training]
 ├── Player       [opens: features.grind AND state.everDropped]
 ├── Delve        [opens: features.player AND Combat Power ≥ 100]
-└── Dungeon      [opens: features.delve AND bots.pop ≥ 10]
+├── Dungeon      [opens: features.delve AND bots.pop ≥ 10]
+└── Help         [always open — reference only, no unlock gate; also reachable
+                   via the resource bar's `?` button, which now switches to
+                   this tab instead of opening `#helpModal` (retired — its one
+                   piece of content, the Ban Wave judgement + bot-DPS-fraction
+                   paragraph, relocates into Help's Training section, see
+                   `## Phase 2: Help tab + copy relocation` below)]
 ```
 
 One structural note the audit surfaced and this IA carries forward: a
 seventh spoke, GM (the meta-currency spend surface), existed until `82d2d99`
 retired it along with the ticket economy. A meta-currency redesign is
-queued (per the plan's Assumptions) and will re-add ONE spoke to this
-sitemap, additively, once designed — not a reason to treat the six-tab
-structure above as final forever, but it is the complete, correct structure
-for this plan.
+queued (per the plan's Assumptions) and would now be an EIGHTH spoke — Help
+took the seventh slot this phase, additively, per the plan's own explicit
+choice of a real tab over a `?`-triggered pane. Not a reason to treat the
+seven-tab structure above as final forever, but it is the complete, correct
+structure for this plan.
 
 **Global navigation labels:** Boss · Training · Grind · Player · Delve ·
-Dungeon. A locked tab's button label is literally `???` (`renderTabs()` in
+Dungeon · Help. A locked tab's button label is literally `???` (`renderTabs()` in
 `main.js`) — a real, intentional state (progressive unlock, not a bug),
-carried into DW-1.5's state column below as `locked`.
+carried into DW-1.5's state column below as `locked`. **Help is never
+`locked`** — meta/reference content with no gameplay gate, added as the
+seventh tab by `.design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md`
+Phase 2 (page spec and states in `## Phase 2: Help tab + copy relocation`
+below).
 
-**Navigation model:** global nav only (the six-button tab bar is the entire
-navigation system) plus one piece of local/contextual nav: the wall selector
+**Navigation model:** global nav only (the seven-button tab bar is the
+entire navigation system, re-fit from six by Phase 2 of the plan above — see
+that section for the grid re-fit and its rendered/measured evidence) plus
+one piece of local/contextual nav: the wall selector
 inside the Boss tab, which appears once `maxWall>1` (`main.js:738`) — i.e.
 from the first wall clear onward — letting them switch which cleared Warden's
 Farm status they're viewing. No breadcrumbs, no search (not applicable at this content scale —
-Hick's law doesn't demand grouping six items further; Miller/Cowan's ~4±1 is
-about working-memory load, not on-screen item count, per the doctrine's own
-citation — six visible tab buttons is not a violation).
+Hick's law doesn't demand grouping seven items further; Miller/Cowan's ~4±1
+is about working-memory load, not on-screen item count, per the doctrine's
+own citation, restated here at the new count — seven visible tab buttons is
+not a violation).
 
 **Validation:** NOT VALIDATED by card sort or tree test (no second user to
 sort cards with). The unlock ORDER is validated by design intent instead
@@ -204,9 +219,9 @@ explicitly so Phase 2 doesn't let it grow its own breakdown.
 | Free bots / capacity + creation rate | **Training tab** | live | resbar chip `#resBots`/`#resRate` | POINTER — echo of Training's population stat. |
 | Copper total + rate | **Grind tab** (copper is earned there) | live | resbar chip `#copperEl`/`#copperRate` | POINTER — rate is computed live across all held zones. |
 | Scripts + damage multiplier | **Training tab** (Ban Wave section) | dormant until 1st rebirth, then live | resbar chip `#scriptsEl`/`#scriptMultEl` (hidden until `scripts>0 or rebirths>0`) | POINTER — echo of `scriptMult()`, the guideline-5 term also folded into the Boss-tab drain. |
-| Tab nav labels (6) | — (nav is the IA itself) | 1 live (Boss) + up to 5 `locked` at game start, unlocking per ladder | `#tabs` | `locked` renders literally as `???`. |
+| Tab nav labels (7) | — (nav is the IA itself) | 2 live (Boss, Help) + up to 5 `locked` at game start, unlocking per ladder | `#tabs` | `locked` renders literally as `???`. **Help added Phase 2 (visual-pass-and-help-tab plan) — never `locked`.** |
 | Activity log | — (event history, not live state) | live (rolling, capped 40 lines) | `#log` | Out of scope for fact-ownership dedup by design: the log's job IS to echo past events after the fact; it is not a second simultaneous render of current state. |
-| Help modal (Ban Wave topic) | **Training tab** | live once available | `#helpModal` | On-demand reference, not a duplicate render (not shown unless opened). |
+| `#helpBtn` (`?`) | — (nav shortcut, not content) | live | resource bar | **Retargeted Phase 2**: switches to the Help tab. Previously opened `#helpModal` (Ban Wave topic only) — that modal is retired; its content is now owned by Help's Training section, see `## Phase 2: Help tab + copy relocation`. |
 | Footer (export/wipe) | — (dev/meta utility) | live | `#logHead`/footer | Not a game fact. |
 
 ### Boss tab (`battleSec`)
@@ -1117,3 +1132,241 @@ line, or one stated pointer away, is a fail.
 **Result:** every name that governs a control is defined on its own line or
 one stated pointer away. The only undefined strings are the two shell-register
 lines, which carry no instruction and gate no action.
+
+---
+
+## Phase 2: Help tab + copy relocation
+
+Produced by Phase 2 of `.design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md`.
+Doctrine: `journey` (page-spec altitude, IA gating), `content-design`
+(Redish scanning/plain-language, the reader's-state workflow), `usability`
+(Hick's law citation restated at seven tabs, Nielsen #10 help & documentation).
+
+**Why this section exists.** The previous plan's Phase 5 wrote plain-English
+copy for every content block and, in doing so, put a teaching sentence on
+nearly every one — the Boss tab prints `Crits ×1.16 average damage — 10.0%
+of hits crit for ×2, and 20.0% of those crit again for ×5` beside the number
+it already displays. That is a tutorial living in a HUD. This section moves
+every *general* mechanic explanation off the six live tabs into a seventh,
+Help, leaving numbers, controls and current-state readouts behind. Nothing
+is deleted — several of the explanations being relocated correct a
+genuinely wrong shipped label and have to survive somewhere; this section is
+where they land.
+
+### The stays/moves rule
+
+Quoting the plan's own constraint: *"A live surface keeps any string a
+player needs AT the moment of the decision; everything that teaches a
+mechanic in general moves."* Operationalized against this document's own
+"Explained-once register" tables (six of them, one per tab, each already
+naming the ONE element that teaches each mechanic — the previous plan's own
+inventory of exactly the strings this phase has to move):
+
+- **MOVES:** every element named as "the tab's teaching line" / an `h3` sub
+  in the six Explained-once registers — a repeatable "how X works" rule
+  that doesn't depend on the player's current state (Redish, *Letting Go of
+  the Words*, 2007: the reader scans for their current goal, not a general
+  lesson).
+- **STAYS:** every per-row cost/chance/state readout, every error
+  condition+fix message (Yifrah's formula), every destructive-confirm
+  message (states the consequence at the moment of the action — Ban Wave's
+  armed-state string is the existing model for this and is untouched), and
+  every POINTER to another tab's owned fact.
+- **STAYS, short flavor:** a line that names an event but explains nothing
+  (already an established convention in this document — Ban Wave's `— the
+  anti-cheat notices the farm`, the Record line's broken-state flavor,
+  Boss-abilities' `there's no wiki and nobody to ask` opener) is kept; only
+  the mechanic-teaching clause riding alongside it moves.
+
+### Relocation table (DW-2.1 / DW-2.3)
+
+Every row below is one element from a tab's own Explained-once register (or,
+for the two rows already flagged by Phase 1, its Final-copy table). "Stays
+on the tab" states what (if anything) remains after the general clause is
+cut; "New home" names the Help content block below. Nothing in this table
+is a new judgement about IA, fact ownership or state — it only decides
+where teaching prose physically renders.
+
+**Boss** *(both already cut by Phase 1 hand-fixes; this phase only gives them a home)*
+
+| Element (source line) | What moves | Stays on Boss | New home |
+|---|---|---|---|
+| `#cooldown`, broken-with-set (JOURNEY `Boss` spec, block 4) | Farm roll interval (30s) and drop chance (25%) | `Set pieces {n} of 7 — on the Player tab.` (state only) | Help → Boss § "Farming a cleared door" |
+| `#projection` ledger (JOURNEY `Boss` spec, block 4) | The crit/super-crit mechanic explanation — chained chance, why "average" is the number that multiplies damage | The ledger itself: `Crit / {rate}% / ×{critMult}` · `Super crit / {superRate}% / ×{superMult}` · `Average / ×{factor}` (all four numbers, live) | Help → Boss § "Crits" |
+
+**Training**
+
+| Element | What moves | Stays on Training | New home |
+|---|---|---|---|
+| `#popFill` caption (JOURNEY Training spec, block 1 — **missed in the first pass, added on review**) | The differentiation clause only: "this bar is every bot you own; the counter at the top of the screen is the ones not assigned to anything" — a general fact about two chrome elements, true regardless of current numbers | The count itself: `{pop} of {cap} slots filled` (state, unchanged) | Help → Training § "Bot pool" |
+| `ATK scripts` `h3` sub | "put bots on a script to run it; every fill adds ATK permanently; 50/s cap; the unlock rule" | bare `h3` heading `ATK scripts`, `#barAtkInfo` totals, per-row gain/stat (unchanged) | Help → Training § "Scripts" |
+| `SPEED scripts` `h3` sub | "same as ATK, for hits/s; past the knee, returns shrink" | bare `h3` heading, `#barSpeedInfo` totals, per-row stats | Help → Training § "Scripts" (same block — ATK/SPEED share one explanation, as the original "same as ATK" line already intended) |
+| `Enhance squad` `h3` sub | "bots that keep pressing enhance for you; same odds/cost; pick slot + target" | bare `h3` heading, slot picker, target input, `#botEnhInfo` state lines (already decision-point) | Help → Training § "Enhance squad" |
+| Ban Wave teaching line (`main.js` render, above `#banWaveInfo`) | "resets bots/training/copper; gear/trophies/Armory/titles/door progress survive; banks √(fills) as Scripts; +1% damage per Script, permanent" | `h3` + flavor sub (`— the anti-cheat notices the farm`), `#banWaveInfo` live numbers, the armed-state destructive-confirm string (unchanged — already Yifrah-correct) | Help → Training § "Ban Wave" |
+| `#helpModal` (`HELP[banwave]`, retired) | "when to bank (the √ judgement); bots borrow 10% ATK / 10% hits-per-second of the player's own stats" | — (button retargeted to the Help tab, see Global chrome table) | Help → Training § "Ban Wave" (same block, folded in — this is the content the modal already isolated as reference-only) |
+
+**Grind**
+
+| Element | What moves | Stays on Grind | New home |
+|---|---|---|---|
+| `Zones` `h3` sub | "put bots on a zone; combined damage must clear the hold number; 50 kills/s cap; 1-in-400 drop chance; IP is the power band" | bare `h3` heading, per-row name/mob/HP/copper/IP-band/state text (all decision-point, unchanged) | Help → Grind § "Zones" |
+
+**Player**
+
+| Element | What moves | Stays on Player | New home |
+|---|---|---|---|
+| `Combat Power` `h3` sub | "CP = ATK × hits/s; what haste means" | bare `h3` heading, the three chip labels (`combat power` / `ATK` / `hits/s`, self-labeling) | Help → Player § "Combat Power" |
+| `Gear` `h3` sub (enhance) | "plus multiplies base power ×1.12; failstack mechanic, cap +15" | bare `h3` heading, safeguard toggle's own label, per-attempt `#sei_*` lines (cost/chance/fallout — decision-point) | Help → Player § "Enhance" |
+| Reforge teaching line | "rerolls affixes for scrap of the same rarity; can't change rarity/IP; preview before committing" | `Reforge` label line, `#rfi_*` price, `#rfc_*` candidate + Keep/Roll again/Discard | Help → Player § "Reforge" |
+| `Stash` `h3` sub | "rarity = affix count (Common 0 → Origin 6); IP = affix strength; salvage → scrap; lock protects from auto-salvage/sweep/overflow" | bare `h3` heading, stash rows (rarity/IP/affixes shown per item, unchanged) | Help → Player § "Stash" |
+| `Trophies` `h3` sub | "each Warden has a 7-piece set; a complete set is ×1.5 damage; pieces come from farming (POINTER to Boss)" | bare `h3` heading, `{n}/10 sets complete`, per-set `{have}/7`, the live `×1.50 damage` on a completed set (all state) | Help → Player § "Trophies" |
+| `Armory` `h3` sub | "every drop logs to its entry; rarity weights (Common 1 → Origin 13); rank cost formula; cap at rank 12; weapon/armor/charm lanes; survives Ban Wave" | bare `h3` heading, `#armorySub` aggregate, per-cell `R{n} · +{pct}%` | Help → Player § "Armory" |
+
+**Delve**
+
+| Element | What moves | Stays on Delve | New home |
+|---|---|---|---|
+| `Delve` `h3` sub | "digs on its own, no input; depth from Combat Power (floor 1 = 10 dps, +70%/floor); +35% Cache/s per floor" | bare `h3` heading, `#delveState` (depth/deepest/Cache-rate, live), `#delveCache` balance | Help → Delve § "How depth works" |
+| `Cache tree` `h3` sub | "each row buys one rank; prices rise per rank" | bare `h3` heading, each row's own gain string + rank readout (decision-point, unchanged) | Help → Delve § "Cache tree" |
+
+**Dungeon**
+
+| Element | What moves | Stays on Dungeon | New home |
+|---|---|---|---|
+| `How it works` block (idle/running block 5, 3 lines) | The entire block — floors, attrition growth, the wipe rule, the 40%-kept rule | Nothing — the block is removed from the live tab entirely (its sole job was general teaching, per its own register row: "nothing else mentions floors or the wipe rule") | Help → Dungeon § "How a run works" |
+| `Assign bots` `h3` sub | "each ability needs N bots to be blocked; unblocked cuts damage every floor; below 25% the party dies; bots are spent, survivors come home" | bare `h3` heading, per-duty `needs {n} bots`, `−{pen}% damage every floor it's unblocked`, `{n} assigned — blocked/NOT BLOCKED` (all decision-point) | Help → Dungeon § "Assigning bots" |
+| `#instKeyInfo` (difficulty helper) | "higher difficulty = more abilities/more bots/better loot/faster bans; you set it, it never drops; wipe keeps 40%" | `#instKey` label `Difficulty`, the state-line's live consequence numbers (abilities to block, bots needed, deepest floor) | Help → Dungeon § "Difficulty" |
+| `#instBank` helper (JOURNEY Dungeon spec, idle 4 · running 4 — **missed in the first pass, added on review**) | The whole sentence: "your bots come home with everything the moment they clear this floor; you can change it mid-run" — a general rule about the setting, true regardless of the floor it's currently set to, same class as the Difficulty helper above | `Pull out at floor` label + the input's own value (state) | Help → Dungeon § "Pull-out floor" |
+| `Boss abilities` `h3` sub | "you learn an ability by running into it; what you learn is permanent, survives a Ban Wave" | flavor opener only: `there's no wiki and nobody to ask` | Help → Dungeon § "Boss abilities journal" |
+
+**Tally (DW-2.3):** 22 relocations (2 Boss + 6 Training + 1 Grind + 6 Player +
+2 Delve + 5 Dungeon), every one landing in exactly one of the 6 Help content
+blocks below. No mechanic is dropped; no fact changes owner (a moved
+sentence still describes the same tab's mechanic — it only changes which
+tab renders it).
+
+### Help
+
+**Purpose:** Answer "how does X work?" for every mechanic in the game, once,
+in one place — the general explanations the six live tabs no longer carry.
+
+**Entry points:** Tab nav (always the seventh button, never `locked`); the
+resource bar's `?` button, retargeted this phase to switch to this tab
+instead of opening the retired `#helpModal`.
+
+**Primary decision:** None — Help is reference only, no action resolves
+here. (Matches the existing convention for a tab with no discrete run mode,
+e.g. Delve's `in-progress: N/A`.)
+
+**Content blocks (in order — mirrors the tab bar's own order, so the mental
+model a player already has for "where do I find X" carries over unchanged,
+Jakob's Law):**
+
+1. **Boss** — Crits (the chained crit/super-crit chance and why "average" is
+   the multiplying number); Farming a cleared door (roll interval, drop
+   chance).
+2. **Training** — Bot pool (population bar vs. the resource-bar free-bots
+   counter); Scripts (fill → gain → 50/s cap → unlock rule, ATK and
+   SPEED together); Enhance squad; Ban Wave (what resets, what survives, the
+   √ formula, the permanent +1%/Script, the √-judgement, the bot-DPS
+   fraction — the full retired-modal content folded in).
+3. **Grind** — Zones (hold requirement, kill cap, drop chance, IP band).
+4. **Player** — Combat Power (the ATK × hits/s definition, what haste
+   means); Enhance (plus formula, failstacks); Reforge; Stash (rarity/IP/
+   salvage/lock); Trophies (7-piece sets, the ×1.5 bonus, POINTER to Boss
+   for farming); Armory (merge weights, rank-cost formula, the rank-12 cap,
+   lane per slot type).
+5. **Delve** — How depth works (the Combat-Power-to-depth formula, the
+   Cache-per-floor rate); Cache tree (prices rise per rank).
+6. **Dungeon** — How a run works (floors, attrition, the wipe, the 40%
+   kept); Assigning bots (the blocking mechanic, the 25% wipe floor);
+   Difficulty (what raising it changes); Pull-out floor (bots come home with
+   everything at that floor, editable mid-run); Boss abilities journal (how
+   discovery works, permanence across Ban Wave).
+
+**States:** Each numbered block above is gated by the SAME unlock condition
+as its tab (Design Decision 2, Phase 2 discovery) — reusing the exact
+conditions already in `## IA`'s sitemap, not a new gate:
+
+| Block | Gate | Locked-state copy |
+|---|---|---|
+| 1 Boss | none (always open) | never locked |
+| 2 Training | `state.unlocked` | `Unlocks as soon as the game starts.` (existing string, `main.js:241`) |
+| 3 Grind | `features.training` | `Unlocks with Training.` (existing string, `main.js:242`) |
+| 4 Player | `features.grind && everDropped` | `Unlocks when your bots find their first piece of gear.` (existing string, `main.js:243`) |
+| 5 Delve | `features.player && CP ≥ 100` | `Unlocks at 100 Combat Power.` (existing string, `main.js:244`) |
+| 6 Dungeon | `features.delve && bots.pop ≥ 10` | `Unlocks once you have 10 bots.` (existing string, `main.js:245`) |
+
+A locked block renders its milestone string only — the same "no spoilers"
+rule the tab bar itself already follows (`## Page specs`' "Locked tab
+buttons" table). This is not new copy: every locked-state string above is
+reused verbatim from the tab button `title` it already ships.
+
+**Primary action:** N/A — reference only, no button resolves anything here.
+
+**Exit:** Tab switch (back to whichever tab prompted the lookup — Help has
+no forced next page, hub-and-spoke like every other tab).
+
+**Microcopy — final copy, assembled from the relocated sentences above
+(reused verbatim where the sentence survives out of its original context;
+lightly restitched where it assumed a specific rendered number beside it —
+noted inline):**
+
+| Block | Element | Final copy | Source |
+|---|---|---|---|
+| 1 Boss | `h3` "Crits" | `Every hit has a chance to crit for extra damage, and a crit has its own chance to crit again — a super-crit — for even more. The Boss tab's Average row is what your damage actually multiplies by once both chances are folded in.` | Restitched from the Boss `#projection` prose Phase 1 cut (`crits.js:30-32`, `BASE = {rate 0.10, superRate 0.20, critMult 2, superMult 5}`) — the base rates/multipliers are the general mechanic; the LIVE numbers stay on Boss's own ledger. |
+| 1 Boss | `h3` "Farming a cleared door" | `Once a door is open, farming it rolls for the rest of that Warden's trophy set every 30 seconds — each roll a 25% chance to drop the next piece.` | `pull.js:49` `FARM_INTERVAL=30`; `trophies.js:24` `FARM_DROP_CHANCE=0.25`. Verbatim facts, prose form new (the original line was cut mid-sentence by Phase 1, not carried as a full sentence). |
+| 2 Training | `h3` "Bot pool" | `The population bar is every bot you own, filled or not. The counter at the top of the screen is only the ones not assigned to any job.` | Restitched from the `#popFill` caption (missed in the first relocation pass — added on review), `main.js:773` `pop/capacity`; `main.js:699` resbar `freeBots/capacity`. The count itself (`{pop} of {cap} slots filled`) stays on Training. |
+| 2 Training | `h3` "Scripts" | `Put bots on a script to run it. Every fill it completes adds its stat — ATK or hits per second — permanently. Any one script tops out at 50 fills per second; the next script down unlocks once the one above it has enough fills. Speed has one more rule: past a threshold that rises with each deeper Warden, extra hits per second still count, just less.` | Verbatim merge of the ATK and SPEED `h3` subs (`bots.js:38` `MAX_FILLS_PER_S=50`; `bots.js:205-214`; `stats.js:22,25-27` `softHits`/`SPEED_KNEE`; `bosses.js` `speedKnee` 5.0→70.0). |
+| 2 Training | `h3` "Enhance squad" | `Bots that keep pressing enhance on one item for you. Same odds and the same copper cost as doing it yourself — they just never stop. The odds and the fallout are on the Player tab.` | Verbatim, `bots.js:236-249`. |
+| 2 Training | `h3` "Ban Wave" | `Banking a Ban Wave resets your bots, your training and your copper to the start. Everything your character owns stays: gear, plusses, scrap, trophies, Armory ranks, titles and door progress. In exchange you bank √(training fills) as Scripts, and every Script permanently adds +1% damage. Scripts never reset.` `Bank when the payout is worth the reset. Scripts are the square root of your training fills, so pushing twice as long pays well under twice the Scripts.` `Your bots borrow your power — each one hits at 10% of your ATK and 10% of your hits per second. So more damage means a faster farm too, and every Ban Wave rebuilds quicker than the one before.` | Verbatim: paragraph 1 was the inline teaching line (`rebirth.js:36-51`, `:20-22`, `:11` `SCRIPT_DMG=0.01`); paragraphs 2–3 are the retired `#helpModal`'s content (`rebirth.js:20`; `bots.js:24-25,71-75` `BOT_ATK_FRAC`/`BOT_SPD_FRAC=0.10`). |
+| 3 Grind | `h3` "Zones" | `Put bots on a zone. Their combined damage has to clear the zone's hold number or they earn nothing at all. A zone they can hold kills up to 50 mobs a second; every kill pays copper and has a 1-in-400 chance to drop a piece of gear. IP is the power band those drops roll in — deeper zones drop higher.` | Verbatim, `bots.js:145-156`, `farm.js:7,5,31-48`. |
+| 4 Player | `h3` "Combat Power" | `Your damage per second against the door: ATK multiplied by hits per second. "Haste" anywhere on the Player tab is a percentage added to hits per second.` | Verbatim (minus the "everything below feeds these two numbers" clause, which only made sense inline), `stats.js:52-55`, `pull.js:15-18`. |
+| 4 Player | `h3` "Enhance" | `Three slots. Enhancing raises an item's plus, and every plus multiplies its base power by 1.12. A failed attempt anywhere banks a failstack worth +1 percentage point on your next attempt, up to +15; a success spends the whole bank.` | Verbatim, `gear.js:26-28`, `enhance.js:11,25-27,58`. |
+| 4 Player | `h3` "Reforge" | `Reforge rerolls an item's affixes for scrap of its own rarity. It can't change the rarity or the IP — only which affixes it has and what they roll. You see the result before you decide whether to keep it.` | Verbatim, `gear.js:132-155`. |
+| 4 Player | `h3` "Stash" | `Where kept drops land, up to 50. An item's rarity is how many affixes it rolled (Common 0, Origin 6) and its IP is how strong those affixes roll. Salvaging turns an item into scrap of its own rarity. Locking one protects it from auto-salvage, the bulk sweep and the stash-full clear-out.` | Verbatim, `gear.js:47,51-63,66-78,105,122`, `rarity.js:6-14`, `affixes.js:57-61`. |
+| 4 Player | `h3` "Trophies" | `Each Warden has a 7-piece set. Breaking its door gives you the first piece; the rest come from farming that Warden on the Boss tab. A complete set multiplies your damage by 1.5.` | Verbatim, `trophies.js:14-23,65-69`. POINTER to Boss unchanged. |
+| 4 Player | `h3` "Armory" | `Every drop is logged here against its own entry, one per item name, whether you keep it or scrap it. Rarer copies count for more: a Common is worth 1 point, an Origin 13. The first rank costs 3 points and each rank after costs 60% more, up to rank 12. Weapons rank ATK, armor ranks haste, charms rank copper — and the ranks survive every Ban Wave.` | Verbatim, `armory.js:16,17,26-30,15,20`, `rebirth.js:36-51`. |
+| 5 Delve | `h3` "How depth works" | `Your character digs on their own down here, no input needed. Depth is however deep your Combat Power clears: floor 1 needs 10 damage per second and each floor after needs 70% more. Every extra floor pays 35% more Cache per second, and Cache is the buried server data you spend below.` | Verbatim, `dungeon.js:8,9,11-17,45-48`. |
+| 5 Delve | `h3` "Cache tree" | `Each row buys one rank. Every rank you buy raises that row's next price.` | Verbatim, `dungeon.js:30`. |
+| 6 Dungeon | `h3` "How a run works" | `Your bots fight down through the floors on their own, and each floor takes longer than the last. Some of them get banned on every floor, faster the deeper they go. When too many abilities go unblocked, the party dies. If they die you keep 40% of what they found. Pull out early and you keep all of it.` | Verbatim, `instance.js:11-12,14-16,39-42,22`. |
+| 6 Dungeon | `h3` "Assigning bots" | `Each ability needs a set number of bots on it to be blocked. An ability you leave unblocked cuts your damage every floor it fires, and when your damage falls below 25% of normal the party dies. Bots you send are spent — you get back whoever survives.` | Verbatim, `instance.js:49-67,13,148,101,126`. |
+| 6 Dungeon | `h3` "Difficulty" | `Higher difficulty means more abilities to block, more bots on each, better loot — and bots banned faster. You set it; it never drops on its own. If the party dies you keep 40% of what they found.` | Verbatim, `instance.js:34-35,39-42,120,22`. |
+| 6 Dungeon | `h3` "Pull-out floor" | `Your bots come home with everything the moment they clear the floor you set here. You can change it mid-run.` | Verbatim (missed in the first relocation pass — added on review), `#instBank` helper, `instance.js:159` `finish(state, 1)` keeps the whole haul; `main.js:509-511` writes on change while running. The `Pull out at floor` label and the input's own value stay on Dungeon. |
+| 6 Dungeon | `h3` "Boss abilities journal" | `You find out what an ability does by running into it. What you learn here is permanent: it survives a Ban Wave.` | Restitched from the flavor-plus-fact original (`instance.js:153-156`; `rebirth.js:36-51` never touches `state.instance`) — the flavor half (`there's no wiki and nobody to ask`) stays on Dungeon per the stays/moves rule above. |
+| locked block | (any) | The matching milestone string from `## Page specs`' "Locked tab buttons" table — reused verbatim, not restated here. | `main.js:241-245` |
+
+### Tab row re-fit (DW-2.4)
+
+Adding a seventh tab to `#tabs{display:grid;grid-template-columns:
+repeat(3,1fr)}` (`internal/mocks/build.mjs`'s current shipped grid, "wraps
+3+3 on a phone rather than scrolling") auto-places 7 children as 3+3+1 — one
+button alone on a row two-thirds empty beside it. That is an *extension*,
+not the *re-fit* the plan's own constraint asks for.
+
+**Rendered and measured** in `internal/mocks/tabrow-specimen.html` (reuses
+DESIGN.md v3 tokens verbatim — the same `--gold`/`--panel`/`--edge-lit`/
+`--radius-control`/`--font-ui`/`--tab-pad`/`--touch-min` values `build.mjs`
+already carries, zero new hex, zero new one-off px) at 375px via the same
+headless-Chrome/CDP pattern `internal/mocks/shoot.mjs` uses for the six real
+mocks. Two variants, same seven labels (Boss/Training/Grind/Player/Delve/
+Dungeon/Help):
+
+| Variant | Grid | Layout | `document.scrollWidth` at 375px | Button width | Text truncation |
+|---|---|---|---|---|---|
+| A — rejected | `repeat(3,1fr)` (unchanged, merely extended) | 3+3+1, orphaned 7th button | 375 (no overflow) | 117px | none |
+| B — chosen | `repeat(4,1fr)` (re-fit) | 4+3, uniform | 375 (no overflow) | 87px | none |
+
+Screenshot: `internal/mocks/shots/tabrow-specimen-375.png`. Neither variant
+technically overflows — CSS Grid auto-wraps rather than forcing a scrollbar
+— which is exactly why DW-2.4 has to be proven on the rendered shape, not
+just the scrollWidth number: variant A passes the letter of "no horizontal
+scroll" while failing the plan's explicit "re-fitted, not merely extended."
+Variant B is the chosen re-fit: `repeat(4,1fr)` lays 7 buttons out 4+3, all
+uniform width, 87px per button (well above the `--touch-min: 44px` floor
+kept on button height), no text truncation on the longest labels
+(`Training`, `Dungeon`), zero new colour or typography — a grid-track-count
+change only, staying inside this phase's OUT-of-scope boundary on visual
+styling. This is the CSS change Phase 3 carries into the six recomposed
+mocks plus the new Help mock; Phase 2's job was to prove it fits before that
+work is spent.

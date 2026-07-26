@@ -1,6 +1,8 @@
 # Design Plan: Visual pass + Help tab
 
-**Status:** ready
+**Status:** in-progress
+**Started:** 2026-07-26
+**Current Phase:** 2
 **Track:** Standard
 **Entry stage:** Design (JOURNEY.md and DESIGN.md both exist and are honored)
 **Created:** 2026-07-26
@@ -274,3 +276,25 @@ still tables; Sage keeps the fully-displayed numbers.
 skipped — on this ramp the only legal alternation is ~1 L\*, invisible, and
 brightening the ground to make it visible would open un-gated accent pairs
 for a stripe nobody can perceive.
+
+### Phase 2: Help tab + copy relocation (Gate: Standard)
+- [x] BUILD: Discovery + design + production complete (2 attempts)
+- [x] REVIEW: FAIL → PASS. First pass caught DW-2.1 incomplete — two teaching
+      strings on live surfaces were never classified (`dungeon.html` `#instBank`
+      helper, `training.html` `#popFill` caption). Root cause: the sweep walked
+      only the six "Explained-once register" tables, and both misses existed
+      only as `(NEW)` rows in the Final-copy tables, so they were never in the
+      inventory being swept. Re-swept by reading the rendered HTML of all six
+      mocks directly; nothing further found. Second pass PASS, detector 0/16,
+      one Minor (tally arithmetic) fixed by the orchestrator.
+- [x] Committed
+Commit: (see below)
+Summary: JOURNEY.md now carries a stays/moves rule, a 22-row relocation table
+covering every teaching string on all six live tabs, and a full Help page spec
+(6 gated content blocks, states, final copy); the seven-tab row is re-fitted at
+375px as `repeat(4,1fr)` 4+3 — measured `scrollWidth = 375`, 87px buttons, 44px
+touch target — and the existing `?` button is retargeted to the Help tab.
+
+**Method note for Phase 3:** the relocation tables are the implementation
+contract, and they were leaky once. Phase 3 implements against the RENDERED
+strings, treating the tables as the intent and the mocks as the inventory.
