@@ -1,6 +1,109 @@
-# ROADMAP / session handoff — updated 2026-07-25 (2nd pass)
+# ROADMAP / session handoff — updated 2026-07-26
 
-## Where the build stands (staging = latest, `4d41da7`)
+## SESSION HANDOFF 2026-07-26 — design plans done, GAME CODE UNTOUCHED
+
+**Read this first. The most important fact: none of the last two sessions'
+design work has been applied to the game.** Load `index.html` today and you
+get the old UI. Everything below is specification and mocks in `internal/`.
+`npm test` is green precisely because no game file was edited.
+
+`staging` is **17 commits ahead of `origin/staging` (unpushed)**; `main` is
+untouched and still awaits approval. Nothing was pushed because it is all
+non-deployed `internal/` work.
+
+### What got built
+
+**Plan 1 — `.design-foundations/plans/2026-07-25-ui-dedup-audit.md` — COMPLETE
+(6 phases, commits `dd4e1da` → `97044fe`).** Produced the contract the UI never
+had:
+- `internal/JOURNEY.md` — JTBD job story, the tab ladder as IA, a
+  fact-ownership table where every displayed fact has exactly ONE owner and a
+  declared STATE (live / dormant / locked), six page specs, and final copy.
+- `internal/DESIGN.md` — token block, type scale, motion budget, component
+  specs, a dimension scale derived from the shipped CSS.
+- `internal/mocks/*.html` — six surfaces, plus `build.mjs` (emits all six from
+  one CSS source and ASSERTS no hex / no rgb / no untokenized px / no external
+  refs, exiting non-zero), `shoot.mjs` (headless capture, zero-dep CDP) and
+  `contrast.mjs` (49 gated pairs).
+- Result: horizontal overflow **414px → 375px**; the ~136 dormant-at-live-
+  weight items now read apart; a locked row draws NO allocation control, taking
+  21 inert alloc clusters to zero.
+
+**Plan 2 — `.design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md`
+— Phase 1 of 3 done, Phases 2 and 3 NOT STARTED.** Plan 1 explicitly forbade
+inventing a visual identity, so its output was tidier but looked the same, and
+the user rejected it as not beautiful. Phase 1 did the excluded part:
+- v2 (Art Deco, from a Ruler archetype) — **rejected twice**: "the script and
+  styling irks me, the early MMO UI vibe isn't there".
+- v3 (`066b5ec`) — **MapleStory construction on the dark ramp**: chunky rounded
+  windows, title bars, sockets cut in with inner shadow, glossy pressable
+  plates, compact bold sans with a hard shadow. Archetype re-derived to
+  **Everyman + Sage** (Ruler's documented gravity describes a bank).
+- User verdict: **"acceptable for now"** — provisional, NOT sign-off. Only
+  `internal/mocks/boss.html` carries v3; the other five took a single
+  `--font-body` token line. The Grind specimen inside `boss.html` is the
+  list-surface preview. **Re-check the direction before spending it on five
+  more surfaces.**
+
+### THE QUEUE — integration pass, 8 code changes, none applied
+
+The user deferred all of these to ONE pass after the design work. Six are
+specified in `internal/DESIGN.md`'s "Required behavior changes"; all eight are
+real defects in the SHIPPED game, independent of any redesign:
+
+1. **`battle.js drawBars()`** draws the boss HP label in near-black over the
+   empty track — **1.23:1**, unreadable for most of every fight.
+2. **`bots.js:154` copper is BASE, not final.** `copperPerSec = kps × z.copper`;
+   `player.copperMult` is applied separately at credit time (`bots.js:228`), so
+   `main.js:852` prints a rate the player never banks (~4,650 shown vs ~5,766
+   actual). Show the final with the multiplier trailing.
+3. **Locked rows accept allocation input and silently discard it** — no lock
+   gate in `bots.setAlloc` (`bots.js:116-122`) or the wiring (`main.js:296-309`).
+4. **`setParty()` (`main.js:484-488`) checks `running` but never
+   `dutyUnlocked`** — Dungeon duty buttons stay clickable while their sibling
+   `<input>` correctly disables.
+5. **Grind's `.locked` class (`main.js:841`) conflates two states** — genuinely
+   locked zones and live manned zones that can't hold get identical treatment.
+   Split into `locked` and a `struggling` class at full opacity with `--warn`.
+6. **`style.css:133` `#logHead`** hardcodes `#4e7a5e` = 3.97:1, outside the
+   token set. → `--logline`.
+7. **`.pip.miss`** uses `--faintest` (3.04:1) on genuine 10px text. → `--faint`.
+   Also `cursor: help` promises a tooltip that does not exist.
+8. **`rarity.js` `mythic`** `#d64a4a` → `#d85454` (4.20 → 4.52:1).
+
+Dead CSS confirmed by grep, safe to delete: `.ztable`, `#pullBtn`,
+`#ticketGain`, `#tierAtk`/`#tierSpeed`, `#gmSec`/`#gmPanel`,
+`.tier-risk`/`.tier-nightmare`.
+
+### Then: Plan 2 Phase 2 (Help tab) and Phase 3 (recompose)
+
+Phase 2 is a **7th tab in the row** (user's explicit choice over a `?` pane —
+the row must re-fit for seven at 375px). It moves every mechanic explanation
+off the live surfaces. The rule established this session: **fixed terms →
+ledger table, state → short line, mechanic explanation → Help.** Four blocks
+were already hand-fixed this way (`eba1698`, `9e2f394`, `3b3f681`); the rest of
+every surface still needs the sweep. Phase 3 then recomposes the five
+remaining surfaces plus Help in v3.
+
+### Hard-won rules from this session — do not re-derive
+
+- **Surface separation is an L\* question; only text is a ratio question.**
+  WCAG's `+0.05` flare term crushes dark-on-dark ratios toward 1.0, so an
+  invisible surface pair reads as an acceptable 1.04:1. The whole ramp was
+  compressed into ~3 L\* and `--inset` was *lighter* than `--panel` while named
+  "recessed". Use `internal/mocks/contrast.mjs`, which prints both.
+- **Ornament fails toward "ruin" by default.** A rule with a gap in it (a
+  per-cell `border-top` interrupted by a grid column-gap) reads as damage,
+  which the no-decay constraint forbids. Full-span rule elements instead.
+- **A manual token sweep cannot establish its own exhaustiveness.** Four review
+  rounds each falsified a prior "exhaustive" claim in a new place: no dimension
+  tier → values outside the shape being looked for → a whole property
+  (`margin-top`) → a composed selector. `build.mjs`'s assertions are the
+  durable answer; DW-6.2 was extended to cover px because of this.
+- The copy pass's brief ("spell out numbers and consequences") **over-applied**
+  and produced a tutorial in every HUD. See the ledger rule above.
+
+## Where the build stands (game code as of `4d41da7` — unchanged since)
 
 Playable arc: intro attempt 0.0008% → unlock → bot swarm economy → gear/
 Armory ranks → Warden health whittles down at Combat Power → Dungeon runs
