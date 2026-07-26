@@ -378,18 +378,27 @@ section.game > h3:first-child { border-top: none; padding-top: 0; margin-top: 2p
   margin: 12px 0;
 }
 
-/* the chat window's head — construction lands with the style.css pass */
-#logHead {
-  font-family: var(--font-data);
-  font-size: var(--fs-micro);
-  letter-spacing: .04em;
-  /* was #4e7a5e — 3.97:1 on --bg, a real WCAG 1.4.3 failure, and a green that
-     belonged to the retired shell prompt. The chat head is neutral chrome:
-     DESIGN.md gives the window no lane hue. */
-  color: var(--dim);
-  border-top: 1px solid var(--line);
-  padding: 8px 0 3px;
+/* #logHead is gone with the shell prompt — the chat window's #chatHead
+   replaces it, hardcoded #4e7a5e (3.97:1 on --bg, a real WCAG failure) and
+   all. These are the chat window's BASE rules, ported from the mock's CSS
+   block; the v3/v4 layer below only adds its construction, so without these
+   the channel plates render at the browser's default button size. */
+#chat { margin-top: 16px; }
+#chatHead {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+  border-top: 1px solid var(--line); padding: 6px 0;
 }
+.chan { font-size: var(--fs-label); padding: 3px 10px; color: var(--dim); text-align: center; }
+.chan.active { color: var(--bone); }
+/* The counter the whole game is about, in the one place an MMO client puts it. */
+#online {
+  margin-left: auto; font-family: var(--font-data); font-size: var(--fs-micro);
+  letter-spacing: .1em; text-transform: uppercase; color: var(--dim);
+}
+/* Quiet, not broken: the window around it is intact, lit and selectable, and
+   the copy states the fact without narrating the silence. A sentence ABOUT
+   the emptiness would be the decay register coming back in as prose. */
+.chatEmpty { color: var(--faint); font-style: italic; text-align: center; padding: 20px 8px; }
 #log {
   font-family: var(--font-data);
   font-size: var(--fs-small);

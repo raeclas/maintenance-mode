@@ -284,6 +284,19 @@ if (state.unlocked) reveal();
 
 // ---- fight is automatic now (idle battler) — no Attempt button ----
 
+// The chat window's two channels. General never gains a line — that is the
+// point of it, so this only swaps which pane shows. No unread state is
+// tracked, deliberately: a badge on an empty channel would be an obligation
+// mechanic pointing at nothing.
+for (const btn of document.querySelectorAll(".chan")) {
+  btn.addEventListener("click", () => {
+    const system = btn.dataset.chan === "system";
+    $("log").style.display = system ? "" : "none";
+    $("chatGeneral").style.display = system ? "none" : "";
+    for (const b of document.querySelectorAll(".chan")) b.classList.toggle("active", b === btn);
+  });
+}
+
 $("wipeBtn").addEventListener("click", () => {
   if (confirm("Wipe this character's save? (dev button)")) { wipe(); location.reload(); }
 });

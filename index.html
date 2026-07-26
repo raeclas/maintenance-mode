@@ -205,14 +205,22 @@
   <!-- The shell prompt that used to live here is DELETED, not re-confined:
        a terminal inside a client that has no shell, naming the server a dead
        one in a game whose premise is that it still works, behind a cursor
-       implying an input that does not exist. See internal/DESIGN.md
-       "## The chat window (v4, Phase 3)".
-       This is the copy half only — the chat window's construction (channel
-       plates, System/General) lands with the style.css integration pass.
-       .cursor and @keyframes blink are already deleted; #logHead keeps its
-       current rule until that pass restyles it. -->
-  <div id="logHead">System &middot; <span id="online">Players online: 1</span></div>
-  <div id="log"></div>
+       implying an input that does not exist. What replaces it is the honest
+       MMO furniture — a chat window. System carries the traffic, General is
+       empty, and the emptiness is the storytelling the decay string was
+       faking. No unread badge or count: that would be an obligation mechanic.
+       See internal/DESIGN.md "## The chat window (v4, Phase 3)". -->
+  <div id="chat">
+    <div id="chatHead">
+      <button class="chan active" data-chan="system">System</button>
+      <button class="chan" data-chan="general">General</button>
+      <span id="online">Players online: 1</span>
+    </div>
+    <div id="log"></div>
+    <div id="chatGeneral" style="display:none">
+      <div class="chatEmpty">Nothing here.</div>
+    </div>
+  </div>
 
   <footer><button id="exportBtn">export save</button> · <button id="wipeBtn">wipe save (dev)</button></footer>
 </main>
