@@ -1,120 +1,123 @@
-# ROADMAP / session handoff — updated 2026-07-26
+# ROADMAP / session handoff — updated 2026-07-26 (integration shipped)
 
-## SESSION HANDOFF 2026-07-26 — design plans done, GAME CODE UNTOUCHED
+## SESSION HANDOFF 2026-07-26 — the design work is now IN THE GAME
 
-**Read this first. The most important fact: none of the last two sessions'
-design work has been applied to the game.** Load `index.html` today and you
-get the old UI. Everything below is specification and mocks in `internal/`.
-`npm test` is green precisely because no game file was edited.
+**Read this first.** The previous version of this file opened by saying none
+of the design work had been applied and that `npm test` was green precisely
+because no game file had been edited. **That is no longer true and has not
+been since `426cf70`.** Load `index.html` today and you get DNA v4: seven
+tabs, colour lanes, the chat window, and the teaching copy gone from the
+live surfaces.
 
-`staging` is **17 commits ahead of `origin/staging` (unpushed)**; `main` is
-untouched and still awaits approval. Nothing was pushed because it is all
-non-deployed `internal/` work.
+`staging` carries everything and is pushed. **`main` is still unmerged and
+awaiting the user's approval** — fast-forward it once the current staging
+build is signed off (two-channel rule: never advance `main` unasked).
 
-### What got built
+### Both design plans are COMPLETE
 
-**Plan 1 — `.design-foundations/plans/2026-07-25-ui-dedup-audit.md` — COMPLETE
-(6 phases, commits `dd4e1da` → `97044fe`).** Produced the contract the UI never
-had:
-- `internal/JOURNEY.md` — JTBD job story, the tab ladder as IA, a
-  fact-ownership table where every displayed fact has exactly ONE owner and a
-  declared STATE (live / dormant / locked), six page specs, and final copy.
-- `internal/DESIGN.md` — token block, type scale, motion budget, component
-  specs, a dimension scale derived from the shipped CSS.
-- `internal/mocks/*.html` — six surfaces, plus `build.mjs` (emits all six from
-  one CSS source and ASSERTS no hex / no rgb / no untokenized px / no external
-  refs, exiting non-zero), `shoot.mjs` (headless capture, zero-dep CDP) and
-  `contrast.mjs` (49 gated pairs).
-- Result: horizontal overflow **414px → 375px**; the ~136 dormant-at-live-
-  weight items now read apart; a locked row draws NO allocation control, taking
-  21 inert alloc clusters to zero.
+- **Plan 1** — `.design-foundations/plans/2026-07-25-ui-dedup-audit.md`.
+  Produced the contract the UI never had: `internal/JOURNEY.md`
+  (fact ownership, per-row state, page specs), `internal/DESIGN.md`, and six
+  mocks with `build.mjs` / `shoot.mjs` / `contrast.mjs`. Overflow 414px → 375px.
+- **Plan 2** — `.design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md`,
+  4 phases (a Phase 2.5 was inserted mid-flight). Visual DNA v4, the Help tab,
+  the copy relocation, and the chat window. All committed, all reviewed.
 
-**Plan 2 — `.design-foundations/plans/2026-07-26-visual-pass-and-help-tab.md`
-— Phase 1 of 3 done, Phases 2 and 3 NOT STARTED.** Plan 1 explicitly forbade
-inventing a visual identity, so its output was tidier but looked the same, and
-the user rejected it as not beautiful. Phase 1 did the excluded part:
-- v2 (Art Deco, from a Ruler archetype) — **rejected twice**: "the script and
-  styling irks me, the early MMO UI vibe isn't there".
-- v3 (`066b5ec`) — **MapleStory construction on the dark ramp**: chunky rounded
-  windows, title bars, sockets cut in with inner shadow, glossy pressable
-  plates, compact bold sans with a hard shadow. Archetype re-derived to
-  **Everyman + Sage** (Ruler's documented gravity describes a bank).
-- User verdict: **"acceptable for now"** — provisional, NOT sign-off. Only
-  `internal/mocks/boss.html` carries v3; the other five took a single
-  `--font-body` token line. The Grind specimen inside `boss.html` is the
-  list-surface preview. **Re-check the direction before spending it on five
-  more surfaces.**
+### Then it was INTEGRATED — six commits, game code
 
-### THE QUEUE — integration pass, 8 code changes, none applied
+| Commit | What |
+|---|---|
+| `426cf70` | v4 token set into `style.css`; 37 monospace + 4 Georgia sites retired; `rarity.js` AA fixes |
+| `dcc4bff` | v4 construction layer (frames, bevels, rivets, tab accents) + markup hooks |
+| `55734e8` | rarity plates and IP power bands wired into `main.js` |
+| `2295fe6` | the chat window — System / General, no badge |
+| `dd883bb` | Help as the seventh tab; the help modal retired |
+| `78e900a` | teaching copy cut off the live surfaces |
 
-The user deferred all of these to ONE pass after the design work. Six are
-specified in `internal/DESIGN.md`'s "Required behavior changes"; all eight are
-real defects in the SHIPPED game, independent of any redesign:
+Tabs, in unlock order: **Boss · Training · Grind · Player · Delve · Dungeon ·
+Help**. The row is a 4-column grid (4+3 at 375px) — it was `display:flex` with
+`flex:1` buttons, which cannot shrink below their content and forced every
+page to 434px.
 
-1. **`battle.js drawBars()`** draws the boss HP label in near-black over the
-   empty track — **1.23:1**, unreadable for most of every fight.
-2. **`bots.js:154` copper is BASE, not final.** `copperPerSec = kps × z.copper`;
+`npm test` and `npm run sim` green throughout, `baseline.json` unchanged — no
+gameplay code moved in any of the six.
+
+### THE QUEUE — 6 of 8 integration defects still open
+
+All are real defects in the SHIPPED game, independent of any redesign. **#6
+(`#logHead` `#4e7a5e`) and #8 (`rarity.js` mythic) were closed** during the
+integration pass — #6 by deleting the element with the shell prompt, #8 by
+lifting epic AND mythic to their v4 values.
+
+1. **`battle.js:132`** draws the boss HP label `#0d0d10` on the `#22222a`
+   track — **1.23:1**. Legible only where the gold fill sits behind it, so it
+   degrades as HP drops. The hero element of the hero tab.
+2. **`bots.js:154` copper is BASE, not final.** `copperPerSec = kps * z.copper`;
    `player.copperMult` is applied separately at credit time (`bots.js:228`), so
-   `main.js:852` prints a rate the player never banks (~4,650 shown vs ~5,766
-   actual). Show the final with the multiplier trailing.
-3. **Locked rows accept allocation input and silently discard it** — no lock
-   gate in `bots.setAlloc` (`bots.js:116-122`) or the wiring (`main.js:296-309`).
-4. **`setParty()` (`main.js:484-488`) checks `running` but never
-   `dutyUnlocked`** — Dungeon duty buttons stay clickable while their sibling
-   `<input>` correctly disables.
-5. **Grind's `.locked` class (`main.js:841`) conflates two states** — genuinely
-   locked zones and live manned zones that can't hold get identical treatment.
-   Split into `locked` and a `struggling` class at full opacity with `--warn`.
-6. **`style.css:133` `#logHead`** hardcodes `#4e7a5e` = 3.97:1, outside the
-   token set. → `--logline`.
-7. **`.pip.miss`** uses `--faintest` (3.04:1) on genuine 10px text. → `--faint`.
-   Also `cursor: help` promises a tooltip that does not exist.
-8. **`rarity.js` `mythic`** `#d64a4a` → `#d85454` (4.20 → 4.52:1).
+   the client prints a rate the player never banks. **The only defect here that
+   lies about a number the player optimises against.** A faucet display —
+   re-run the sim in the same commit.
+3. **`bots.js:116` `setAlloc` has no lock gate** — locked rows accept
+   allocation input and silently discard it.
+4. **`main.js:634` `setParty` checks `running` but never `dutyUnlocked`** —
+   Dungeon duty buttons stay clickable while their sibling `<input>` correctly
+   disables.
+5. **`main.js:995` conflates two states** — `toggle("locked", !unlocked || (n > 0
+   && !zr.held))` gives a genuinely locked zone and a live manned zone that
+   cannot hold identical treatment. Split into `locked` and a `struggling`
+   class at full opacity with `--warn`. DESIGN.md already specs `struggling`.
+6. ~~`style.css` `#logHead`~~ — **CLOSED**, element deleted with the shell prompt.
+7. **`style.css:888,891` `.pip.miss`** uses `--faintest` (3.04:1) on genuine
+   10px text, and `cursor: help` promises a tooltip that does not exist.
+8. ~~`rarity.js` mythic~~ — **CLOSED**, epic and mythic both lifted to v4.
 
 Dead CSS confirmed by grep, safe to delete: `.ztable`, `#pullBtn`,
 `#ticketGain`, `#tierAtk`/`#tierSpeed`, `#gmSec`/`#gmPanel`,
 `.tier-risk`/`.tier-nightmare`.
 
-### Then: Plan 2 Phase 2 (Help tab) and Phase 3 (recompose)
+### Open with the user, not with the code
 
-Phase 2 is a **7th tab in the row** (user's explicit choice over a `?` pane —
-the row must re-fit for seven at 375px). It moves every mechanic explanation
-off the live surfaces. The rule established this session: **fixed terms →
-ledger table, state → short line, mechanic explanation → Help.** Four blocks
-were already hand-fixed this way (`eba1698`, `9e2f394`, `3b3f681`); the rest of
-every surface still needs the sweep. Phase 3 then recomposes the five
-remaining surfaces plus Help in v3.
+- **Maren/Vess renders GREEN, not gold.** DNA v4 lane 2 gives each Warden its
+  own hue and the Boss name takes it. Working as specified; the user was asked
+  and has not ruled. Boss-only, cheap to reverse.
+- **`main` is unmerged.** Waiting on a playtest.
 
-### Hard-won rules from this session — do not re-derive
+### Hard-won rules from these sessions — do not re-derive
 
 - **Surface separation is an L\* question; only text is a ratio question.**
   WCAG's `+0.05` flare term crushes dark-on-dark ratios toward 1.0, so an
-  invisible surface pair reads as an acceptable 1.04:1. The whole ramp was
-  compressed into ~3 L\* and `--inset` was *lighter* than `--panel` while named
-  "recessed". Use `internal/mocks/contrast.mjs`, which prints both.
-- **Ornament fails toward "ruin" by default.** A rule with a gap in it (a
-  per-cell `border-top` interrupted by a grid column-gap) reads as damage,
-  which the no-decay constraint forbids. Full-span rule elements instead.
-- **A manual token sweep cannot establish its own exhaustiveness.** Four review
-  rounds each falsified a prior "exhaustive" claim in a new place: no dimension
-  tier → values outside the shape being looked for → a whole property
-  (`margin-top`) → a composed selector. `build.mjs`'s assertions are the
-  durable answer; DW-6.2 was extended to cover px because of this.
+  invisible surface pair reads as an acceptable 1.04:1. Use
+  `internal/mocks/contrast.mjs`, which prints both.
+- **Ornament fails toward "ruin" by default.** A rule with a gap in it reads as
+  damage, which the no-decay constraint forbids. Full-span rule elements.
+- **A manual sweep cannot establish its own exhaustiveness.** Four review
+  rounds each falsified a prior "exhaustive" claim in a new place. The Phase 2
+  copy sweep walked JOURNEY's register tables and missed two strings that
+  existed only in its final-copy tables. **Sweep the RENDERED output; treat the
+  tables as intent and the pixels as inventory.** `build.mjs`'s assertions are
+  the durable version of this.
+- **The mocks are generated.** Edit `internal/mocks/build.mjs`, never the
+  emitted `.html`. The mocks are the design contract and must not drift from
+  what ships — when you change shipped CSS, change the generator too.
+- **Not every relocation row has a shipped counterpart.** Several describe copy
+  that only ever existed as `(NEW)` rows in JOURNEY's final-copy tables. Check
+  before "cutting" something that was never there.
 - The copy pass's brief ("spell out numbers and consequences") **over-applied**
-  and produced a tutorial in every HUD. See the ledger rule above.
+  and produced a tutorial in every HUD. Fixed terms → ledger table, state →
+  short line, mechanic explanation → Help.
 
-## Where the build stands (game code as of `4d41da7` — unchanged since)
+## Where the build stands (game code as of `78e900a`)
 
 Playable arc: intro attempt 0.0008% → unlock → bot swarm economy → gear/
 Armory ranks → Warden health whittles down at Combat Power → Dungeon runs
 spend the swarm for loot. W1 breaks at **11.8h (sim EV)**; sim flags it as
 slightly under the 12h–2d target — deep Wardens stretch far longer.
 
-All on `staging` (Pages serves it); **`main` lags 57 commits** pending user
+All on `staging` (Pages serves it); **`main` lags 94 commits** pending user
 approval — fast-forward main once the current staging build is approved.
 
-Tabs, in unlock order: **Boss · Training · Grind · Player · Delve · Dungeon**.
-(GM retired in `82d2d99` — see below.)
+Tabs, in unlock order: **Boss · Training · Grind · Player · Delve · Dungeon ·
+Help**. (GM retired in `82d2d99` — see below; Help added `dd883bb`.)
 
 ### RETIRED in `82d2d99`: the GM tab + the whole ticket economy
 The UI audit found four GM purchases selling upgrades for mechanics the
@@ -135,21 +138,16 @@ Consequences now live in the build:
   carries over only ranks the tree still has.
 - Sim unaffected: W1 still 11.8h, `baseline.json` unchanged.
 
-**Next session: execute Phase 1 of the UI de-duplication plan.** The plan is
-written, CHECK-passed and reconciled at
-`.design-foundations/plans/2026-07-25-ui-dedup-audit.md` (6 phases, Standard
-track, `design-for-ai` plugin). The current state is already MEASURED — see
-`internal/UI-AUDIT.md`; Phase 1 starts from it rather than re-deriving it.
+**Both UI plans are done and integrated — see the handoff at the top of this
+file for what shipped and what is still open.** `internal/UI-AUDIT.md` is the
+pre-plan measurement and is now historical.
 
-Phase 1 produces `internal/JOURNEY.md`: Job, Journey, IA, and the fact-ownership
-map (every displayed fact → exactly one owning tab, plus each row's STATE —
-live / dormant / locked, which is DW-1.5 and the audit's biggest finding).
+`npm run shots` re-captures all seven tabs + the Dungeon mid-run at 375px
+whenever you need current pixels. Help is ~3,500 CSS px of prose and falls
+back to 1x capture; that is expected, not a failure.
 
-`npm run shots` re-captures all six tabs + the Dungeon mid-run at 375px
-whenever you need current pixels.
-
-Three deviations from the plugin's defaults are recorded in the plan and must
-be honored by every dispatch:
+Three deviations from the `design-for-ai` plugin's defaults are recorded in
+both plans and must be honored by every dispatch:
 1. **Artifacts live in `internal/`**, not the project root (repo rule: the root
    is the Pages web root). The plugin's agents check root by default — if one
    finds no DESIGN.md there it drops to greyscale wireframe mode while the real
