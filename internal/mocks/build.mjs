@@ -625,6 +625,10 @@ details.trophySet>summary{cursor:pointer;color:var(--faint);
   padding:var(--space-2) 0;display:list-item}
 details.trophySet>summary .trophySetProg{float:right}
 details.trophySet>.pips{margin-top:var(--space-4)}
+/* Chrome lets an author display on a DIRECT child of details override the UA
+   rule hiding it while closed, and .pips is display:flex — so the dormant set
+   specified here never actually collapsed in the rendered mock. Stated. */
+details.trophySet:not([open])>.pips{display:none}
 .pips{display:flex;flex-wrap:wrap;gap:var(--space-3)}
 .pip{font-size:var(--fs-label);font-family:var(--font-data);
   padding:var(--space-1) var(--space-4);

@@ -785,8 +785,20 @@ function renderArmory() {
   const st = armory.armoryStats(state);
   $("armorySub").innerHTML = `— <b>${st.totalRank}</b> total rank · ${st.logged} entries · ` +
     `<span class="sat">+${mods.atkPct.toFixed(1)}% ATK · +${mods.hastePct.toFixed(1)}% haste · +${mods.copperPct.toFixed(1)}% copper</span>`;
+  // G2: a locked zone drops nothing, so its three entries can never rank — they
+  // were 30 identical "R0 · +0.00%" cells with a full progress bar each,
+  // sitting at the same weight as entries actually being fed. Reuses
+  // farm.zoneUnlocked, the same predicate the Grind tab gates on, so the two
+  // surfaces cannot disagree about which zones exist.
+  const clears = (state.cleared || []).length;
   let html = "";
   for (let z = 1; z <= farm.zones.length; z++) {
+    if (!farm.zoneUnlocked(clears, z - 1)) {
+      const need = farm.zoneUnlockClears(z - 1);
+      html += `<div class="amRow locked"><span class="amZone">z${z}</span>` +
+        `<span class="amLock">locked · clear ${need} door${need > 1 ? "s" : ""}</span></div>`;
+      continue;
+    }
     let cells = "";
     for (const slot of SLOTS) {
       const pts = state.armory[`${slot}:${z}`] || 0;
@@ -1137,6 +1149,19 @@ function render() {
 
   { // Trophy cabinet: one 7-piece set per Warden. Owned pieces glow; unowned
     // are silhouettes. Break for the first, farm the boss for the rest.
+    /* G2: a set you own nothing from COLLAPSES. All ten walls drew all seven
+       pieces regardless of progress, so a fresh account rendered 70 pips — 63
+       of them for Wardens it had never met — and the cabinet read as a wall of
+       identical unearned rows rather than as a collection.
+
+       This is the mocks' own design, not a new one: build.mjs has specified
+       `details.trophySet.dormant` since the design pass, and the shipped build
+       had drifted from its own contract. A native <details> costs one line
+       closed, still lets the player open it to see what the set contains, and
+       needs no JS — the disclosure is the platform's.
+
+       Keyed on pieces OWNED rather than on wall reached, which also covers the
+       door you have broken but not yet farmed. */
     const walls = bosses.filter(b => b.set).map(b => b.wall);
     let done = 0;
     const html = walls.map(w => {
@@ -1146,7 +1171,13 @@ function render() {
         const p = pieceOf(w, i), own = ownsPiece(state, w, i);
         return `<span class="pip ${own ? "own" : "miss"}">${own ? "✓" : "◈"} ${p.part} <b>+${p.pct}% ${laneWord(p.lane)}</b></span>`;
       }).join("");
-      return `<div class="trophySet ${complete ? "complete" : ""}">` +
+      if (have === 0) {
+        return `<details class="trophySet dormant">` +
+          `<summary><span class="trophySetName">${bw.set.name}</span>` +
+          `<span class="trophySetProg">0/${PARTS.length}</span></summary>` +
+          `<div class="pips">${pips}</div></details>`;
+      }
+      return `<div class="trophySet ${complete ? "complete" : "started"}">` +
         `<div class="trophySetHead"><span class="trophySetName">${bw.set.name}</span>` +
         `<span class="trophySetProg">${have}/${PARTS.length}${complete ? ` · ×${(1 + SET_BONUS).toFixed(2)} dmg` : ""}</span></div>` +
         `<div class="pips">${pips}</div></div>`;
