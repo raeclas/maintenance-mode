@@ -519,9 +519,9 @@ section.game button:disabled { color: var(--faint); cursor: default; }
 .allocMini button { padding: 4px 8px; font-size: var(--fs-small); color: var(--recede); border-color: var(--line-soft); }
 /* power controls (cap/max/0) collapse behind ⋯ until tapped — the row's
    default state is just −/value/+ */
-.allocMore { display: none; align-items: center; gap: 3px; }
-.allocMini.expanded .allocMore { display: inline-flex; }
-.allocMini.expanded .allocX { color: var(--gold); border-color: var(--line); }
+/* .allocMore / .allocX are gone — max and 0 are inline now. The expander
+   toggled two extra buttons into the row and blew the layout out at 375px. */
+.allocMini { flex-wrap: wrap; }
 .allocMini input {
   width: 44px;
   background: var(--inset);

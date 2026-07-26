@@ -461,16 +461,16 @@ function getAlloc(key) {
 function allocMini(key, withCap = true) {
   const span = document.createElement("span");
   span.className = "allocMini";
-  // shows −/value/+ and cap inline; max/0 hide behind ⋯
+  // Every control inline. max/0 used to hide behind a ⋯ expander, which added
+  // a whole extra row of buttons on toggle and broke the layout at 375px —
+  // and it was a disclosure state protecting nothing. Six short controls fit.
   span.innerHTML = `<button data-d="-1">−</button><input type="number" min="0" step="1"><button data-d="1">+</button>` +
     `${withCap ? `<button data-c>cap</button>` : ""}` +
-    `<button data-x class="allocX" title="more">⋯</button>` +
-    `<span class="allocMore"><button data-m>max</button><button data-z>0</button></span>`;
+    `<button data-m>max</button><button data-z>0</button>`;
   span.addEventListener("click", e => {
     const btn = e.target.closest("button");
     if (!btn) return;
     e.stopPropagation();
-    if (btn.dataset.x !== undefined) { span.classList.toggle("expanded"); return; }
     if (btn.dataset.d) bots.setAlloc(state, key, getAlloc(key) + Number(btn.dataset.d));
     else if (btn.dataset.c !== undefined) bots.setAlloc(state, key, bots.capNeeded(state.bots, key, derive(state)));
     else if (btn.dataset.m !== undefined) bots.setAlloc(state, key, getAlloc(key) + Math.floor(bots.freeBots(state.bots)));
