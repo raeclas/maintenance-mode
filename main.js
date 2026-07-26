@@ -107,7 +107,8 @@ const laneWord = lane => lane === "atk" ? "ATK" : lane === "speed" ? "haste" : "
 
 // The log is the dead server's console: classify each line by event kind so
 // it's scannable by type, and swap the emoji markers for terminal glyphs.
-function log(msg) {
+// `tag` optionally colours one run of the line: {before, text, rarity, after}.
+function log(msg, tag) {
   let cls = "log-plain";
   if (msg.startsWith("★")) cls = "log-event";
   else if (msg.startsWith("🏆")) { cls = "log-loot"; msg = "◆ " + msg.slice(2).trimStart(); }
@@ -117,6 +118,16 @@ function log(msg) {
   const div = document.createElement("div");
   div.className = "logline " + cls;
   div.textContent = msg;
+  // DNA v4 lane 1 in the console: a drop names its item in the tier's hue.
+  // Built as a node with textContent rather than innerHTML — item names ride
+  // in on imported saves, so this line stays a non-injecting path.
+  if (tag) {
+    const span = document.createElement("span");
+    span.className = "rar rar-" + tag.rarity;
+    span.textContent = tag.text;
+    div.textContent = "";
+    div.append(tag.before, span, tag.after);
+  }
   $("log").prepend(div);
   while ($("log").children.length > 40) $("log").lastChild.remove();
 }
@@ -142,7 +153,10 @@ function onDrop(item) {
   const r = routeDrop(state, item); // filter: keep→stash, else→scrap (never auto-equip)
   stashDirty = true; armoryDirty = true;
   const fate = r.equipped ? "equipped" : r.kept ? "stashed" : `salvaged +${r.scrap.n} ${item.rarity} scrap`;
-  log(`drop: ${rar} ${item.name} ${fmt(item.ip)}IP · ${fate}`);
+  log(`drop: ${rar} ${item.name} ${fmt(item.ip)}IP · ${fate}`, {
+    before: "drop: ", text: `${rar} ${item.name}`,
+    rarity: item.rarity, after: ` ${fmt(item.ip)}IP · ${fate}`,
+  });
   if (r.merge?.rankedUp) { // the Armory rank-up spike — every drop advances an entry, this crosses a threshold
     const m = r.merge;
     log(`ARMORY — ${m.name} rank ${m.from}→${m.to}, +${m.pct.toFixed(2)}% ${laneWord(m.lane)}`);
@@ -346,13 +360,24 @@ for (const slot of SLOTS) {
 }
 
 // ---- farming: dense zone table, built once, cells updated in render ----
+// DNA v4 lane 4: the IP power band, cold to hot in groups of three zones.
+// The chip's ground is a --well mix, a whole luminance tier below the ink
+// lanes, so a band never competes with a rarity or accent hue.
+const bandOf = i => Math.min(5, Math.floor(i / 3) + 1);
+// DNA v4 lane 1 on a gear slot: `filled` picks the raised plate, `r-<rarity>`
+// supplies its ground and edge. Pass null to empty the slot back out.
+function setSlotRarity(el, rarityId) {
+  for (const c of [...el.classList]) if (c.startsWith("r-")) el.classList.remove(c);
+  el.classList.toggle("filled", !!rarityId);
+  if (rarityId) el.classList.add(`r-${rarityId}`);
+}
 // ---- zones: bot-only, same row component as training ----
 const zoneRows = farm.zones.map((z, i) => {
   const row = document.createElement("div");
   row.className = "row";
   row.innerHTML =
     `<span class="rowName">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP</div></span>` +
-    `<span class="rowGain">${fmt(z.copper)}c/kill<div class="sub">IP ${fmt(z.ipLo)}–${fmt(z.ipHi)}</div></span>` +
+    `<span class="rowGain">${fmt(z.copper)}c/kill<div class="sub"><span class="band b${bandOf(i)}">IP ${fmt(z.ipLo)}–${fmt(z.ipHi)}</span></div></span>` +
     `<span class="rowAlloc"></span>` +
     `<span class="rowStat" id="zs${i}"></span>` +
     `<div class="rowBar"><div class="rowFill" id="zf${i}"></div></div>`;
@@ -568,11 +593,13 @@ function renderStash() {
     const up = isUpgrade(state, item); // strict upgrade over what's equipped in the slot
     const affixes = (item.affixes || []).map(a => affixLabel(a, state)).join(" · ");
     const row = document.createElement("div");
-    row.className = "stashRow" + (up ? " upgrade" : "") + (item.lock ? " locked" : "");
-    row.style.borderLeftColor = up ? "var(--gold)" : rar.color;
+    // DNA v4 lane 1: the r-<rarity> class carries both the plate ground (--rp)
+    // and the ink (--ri). The border colour and name colour used to be set
+    // inline here; inline wins over the class, so the plate would never show.
+    row.className = "stashRow r-" + rar.id + (up ? " upgrade" : "") + (item.lock ? " locked" : "");
     row.innerHTML =
       `<span class="sMark">${up ? "▲" : item.lock ? "L" : ""}</span>` +
-      `<span class="sName" style="color:${rar.color}">${item.name}</span>` +
+      `<span class="sName rar-${rar.id}">${item.name}</span>` +
       `<span class="sAct"><button class="eq">equip</button><button class="lk">${item.lock ? "unlock" : "lock"}</button><button class="sv" ${item.lock ? "disabled" : ""}>×${scrapYield(item)}</button></span>` +
       `<span class="sInfo">${item.slot} · IP ${fmt(item.ip)}${item.plus ? ` +${item.plus}` : ""}${affixes ? ` · ${affixes}` : ""}</span>`;
     row.querySelector(".eq").addEventListener("click", () => { equipFromStash(state, idx); delete pendingReforge[item.slot]; stashDirty = true; });
@@ -827,7 +854,7 @@ function render() {
   if (document.activeElement !== $("keepIp")) $("keepIp").value = state.gear.keepIp;
   const owned = RARITIES.filter(r => (state.scrap[r.id] || 0) > 0);
   $("scrapWallet").innerHTML = owned.length
-    ? owned.map(r => `<span class="scrapPill" style="border-color:${r.color};color:${r.color}">${fmt(state.scrap[r.id])} ${r.name.toLowerCase()}</span>`).join("")
+    ? owned.map(r => `<span class="scrapPill r-${r.id}">${fmt(state.scrap[r.id])} ${r.name.toLowerCase()}</span>`).join("")
     : `<span class="muted">no scrap yet — salvage drops to earn it</span>`;
 
   // bot enhance squad
@@ -882,15 +909,17 @@ function render() {
       const lines = (item.affixes || []).map(a => `<div class="affixItem">${affixLabel(a, state)}</div>`).join("");
       si.innerHTML =
         `<div class="itemHeader">` +
-          `<span class="itemName" style="color:${rar.color}">${item.name}</span>` +
-          `<span class="rarityTag" style="color:${rar.color}">${rar.name}</span>` +
+          `<span class="itemName rar-${rar.id}">${item.name}</span>` +
+          `<span class="rarityTag rar-${rar.id}">${rar.name}</span>` +
           `<span class="itemMeta">IP ${fmt(item.ip)}${item.plus ? ` +${item.plus}` : ""} · ${fmt(contribution(item))} ATK</span>` +
         `</div>` +
         (lines ? `<div class="affixList">${lines}</div>` : `<div class="affixList muted">no affixes</div>`);
-      slotEls[slot].style.borderLeftColor = rar.color;
+      // lane 1 again: the plate is class-driven, so the inline border colour
+      // that used to live here has to go or it out-specifies --ri.
+      setSlotRarity(slotEls[slot], rar.id);
     } else {
       si.textContent = "—";
-      slotEls[slot].style.borderLeftColor = "";
+      setSlotRarity(slotEls[slot], null);
     }
     si.className = "slotItem" + (item ? ` tier-${enh.zone(item.plus)}` : "");
     const btn = $(`se_${slot}`);

@@ -45,6 +45,21 @@ const SEED = `(() => {
   s.bots.alloc.zones[0] = 6; s.bots.alloc.atk[0] = 4; s.bots.alloc.speed[0] = 3;
   s.dungeon.cache = 900;
   s.instance.key = 3; s.instance.party = {interrupt:4, dispel:4, adds:4}; s.instance.bankAt = 8;
+  // Gear and stash, because DNA v4's rarity lane is only visible on items and
+  // an empty Player tab audits nothing. One item per slot plus a spread across
+  // the ramp, so every plate colour renders in one shot.
+  const mk = (slot, name, rarity, ip, zone, plus = 0) =>
+    ({ slot, name, rarity, ip, zone, plus, affixes: [] });
+  s.gear.weapon = mk("weapon", "Sentry Halberd", "legendary", 11200, 5, 12);
+  s.gear.armor  = mk("armor",  "Sentry Plate",   "rare",       8200, 5, 7);
+  s.gear.stash = [
+    mk("weapon", "Threshold Cleaver",     "epic",      18600, 6),
+    mk("armor",  "Cinder Scale Coat",     "rare",       1450, 4),
+    mk("charm",  "Salt Talisman",         "common",      380, 3),
+    mk("weapon", "World-Edge Blade",      "origin",    94000, 15),
+    mk("charm",  "Spire Ward",            "mythic",    41200, 14),
+    mk("armor",  "Weaver-Silk Jerkin",    "uncommon",     95, 2),
+  ];
   document.querySelectorAll('.game').forEach(el => el.classList.remove('hidden'));
   window.__mm.save();
   return 'seeded';
