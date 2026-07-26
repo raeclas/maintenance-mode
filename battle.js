@@ -336,7 +336,10 @@ const LOOKS = {
   w4:  { kind: "ring",   scale: 1.34, arc: 1, pulse: 0.30 },
   // "Everything temporary here became forever." Vess's construction, guttering.
   // One number apart, seven doors apart.
-  w5:  { kind: "vein",   heat: 0.20 },
+  // 0.20 was indistinguishable from Sef's nothing, and two doors reading as
+  // "no light" costs Sef the signal his whole identity rests on. An ember, not
+  // an absence: clearly dimmer than Vess, clearly still lit.
+  w5:  { kind: "vein",   heat: 0.34 },
   // "Some servers should be allowed to die with dignity." Hostile and
   // defensive, so the sweep leads on the side facing the door it is protecting.
   w6:  { kind: "sweep",  scale: 0.92, bias: -1 },

@@ -23,7 +23,12 @@ import { fmt, fmtDepth } from "./format.js";
 const state = newState();
 const loaded = load(state);
 let boss = getBoss(state.wall); // reassigned by advanceWall on a break
-window.__mm = { state, save: () => save(state) }; // dev hook
+// Dev hook. `refreshBoss` is exposed because the arena review harness
+// (internal/arena.mjs) sets state.wall directly, and the door's hue only moves
+// through setWardenHue() inside refreshBoss(). Without it every screenshot came
+// out in --w2's green whatever door it claimed to be — the tool was lying, not
+// the game.
+window.__mm = { state, save: () => save(state), refreshBoss: () => refreshBoss() };
 
 // ---- dev mode: ?dev in the URL. Time scale + shortcuts. Never saved. ----
 const DEV = new URLSearchParams(location.search).has("dev");

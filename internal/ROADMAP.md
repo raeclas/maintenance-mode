@@ -331,6 +331,46 @@ comes from absence, not decay. No glitch, corruption, or broken frames.
 (Spoofing lane is DONE as of `4d41da7` — it became the Dungeon's proxy-rotation
 consumable, which is where ban mitigation finally has a reason to exist.)
 
+## Future gameplay — a meta reset after W10 (user-raised 2026-07-26)
+
+The user wants a meta reset behind the Tenth Door. **Logged, not designed** —
+REMAKE-DESIGN.md §10 principle 5 says layers arrive at exhaustion, and nothing
+is exhausted: W1 breaks at 11.8h in the sim and W2–W10 are still explicitly
+rough starting values.
+
+This shape is already sanctioned. REMAKE-DESIGN.md:394 logs it as the
+"alternative shape": *capstone-wall breaks AS layer triggers (ITRTG fusion: boss
+victory = layer transition)*. So the question is never "may we", it is "as
+what".
+
+Three constraints it inherits, all from §10, none negotiable:
+
+1. **Principle 1 — new layers change RULES, not numbers.** A reset that pays a
+   multiplier is out, and specifically it is a duplicate: Ban Wave already owns
+   that slot. `scripts` is a permanent +player-damage term, and because bot squad
+   DPS is player-coupled it lifts the boss fight and the farm together. A second
+   multiplier reset would be the same system with a different noun.
+2. **Principle 6 — no layer resets, demotes or replaces the character.** Ban
+   Wave is legal only because it wipes the born-disposable bot stratum and
+   nothing else (guideline 8's 2026-07-21 amendment). A W10 reset needs an
+   equally narrow, equally diegetic target — and there is no second disposable
+   stratum yet.
+3. **Principle 4 — walls should be diegetic.** "New Game+" is not; something the
+   dead server does to itself is.
+
+**One concrete conflict to resolve before any of this is buildable.** W10's break
+line currently *ends the story*: "It opens onto a login screen, frozen. PLAYERS
+ONLINE: 1. That was always you. … Thank you for playing. The server logs off,
+content." You cannot log the server off content and then hand the player a fresh
+ladder. Either that line changes, or the reset is diegetically something other
+than "keep going" — **the server refusing to stay off** is the version that keeps
+the ending intact and earns the reset, rather than retconning it.
+
+Also unresolved: what the ten Wardens are on a second pass. Guideline 8 forbids
+destroying story canon, and eight of them have now been characterised — Sef's
+grievance and Osei's age are canon as of this session. Re-fighting them as
+if nothing happened is the trap.
+
 ## Known debts / notes
 - **The design guidelines are HEURISTICS, not law.** Do not turn one into a
   gate the user has to clear before work starts, and do not call them "law N".

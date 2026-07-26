@@ -69,11 +69,16 @@ export const bosses = [
     id: "w4", wall: 4, name: "Osei", title: "Warden of the Fourth Door",
     hp: 6_000_000_000_000_000, windowS: 30, speedKnee: 18.0,
     set: { name: "The Fourth Door", mult: 3.4 },
+    // Osei is the OLDEST Warden — posted before the others, and the only one who
+    // remembers the server ALIVE rather than dying. Everyone else mourns a thing
+    // they were told about; he was there. His envelope claims this (widest of the
+    // ten, the only unbroken circle, the slowest pulse) so his lines have to as
+    // well, or the art is asserting something the canon never said.
     dialogue: {
-      greet: ["So you saw the guildhalls. All those names in the roster, greyed out. You're the only one still coloured in."],
-      fail_hopeless: ["You fight like someone with something to prove to no one. Fitting."],
-      fail_near: ["…Closer. The hinges remember you now."],
-      break: ["Go through. The auction house is just beyond — every bid frozen mid-war, six years stale."],
+      greet: ["So you saw the guildhalls. All those names in the roster, greyed out — I watched most of them get typed in. I stood here before the second door had a Warden."],
+      fail_hopeless: ["I have watched ten thousand players fail at easier doors than this one. I remember what a queue sounded like. You are quieter."],
+      fail_near: ["…Closer. Nothing has moved these hinges since the server was full."],
+      break: ["Go through. The auction house is just beyond — every bid frozen mid-war, six years stale. I saw that war start. I am the only one left who did."],
     },
   },
   {
