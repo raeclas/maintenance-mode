@@ -10,7 +10,7 @@ import { armoryMods } from "./armory.js";
 import { critStats, critFactor } from "./crits.js";
 import { delveBonus } from "./dungeon.js";
 import { getBoss } from "./bosses.js";
-import { passiveMult, activeMods } from "./skills.js";
+import { passiveMult, activeMods, coreMult } from "./skills.js";
 
 export const BASE_ATK = 10;
 export const BASE_HPS = 2.0;
@@ -49,18 +49,22 @@ export function derive(state) {
   const tm = trophyMods(state); // boss Trophy set: per-piece boosts + set bonus
   const am = armoryMods(state);  // the Armory: gear-collection rank passives (displayed lane terms)
   atkPct += am.atkPct; hastePct += am.hastePct; copperPct += am.copperPct;
-  const cs = critStats(state);   // two-tier crit → one displayed CP factor (crits.js)
+  const cs = critStats(state);   // two-tier crit → per-hit roll stats + CP factor
   // Skill lane (skills.js). Focus forces every hit to crit; Rage doubles the
-  // hit rate; passives fold as ONE displayed "skills ×" EV term, exactly the
-  // crit pattern — smooth whittle, spiky stream. Hits are computed FIRST
-  // because the time-based procs' EV (Judgment, Frenzy, Trance) depends on
-  // the live hit rate.
+  // hit rate. Two ATK figures leave here:
+  //   atkCore — the deterministic per-swing base (buffs, gear, trophies,
+  //             Power Strike, Might). The LIVE fight rolls crits and procs
+  //             on top of this for real (skills.tick roller).
+  //   atk     — the EV total (core × critFactor × proc EV), for RATE
+  //             consumers: bot DPS borrowing, Delve depth, time-to-breach,
+  //             the sim. E[roller] == atk × hits by construction.
   const act = activeMods(state);
   if (act.allCrit) cs.rate = 1;
   const knee = getBoss(state.wall)?.speedKnee ?? SPEED_KNEE;
   const hitsPerSec = softHits(BASE_HPS + state.bots.trained.hits + hitsFlat, knee) * (1 + hastePct / 100) * (1 + tm.hastePct / 100) * act.hitsMult;
   const cf = critFactor(cs);
   const sk = passiveMult(state, hitsPerSec, cs, cf);
-  const atk = (BASE_ATK + state.bots.trained.atk + gearAtk) * (1 + atkPct / 100) * (1 + tm.atkPct / 100) * scriptMult(state) * tm.dmgMult * delveBonus(state, "overclock") * cf * sk.mult * act.atkMult;
-  return { atk, hitsPerSec, copperMult: 1 + (copperPct + tm.copperPct) / 100, crit: cs, skills: sk };
+  const atkCore = (BASE_ATK + state.bots.trained.atk + gearAtk) * (1 + atkPct / 100) * (1 + tm.atkPct / 100) * scriptMult(state) * tm.dmgMult * delveBonus(state, "overclock") * coreMult(state) * act.atkMult;
+  const atk = atkCore * cf * sk.mult;
+  return { atk, atkCore, hitsPerSec, copperMult: 1 + (copperPct + tm.copperPct) / 100, crit: cs, skills: sk };
 }

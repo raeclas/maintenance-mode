@@ -4,9 +4,6 @@
 // `*` / `**` in a MapleStory-style skin (outlined digits, pop + drift + fade).
 import { hpFrac } from "./pull.js";
 import { getBoss } from "./bosses.js";
-import { derive } from "./stats.js";
-import { critStats, rollHit } from "./crits.js";
-import { visualProcs } from "./skills.js";
 import { fmt } from "./format.js";
 
 // 16/10, not the old 16/7. A letterbox cannot hold a door and a standing
@@ -118,6 +115,13 @@ export function notifyEnhance(plus, success) {
   if (risk) shakeUntil = now + (nightmare ? 500 : 220);
   if (nightmare) flashUntil = now + 120;
   spawnFloater(`+${plus}`, c(nightmare ? "--gold-bright" : "--dmg-text"), nightmare ? 26 : 18);
+}
+
+// A REAL rolled hit from the logic tick (the skills.js roller). The stream
+// stopped rolling its own dice 2026-07-27 — every number drawn here landed.
+export function notifyHit(dmg, tier) {
+  spawnHit(dmg, tier, performance.now());
+  bossFlashUntil = performance.now() + 70;
 }
 
 // Skill feedback from main.js (casts, Judgment beats, combo finishers). Same
@@ -709,36 +713,9 @@ export function renderBattle(state) {
   drawBoss(now, state.boss.broken, goneFrac, boss?.id);
   drawHero(now, fighting);
 
-  // damage stream: auto-hits at the character's hit rate, each rolls a crit tier
-  if (fighting) {
-    const d = derive(state);
-    const interval = Math.max(90, 1000 / d.hitsPerSec);
-    if (now - lastHitAt > interval) {
-      lastHitAt = now;
-      const cs = d.crit || critStats(state);
-      const { dmg, tier } = rollHit(d.atk, cs);
-      spawnHit(dmg, tier, now);
-      bossFlashUntil = now + 70;
-      // skill procs are visual theater on top of the EV-smooth whittle (the
-      // crit pattern): roll them per streamed hit and draw the spectacle
-      for (const p of visualProcs(state, d.atk)) {
-        if (p.kind === "double") {
-          const second = rollHit(d.atk, cs);
-          spawnHit(second.dmg, second.tier, now);
-        } else if (p.kind === "trance") {
-          spawnFloater(`${fmt(d.atk)}~`, c("--gold-dim"), 13);
-        } else if (p.kind === "meteor") {
-          spawnFloater(`☄ ${fmt(p.dmg)}`, c("--super-crit"), 30);
-          shakeUntil = Math.max(shakeUntil, now + 250);
-          flashUntil = Math.max(flashUntil, now + 120);
-        } else if (p.kind === "chaos") {
-          spawnFloater("CHAOS", c("--gold-bright"), 16);
-          const echo = rollHit(d.atk, cs);
-          spawnHit(echo.dmg, echo.tier, now);
-        }
-      }
-    }
-  }
+  // The damage stream arrives from the LOGIC tick now (main.js forwards the
+  // roller's real hits through notifyHit/notifySkill) — the canvas rolls
+  // nothing itself. `fighting` still gates poses and the boss flash.
 
   for (let i = floaters.length - 1; i >= 0; i--) {
     const f = floaters[i];

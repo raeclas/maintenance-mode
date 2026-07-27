@@ -1,15 +1,17 @@
 // skills.js — the character's skill book (dead-game register: what the MMO's
 // own skill window printed). Two lanes:
-//   PASSIVES — procs on the character's attacks. Their EXPECTED value folds
-//   into Combat Power as ONE displayed "skills ×" term (same pattern as
-//   crits.js: the whittle uses the smooth average, battle.js rolls the
-//   spectacle). Bots inherit through player atk — every skill buy speeds
-//   the farm too.
+//   PASSIVES — procs on the character's attacks, rolled FOR REAL in the
+//   logic tick (user verdict 2026-07-27: procs must actually proc). The
+//   boss's health chunks with what lands; passiveMult() keeps the matching
+//   EV for rate consumers (bots borrow it, projections/sim use it) — so
+//   every skill buy still speeds the farm through the player coupling.
 //   ACTIVES — press for a burst, spending a pip from ONE shared bank. Pips
 //   recharge on a timer that ticks live AND offline (clamp law); a full
 //   bank is the only place recharge is lost. Nothing decays, nothing
 //   resets — absence banks bursts, it never costs them (no-obligation veto).
 //
+import { rollHit } from "./crits.js";
+
 // Design contract (2026-07-27, "imba two-curve rule"): EV per copper starts
 // ~0.25%/c and gently falls down the ladder; spike MAGNITUDE grows ~×4 per
 // tier and is uncapped, while proc RATES and uptimes are band-capped. The
@@ -122,8 +124,11 @@ export function skillState() {
     pips: 0, pipT: 0,   // banked pips + recharge progress (s)
     energy: 0,
     comboT: 0,          // hits accumulated toward the next finisher
-    judgT: 0,           // Judgment metronome accumulator (visual beat)
+    judgT: 0,           // Judgment metronome accumulator
     swT: 0, swBank: 0,  // Second Wind clock + stored use (max 1)
+    hitCarry: 0,        // fractional swings carried between ticks (the roller)
+    frenzyT: 0,         // Frenzy window remaining (s) — fight-local, real
+    tranceT: 0,         // Battle Trance window remaining (s)
     // live burst timers, in REMAINING SECONDS — decremented by the same tick
     // live and offline, so the clamp law holds by construction
     rage: 0, might: 0, focus: 0, empower: 0, windup: 0, bladeHits: 0,
@@ -159,20 +164,21 @@ export function effRank(state, id) {
   return r;
 }
 
-/* ── the displayed "skills ×" term ─────────────────────────────────────────
-   Per-hit expected value of every learned passive, relative to the average
-   hit (which is critFactor × atk — the raw-atk procs divide by cf so the
-   fold is honest). Uptime procs (Frenzy, Trance) use renewal-process uptime
-   x/(1+x) with an internal cooldown assumed (no retrigger inside a window),
-   so uptime is a designed number, not an emergent one.                    */
+/* ── proc EV, for RATE consumers only ──────────────────────────────────────
+   The LIVE fight rolls every proc for real (tick below) — this EV exists for
+   the consumers that need a smooth rate: bot DPS borrowing (player coupling),
+   Delve depth, time-to-breach projections, and the sim (which replaces all
+   randomness with EV by design). E[roller] == this by construction; if you
+   change a proc, change BOTH or the projections lie.
+   Uptime procs (Frenzy, Trance) use renewal-process uptime x/(1+x) with an
+   internal cooldown (no retrigger inside a window). Power Strike is NOT here
+   — it's a deterministic buff and lives in derive()'s core product.        */
 export function passiveMult(state, hits, cs, cf) {
   if (!state.skills) return { mult: 1, terms: [] };
   const terms = [];
   const add = (id, name, m) => { if (m > 1) terms.push({ id, name, x: m }); };
   const h = Math.max(0.1, hits);
 
-  const rPS = effRank(state, "powerStrike");
-  if (rPS) add("powerStrike", "Power Strike", 1 + fx.powerStrike(rPS));
   const rDS = effRank(state, "doubleStrike");
   if (rDS) add("doubleStrike", "Double Strike", 1 + fx.doubleChance(rDS));
   const rJ = effRank(state, "judgment");
@@ -205,6 +211,13 @@ export function passiveMult(state, hits, cs, cf) {
   return { mult: terms.reduce((m, t) => m * t.x, 1), terms };
 }
 
+// Deterministic skill buffs (no RNG, no EV) — multiplied into derive()'s core
+// ATK product. Currently just Power Strike.
+export function coreMult(state) {
+  const r = rank(state, "powerStrike");
+  return r ? 1 + fx.powerStrike(r) : 1;
+}
+
 // Live burst modifiers for derive(). allCrit: Focus forces every hit to tier
 // ≥1 — derive sets cs.rate = 1 so the CP factor and the stream both surge.
 export function activeMods(state) {
@@ -218,13 +231,22 @@ export function activeMods(state) {
 }
 
 /* ── the shared tick: live and offline are the SAME function ──────────────
-   d = derive(state) (caller computes it), emit(ev) receives display events.
-   Returns { dmg } — REAL burst damage (windup completions, Blade Dance
-   riders) for the caller to land on the boss exactly like drain damage.  */
-export function tick(state, dt, d, emit = () => {}) {
+   d = derive(state), emit(ev) receives display events, rng is injectable
+   for tests. Returns { dmg } — the character's REAL damage this tick.
+
+   THE ROLLER (2026-07-27, by user verdict — "passives should actually
+   proc"): every swing is rolled for real here in the LOGIC tick — crit
+   tier, Double Strike, Meteor, Trance echoes, Chaos, the Combo counter,
+   Judgment's beat, Blade Dance riders. The boss's health chunks with what
+   actually lands; nothing is smoothed. Swings past ROLL_CAP per tick
+   (offline batches, ×600 dev speed) resolve at EV instead — same clamp
+   philosophy as every offline path, and E[roller] == the EV by
+   construction (see passiveMult).                                        */
+export const ROLL_CAP = 2000; // rolled swings per tick before EV takes over
+
+export function tick(state, dt, d, emit = () => {}, rng = Math.random) {
   const k = state.skills;
   if (!k) return { dmg: 0 };
-  const hits = d.hitsPerSec * dt;
   let dmg = 0;
 
   // pip recharge — stalls only at a full bank (the one designed loss)
@@ -235,42 +257,109 @@ export function tick(state, dt, d, emit = () => {}) {
       if (k.pips >= PIP_CAP) k.pipT = 0;
     }
   }
-  if (rank(state, "energyBurst")) k.energy = Math.min(ENERGY_CAP, k.energy + hits);
   if (rank(state, "secondWind") && k.swBank < 1) {
     k.swT += dt;
     if (k.swT >= fx.swClock(rank(state, "secondWind"))) { k.swT = 0; k.swBank = 1; }
-  }
-  if (rank(state, "comboAttack")) {
-    k.comboT += hits;
-    while (k.comboT >= COMBO_HITS) {
-      k.comboT -= COMBO_HITS;
-      // finisher damage is EV-folded; the pip shave is REAL
-      if (k.pips < PIP_CAP) k.pipT += fx.comboShave(rank(state, "comboAttack"));
-      emit({ type: "finisher", mult: fx.comboFin(effRank(state, "comboAttack")) });
-    }
-  }
-  if (rank(state, "judgment")) {
-    k.judgT += dt;
-    while (k.judgT >= JUDG_PERIOD) { // visual beat only — EV rides in derive
-      k.judgT -= JUDG_PERIOD;
-      emit({ type: "judgment", mult: fx.judgMult(effRank(state, "judgment")) });
-    }
   }
   if (k.windup > 0) {
     k.windup -= dt;
     if (k.windup <= 0) {
       k.windup = 0;
-      const hit = fx.smashMult(rank(state, "powerSmash")) * d.atk;
+      const hit = fx.smashMult(rank(state, "powerSmash")) * d.atkCore;
       dmg += hit;
       emit({ type: "smash", dmg: hit });
     }
   }
-  if (k.bladeHits > 0) {
-    const used = Math.min(k.bladeHits, hits);
-    k.bladeHits -= used;
-    dmg += used * fx.bladeBonus(rank(state, "bladeDance")) * d.atk;
-  }
   for (const t of ["rage", "might", "focus", "empower"]) k[t] = Math.max(0, k[t] - dt);
+  k.frenzyT = Math.max(0, k.frenzyT - dt);
+  k.tranceT = Math.max(0, k.tranceT - dt);
+
+  // ---- the swing roller ----
+  const atk = d.atkCore, cs = d.crit;
+  // Frenzy's window is fight-local: it speeds the CHARACTER's swings here,
+  // while rate consumers (bots, projections) see its EV via passiveMult.
+  k.hitCarry += d.hitsPerSec * (k.frenzyT > 0 ? 1 + fx.frenzyHaste() : 1) * dt;
+  let swings = Math.floor(k.hitCarry);
+  k.hitCarry -= swings;
+  if (swings > ROLL_CAP) { // batch overflow resolves at per-swing EV
+    dmg += (swings - ROLL_CAP) * d.atk;
+    // banked resources still accrue for the un-rolled swings
+    if (rank(state, "energyBurst")) k.energy = Math.min(ENERGY_CAP, k.energy + (swings - ROLL_CAP));
+    if (rank(state, "comboAttack")) k.comboT = (k.comboT + (swings - ROLL_CAP)) % COMBO_HITS;
+    swings = ROLL_CAP;
+  }
+  const rDS = effRank(state, "doubleStrike");
+  const rFB = effRank(state, "finishingBlow");
+  const rF = effRank(state, "frenzy");
+  const rT = effRank(state, "battleTrance");
+  const rM = effRank(state, "meteor");
+  const rCh = effRank(state, "chaosStrike");
+  const rC = rank(state, "comboAttack");
+  const swing = () => { // one rolled hit + its riders; returns damage, emits spectacle
+    let out = 0;
+    const h = rollHit(atk, cs, rng);
+    out += h.dmg;
+    emit({ type: "hit", dmg: h.dmg, tier: h.tier });
+    if (h.tier === 2 && rFB) {
+      const bonus = fx.finBonus(rFB) * atk;
+      out += bonus;
+      emit({ type: "finishing", dmg: bonus });
+    }
+    if (k.tranceT > 0) out += atk; // every hit in a lit trance echoes ×1
+    return out;
+  };
+  for (let i = 0; i < swings; i++) {
+    dmg += swing();
+    if (rDS && rng() < fx.doubleChance(rDS)) dmg += swing(); // the double is a full second hit
+    if (rM && rng() < 0.01) {
+      const hit = fx.meteorMult(rM) * atk;
+      dmg += hit;
+      emit({ type: "meteor", dmg: hit });
+    }
+    if (rF && k.frenzyT <= 0 && rng() < 0.05) { // ICD: no retrigger while lit
+      k.frenzyT = fx.frenzyWin(rF);
+      emit({ type: "frenzy", dur: k.frenzyT });
+    }
+    if (rT && k.tranceT <= 0 && rng() < 0.01) {
+      k.tranceT = fx.tranceWin(rT);
+      emit({ type: "trance", dur: k.tranceT });
+    }
+    if (rCh && rng() < fx.chaosChance(rCh)) { // re-fires one owned proc at random
+      const owned = [rDS && "double", rM && "meteor", rFB && "finishing"].filter(Boolean);
+      if (owned.length) {
+        const pick = owned[Math.floor(rng() * owned.length)];
+        const hit = pick === "double" ? rollHit(atk, cs, rng).dmg
+          : pick === "meteor" ? fx.meteorMult(rM) * atk
+          : fx.finBonus(rFB) * atk;
+        dmg += hit;
+        emit({ type: "chaos", dmg: hit });
+      }
+    }
+    if (rank(state, "energyBurst")) k.energy = Math.min(ENERGY_CAP, k.energy + 1);
+    if (k.bladeHits > 0) {
+      k.bladeHits--;
+      dmg += fx.bladeBonus(rank(state, "bladeDance")) * atk;
+    }
+    if (rC) {
+      k.comboT++;
+      if (k.comboT >= COMBO_HITS) {
+        k.comboT = 0;
+        const hit = fx.comboFin(effRank(state, "comboAttack")) * atk;
+        dmg += hit;
+        if (k.pips < PIP_CAP) k.pipT += fx.comboShave(rC); // the pip shave
+        emit({ type: "combo", dmg: hit });
+      }
+    }
+  }
+  if (rank(state, "judgment")) {
+    k.judgT += dt;
+    while (k.judgT >= JUDG_PERIOD) { // deterministic beat, REAL damage
+      k.judgT -= JUDG_PERIOD;
+      const hit = fx.judgMult(effRank(state, "judgment")) * atk;
+      dmg += hit;
+      emit({ type: "judgment", dmg: hit });
+    }
+  }
   return { dmg };
 }
 
@@ -306,12 +395,12 @@ export function cast(state, id, d, rng = Math.random) {
       k.pips--;
       let roll = rng(), out = WILD_TABLE[WILD_TABLE.length - 1];
       for (const o of WILD_TABLE) { if (roll < o.p) { out = o; break; } roll -= o.p; }
-      return { spent: "pip", dmg: out.mult(r) * d.atk, label: out.label, mult: out.mult(r) };
+      return { spent: "pip", dmg: out.mult(r) * d.atkCore, label: out.label, mult: out.mult(r) };
     }
   }
   if (id === "energyBurst") {
     if (k.energy < 1) return null;
-    const hit = k.energy * fx.burstRate(r) * d.atk;
+    const hit = k.energy * fx.burstRate(r) * d.atkCore;
     const spent = Math.floor(k.energy);
     k.energy = 0;
     return { spent: "energy", energy: spent, dmg: hit };
@@ -324,24 +413,6 @@ export function cast(state, id, d, rng = Math.random) {
     return { spent: "bank" };
   }
   return null;
-}
-
-/* Visual-only proc rolls for battle.js — one call per streamed hit. The
-   whittle already carries the EV; these are the spectacle (crit-precedent:
-   real math smooth, real spikes fake). Returns effects for the caller to
-   draw; ids match tokens battle.js already loads.                        */
-export function visualProcs(state, atk, rng = Math.random) {
-  if (!state.skills) return [];
-  const out = [];
-  const rDS = effRank(state, "doubleStrike");
-  if (rDS && rng() < fx.doubleChance(rDS)) out.push({ kind: "double" });
-  const rT = effRank(state, "battleTrance");
-  if (rT && rng() < 0.01) out.push({ kind: "trance" });
-  const rM = effRank(state, "meteor");
-  if (rM && rng() < 0.01) out.push({ kind: "meteor", dmg: fx.meteorMult(rM) * atk });
-  const rCh = effRank(state, "chaosStrike");
-  if (rCh && rng() < fx.chaosChance(rCh)) out.push({ kind: "chaos" });
-  return out;
 }
 
 export const fxValues = fx; // tests + UI peek at the per-rank curves

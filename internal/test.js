@@ -933,15 +933,37 @@ const skills = await import("../skills.js");
   assert.ok(Math.abs(skills.fxValues.doubleChance(99) - 0.30) < 1e-9); // Empower can't burst the cap
 }
 
-// Skills: the EV fold is the crit pattern — one displayed term, exact math
+// Skills: Power Strike is a deterministic core buff; proc EV (for the rate
+// consumers — bots, projections, sim) tracks the roller's expectation
 {
   const s = newState();
   const base = derive(s);
   s.copper = 20;
   skills.buy(s, "powerStrike");
   const d = derive(s);
-  assert.ok(Math.abs(d.atk / base.atk - 1.05) < 1e-9); // +5% ATK, nothing else
-  assert.equal(d.skills.terms.length, 1);              // and it is DISPLAYED
+  assert.ok(Math.abs(d.atk / base.atk - 1.05) < 1e-9);       // +5% ATK, nothing else
+  assert.ok(Math.abs(d.atkCore / base.atkCore - 1.05) < 1e-9); // and it's in the swing base
+  assert.equal(d.skills.terms.length, 0);                    // procs only in the EV list
+  s.copper = 60;
+  skills.buy(s, "doubleStrike");
+  const d2 = derive(s);
+  assert.equal(d2.skills.terms.length, 1);                   // Double Strike EV term
+  assert.ok(Math.abs(d2.atk / d.atk - 1.08) < 1e-9);         // ×1.08 expectation
+}
+
+// The roller: E[rolled damage] tracks the EV the projections use, and procs
+// REALLY fire (scripted rng)
+{
+  const s = newState();
+  s.copper = 1e9;
+  skills.buy(s, "meteor");
+  const d = derive(s);
+  // rng scripted: crit roll (no crit), variance (mid), meteor roll (fires)
+  const events = [];
+  skills.tick(s, 0.5, d, e => events.push(e), seq(0.99, 0.5, 0.001));
+  const meteors = events.filter(e => e.type === "meteor");
+  assert.equal(meteors.length, 1);                        // the proc actually fired
+  assert.ok(Math.abs(meteors[0].dmg - 15 * d.atkCore) < 1e-6); // and its damage is real
 }
 
 // Actives: Focus forces every hit to crit, Rage doubles the hit rate
@@ -989,8 +1011,10 @@ const skills = await import("../skills.js");
   assert.ok(s.skills.windup > 0);
   const events = [];
   const r = skills.tick(s, 6, d, e => events.push(e));
-  assert.ok(Math.abs(r.dmg - 80 * d.atk) < 1e-6);
-  assert.equal(events.filter(e => e.type === "smash").length, 1);
+  const smash = events.filter(e => e.type === "smash");
+  assert.equal(smash.length, 1);
+  assert.ok(Math.abs(smash[0].dmg - 80 * d.atkCore) < 1e-6);
+  assert.ok(r.dmg > smash[0].dmg); // the tick also rolled the 6s of base swings
 }
 
 // Wild Swing: odds fixed, scripted rng hits the jackpot and the whiff
@@ -1000,7 +1024,7 @@ const skills = await import("../skills.js");
   skills.buy(s, "wildSwing");
   const d = derive(s);
   skills.tick(s, skills.PIP_RECHARGE * 2, d);
-  assert.ok(Math.abs(skills.cast(s, "wildSwing", d, () => 0.05).dmg - 150 * d.atk) < 1e-6);
+  assert.ok(Math.abs(skills.cast(s, "wildSwing", d, () => 0.05).dmg - 150 * d.atkCore) < 1e-6);
   assert.equal(skills.cast(s, "wildSwing", d, () => 0.95).dmg, 0); // WHIFF
 }
 
@@ -1012,8 +1036,10 @@ const skills = await import("../skills.js");
   skills.buy(s, "rage"); // a pip spender, so the recharge is live
   const d = derive(s);
   const events = [];
-  skills.tick(s, 15, d, e => events.push(e)); // 2 hits/s × 15s = 30 hits
-  assert.equal(events.filter(e => e.type === "finisher").length, 1);
+  skills.tick(s, 15, d, e => events.push(e)); // 2 hits/s × 15s = 30 rolled hits
+  const fin = events.filter(e => e.type === "combo");
+  assert.equal(fin.length, 1);
+  assert.ok(Math.abs(fin[0].dmg - 10 * d.atkCore) < 1e-6); // the finisher LANDS now
   assert.ok(Math.abs(s.skills.pipT - (15 + 5)) < 1e-6); // 15s elapsed + 5s shave
 }
 

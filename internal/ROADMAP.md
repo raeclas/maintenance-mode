@@ -120,9 +120,16 @@ actives on ONE shared pip pool) is in the game and on staging. Key facts:
 
 - **PIP_CAP = 5 in skills.js is THE USER'S DIAL** (they asked to own this
   number). 5 × 300s = 25min zero-loss window. One constant.
-- Passive EV folds into derive() as the displayed "skills ×" term (crit
-  pattern: whittle smooth, battle.js rolls the spectacle). Bots inherit via
-  the player coupling — skill buys speed the farm.
+- ~~Passive EV folds into derive() as the displayed "skills ×" term~~
+  **[CORRECTED same day, user verdict: "passives should actually proc."]**
+  The EV fold shipped first and the user was not a fan once told the procs
+  were theater. Now: skills.tick is a REAL per-swing roller (crit tier,
+  every proc, riders, Judgment's beat) — the boss's health chunks with what
+  lands; battle.js draws only real numbers forwarded from the logic tick.
+  passiveMult() KEEPS the matching EV for rate consumers (bot borrowing,
+  Delve, time-to-breach, sim) — E[roller] == EV by construction; change a
+  proc, change both. Overflow past ROLL_CAP (offline batches, ×600 dev)
+  resolves at EV — the clamp. The "skills ×" header readout is deleted.
 - Actives are REAL effects (Rage/Might/Focus/Empower timers, windup, riders);
   burst damage lands through pull.js smite() — one break transition for every
   damage path. Sim buys PASSIVES only (actives are timing feel — sim is a

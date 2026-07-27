@@ -3,8 +3,8 @@ import { newState } from "./state.js";
 import { load, save, wipe, exportSave } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { bosses, getBoss } from "./bosses.js";
-import { drain, smite, farmTick, timeToKill } from "./pull.js";
-import { initBattle, renderBattle, notifyBreak, notifyEnhance, notifySkill, refreshTheme } from "./battle.js";
+import { smite, farmTick, timeToKill } from "./pull.js";
+import { initBattle, renderBattle, notifyBreak, notifyEnhance, notifySkill, notifyHit, refreshTheme } from "./battle.js";
 import * as skills from "./skills.js";
 import { derive } from "./stats.js";
 import { critFactor } from "./crits.js";
@@ -242,14 +242,19 @@ if (loaded && state.unlocked && state.lastSeen) {
     // enh feedback stays silent offline (slot rows aren't built yet)
     bots.tick(state, dt, (kind, item) => { if (kind === "drop") { drops++; onDrop(item); } });
     log(`offline ${fmt(dt / 3600)}h: +${fmt(state.copper - c0)}c · ${drops} drops`);
-    { // skills: pips/Energy bank toward their caps, burst timers run out —
-      // same tick as live, silent emitter (no floaters for an absent player).
-      // A windup or Blade Dance that was running lands its damage here.
+    { // skills + the whittle: the roller IS the character's damage now.
+      // A 12h batch blows past ROLL_CAP, so almost all of it resolves at
+      // EV inside skills.tick — the offline clamp, same function as live.
+      // Silent emitter: no floaters for an absent player.
       const sk = skills.tick(state, dt, derive(state));
-      if (sk.dmg > 0 && state.wall === state.maxWall && !state.boss.broken
-          && smite(state, sk.dmg).broke) {
-        log(`★ W${state.wall} BREACHED while you were away`);
-        handleBreak();
+      if (sk.dmg > 0 && state.wall === state.maxWall && !state.boss.broken) {
+        const hit = smite(state, sk.dmg);
+        if (hit.broke) {
+          log(`★ W${state.wall} BREACHED while you were away`);
+          handleBreak();
+        } else if (hit.dealt > 0) {
+          log(`offline: ${fmt(hit.dealt)} health off ${getBoss(state.wall).name}`);
+        }
       }
     }
     { // the Delve mines Cache idle — same rate as live, clamped by dt
@@ -258,12 +263,8 @@ if (loaded && state.unlocked && state.lastSeen) {
       state.dungeon.depthBest = Math.max(state.dungeon.depthBest, dungeon.reachDepth(state, charDps()));
       if (gained > 0) log(`offline delve: +${fmt(gained)} Cache`);
     }
-    { // the Warden whittles offline too (clamped by dt); broken walls farm
-      if (!state.boss.broken && state.wall === state.maxWall) {
-        const r = drain(state, dt);
-        if (r.broke) { log(`★ W${state.wall} BREACHED while you were away`); handleBreak(); }
-        else if (r.dealt > 0) log(`offline: ${fmt(r.dealt)} health off ${getBoss(state.wall).name}`);
-      } else if (state.boss.broken) {
+    { // broken walls farm offline (the whittle landed above, via the roller)
+      if (state.boss.broken) {
         const fr = farmTick(state, dt);
         if (fr.rolls) log(`offline farm: ${fr.pieces.length} piece(s)`);
       }
@@ -339,9 +340,9 @@ const HELP_ROOMS = [
       next piece.`],
     ["Skills", `Skills are bought and levelled with copper — the same copper the rig
       wants, so every purchase is a choice between your character and your swarm.
-      Passive skills fire on their own as you attack; everything they add is folded
-      into the one "skills ×" number next to the Skills header. The list shows what
-      you know plus the next two you could learn.`],
+      Passive skills really fire as you attack: every proc you see in the arena is
+      damage that actually landed. The list shows what you know plus the next two
+      you could learn.`],
     ["Casting", `Active skills spend a pip. Pips recharge one every 5 minutes, whether
       the game is open or not, and store up to 5 — nothing is ever lost by being away
       unless the bank is already full. Casting is a bonus for being here, never a
@@ -531,12 +532,24 @@ function castSkill(id) {
   }
 }
 
-// Tick events → arena feedback. Judgment/finisher damage is EV-folded into
-// CP, so the floater prints the beat's worth without double-dealing it.
+// Tick events → arena feedback. Every number here is REAL damage that just
+// landed (the roller). Plain hits are rate-limited to keep the stream at the
+// old visual density — the damage counts either way, only the floater is
+// skipped.
+let lastHitFloatAt = 0;
 function onSkillEvent(ev) {
-  if (ev.type === "smash") notifySkill(`${fmt(ev.dmg)} SMASH`, "--super-crit", 30, true);
-  else if (ev.type === "finisher") notifySkill(`COMBO ×${ev.mult}`, "--crit-gold", 20);
-  else if (ev.type === "judgment") notifySkill(`⚖ ×${ev.mult}`, "--gold-bright", 18);
+  if (ev.type === "hit") {
+    const now = performance.now();
+    if (now - lastHitFloatAt > 90) { lastHitFloatAt = now; notifyHit(ev.dmg, ev.tier); }
+  }
+  else if (ev.type === "meteor") notifySkill(`☄ ${fmt(ev.dmg)}`, "--super-crit", 30, true);
+  else if (ev.type === "smash") notifySkill(`${fmt(ev.dmg)} SMASH`, "--super-crit", 30, true);
+  else if (ev.type === "combo") notifySkill(`COMBO ${fmt(ev.dmg)}`, "--crit-gold", 20);
+  else if (ev.type === "judgment") notifySkill(`⚖ ${fmt(ev.dmg)}`, "--gold-bright", 18);
+  else if (ev.type === "finishing") notifySkill(`${fmt(ev.dmg)}!`, "--crit-gold", 18);
+  else if (ev.type === "chaos") notifySkill(`CHAOS ${fmt(ev.dmg)}`, "--gold-bright", 16);
+  else if (ev.type === "frenzy") notifySkill("FRENZY", "--crit-gold", 14);
+  else if (ev.type === "trance") notifySkill("TRANCE", "--gold-bright", 14);
 }
 
 function buildSkillRows() {
@@ -578,7 +591,8 @@ function fmtClock(sec) {
 
 function renderSkills(d) {
   const k = state.skills;
-  $("skillsMultEl").textContent = d.skills?.mult > 1 ? `skills ×${d.skills.mult.toFixed(2)}` : "";
+  // (the "skills ×N" EV aggregate is gone — procs roll for real now, and the
+  // user was rightly not a fan of an expected-value readout posing as power)
   for (const s of visibleSkills()) {
     if (!skillBtns[s.id]) { buildSkillRows(); break; }
   }
@@ -943,8 +957,8 @@ function tick() {
   if (state.unlocked) {
     bots.tick(state, dt, (kind, item) => kind === "drop" ? onDrop(item) : enhMilestones(item, kind));
   }
-  { // the skill book: pips recharge, combo/Energy accrue, burst timers run,
-    // real burst damage (windup, Blade Dance riders) lands via smite()
+  { // the fight: skills.tick is THE damage path now — every swing, crit and
+    // proc rolled for real (plus pips/Energy/combo/timers). smite() lands it.
     const sk = skills.tick(state, dt, derive(state), onSkillEvent);
     if (sk.dmg > 0 && state.wall === state.maxWall && !state.boss.broken) {
       const hit = smite(state, sk.dmg);
@@ -952,13 +966,8 @@ function tick() {
       if (hit.broke) handleBreak();
     }
   }
-  // Siege: the frontier Warden whittles at Combat Power; broken walls farm set
-  // pieces on a timer (Farm status). No pulls, no cooldown — the fight is live.
-  if (!state.boss.broken && state.wall === state.maxWall) {
-    const dr = drain(state, dt);
-    recordDmg(dr.dealt);
-    if (dr.broke) handleBreak();
-  } else if (state.boss.broken) {
+  // Broken walls farm set pieces on a timer (Farm status).
+  if (state.boss.broken) {
     const f = farmTick(state, dt);
     for (const piece of f.pieces) {
       log(`🏆 ${piece.name} dropped! +${piece.pct}% ${laneWord(piece.lane)}`);
