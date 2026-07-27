@@ -76,10 +76,23 @@ Not designed yet. Three things settled before anyone starts:
      a proc has machinery AND a display home. Gives the idle loop texture with
      zero input, which is the direct answer to "waiting game, not the good
      kind".
-  2. **Active (input)** — legal ONLY in the Delve's shape: player-initiated,
-     carries a cost, no penalty for never touching it. An active you must press
-     on cooldown to stay optimal is an obligation mechanic and hits the hard
-     veto. Test: if skipping it forever is a valid playstyle, it is legal.
+  2. **Active (input)** — WANTED. Press a skill for a burst: "2x attack speed
+     for 30s, 300s cooldown", summon meteor, and so on. Requires the player to
+     be there, which is the POINT — the headline complaint was a lack of
+     actively managed content.
+     **[CORRECTED 2026-07-27.]** An earlier note in this file claimed actives
+     were legal only in the Delve's push-your-luck shape, on the grounds that a
+     cooldown you service is an obligation mechanic. That over-applied the hard
+     veto, which names dailies, streaks, FOMO, calendar events and lockouts —
+     CALENDAR and SESSION obligations. A cooldown burst is none of them: it
+     does not decay, reset a streak, or care when you log in. Do not re-derive
+     the stricter reading.
+     The real question is narrow and numeric: **how big is the gap between a
+     player who babysits the cooldown and one who does not?** Too wide and an
+     idle game becomes a phone-checking game. Cleanest answer is to let the
+     cooldown tick OFFLINE and bank charges up to a cap — absence then costs
+     nothing, you just return with bursts saved, and the active is a bonus for
+     being there rather than a penalty for not.
   3. **Direct buff (passive)** — the trap. The rig already IS this (`script
      version` +0.25 power/rank, `overclock` +0.20 speed/rank, bought with
      copper). A copper-bought +X% is a stat dribble, which is what feature-pass
