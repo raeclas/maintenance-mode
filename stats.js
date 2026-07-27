@@ -2,8 +2,7 @@
 // DPS = (10 + trainedATK + Σ gear) × GMdmg × hits/s × GMhaste
 // GM terms are a separate, DISPLAYED lane (era-priced flags); the trained
 // speed cap stays a training-lane identity — haste multiplies past it.
-import { contribution, SLOTS } from "./gear.js";
-import { AFFIXES, liveValue } from "./affixes.js";
+import { laneValue, SIG, SLOTS } from "./gear.js";
 import { scriptMult } from "./rebirth.js";
 import { trophyMods } from "./trophies.js";
 import { armoryMods } from "./armory.js";
@@ -30,21 +29,17 @@ export function softHits(raw, knee = SPEED_KNEE) {
 // Lanes are CODE (few, fixed identities); affixes are DATA summed into them.
 // Every term below is displayed (law 5): gear base power + each affix line.
 export function derive(state) {
+  // Signature gear (v15): each slot is one permanent item feeding ONE lane —
+  // weapon → flat ATK, armor → flat hits/s, charm → +% copper. laneValue =
+  // ip × 1.12^plus × the slot's scale; every term displayed on its card.
   let gearAtk = 0, atkPct = 0, hitsFlat = 0, hastePct = 0, copperPct = 0;
   for (const slot of SLOTS) {
     const it = state.gear[slot];
     if (!it) continue;
-    gearAtk += contribution(it); // base item power (ip × 1.12^plus)
-    for (const af of it.affixes || []) {
-      const a = AFFIXES[af.id];
-      if (!a) continue;
-      const val = liveValue(af, state); // static affixes return af.value; live ones compute from state
-      if (a.lane === "atk" && a.kind === "flat") gearAtk += val;
-      else if (a.lane === "atk") atkPct += val;
-      else if (a.lane === "speed" && a.kind === "flat") hitsFlat += val;
-      else if (a.lane === "speed") hastePct += val;
-      else if (a.lane === "farm") copperPct += val;
-    }
+    const v = laneValue(it);
+    if (SIG[slot].lane === "atk") gearAtk += v;
+    else if (SIG[slot].lane === "hits") hitsFlat += v;
+    else if (SIG[slot].lane === "copperPct") copperPct += v;
   }
   const tm = trophyMods(state); // boss Trophy set: per-piece boosts + set bonus
   const am = armoryMods(state);  // the Armory: gear-collection rank passives (displayed lane terms)

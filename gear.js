@@ -1,14 +1,22 @@
-// gear.js — Diablo/PoE-lite items: a base power scalar (ip × 1.12^plus)
-// PLUS rolled affixes. Rarity = affix COUNT, ip = affix TIER (see
-// rarity.js / affixes.js). Attachment law: nothing is ever destroyed —
-// replaced or filtered gear goes to stash or salvages into Scrap.
+// gear.js — SIGNATURE gear (reworked 2026-07-27, user-blessed design).
+// Gear is no longer churn: each slot holds ONE permanent named item, earned
+// at a story milestone, that GROWS forever — enhance pushes its plus
+// (§5 heartbeat, same object for life), and slice 2 adds rerollable mod
+// lines. Nothing is ever replaced or destroyed: gear joins the character,
+// the strongest form of the attachment law.
+//
+// Drops are EVENTS now, not objects: a drop rolls {slot, zone, rarity},
+// merges into its Armory entry (as always) and pays tiered Scrap — fuel for
+// the slice-2 reforge bench. Epic+ drops bank a RELIC (slice-3 currency,
+// banked from day one so no playtest drop is retroactively wasted). There
+// is no stash, no filter, no equip decision — and no flood, because there
+// is nothing to pile up.
 import { RARITIES, RARITY_BY_ID, RARITY_IDX, rollRarity } from "./rarity.js";
-import { AFFIXES, rollAffixes, affixTier } from "./affixes.js";
 import { merge } from "./armory.js";
 
 export const SLOTS = ["weapon", "armor", "charm"];
 
-// Dead-game register; names follow the zone that drops them.
+// Dead-game register; Armory entries are named by the zone that drops them.
 export const NAMES = {
   weapon: ["Rusty Shortsword", "Ravine Pike", "Salt-Etched Saber", "Cinder Warblade", "Sentry Halberd",
     "Threshold Cleaver", "Nave Censer", "Undercroft Trident", "Long Dark Reaver", "Second Door Greatblade",
@@ -21,146 +29,78 @@ export const NAMES = {
     "Frost Bead", "Archive Seal", "Obsidian Eye", "Spire Sigil", "World-Edge Star"],
 };
 
-// Base item power (the "white" scalar). Compounding: +12 ≈ ×3.9, +20 ≈ ×9.6.
-// Affixes ride ON TOP and are summed into their lanes by derive().
+/* The three signatures. Each is the zone-1 quest reward — the newbie gear
+   every 2006 MMO printed — and it never gets replaced: a +20 Rusty
+   Shortsword at the Tenth Door is both the satire and the attachment.
+     ip     the item's scalar: drives BOTH enhance cost (enhance.js cost())
+            and its stat via contribution() — one number, two meanings, so
+            an attempt is never free (≈15c at +0 vs the 20c entry skill,
+            growing ×1.6 per plus: the early-game brake the user asked for)
+     scale  maps contribution() into the slot's lane (displayed in derive):
+            weapon → flat ATK, armor → flat hits/s, charm → +% copper
+     arrive milestone id (main.js grants on it) + the story line printed  */
+export const SIG = {
+  weapon: { ip: 30, scale: 0.5, lane: "atk",
+    arriveAt: "firstCopper",
+    story: "Quest complete: 'A First Errand'. The server has held your reward for six years." },
+  armor: { ip: 24, scale: 0.014, lane: "hits",
+    arriveAt: "firstArmoryRank",
+    story: "Quest complete: 'Collector's Habit'. Reward mailed. Nobody else ever finished it." },
+  charm: { ip: 20, scale: 0.5, lane: "copperPct",
+    arriveAt: "cp100",
+    story: "Quest complete: 'Proof of Strength'. The reward chest creaks open on its own." },
+};
+
+export function newSignature(slot) {
+  return { slot, ip: SIG[slot].ip, plus: 0, name: NAMES[slot][0] };
+}
+
+// Base item power scalar (compounding: +12 ≈ ×3.9, +20 ≈ ×9.6). The slot's
+// `scale` maps this into its lane — see derive().
 export function contribution(item) {
   return item.ip * Math.pow(1.12, item.plus);
 }
 
-// zoneIdx 0-based; ip band comes from the zone. Rarity is standardized
-// (same odds everywhere); affix count follows rarity, affix tier follows ip.
-// bias = Overkill Saturation band bonus (0–3). Pulls ip toward the band top
-// and gives rarity keep-best-of-(1+bias) rolls — richer loot for over-farming.
-export function rollItem(zone, zoneIdx, rng = Math.random, bias = 0) {
+// The slot's displayed lane value at the item's current plus.
+export function laneValue(item) {
+  return contribution(item) * SIG[item.slot].scale;
+}
+
+// ---- drops as events ----
+// Rarity is standardized (same odds everywhere); Overkill Saturation bias
+// gives keep-best-of-(1+bias) rarity rolls — over-farming pays quality.
+export function rollDrop(zoneIdx, rng = Math.random, bias = 0) {
   const slot = SLOTS[Math.floor(rng() * SLOTS.length)];
-  const ipT = Math.min(1, rng() + bias * 0.12); // each band pulls ~12% toward ipHi
-  const ip = Math.round(zone.ipLo + (zone.ipHi - zone.ipLo) * ipT);
   let rarity = rollRarity(rng);
   for (let k = 0; k < bias; k++) { const r2 = rollRarity(rng); if (RARITY_IDX[r2.id] > RARITY_IDX[rarity.id]) rarity = r2; }
-  return {
-    slot, ip, plus: 0, zone: zoneIdx + 1, name: NAMES[slot][zoneIdx],
-    rarity: rarity.id,
-    affixes: rollAffixes(ip, rarity.affixes, rng),
-  };
+  return { slot, zone: zoneIdx + 1, name: NAMES[slot][zoneIdx], rarity: rarity.id };
 }
 
-export const STASH_CAP = 50;
-
-// ---- Salvage → tiered Scrap (the sink; feeds the Reforge bench, Slice 2).
-// Yield scales with rarity index and √ip. Deposited into state.scrap by tier.
-export function scrapYield(item) {
-  const ri = RARITY_IDX[item.rarity] ?? 0;
-  return Math.max(1, Math.round((0.5 + ri) * Math.sqrt(item.ip)));
+// Scrap paid per drop event, by rarity (deeper zones pay MORE drops, not
+// bigger ones — volume is the zone axis, rarity is the quality axis).
+// Starting values; the scrap wallet is slice-2 reforge fuel.
+export function fuelYield(rarityId) {
+  const ri = RARITY_IDX[rarityId] ?? 0;
+  return { rarity: rarityId, n: 1 + ri * ri };
 }
 
-// Salvage yields SCRAP only (reforge fuel). The character's copper comes from
-// their own verb — the dungeon delve — not from passively skimming bot drops.
-export function salvage(state, item) {
-  const r = item.rarity || "common";
-  const n = scrapYield(item);
-  state.scrap[r] = (state.scrap[r] || 0) + n;
-  return { rarity: r, n };
+// Epic and above banks a Relic — the slice-3 mod-line currency. Banked (not
+// dropped on the floor) from the first commit so nothing is wasted later.
+export const RELIC_MIN = "epic";
+export function isRelic(rarityId) {
+  return (RARITY_IDX[rarityId] ?? 0) >= (RARITY_IDX[RELIC_MIN] ?? 99);
 }
 
-// Stash discipline: past cap, the lowest-base-power UNLOCKED item salvages.
-function stashPush(state, item) {
-  state.gear.stash.push(item);
-  if (state.gear.stash.length <= STASH_CAP) return null;
-  let worst = -1;
-  for (let i = 0; i < state.gear.stash.length; i++) {
-    const it = state.gear.stash[i];
-    if (it.lock) continue;
-    if (worst === -1 || contribution(it) < contribution(state.gear.stash[worst])) worst = i;
+// Resolve one drop event: Armory merge + scrap fuel (+ relic bank).
+// Returns { merge, scrap, relic } for the caller's feedback.
+export function resolveDrop(state, drop) {
+  const merged = merge(state, drop);
+  const scrap = fuelYield(drop.rarity);
+  state.scrap[scrap.rarity] = (state.scrap[scrap.rarity] || 0) + scrap.n;
+  let relic = false;
+  if (isRelic(drop.rarity)) {
+    state.relics = (state.relics || 0) + 1;
+    relic = true;
   }
-  if (worst === -1) return null; // everything locked — cap yields to the lock
-  const [gone] = state.gear.stash.splice(worst, 1);
-  return { item: gone, scrap: salvage(state, gone) };
-}
-
-// ---- Loot filter: the DISPOSAL front door. NEVER auto-equips (agency law —
-// the player builds). Keep if it clears BOTH floors (rarity AND ip — a
-// low-ip Origin from an old zone is still junk); else it salvages to Scrap.
-export function meetsKeep(item, keepRarity, keepIp) {
-  return (RARITY_IDX[item.rarity] ?? 0) >= (RARITY_IDX[keepRarity] ?? 0) && item.ip >= (keepIp || 0);
-}
-
-// A drop is a strict upgrade if it out-powers the equipped item in its slot.
-export function isUpgrade(state, item) {
-  const cur = state.gear[item.slot];
-  return !cur || contribution(item) > contribution(cur);
-}
-
-// Route a fresh drop. Returns { equipped|kept, scrap?, overflow? }.
-// Auto-equip (gated by the GM module + the toggle) grabs strict upgrades, the
-// replaced item to stash (attachment law). Else the loot filter: keep→stash,
-// junk→scrap. With the auto-filter OFF, every drop is kept.
-export function routeDrop(state, item) {
-  const g = state.gear;
-  const merged = merge(state, item); // Armory: every drop merges into its entry (before disposal)
-  let res;
-  if (g.autoEquip === true && isUpgrade(state, item)) {
-    const cur = g[item.slot];
-    g[item.slot] = item;
-    res = { equipped: true, overflow: cur ? stashPush(state, cur) : null };
-  } else if (g.autoFilter === false || meetsKeep(item, g.keepRarity, g.keepIp)) {
-    res = { kept: true, overflow: stashPush(state, item) };
-  } else {
-    res = { kept: false, scrap: salvage(state, item) };
-  }
-  res.merge = merged;
-  return res;
-}
-
-// Manual bulk sweep: salvage every UNLOCKED stash item at/below BOTH maxRarity
-// (rarity index) AND maxIp — the same two axes as the auto filter. Locked +
-// equipped are untouched. Returns a scrap tally.
-export function salvageMatching(state, maxRarityId, maxIp = Infinity) {
-  const maxIdx = RARITY_IDX[maxRarityId] ?? 0;
-  const keep = [], tally = {};
-  let count = 0;
-  for (const it of state.gear.stash) {
-    if (!it.lock && (RARITY_IDX[it.rarity] ?? 0) <= maxIdx && it.ip <= maxIp) {
-      const { rarity, n } = salvage(state, it);
-      tally[rarity] = (tally[rarity] || 0) + n;
-      count++;
-    } else keep.push(it);
-  }
-  state.gear.stash = keep;
-  return { count, tally };
-}
-
-// ---- Reforge bench (Slice 2): reroll an item's affixes for Scrap of its
-// OWN rarity tier. Cannot change rarity (affix COUNT) or ip (affix TIER) —
-// only the composition + values reroll, within the item's fixed budget.
-// Commons have no affixes, so nothing to reforge.
-export function canReforge(item) {
-  return item && (RARITY_BY_ID[item.rarity]?.affixes || 0) > 0;
-}
-
-// Cost is like-for-like scrap (sacrifice duplicates of the tier to perfect
-// one), scaling with the item's affix tier. Starting values, playtest-tuned.
-export function reforgeCost(item) {
-  return { rarity: item.rarity, n: 2 * affixTier(item.ip) };
-}
-
-// Roll a CANDIDATE affix set — does NOT mutate the item (preview-then-commit,
-// so a bad roll never demotes gear: attachment law 8). Deducts scrap on roll;
-// returns the candidate, or null if the bench can't afford / can't reforge.
-export function reforge(state, item, rng = Math.random) {
-  if (!canReforge(item)) return null;
-  const c = reforgeCost(item);
-  if ((state.scrap[c.rarity] || 0) < c.n) return null;
-  state.scrap[c.rarity] -= c.n;
-  return rollAffixes(item.ip, RARITY_BY_ID[item.rarity].affixes, rng);
-}
-
-// Manual: swap a stash item into its slot (plusses + affixes travel with it).
-export function equipFromStash(state, idx) {
-  const item = state.gear.stash[idx];
-  if (!item) return false;
-  state.gear.stash.splice(idx, 1);
-  const cur = state.gear[item.slot];
-  if (cur) state.gear.stash.push(cur);
-  state.gear[item.slot] = item;
-  return true;
+  return { merge: merged, scrap, relic };
 }

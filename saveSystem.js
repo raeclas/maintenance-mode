@@ -3,8 +3,7 @@
 // can never clobber it mid-session), _corrupt (quarantine for manual rescue).
 import { newState } from "./state.js";
 import { getBoss } from "./bosses.js";
-import { SLOTS } from "./gear.js";
-import { AFFIXES } from "./affixes.js";
+import { SLOTS, newSignature } from "./gear.js";
 import { SKILL_BY_ID } from "./skills.js";
 
 const KEY = "mm_save";
@@ -164,15 +163,34 @@ export function load(state) {
   state.skills.ranks = (s.skills?.ranks && typeof s.skills.ranks === "object")
     ? Object.fromEntries(Object.entries(s.skills.ranks).filter(([id]) => SKILL_BY_ID[id]))
     : {};
-  state.gear = { ...d.gear, ...(s.gear || {}) };
-  if (!Array.isArray(state.gear.stash)) state.gear.stash = [];
-  // Drop affixes whose row no longer exists (v12 retired Ban Counter with the
-  // Grind ban rate). derive() already skips unknown ids, but the item card
-  // would print the raw id — strip them so old gear reads clean.
-  for (const it of [...SLOTS.map(sl => state.gear[sl]), ...state.gear.stash]) {
-    if (it?.affixes) it.affixes = it.affixes.filter(af => AFFIXES[af.id]);
-  }
+  // v15: SIGNATURE gear. Pre-v15 items (equipped + stash) convert to scrap
+  // by rarity, and the HIGHEST plus among them carries onto the new weapon —
+  // enhance progress is never destroyed by a redesign (attachment law).
+  // Signatures whose milestones a save has already passed re-grant on the
+  // first checkUnlocks() tick, so migration itself grants only the carry.
+  state.gear = { weapon: null, armor: null, charm: null };
+  state.relics = s.relics || 0;
   state.scrap = { ...d.scrap, ...(s.scrap || {}) }; // v9 tiered scrap wallet
+  if ((s.v ?? 0) >= 15) {
+    // v15+ save: signatures restore as-is (rebuilt from SIG so a retuned
+    // ip/scale applies to old saves too — only the plus is the player's)
+    for (const sl of SLOTS) if (s.gear?.[sl]) state.gear[sl] = { ...newSignature(sl), plus: s.gear[sl].plus || 0 };
+  } else if (s.gear) {
+    // pre-v15: convert every owned item to scrap, carry the best plus
+    const olds = [];
+    for (const sl of SLOTS) if (s.gear[sl]) olds.push(s.gear[sl]);
+    if (Array.isArray(s.gear.stash)) olds.push(...s.gear.stash);
+    let bestPlus = 0;
+    for (const it of olds) {
+      const r = it.rarity || "common";
+      state.scrap[r] = (state.scrap[r] || 0) + Math.max(1, Math.round(Math.sqrt(it.ip || 1)));
+      bestPlus = Math.max(bestPlus, it.plus || 0);
+    }
+    if (olds.length) {
+      state.gear.weapon = newSignature("weapon");
+      state.gear.weapon.plus = Math.min(bestPlus, 20);
+    }
+  }
   // v13: the "support backlog" (+% tickets) node went with the ticket economy —
   // only ranks that still exist in the tree are carried over.
   const savedRanks = s.dungeon?.ranks || {};

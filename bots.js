@@ -7,7 +7,7 @@
 // Starting values throughout — sim-gated; test plans in REMAKE-DESIGN §7.
 import { zones, DROP_CHANCE, zoneUnlocked, saturation, lootBias } from "./farm.js";
 import { delveBonus } from "./dungeon.js";
-import { rollItem } from "./gear.js";
+import { rollDrop } from "./gear.js";
 import { attempt as enhAttempt } from "./enhance.js";
 import { derive } from "./stats.js";
 
@@ -311,7 +311,7 @@ function tickChunk(state, dtS, onEvent, rng) {
     const np = r.kps * dtS * DROP_CHANCE * delveBonus(state, "loot"); // Delve "salvage beacon" → +drops
     let drops = Math.floor(np) + (rng() < np - Math.floor(np) ? 1 : 0);
     const bias = lootBias(saturation(r.squadDps, zones[zi].mobHp)); // over-farm → richer loot
-    while (drops-- > 0) onEvent("drop", rollItem(zones[zi], zi, rng, bias));
+    while (drops-- > 0) onEvent("drop", rollDrop(zi, rng, bias)); // events, not objects (v15)
   }
 
   // enhancing (real odds, real copper — stops at the target plus)

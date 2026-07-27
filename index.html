@@ -147,30 +147,15 @@
     <h3>Trophies <span class="sub" id="trophySet"></span></h3>
     <div id="trophyCabinet"></div>
 
+    <!-- v15 signature gear: one permanent named item per slot, earned at
+         milestones, grown by enhance. Stash/filter/reforge markup is GONE —
+         drops are events (Armory points + Scrap + Relics), not objects. -->
     <h3>Gear <span id="stacksHud"></span></h3>
     <label class="toggleLine"><input type="checkbox" id="safeguard"> safeguard (3× cost, no drop on fail — up to +15 only)</label>
     <div id="slots"></div>
 
-    <h3>Stash</h3>
+    <h3>Materials</h3>
     <div id="scrapWallet" class="scrapWallet">no scrap yet</div>
-    <div id="stashHead">
-      <label class="toggleLine" id="autoEquipLine" style="display:none"><input type="checkbox" id="autoEquip"> auto-equip strict upgrades</label>
-      <div class="filterRow">
-        <label class="filterLabel"><input type="checkbox" id="autoFilter"> auto-salvage · keep ≥</label>
-        <select id="keepRarity"></select>
-        <span class="filterLabel">· ip ≥</span>
-        <input id="keepIp" type="number" min="0" value="0" class="ipDial">
-      </div>
-      <div class="filterRow">
-        <button id="stashToggle"></button>
-        <span class="filterLabel">· salvage ≤</span>
-        <select id="salvageRarity"></select>
-        <span class="filterLabel">· ip ≤</span>
-        <input id="salvageIp" type="number" min="0" value="0" class="ipDial">
-        <button id="salvageMatch">salvage matching</button>
-      </div>
-    </div>
-    <div id="stashList"></div>
 
     <h3>Armory <span class="sub" id="armorySub"></span></h3>
     <div id="armoryGrid"></div>

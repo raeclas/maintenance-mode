@@ -38,17 +38,25 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.ok(pull.timeToKill(s) > 86400 * 100); // > 100 days
 }
 
-// Stats: gear + bars feed the one-line formula; speed SOFT cap (no hard cap)
+// Stats: signature gear + bars feed the one-line formula; speed SOFT cap
 {
   const s = newState();
   s.bots.trained.atk = 80;
   s.bots.trained.hits = 99; // raw 101 hits — soft cap, NOT clamped to 5.0
-  s.gear.weapon = { slot: "weapon", ip: 100, plus: 10, zone: 1, name: "t" }; // 100×1.12^10
+  s.gear.weapon = { ...gear.newSignature("weapon"), plus: 10 }; // ip 30 × 1.12^10 × scale 0.5
   const d = derive(s);
-  assert.ok(Math.abs(d.atk - (10 + 80 + 100 * Math.pow(1.12, 10)) * crits.critFactor(crits.critStats(s))) < 1e-6);
+  const watk = gear.laneValue(s.gear.weapon);
+  assert.ok(Math.abs(watk - 30 * Math.pow(1.12, 10) * 0.5) < 1e-9);
+  assert.ok(Math.abs(d.atk - (10 + 80 + watk) * crits.critFactor(crits.critStats(s))) < 1e-6);
   // above the knee (5.0), diminishing but well past the old 5.0 wall
   assert.ok(Math.abs(d.hitsPerSec - softHits(2.0 + 99)) < 1e-9);
   assert.ok(d.hitsPerSec > 5.0); // the point: never hard-capped
+  // armor feeds flat hits/s, charm feeds copper% — one lane per slot
+  s.gear.armor = { ...gear.newSignature("armor"), plus: 0 };
+  s.gear.charm = { ...gear.newSignature("charm"), plus: 0 };
+  const d2 = derive(s);
+  assert.ok(d2.hitsPerSec > d.hitsPerSec);
+  assert.ok(d2.copperMult > 1);
 }
 
 // Crits: two-tier cascade folds into the CP factor; rollHit tiers
@@ -60,15 +68,14 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.equal(crits.rollHit(100, cs, seq(0.05, 0.05)).tier, 2);   // crit + super
 }
 
-// Crit affixes raise critStats (the improvable stat behind the chase)
+// critStats: signatures carry no affixes (v15) — base crit until the crit
+// chase returns as slice-2 mod lines
 {
   const s = newState();
-  s.gear.weapon = { slot: "weapon", ip: 100, plus: 0, zone: 1, name: "t",
-    affixes: [{ id: "critRate", tier: 1, value: 15 }, { id: "critDmg", tier: 1, value: 50 }] };
+  s.gear.weapon = gear.newSignature("weapon");
   const cs = crits.critStats(s);
-  assert.ok(Math.abs(cs.rate - 0.25) < 1e-9);     // 0.10 + 0.15
-  assert.ok(Math.abs(cs.critMult - 2.5) < 1e-9);  // 2 + 0.50
-  assert.ok(Math.abs(cs.superMult - 5.5) < 1e-9);
+  assert.equal(cs.rate, crits.BASE.rate);
+  assert.equal(cs.critMult, crits.BASE.critMult);
 }
 
 // Drain: HP falls at Combat Power; break at 0, clamped
@@ -201,7 +208,7 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   const drops2 = [];
   bots.tick(s2, 3600, (kind, item) => { if (kind === "drop") drops2.push(item); }, () => 0);
   assert.equal(drops2.length, 60); // rng 0 → remainder always lands: 1 per 60s chunk
-  assert.ok(drops2[0].ip >= z1.ipLo && drops2[0].ip <= z1.ipHi);
+  assert.ok(gear.SLOTS.includes(drops2[0].slot)); // v15: drops are events, no ip
   // zone kill rate caps at 50/s no matter the squad
   assert.ok(bots.botZoneRates(s.bots, 0, 1e6, p).kps === 50);
 }
@@ -280,146 +287,43 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.equal(farm.lootBias(1e6), 3);   // log-capped at 3 (top rarities stay events)
   assert.equal(farm.saturation(100, 1), 100 / (farm.KILL_CAP * 1));
   // bias pulls the ip roll toward the band top
-  const z = farm.zones[0];
-  assert.ok(gear.rollItem(z, 0, () => 0.5, 3).ip > gear.rollItem(z, 0, () => 0.5, 0).ip);
+  // bias gives keep-best-of-(1+bias) RARITY rolls now (drops have no ip)
+  assert.ok(rarity.RARITY_IDX[gear.rollDrop(0, seq(0.3, 0.99, 0.5, 0.99), 1).rarity] >= rarity.RARITY_IDX[gear.rollDrop(0, seq(0.3, 0.99), 0).rarity]);
 }
 
 // Farm: zones are bot-only data now — no player kill functions (v8)
 
-// Gear v9: rarity + affixes on roll; loot filter (never auto-equips);
-// salvage → tiered scrap; bulk sweep; stash overflow → scrap; lock discipline
+// Gear v15: SIGNATURE items — permanent, milestone-granted, one lane each;
+// drops are EVENTS (Armory points + scrap fuel, Epic+ banks a Relic)
 {
   const s = newState();
-  // rollItem: ip in band, a rarity, affix count = rarity's slot count
-  const item = gear.rollItem(farm.zones[0], 0, () => 0.5);
-  assert.ok(item.ip <= 30 && item.ip >= 10);
-  assert.ok(rarity.RARITY_BY_ID[item.rarity]);
-  assert.equal(item.affixes.length, rarity.RARITY_BY_ID[item.rarity].affixes);
+  // drops roll slot/zone/rarity only — no object, no ip, no affixes
+  const drop = gear.rollDrop(0, () => 0.5);
+  assert.ok(gear.SLOTS.includes(drop.slot));
+  assert.ok(rarity.RARITY_BY_ID[drop.rarity]);
+  assert.equal(drop.zone, 1);
+  assert.equal(drop.name, gear.NAMES[drop.slot][0]);
+
+  // resolveDrop: scrap fuel by rarity + Armory merge; Epic+ banks a Relic
+  const r1 = gear.resolveDrop(s, { slot: 'weapon', zone: 1, name: 'x', rarity: 'common' });
+  assert.ok(s.scrap.common >= 1);
+  assert.equal(s.relics, 0);
+  assert.ok(!r1.relic);
+  const r2 = gear.resolveDrop(s, { slot: 'weapon', zone: 1, name: 'x', rarity: 'epic' });
+  assert.ok(r2.relic);
+  assert.equal(s.relics, 1);
+  assert.ok(s.scrap.epic >= gear.fuelYield('epic').n);
+  assert.ok(gear.fuelYield('legendary').n > gear.fuelYield('common').n);
+
+  // signatures: fixed identity, lane value = ip × 1.12^plus × scale
+  const w = gear.newSignature('weapon');
+  assert.equal(w.name, 'Rusty Shortsword');
   assert.ok(Math.abs(gear.contribution({ ip: 100, plus: 12 }) - 100 * Math.pow(1.12, 12)) < 1e-9);
+  assert.ok(Math.abs(gear.laneValue({ ...w, plus: 0 }) - 30 * 0.5) < 1e-9);
 
-  // meetsKeep: BOTH floors — a low-ip Origin fails the ip floor (law: standardized
-  // rarity means old zones spit high-rarity junk)
-  assert.ok(gear.meetsKeep({ rarity: "epic", ip: 500 }, "rare", 100));
-  assert.ok(!gear.meetsKeep({ rarity: "origin", ip: 20 }, "rare", 100));   // ip too low
-  assert.ok(!gear.meetsKeep({ rarity: "common", ip: 9999 }, "rare", 100)); // rarity too low
-
-  // routeDrop NEVER equips: a keeper goes to stash, junk salvages to scrap
-  s.gear.keepRarity = "rare"; s.gear.keepIp = 0;
-  const keep = gear.routeDrop(s, { slot: "weapon", ip: 40, plus: 0, rarity: "epic", affixes: [], name: "k" });
-  assert.ok(keep.kept && !s.gear.weapon);            // stashed, not worn
-  assert.equal(s.gear.stash.length, 1);
-  const junk = gear.routeDrop(s, { slot: "weapon", ip: 40, plus: 0, rarity: "common", affixes: [], name: "j" });
-  assert.ok(!junk.kept && junk.scrap.n > 0);         // salvaged to scrap
-  assert.equal(s.scrap.common, junk.scrap.n);
-  assert.equal(s.gear.stash.length, 1);              // junk never hit the stash
-
-  // auto-filter OFF: everything is kept (no auto-salvage), even junk
-  s.gear.autoFilter = false;
-  const kept2 = gear.routeDrop(s, { slot: "weapon", ip: 5, plus: 0, rarity: "common", affixes: [], name: "j2" });
-  assert.ok(kept2.kept);
-  assert.equal(s.gear.stash.length, 2);
-  s.gear.autoFilter = true;
-
-  // auto-equip is opt-in (v13: GM gate retired, defaults OFF — agency by default)
-  const off = newState();
-  assert.equal(off.gear.autoEquip, false);
-  assert.ok(!gear.routeDrop(off, { slot: "weapon", ip: 100, plus: 0, rarity: "common", affixes: [], name: "x" }).equipped);
-
-  // toggled ON: strict upgrades equip, replaced gear → stash (attachment)
-  const ae = newState();
-  ae.gear.autoEquip = true;
-  assert.ok(gear.routeDrop(ae, { slot: "weapon", ip: 100, plus: 0, rarity: "common", affixes: [], name: "a" }).equipped);
-  const up = gear.routeDrop(ae, { slot: "weapon", ip: 200, plus: 0, rarity: "common", affixes: [], name: "b" });
-  assert.ok(up.equipped && ae.gear.weapon.name === "b");        // higher ip equips
-  assert.ok(ae.gear.stash.some(it => it.name === "a"));        // old one preserved in stash
-  assert.ok(!gear.routeDrop(ae, { slot: "weapon", ip: 50, plus: 0, rarity: "common", affixes: [], name: "c" }).equipped); // worse → not equipped
-  // no module → never auto-equips (agency default)
-  assert.ok(!gear.routeDrop(newState(), { slot: "weapon", ip: 999, plus: 0, rarity: "epic", affixes: [], name: "d" }).equipped);
-
-  // scrap yield is tiered: higher rarity at equal ip yields more
-  assert.ok(gear.scrapYield({ rarity: "legendary", ip: 100 }) > gear.scrapYield({ rarity: "common", ip: 100 }));
-
-  // manual equip conserves items (swap, never delete)
-  s.gear.stash = [{ slot: "weapon", ip: 20, plus: 0, rarity: "rare", affixes: [], name: "a" }];
-  assert.ok(gear.equipFromStash(s, 0));
-  assert.equal(s.gear.weapon.name, "a");
-  assert.equal(s.gear.stash.length, 0);
-
-  // bulk sweep: salvage all unlocked ≤ chosen rarity; locked + higher survive
-  s.gear.stash = [
-    { slot: "charm", ip: 10, plus: 0, rarity: "common", affixes: [], name: "c1" },
-    { slot: "charm", ip: 10, plus: 0, rarity: "uncommon", affixes: [], name: "u1", lock: true },
-    { slot: "charm", ip: 10, plus: 0, rarity: "epic", affixes: [], name: "e1" },
-  ];
-  const sweep = gear.salvageMatching(s, "uncommon"); // ≤ uncommon, but u1 is locked
-  assert.equal(sweep.count, 1);                       // only c1
-  assert.equal(s.gear.stash.length, 2);              // locked u1 + epic e1 remain
-  assert.ok(s.gear.stash.some(it => it.name === "u1") && s.gear.stash.some(it => it.name === "e1"));
-
-  // manual sweep respects the ip axis too (≤ rarity AND ≤ ip) — aligned with the filter
-  s.gear.stash = [
-    { slot: "charm", ip: 100, plus: 0, rarity: "common", affixes: [], name: "lowip" },
-    { slot: "charm", ip: 9999, plus: 0, rarity: "common", affixes: [], name: "highip" },
-  ];
-  const sw = gear.salvageMatching(s, "rare", 500);   // common ≤ rare, but only ip ≤ 500
-  assert.equal(sw.count, 1);
-  assert.ok(s.gear.stash.some(it => it.name === "highip")); // high-ip common survives the ip cap
-
-  // stash cap: overflow salvages the WORST unlocked item → scrap; locked immune
-  s.gear.stash = [{ slot: "charm", ip: 1, plus: 0, rarity: "common", affixes: [], name: "worst", lock: true }];
-  for (let i = 0; i < gear.STASH_CAP - 1; i++) {
-    s.gear.stash.push({ slot: "charm", ip: 100 + i, plus: 0, rarity: "common", affixes: [], name: `f${i}` });
-  }
-  assert.equal(s.gear.stash.length, gear.STASH_CAP);
-  const over = gear.routeDrop(s, { slot: "charm", ip: 200, plus: 0, rarity: "rare", affixes: [], name: "new" });
-  assert.ok(over.kept && over.overflow);             // kept (rare≥rare), pushed cap over → worst salvaged
-  assert.equal(s.gear.stash.length, gear.STASH_CAP);
-  assert.ok(s.gear.stash.some(it => it.name === "worst")); // locked ip-1 survives the cull
-
-  // affix registry maps every affix to a known lane (data/code boundary).
-  // "crit" is read by crits.js, not derive()'s atk/speed/farm loop.
-  for (const id of affixes.AFFIX_IDS) {
-    assert.ok(["atk", "speed", "farm", "crit"].includes(affixes.AFFIXES[id].lane));
-  }
-
-  // LIVE affixes: contribution = rolled rate × state quantity, hard-capped
-  const sl = newState();
-  sl.gear.weapon = { slot: "weapon", ip: 100, plus: 0, rarity: "rare",
-    affixes: [{ id: "botsync", tier: 1, value: 0.4 }], name: "t" }; // +0.4% ATK / 100 bots
-  sl.bots.pop = 0;
-  const atk0 = derive(sl).atk;
-  sl.bots.pop = 5000;                                   // 0.4 × 50 = +20% ATK
-  assert.ok(derive(sl).atk > atk0);                    // scales with the swarm
-  assert.equal(affixes.liveValue({ id: "botsync", value: 0.4 }, sl), 20);
-  sl.bots.pop = 1e9;                                    // way over
-  assert.equal(affixes.liveValue({ id: "botsync", value: 0.4 }, sl), 40); // capped (law 1)
-  assert.equal(affixes.liveValue({ id: "atkPct", value: 12 }, sl), 12);   // static affix unchanged
-
-  // Reforge bench: spends OWN-rarity scrap, rerolls affixes, ip/rarity fixed,
-  // preview-then-commit (candidate does NOT mutate the item)
-  const sr = newState();
-  const rItem = { slot: "weapon", ip: 100, plus: 0, rarity: "rare", affixes: [{ id: "copper", tier: 3, value: 20 }], name: "rf" };
-  sr.gear.weapon = rItem;
-  assert.ok(gear.canReforge(rItem));
-  assert.ok(!gear.canReforge({ rarity: "common", ip: 100 })); // commons: nothing to roll
-  const rc = gear.reforgeCost(rItem);                          // rare scrap, tier-3 ip=100
-  assert.equal(rc.rarity, "rare");
-  assert.ok(gear.reforge(sr, rItem) === null);                 // no scrap → refused, no mutation
-  assert.deepEqual(rItem.affixes, [{ id: "copper", tier: 3, value: 20 }]);
-  sr.scrap.rare = rc.n * 2;
-  const cand = gear.reforge(sr, rItem);                        // spends scrap, returns candidate
-  assert.equal(sr.scrap.rare, rc.n);                           // one roll deducted
-  assert.equal(cand.length, rarity.RARITY_BY_ID.rare.affixes); // affix COUNT held (=2)
-  assert.deepEqual(rItem.affixes, [{ id: "copper", tier: 3, value: 20 }]); // NOT committed yet
-  rItem.affixes = cand;                                        // caller commits
-  assert.equal(rItem.affixes.length, 2);
-  // affixes actually move derive()'s lanes
-  const s2 = newState();
-  s2.gear.weapon = { slot: "weapon", ip: 100, plus: 0, rarity: "rare",
-    affixes: [{ id: "atkFlat", tier: 3, value: 50 }, { id: "hits", tier: 3, value: 0.5 }], name: "t" };
-  const d0 = derive(newState()), d1 = derive(s2);
-  assert.ok(d1.atk > d0.atk + 100);          // base ip + flat atk affix
-  assert.ok(d1.hitsPerSec > d0.hitsPerSec);  // hits affix lifts speed
+  // enhance brake: an attempt is never free — ~15c at +0, ×1.6 per plus
+  assert.equal(enh.cost(w), Math.round(0.5 * 30));
+  assert.ok(enh.cost({ ...w, plus: 5 }) > enh.cost(w) * 9);
 }
 
 // Ban Wave (rebirth): √ payout, player-damage mult, disposable-stratum reset,
@@ -468,7 +372,7 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   s.bots.powerRank = 7;                         // rig rank persists
   s.bots.pop = 40; s.bots.trained.atk = 500; s.bots.trained.hits = 2;
   s.bots.alloc.atk = [10, 5, 0, 0]; s.bots.alloc.zones = [3, 2, 0, 0, 0]; s.bots.alloc.enh = 4;
-  s.gear.stash = [{ slot: "charm", ip: 9, plus: 0, rarity: "rare", affixes: [], name: "keep" }];
+  s.gear.weapon = { ...gear.newSignature("weapon"), plus: 7 }; // must survive
 
   const gained = rebirth.banWave(s);
   assert.equal(gained, 12);
@@ -479,9 +383,9 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.equal(s.bots.pop, newState().bots.pop);
   assert.equal(s.bots.trained.atk, 0);
   assert.equal(s.bots.bars.atk.fills.reduce((a, b) => a + b, 0), 0);
-  // attachment: gear + rig ranks survive
+  // attachment: the signature + rig ranks survive
   assert.equal(s.bots.powerRank, 7);
-  assert.equal(s.gear.stash.length, 1);
+  assert.equal(s.gear.weapon.plus, 7);
   // allocation resets to a fresh character's seed — NOT the persisted over-
   // allocation (the bug: tier-0 rows kept 15 bots against a pop of 2)
   assert.deepEqual(s.bots.alloc, newState().bots.alloc);
@@ -683,8 +587,7 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   s.bots.bars.atk = { fills: [50, 3, 0, 0], prog: [11, 4, 0, 0], unlocked: 2 };
   s.bots.alloc.atk = [2, 1, 0, 0];
   s.bots.alloc.zones = [0, 1, 0, 0, 0];
-  s.gear.weapon = { slot: "weapon", ip: 55, plus: 3, zone: 1, name: "t" };
-  s.gear.stash = [{ slot: "charm", ip: 5, plus: 0, zone: 1, name: "u" }];
+  s.gear.weapon = { ...gear.newSignature("weapon"), plus: 3 };
   s.boss = { hp: 123_000_000, broken: false, nearSaid: false, farmCarry: 0 };
   s.frontierBoss = s.boss; // invariant: at the frontier, boss IS frontierBoss
   saves.save(s);
@@ -698,8 +601,10 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.equal(s2.bots.pop, 4.5);
   assert.equal(s2.bots.capRank, 1);
   assert.equal(s2.copper, 1234);
-  assert.equal(s2.gear.weapon.ip, 55);
-  assert.equal(s2.gear.stash.length, 1);
+  // v15 signatures: the PLUS is the player's; ip/scale rebuild from SIG so
+  // retunes reach old saves
+  assert.equal(s2.gear.weapon.plus, 3);
+  assert.equal(s2.gear.weapon.ip, gear.SIG.weapon.ip);
   assert.deepEqual(s2.boss, s.boss);
 
   // v1 save (pre-bots, had player field): backfills, keeps siege progress, unlocks
@@ -857,14 +762,12 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.ok(derive(s).atk > base);
 }
 
-// Armory: routeDrop merges every drop (even auto-salvaged junk) + attaches result
+// Armory: resolveDrop merges every drop event (v15 — there is no disposal
+// path anymore, so every drop feeds the collection by construction)
 {
   const s = newState();
-  s.gear.autoFilter = true; s.gear.keepRarity = "legendary"; s.gear.keepIp = 9e9; // filter salvages this common
-  const item = { slot: "weapon", zone: 1, rarity: "common", ip: 40, plus: 0, name: "t", affixes: [] };
-  const r = gear.routeDrop(s, item);
-  assert.equal(r.kept, false);              // junk → salvaged
-  assert.ok("merge" in r);                  // …but still merged into the Armory
+  const r = gear.resolveDrop(s, { slot: "weapon", zone: 1, rarity: "common", name: "t" });
+  assert.ok("merge" in r);
   assert.equal(s.armory["weapon:1"], 1);
 }
 
@@ -885,18 +788,21 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
 
 // (Dungeon coverage/attrition/journal tests CUT with the system, v14.)
 
-// Grind: the Ban Counter affix is gone, and old items carrying it load clean
+// v15 migration: pre-v15 items convert to scrap by rarity; the HIGHEST plus
+// among them carries onto the signature weapon (enhance progress survives)
 {
-  assert.equal(affixes.AFFIXES.bancount, undefined);
-  assert.ok(!affixes.AFFIX_IDS.includes("bancount"));
   const s = newState();
   localStorage.setItem("mm_save", JSON.stringify({
-    v: 11, unlocked: true, boss: { hp: 5 },
-    gear: { weapon: { slot: "weapon", ip: 100, plus: 0, rarity: "rare", zone: 1, name: "x",
-      affixes: [{ id: "bancount", tier: 1, value: 2 }, { id: "atkPct", tier: 1, value: 5 }] }, stash: [] },
+    v: 14, unlocked: true, boss: { hp: 5 },
+    gear: {
+      weapon: { slot: "weapon", ip: 100, plus: 9, rarity: "rare", zone: 1, name: "x", affixes: [] },
+      stash: [{ slot: "charm", ip: 25, plus: 16, rarity: "epic", zone: 1, name: "y", affixes: [] }],
+    },
   }));
   saves.load(s);
-  assert.deepEqual(s.gear.weapon.affixes.map(a => a.id), ["atkPct"]); // retired row stripped
+  assert.equal(s.gear.weapon.name, "Rusty Shortsword");
+  assert.equal(s.gear.weapon.plus, 16);      // best plus carried, even from stash
+  assert.ok(s.scrap.rare >= 1 && s.scrap.epic >= 1); // both items became fuel
   localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
 }
 

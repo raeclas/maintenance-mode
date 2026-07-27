@@ -10,10 +10,9 @@ import { derive } from "./stats.js";
 import { critFactor } from "./crits.js";
 import * as bots from "./bots.js";
 import * as farm from "./farm.js";
-import { routeDrop, equipFromStash, contribution, salvage, scrapYield, salvageMatching, canReforge, reforgeCost, reforge, isUpgrade, SLOTS, STASH_CAP, NAMES } from "./gear.js";
+import { resolveDrop, laneValue, contribution, SIG, newSignature, SLOTS, NAMES } from "./gear.js";
 import * as armory from "./armory.js";
 import { RARITIES, RARITY_BY_ID } from "./rarity.js";
-import { affixLabel } from "./affixes.js";
 import { banWave, pendingScripts, scriptMult, totalFills, depthMult } from "./rebirth.js";
 import { grantBreakPiece, rollFarmDrop, bossHasSet, PARTS, pieceOf, ownedIdxs, ownsPiece, setComplete, setCount, SET_BONUS } from "./trophies.js";
 import * as dungeon from "./dungeon.js";
@@ -161,7 +160,6 @@ function buyState(btn, ok) { btn.disabled = !ok; btn.classList.toggle("affordabl
 // offline batch calls it before the render helpers run)
 function charDps() { const dd = derive(state); return dd.atk * dd.hitsPerSec; }
 
-let stashDirty = true;
 let armoryDirty = true;
 let lastWallSel = ""; // wall-selector rebuild cache
 let lastRenderNow = Date.now();  // for per-frame dt (kill-cycle bar integrator)
@@ -193,21 +191,24 @@ function shownDpm(fallbackDps) {
 }
 const zonePhase = [];            // per-zone accumulated kill phase (0..1 shown)
 
-function onDrop(item) {
+// A drop is an EVENT (v15): Armory points + Scrap fuel, Epic+ banks a Relic.
+// Flood rule: ordinary drops never log — the only log events are Armory
+// rank-ups (the spike) and Relics (rare enough to stay events).
+function onDrop(drop) {
   state.everDropped = true; // gates the Player tab
-  const rar = RARITY_BY_ID[item.rarity]?.name || item.rarity;
-  const r = routeDrop(state, item); // filter: keep→stash, else→scrap (never auto-equip)
-  stashDirty = true; armoryDirty = true;
-  const fate = r.equipped ? "equipped" : r.kept ? "stashed" : `salvaged +${r.scrap.n} ${item.rarity} scrap`;
-  log(`drop: ${rar} ${item.name} ${fmt(item.ip)}IP · ${fate}`, {
-    before: "drop: ", text: `${rar} ${item.name}`,
-    rarity: item.rarity, after: ` ${fmt(item.ip)}IP · ${fate}`,
-  });
-  if (r.merge?.rankedUp) { // the Armory rank-up spike — every drop advances an entry, this crosses a threshold
+  const r = resolveDrop(state, drop);
+  armoryDirty = true;
+  if (r.relic) {
+    const rar = RARITY_BY_ID[drop.rarity]?.name || drop.rarity;
+    log(`RELIC — ${rar} ${drop.name} crystallizes into a Relic (${fmt(state.relics)} banked)`, {
+      before: "RELIC — ", text: `${rar} ${drop.name}`,
+      rarity: drop.rarity, after: ` crystallizes into a Relic (${fmt(state.relics)} banked)`,
+    });
+  }
+  if (r.merge?.rankedUp) { // the Armory rank-up spike
     const m = r.merge;
     log(`ARMORY — ${m.name} rank ${m.from}→${m.to}, +${m.pct.toFixed(2)}% ${laneWord(m.lane)}`);
   }
-  if (r.overflow) log(`stash full: salvaged ${r.overflow.item.name} +${r.overflow.scrap.n} ${r.overflow.scrap.rarity} scrap`);
 }
 
 // enhance feedback is visual: the slot row glows on success, flickers on fail
@@ -222,7 +223,6 @@ function flashSlot(slot, ok) {
 // shared milestone handling for manual clicks and bot attempts
 function enhMilestones(item, r) {
   flashSlot(item.slot, r === "success");
-  stashDirty = true;
   if (r !== "success") return;
   notifyEnhance(item.plus, true);
   if (item.plus >= 16) log(`[Server] a player has reached +${item.plus}. Players online: 1.`);
@@ -286,7 +286,7 @@ const TAB_ROOM = { battleSec: "boss", ...TAB_FEATURE, helpSec: "help" };
 const TAB_LOCK = {
   botSec: "Unlocks as soon as the game starts.",
   farmSec: "Unlocks with Training.",
-  gearSec: "Unlocks when your bots find their first piece of gear.",
+  gearSec: "Unlocks with your first quest reward.",
   dungeonSec: "Unlocks at 100 Combat Power.",
 };
 const UNLOCK_MSG = {
@@ -377,8 +377,9 @@ const HELP_ROOMS = [
   ["G", "Grind", "farmSec", [
     ["Zones", `Put bots on a zone. Their combined damage has to clear the zone's hold
       number or they earn nothing at all. A zone they can hold kills up to 50 mobs a
-      second; every kill pays copper and has a 1-in-400 chance to drop a piece of gear.
-      IP is the power band those drops roll in — deeper zones drop higher.`],
+      second; every kill pays copper and has a 1-in-400 chance at a drop. Drops feed
+      your Armory entry for that zone and break down into scrap on the spot — you
+      never have to sort them. Epic or better drops crystallize into Relics.`],
   ]],
   ["P", "Player", "gearSec", [
     ["Combat Power", `Your damage per second against the door: ATK multiplied by hits
@@ -386,17 +387,16 @@ const HELP_ROOMS = [
       second. The Boss tab's "avg DPM" is the damage that actually landed over the
       last minute — crits, skills and casts included — so a burst you press shows up
       in it.`],
-    ["Enhance", `Three slots. Enhancing raises an item's plus, and every plus multiplies
-      its base power by 1.12. A failed attempt anywhere banks a failstack worth +1
-      percentage point on your next attempt, up to +15; a success spends the whole
-      bank.`],
-    ["Reforge", `Reforge rerolls an item's affixes for scrap of its own rarity. It can't
-      change the rarity or the IP — only which affixes it has and what they roll. You
-      see the result before you decide whether to keep it.`],
-    ["Stash", `Where kept drops land, up to 50. An item's rarity is how many affixes it
-      rolled (Common 0, Origin 6) and its IP is how strong those affixes roll.
-      Salvaging turns an item into scrap of its own rarity. Locking one protects it
-      from auto-salvage, the bulk sweep and the stash-full clear-out.`],
+    ["Your gear", `Three items, and they're yours for life — quest rewards the dead
+      server has been holding. They are never replaced and never destroyed; they only
+      grow. The weapon adds ATK, the armor adds hits per second, the charm adds
+      copper income. Two more rewards wait behind milestones you haven't hit yet.`],
+    ["Enhance", `Enhancing raises an item's plus, and every plus multiplies its power
+      by 1.12. A failed attempt anywhere banks a failstack worth +1 percentage point
+      on your next attempt, up to +15; a success spends the whole bank.`],
+    ["Materials", `Every bot drop breaks down into scrap of its rarity, automatically.
+      Scrap has no use yet — a workbench for it is coming. Epic or better drops also
+      crystallize into Relics, which will feed that same bench.`],
     ["Trophies", `Each Warden has a 7-piece set. Breaking its door gives you the first
       piece; the rest come from farming that Warden on the Boss tab. A complete set
       multiplies your damage by 1.5.`],
@@ -432,10 +432,25 @@ function renderHelp() {
 function checkUnlocks() {
   const dps = charDps();
   const s = state, f = s.features;
+  // Signature arrivals (v15): the dead server's quest system still runs, and
+  // you are the only player left to claim the rewards. Each grant is a story
+  // beat; the item is permanent from that moment (attachment law).
+  const sigCond = {
+    weapon: s.copper >= 10 || s.rebirths > 0, // first earnings ("A First Errand")
+    armor: Object.values(s.armory || {}).some(pts => armory.rankOf(pts) >= 1),
+    charm: dps >= 100,
+  };
+  for (const slot of SLOTS) {
+    if (!s.gear[slot] && sigCond[slot]) {
+      s.gear[slot] = newSignature(slot);
+      log(`★ ${SIG[slot].story}`);
+      log(`obtained: ${s.gear[slot].name} — it's yours for good. Enhance it on the Player tab.`);
+    }
+  }
   const cond = {
     training: s.unlocked,
     grind: f.training, // the bot-farm layer (train + deploy) opens together
-    player: f.grind && s.everDropped,
+    player: f.grind && (!!s.gear.weapon || s.everDropped),
     delve: f.player && dps >= 100,
     rebirth: s.cleared.length >= 1 || s.rebirths >= 1,
   };
@@ -697,9 +712,6 @@ for (const slot of SLOTS) {
 
 // ---- farming: dense zone table, built once, cells updated in render ----
 // DNA v4 lane 4: the IP power band, cold to hot in groups of three zones.
-// The chip's ground is a --well mix, a whole luminance tier below the ink
-// lanes, so a band never competes with a rarity or accent hue.
-const bandOf = i => Math.min(5, Math.floor(i / 3) + 1);
 // DNA v4 lane 1 on a gear slot: `filled` picks the raised plate, `r-<rarity>`
 // supplies its ground and edge. Pass null to empty the slot back out.
 function setSlotRarity(el, rarityId) {
@@ -713,7 +725,7 @@ const zoneRows = farm.zones.map((z, i) => {
   row.className = "row";
   row.innerHTML =
     `<span class="rowName">${z.name}<div class="sub">${z.mob} · ${fmt(z.mobHp)} HP</div></span>` +
-    `<span class="rowGain">${fmt(z.copper)}c/kill<div class="sub"><span class="band b${bandOf(i)}">IP ${fmt(z.ipLo)}–${fmt(z.ipHi)}</span></div></span>` +
+    `<span class="rowGain">${fmt(z.copper)}c/kill</span>` +
     `<span class="rowAlloc"></span>` +
     `<span class="rowStat" id="zs${i}"></span>` +
     `<div class="rowBar"><div class="rowFill" id="zf${i}"></div></div>`;
@@ -722,9 +734,16 @@ const zoneRows = farm.zones.map((z, i) => {
   return row;
 });
 
-// ---- gear: build slot rows once ----
+// ---- gear: signature cards, built once (v15) ----
+// One permanent named item per slot. The card shows its lane value and the
+// enhance bench; before its milestone it shows what will earn it (Help-free
+// teaching: the hint IS the empty state).
+const SLOT_HINT = {
+  weapon: "Reward waiting — earn your first copper.",
+  armor: "Reward waiting — rank up any Armory entry.",
+  charm: "Reward waiting — reach 100 Combat Power.",
+};
 const slotEls = {};
-let pendingReforge = {}; // transient per-slot candidate affixes (preview-then-commit)
 for (const slot of SLOTS) {
   const div = document.createElement("div");
   div.className = "slot";
@@ -732,11 +751,6 @@ for (const slot of SLOTS) {
     <div class="slotItem" id="si_${slot}">—</div>
     <div class="slotControls">
       <span class="ctlGroup"><button id="se_${slot}">enhance</button><span class="enhInfo" id="sei_${slot}"></span></span>
-      <span class="ctlGroup"><button id="rf_${slot}">reforge</button><span class="enhInfo" id="rfi_${slot}"></span></span>
-    </div>
-    <div class="reforgeCand" id="rfc_${slot}" style="display:none">
-      <span id="rfcl_${slot}"></span>
-      <span class="ctlGroup"><button id="rfk_${slot}">keep</button><button id="rfr_${slot}">reroll</button><button id="rfd_${slot}">discard</button></span>
     </div>`;
   $("slots").appendChild(div);
   slotEls[slot] = div;
@@ -747,25 +761,6 @@ for (const slot of SLOTS) {
     if (r === "poor" || r === "max") return; // button state explains itself
     enhMilestones(item, r); // feedback is the row flash, not log spam
   });
-  // reforge bench: roll a candidate (spends scrap), preview, commit or discard
-  const rollCand = () => {
-    const item = state.gear[slot];
-    const cand = reforge(state, item, Math.random);
-    if (!cand) { log("reforge: not enough scrap"); return; }
-    pendingReforge[slot] = cand;
-    flashSlot(slot, true);
-  };
-  $(`rf_${slot}`).addEventListener("click", rollCand);
-  $(`rfr_${slot}`).addEventListener("click", rollCand);
-  $(`rfk_${slot}`).addEventListener("click", () => {
-    const item = state.gear[slot], cand = pendingReforge[slot];
-    if (!item || !cand) return;
-    item.affixes = cand;
-    delete pendingReforge[slot];
-    log(`reforged ${item.name}`);
-    flashSlot(slot, true);
-  });
-  $(`rfd_${slot}`).addEventListener("click", () => { delete pendingReforge[slot]; });
 }
 
 // Ban Wave — armed two-click confirm (irreversible reset of the bot stratum)
@@ -790,7 +785,6 @@ $("banWaveBtn").addEventListener("click", () => {
     // in the log does the job — POINTERs are a live-surface convention here.
     if (state.rebirths === 1) log("Ban Wave explained on the Help tab.");
   }
-  stashDirty = true;
   save(state);
 });
 
@@ -835,74 +829,9 @@ for (const key of Object.keys(dungeon.UPGRADES)) {
 // playtest verdict better than "there for the sake of being there". The
 // swarm's sink question reopens; see ROADMAP.)
 
-$("stashToggle").addEventListener("click", () => {
-  const l = $("stashList");
-  l.style.display = l.style.display === "none" ? "" : "none";
-});
-// rarity dropdowns are built from the data (add a tier → it shows up here)
-for (const sel of [$("keepRarity"), $("salvageRarity")]) {
-  sel.innerHTML = RARITIES.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
-}
-$("salvageRarity").value = "uncommon"; // default sweep target
-
-// loot filter dials (passive, on-drop) — keep at/above rarity AND ip
-$("autoFilter").addEventListener("change", () => { state.gear.autoFilter = $("autoFilter").checked; });
-$("autoEquip").addEventListener("change", () => { state.gear.autoEquip = $("autoEquip").checked; });
-$("keepRarity").addEventListener("change", () => { state.gear.keepRarity = $("keepRarity").value; });
-$("keepIp").addEventListener("change", () => { state.gear.keepIp = Math.max(0, Math.floor(+$("keepIp").value) || 0); });
-// manual bulk sweep — salvage all unlocked stash items ≤ rarity AND ≤ ip (0 ip = ignore ip)
-$("salvageMatch").addEventListener("click", () => {
-  const ip = Math.floor(+$("salvageIp").value) || 0;
-  const { count, tally } = salvageMatching(state, $("salvageRarity").value, ip > 0 ? ip : Infinity);
-  if (!count) return;
-  stashDirty = true;
-  const parts = Object.entries(tally).map(([r, n]) => `${n} ${r}`).join(", ");
-  log(`salvaged ${count} items → ${parts} scrap`);
-});
-
-function renderStash() {
-  stashDirty = false;
-  // group by slot, best-first — same-slot items cluster so comparison is easy
-  const sorted = [...state.gear.stash]
-    .sort((a, b) => a.slot.localeCompare(b.slot) || contribution(b) - contribution(a))
-    .slice(0, 24);
-  $("stashToggle").textContent = `stash (${state.gear.stash.length}/${STASH_CAP})`;
-  const el = $("stashList");
-  el.innerHTML = "";
-  for (const item of sorted) {
-    const idx = state.gear.stash.indexOf(item);
-    const rar = RARITY_BY_ID[item.rarity] || RARITIES[0];
-    const up = isUpgrade(state, item); // strict upgrade over what's equipped in the slot
-    const affixes = (item.affixes || []).map(a => affixLabel(a, state)).join(" · ");
-    const row = document.createElement("div");
-    // DNA v4 lane 1: the r-<rarity> class carries both the plate ground (--rp)
-    // and the ink (--ri). The border colour and name colour used to be set
-    // inline here; inline wins over the class, so the plate would never show.
-    row.className = "stashRow r-" + rar.id + (up ? " upgrade" : "") + (item.lock ? " locked" : "");
-    row.innerHTML =
-      `<span class="sMark">${up ? "▲" : item.lock ? "L" : ""}</span>` +
-      `<span class="sName rar-${rar.id}">${item.name}</span>` +
-      `<span class="sAct"><button class="eq">equip</button><button class="lk">${item.lock ? "unlock" : "lock"}</button><button class="sv" ${item.lock ? "disabled" : ""}>×${scrapYield(item)}</button></span>` +
-      `<span class="sInfo">${item.slot} · IP ${fmt(item.ip)}${item.plus ? ` +${item.plus}` : ""}${affixes ? ` · ${affixes}` : ""}</span>`;
-    row.querySelector(".eq").addEventListener("click", () => { equipFromStash(state, idx); delete pendingReforge[item.slot]; stashDirty = true; });
-    row.querySelector(".lk").addEventListener("click", () => { item.lock = !item.lock; stashDirty = true; });
-    row.querySelector(".sv").addEventListener("click", () => {
-      state.gear.stash.splice(idx, 1);
-      const s = salvage(state, item);
-      log(`salvaged ${item.name} → +${s.n} ${s.rarity} scrap`);
-      stashDirty = true;
-    });
-    el.appendChild(row);
-  }
-  if (!state.gear.stash.length) el.innerHTML = `<div class="muted" style="padding:6px 4px">stash empty — drops land here</div>`;
-  else if (state.gear.stash.length > 24) {
-    const more = document.createElement("div");
-    more.className = "muted";
-    more.style.padding = "4px";
-    more.textContent = `…and ${state.gear.stash.length - 24} more (salvage to clear)`;
-    el.appendChild(more);
-  }
-}
+// (Stash, loot filter, bulk salvage and the reforge bench are GONE in v15 —
+// drops are events, signatures are permanent. The scrap wallet stays: it is
+// the slice-2 reforge-bench fuel, accruing from every drop.)
 
 // The Armory grid: zone rows × 3 slot cells. Each cell shows the entry's rank,
 // its lane passive, and a fill bar to the next rank. Dim at rank 0. Lane totals
@@ -1163,15 +1092,11 @@ function render() {
       : `trained +${b.trained.hits.toFixed(4)} hits/s (+${laneRate.toFixed(5)}/s)`;
     $(`bar${el}Info`).textContent = trained;
   }
-  $("autoEquipLine").style.display = ""; // v13: auto-equip is always available (its GM gate is retired)
-  $("autoEquip").checked = state.gear.autoEquip !== false;
-  $("autoFilter").checked = state.gear.autoFilter !== false;
-  if (document.activeElement !== $("keepRarity")) $("keepRarity").value = state.gear.keepRarity;
-  if (document.activeElement !== $("keepIp")) $("keepIp").value = state.gear.keepIp;
   const owned = RARITIES.filter(r => (state.scrap[r.id] || 0) > 0);
-  $("scrapWallet").innerHTML = owned.length
+  $("scrapWallet").innerHTML = (owned.length
     ? owned.map(r => `<span class="scrapPill r-${r.id}">${fmt(state.scrap[r.id])} ${r.name.toLowerCase()}</span>`).join("")
-    : `<span class="muted">no scrap yet — salvage drops to earn it</span>`;
+    : `<span class="muted">no scrap yet — your bots' drops break down into it</span>`)
+    + (state.relics > 0 ? ` <span class="scrapPill r-epic">${fmt(state.relics)} Relic${state.relics === 1 ? "" : "s"}</span>` : "");
 
   // bot enhance squad
   for (const btn of $("enhSeg").children) btn.classList.toggle("active", btn.dataset.slot === b.enhTarget.slot);
@@ -1230,20 +1155,17 @@ function render() {
     const item = state.gear[slot];
     const si = $(`si_${slot}`);
     if (item) {
-      const rar = RARITY_BY_ID[item.rarity] || RARITIES[0];
-      const lines = (item.affixes || []).map(a => `<div class="affixItem">${affixLabel(a, state)}</div>`).join("");
+      const laneTxt = SIG[slot].lane === "atk" ? `+${fmt(laneValue(item))} ATK`
+        : SIG[slot].lane === "hits" ? `+${laneValue(item).toFixed(2)} hits/s`
+        : `+${laneValue(item).toFixed(1)}% copper`;
       si.innerHTML =
         `<div class="itemHeader">` +
-          `<span class="itemName rar-${rar.id}">${item.name}</span>` +
-          `<span class="rarityTag rar-${rar.id}">${rar.name}</span>` +
-          `<span class="itemMeta">IP ${fmt(item.ip)}${item.plus ? ` +${item.plus}` : ""} · ${fmt(contribution(item))} ATK</span>` +
-        `</div>` +
-        (lines ? `<div class="affixList">${lines}</div>` : `<div class="affixList muted">no affixes</div>`);
-      // lane 1 again: the plate is class-driven, so the inline border colour
-      // that used to live here has to go or it out-specifies --ri.
-      setSlotRarity(slotEls[slot], rar.id);
+          `<span class="itemName rar-rare">${item.name}</span>` +
+          `<span class="itemMeta">+${item.plus} · ${laneTxt}</span>` +
+        `</div>`;
+      setSlotRarity(slotEls[slot], "rare");
     } else {
-      si.textContent = "—";
+      si.innerHTML = `<span class="muted">${SLOT_HINT[slot]}</span>`;
       setSlotRarity(slotEls[slot], null);
     }
     si.className = "slotItem" + (item ? ` tier-${enh.zone(item.plus)}` : "");
@@ -1259,20 +1181,6 @@ function render() {
     } else {
       $(`sei_${slot}`).textContent = "";
     }
-    // reforge bench: cost readout, afford-gating, candidate preview
-    const rf = $(`rf_${slot}`);
-    const canRf = canReforge(item);
-    const cost = canRf ? reforgeCost(item) : null;
-    const afford = cost && (state.scrap[cost.rarity] || 0) >= cost.n;
-    rf.disabled = !canRf || !afford;
-    $(`rfi_${slot}`).textContent = !item ? "" : !canRf ? "no affixes" : `${cost.n} ${cost.rarity} scrap/roll`;
-    const cand = pendingReforge[slot];
-    const rfc = $(`rfc_${slot}`);
-    if (item && cand) {
-      rfc.style.display = "";
-      $(`rfcl_${slot}`).innerHTML = `→ ${cand.map(a => affixLabel(a, state)).join(" · ")}`;
-      $(`rfr_${slot}`).disabled = !afford;
-    } else rfc.style.display = "none";
   }
   $("titles").style.display = state.titles.length ? "" : "none";
   $("titles").textContent = state.titles.length ? `Titles: ${state.titles.join(" · ")}` : "";
@@ -1329,7 +1237,6 @@ function render() {
     }
   }
 
-  if (stashDirty) renderStash();
   if (armoryDirty) renderArmory();
 }
 

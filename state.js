@@ -4,7 +4,7 @@ import { getBoss } from "./bosses.js";
 import { skillState } from "./skills.js";
 export function newState() {
   return {
-    v: 14,
+    v: 15,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     // progressive feature unlocks (NGU/ITRTG-style ??? tabs). Boss is always
@@ -62,18 +62,11 @@ export function newState() {
     dungeon: { cache: 0, depthBest: 0, ranks: { reach: 0, yield: 0, overclock: 0, loot: 0, drill: 0 } },
     // (v14: the Dungeon/instance POC is CUT — it never earned its playtest.
     // saveSystem hands any staffed bots back and drops the block on load.)
-    // v8: zones are bot-only — the player's verb is the Boss. No farm{}.
-    gear: {
-      weapon: null, armor: null, charm: null,
-      stash: [],            // item = {slot, ip, plus, rarity, affixes[], zone, name, lock?}
-      // v13: the GM module that used to gate auto-equip is retired, so this is
-      // now a plain opt-in toggle in the gear filter. Defaults OFF — building
-      // the character by hand is the locked design decision; auto-equip is
-      // relief you choose, never the default.
-      autoEquip: false,
-      autoFilter: true,     // loot filter on: auto-salvage drops below the floors
-      keepRarity: "rare",   // loot filter: keep drops at/above this rarity AND
-      keepIp: 0,            //   at/above this ip; everything else auto-salvages
-    },
+    // v15: SIGNATURE gear — one permanent named item per slot, granted at
+    // story milestones (gear.js SIG), grown forever by enhance. No stash,
+    // no filter, no objects from drops: drops pay Scrap + Armory points,
+    // Epic+ banks a Relic (slice-3 currency).
+    gear: { weapon: null, armor: null, charm: null },
+    relics: 0,
   };
 }

@@ -142,6 +142,31 @@ actives on ONE shared pip pool) is in the game and on staging. Key facts:
 - NOT DONE: mock generator (build.mjs) has no skills section yet — design
   contract debt. Rakshasa prompt-minigame parked pending user confirmation.
 
+### SHIPPED 2026-07-27 — SIGNATURE GEAR slice 1 (v15), user-blessed design
+
+User verdict on the old gear: redundant with the Armory, obstructive
+inventory. The comprehensive answer ("what job does gear do that nothing
+else does?"): gear = the character's permanent companions + (slice 2) the
+skill-MOD layer. Slice 1 in game:
+
+- **3 permanent signatures** (Rusty Shortsword / Padded Vest / Cracked
+  Bead), granted at milestones: first copper (~min 1) · first Armory
+  rank-up · 100 CP. One lane each: weapon flat ATK · armor flat hits/s ·
+  charm copper%. `laneValue = ip × 1.12^plus × scale`. Never replaced —
+  a +20 Rusty Shortsword at the Tenth Door is the satire AND the spine.
+- **Drops are events**: Armory points + tiered Scrap; Epic+ banks a
+  RELIC (state.relics — slice-3 currency, banked from day one). No
+  stash, no filter, no objects, no flood. Ordinary drops never log.
+- **Enhance brake** (user condition): attempt ≈15c at +0 (vs 20c entry
+  skill), ×1.6^plus — never free, era-priced by construction.
+- Migration: old items → scrap by rarity; HIGHEST plus carries onto the
+  weapon. W1 EV now 13.0h — INSIDE the 12h–2d gate for the first time
+  (was 11.8h, flagged under). Baseline restamped.
+- QUEUE: slice 2 = mod lines (skill modifiers rolled on signatures,
+  reforge bench returns as the cube, plus-gated line slots +6/+12/+18,
+  crit chase returns as crit mod lines) · slice 3 = Relic spending +
+  helm/gloves/boots behind W1/W3/W5. All real-roll law compliant.
+
 ### CUT 2026-07-27 — the Dungeon (instance.js), by user verdict
 
 *"iffy on the dungeon … obstructive and just there for the sake of being

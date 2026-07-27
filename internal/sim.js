@@ -20,21 +20,7 @@ import { getBoss } from "../bosses.js";
 import { derive, SPEED_KNEE, BASE_HPS } from "../stats.js";
 import * as bots from "../bots.js";
 import * as farm from "../farm.js";
-import { contribution, SLOTS } from "../gear.js";
-import { AFFIXES, affixTier } from "../affixes.js";
-
-// EV gear model: optimal play keeps DAMAGE rolls, so credit the equipped EV
-// item a Rare's worth of atk affixes (atkFlat + atkPct) at mid tier value.
-// ponytail: coarse — ignores haste/copper rolls and roll variance; gear feeds
-// player DPS so this is sim-relevant, restamp baseline + playtest to tune.
-function evAffixes(ip) {
-  const t = affixTier(ip);
-  return ["atkFlat", "atkPct"].map(id => {
-    const a = AFFIXES[id];
-    const mid = a.ipFrac != null ? a.ipFrac * ip : a.base + a.per * (t - 1);
-    return { id, tier: t, value: a.round ? Math.round(mid) : +mid.toFixed(2) };
-  });
-}
+import { SLOTS, newSignature } from "../gear.js";
 import { cost as enhCost, evCostPerIpFrom, chance } from "../enhance.js";
 import * as skills from "../skills.js";
 
@@ -55,8 +41,10 @@ function mark(t, desc) {
   milestones.push({ t: Math.round(t), desc });
 }
 
-// per-zone accumulated gear rolls (EV): E[max of n uniform] = lo + span·n/(n+1)
-const rolls = farm.zones.map(() => 0);
+// v15 signature gear: no drop adoption to model — drops are Armory/scrap
+// events and the Armory is playtest-gated (bot-lane rule: sim never rolls
+// drops, so armor's arrival milestone never fires here — a deliberate
+// lower bound). Weapon and charm grant on deterministic conditions below.
 
 let t = 0;
 let broken = false;
@@ -127,33 +115,18 @@ while (t < MAX_S && !broken) {
   // drops land at expected count and rolls are ignored (gear is EV'd below)
   bots.tick(S, STEP, () => {}, () => 0.5);
 
-  // --- gear + salvage: EV of the swarm's chance drops, per zone ---
+  // --- zone income (drops are events now; no gear adoption to model) ---
   let income = 0;
   farm.zones.forEach((z, i) => {
     const n = S.bots.alloc.zones[i];
     if (n <= 0 || !farm.zoneUnlocked(S.cleared?.length, i)) return;
-    const zr = bots.botZoneRates(S.bots, i, n, derive(S));
-    income += zr.copperPerSec;
-    const dropsNow = zr.kps * STEP * farm.DROP_CHANCE;
-    rolls[i] += dropsNow;
-    // salvage yields SCRAP now; the character's copper is the dungeon delve
-    // (playtest-gated, not modelled here — sim stays a conservative lower bound)
+    income += bots.botZoneRates(S.bots, i, n, derive(S)).copperPerSec;
   });
-  // adoption: EV best roll per slot from the RICHEST farmed zone. Adopt on
-  // RAW ip gain (optimal play re-enhances; income covers the re-climb)
-  let bestZi = -1;
-  farm.zones.forEach((z, i) => { if (rolls[i] >= SLOTS.length && (bestZi < 0 || z.ipHi > farm.zones[bestZi].ipHi)) bestZi = i; });
-  if (bestZi >= 0) {
-    const z = farm.zones[bestZi];
-    for (const slot of SLOTS) {
-      const n = rolls[bestZi] / SLOTS.length;
-      const expIp = Math.round(z.ipLo + (z.ipHi - z.ipLo) * (n / (n + 1)));
-      const cur = S.gear[slot];
-      if (!cur || expIp > cur.ip) {
-        if (cur) S.gear.stash.push(cur);
-        S.gear[slot] = { slot, ip: expIp, plus: 0, zone: bestZi + 1, name: "ev", rarity: "rare", affixes: evAffixes(expIp) };
-      }
-    }
+  // --- signature arrivals (same conditions as checkUnlocks) ---
+  if (!S.gear.weapon && S.copper >= 10) S.gear.weapon = newSignature("weapon");
+  if (!S.gear.charm) {
+    const dd = derive(S);
+    if (dd.atk * dd.hitsPerSec >= 100) S.gear.charm = newSignature("charm");
   }
 
   // --- spend copper: skills first (their EV rides in derive, and their
