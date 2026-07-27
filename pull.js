@@ -29,6 +29,18 @@ export function drain(state, dtS) {
   return { dealt, broke, cp };
 }
 
+// Skill bursts (Power Smash, Wild Swing, Energy Burst, Blade Dance riders)
+// land through here — drain's guard and break semantics for a flat amount
+// instead of CP×dt, so every damage path shares ONE break transition.
+export function smite(state, dmg) {
+  if (state.boss.broken || dmg <= 0) return { dealt: 0, broke: false };
+  const dealt = Math.min(state.boss.hp, dmg);
+  state.boss.hp = Math.max(0, state.boss.hp - dealt);
+  const broke = state.boss.hp <= 0;
+  if (broke) state.boss.broken = true;
+  return { dealt, broke };
+}
+
 // Estimated seconds to kill at current CP — the readout that reads huge on
 // arrival and drops as you scale. null when there's nothing to kill.
 export function timeToKill(state) {

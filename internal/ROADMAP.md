@@ -113,6 +113,28 @@ Not designed yet. Three things settled before anyone starts:
 - Hard veto still applies: no obligation mechanics. An active skill must not
   punish you for not clicking.
 
+### P3/P1 SHIPPED 2026-07-27 — the skill book (skills.js), full 18-skill design
+
+The whole book from the approved design (9 passives incl. the 20c entry, 9
+actives on ONE shared pip pool) is in the game and on staging. Key facts:
+
+- **PIP_CAP = 5 in skills.js is THE USER'S DIAL** (they asked to own this
+  number). 5 × 300s = 25min zero-loss window. One constant.
+- Passive EV folds into derive() as the displayed "skills ×" term (crit
+  pattern: whittle smooth, battle.js rolls the spectacle). Bots inherit via
+  the player coupling — skill buys speed the farm.
+- Actives are REAL effects (Rage/Might/Focus/Empower timers, windup, riders);
+  burst damage lands through pull.js smite() — one break transition for every
+  damage path. Sim buys PASSIVES only (actives are timing feel — sim is a
+  lower bound, per the hard-won rule).
+- **W1 HP 300e9 → 25e12 (×83), W2–W10 rescaled by the same factor.** The
+  EV-greedy skill stack had collapsed W1 to 2.7h; HP is the sanctioned lever.
+  Sim W1 break back at 11.8h, baseline restamped in the same commit.
+- UI: Boss tab, rig row grammar, learned + next-two reveal ladder, hotbar +
+  pip row. Wild Swing whiff is ×0 (drama — playtest owns it).
+- NOT DONE: mock generator (build.mjs) has no skills section yet — design
+  contract debt. Rakshasa prompt-minigame parked pending user confirmation.
+
 ### Fixed during the playtest
 
 - Locked Armory zones z6–z15 are no longer rendered at all (`2028ff8`). They

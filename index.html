@@ -86,6 +86,16 @@
       <button id="descendBtn" style="display:none">Descend to the next door →</button>
     </div>
 
+    <!-- the skill book: rows come from skills.SKILLS (learned + the next two
+         on the ladder); the hotbar is the learned actives. No per-skill
+         markup lives here — same registry pattern as the rig. -->
+    <div id="skillsBlock" class="game hidden">
+      <h3>Skills <span class="sub" id="skillsMultEl"></span></h3>
+      <div id="hotbar" style="display:none"></div>
+      <div class="sub" id="pipRow" style="display:none"></div>
+      <div class="rowlist" id="skillRows"></div>
+    </div>
+
     <!-- story -->
     <div id="dialogue"></div>
   </section>

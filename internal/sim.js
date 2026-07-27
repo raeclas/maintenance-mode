@@ -36,6 +36,7 @@ function evAffixes(ip) {
   });
 }
 import { cost as enhCost, evCostPerIpFrom, chance } from "../enhance.js";
+import * as skills from "../skills.js";
 
 const S = newState();
 const boss = getBoss(S.wall);
@@ -155,7 +156,21 @@ while (t < MAX_S && !broken) {
     }
   }
 
-  // --- spend copper: rig upgrades with ≤30min payback, then enhance to +10 ---
+  // --- spend copper: skills first (their EV rides in derive, and their
+  // passives lift bot DPS through the player coupling), then rig, then
+  // enhance. PASSIVES ONLY: actives are burst timing — playtest-owned feel,
+  // not EV the sim may claim (see Hard-won rules). Sim stays a lower bound.
+  for (;;) {
+    let best = null;
+    for (const sk of skills.SKILLS) {
+      if (sk.kind !== "passive") continue;
+      const c = skills.cost(S, sk.id);
+      if (c < (best?.c ?? Infinity)) best = { id: sk.id, c };
+    }
+    if (best && best.c <= S.copper && best.c <= income * 1800) skills.buy(S, best.id);
+    else break;
+  }
+  // --- rig upgrades with ≤30min payback, then enhance to +10 ---
   for (;;) {
     const options = [
       ["cap", bots.capCost(S.bots)],

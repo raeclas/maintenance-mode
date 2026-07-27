@@ -1035,4 +1035,161 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
 }
 
+const skills = await import("../skills.js");
+
+// Skills: cost curve, band caps, buy gating
+{
+  const s = newState();
+  assert.equal(skills.cost(s, "powerStrike"), 20);
+  s.copper = 19;
+  assert.equal(skills.buy(s, "powerStrike"), false); // can't afford
+  s.copper = 1e9;
+  assert.equal(skills.buy(s, "powerStrike"), true);
+  assert.equal(skills.cost(s, "powerStrike"), 30);   // 20 × 1.5
+  // Double Strike band cap: chance stops at 30%, cost goes Infinity at maxRank
+  for (let i = 0; i < 12; i++) skills.buy(s, "doubleStrike");
+  assert.equal(skills.cost(s, "doubleStrike"), Infinity);
+  assert.ok(Math.abs(skills.fxValues.doubleChance(12) - 0.30) < 1e-9);
+  assert.ok(Math.abs(skills.fxValues.doubleChance(99) - 0.30) < 1e-9); // Empower can't burst the cap
+}
+
+// Skills: the EV fold is the crit pattern — one displayed term, exact math
+{
+  const s = newState();
+  const base = derive(s);
+  s.copper = 20;
+  skills.buy(s, "powerStrike");
+  const d = derive(s);
+  assert.ok(Math.abs(d.atk / base.atk - 1.05) < 1e-9); // +5% ATK, nothing else
+  assert.equal(d.skills.terms.length, 1);              // and it is DISPLAYED
+}
+
+// Actives: Focus forces every hit to crit, Rage doubles the hit rate
+{
+  const s = newState();
+  s.skills.ranks.focus = 1;
+  s.skills.focus = 10; // seconds remaining
+  const d = derive(s);
+  const cfAll = 1 + 1 * (2 - 1) + 1 * 0.2 * (5 - 2); // 2.6
+  assert.ok(Math.abs(d.atk - 10 * cfAll) < 1e-9);
+  s.skills.focus = 0;
+  s.skills.ranks.rage = 1;
+  s.skills.rage = 30;
+  assert.equal(derive(s).hitsPerSec, 4.0);
+}
+
+// Pips: spend-gated casts, no restack, recharge banks to the cap and stalls
+{
+  const s = newState();
+  s.copper = 1e9;
+  skills.buy(s, "rage");
+  const d = derive(s);
+  assert.equal(skills.cast(s, "rage", d), null);      // no pip yet
+  skills.tick(s, skills.PIP_RECHARGE, d);             // one pip banks
+  assert.equal(s.skills.pips, 1);
+  assert.ok(skills.cast(s, "rage", d));               // spends it
+  assert.equal(s.skills.pips, 0);
+  assert.ok(s.skills.rage > 0);
+  assert.equal(skills.cast(s, "rage", d), null);      // restack blocked
+  // offline banking: a huge absence fills the bank EXACTLY to the cap
+  skills.tick(s, 86400 * 30, d);
+  assert.equal(s.skills.pips, skills.PIP_CAP);
+  assert.equal(s.skills.pipT, 0);                     // full bank = recharge stalls
+  assert.equal(s.skills.rage, 0);                     // the burst expired on its timer
+}
+
+// Power Smash winds up through the same tick and lands real damage
+{
+  const s = newState();
+  s.copper = 1e9;
+  skills.buy(s, "powerSmash");
+  const d = derive(s);
+  skills.tick(s, skills.PIP_RECHARGE, d);
+  assert.ok(skills.cast(s, "powerSmash", d));
+  assert.ok(s.skills.windup > 0);
+  const events = [];
+  const r = skills.tick(s, 6, d, e => events.push(e));
+  assert.ok(Math.abs(r.dmg - 80 * d.atk) < 1e-6);
+  assert.equal(events.filter(e => e.type === "smash").length, 1);
+}
+
+// Wild Swing: odds fixed, scripted rng hits the jackpot and the whiff
+{
+  const s = newState();
+  s.copper = 1e9;
+  skills.buy(s, "wildSwing");
+  const d = derive(s);
+  skills.tick(s, skills.PIP_RECHARGE * 2, d);
+  assert.ok(Math.abs(skills.cast(s, "wildSwing", d, () => 0.05).dmg - 150 * d.atk) < 1e-6);
+  assert.equal(skills.cast(s, "wildSwing", d, () => 0.95).dmg, 0); // WHIFF
+}
+
+// Combo Attack: finishers emit and shave the pip recharge (the real coupling)
+{
+  const s = newState();
+  s.copper = 1e9;
+  skills.buy(s, "comboAttack");
+  skills.buy(s, "rage"); // a pip spender, so the recharge is live
+  const d = derive(s);
+  const events = [];
+  skills.tick(s, 15, d, e => events.push(e)); // 2 hits/s × 15s = 30 hits
+  assert.equal(events.filter(e => e.type === "finisher").length, 1);
+  assert.ok(Math.abs(s.skills.pipT - (15 + 5)) < 1e-6); // 15s elapsed + 5s shave
+}
+
+// Second Wind: its own clock, banks exactly 1, refills the whole pip bank
+{
+  const s = newState();
+  s.copper = 1e9;
+  skills.buy(s, "secondWind");
+  skills.buy(s, "rage");
+  const d = derive(s);
+  skills.tick(s, 86400, d);                 // clock fills, bank caps at 1
+  assert.equal(s.skills.swBank, 1);
+  s.skills.pips = 0;
+  assert.ok(skills.cast(s, "secondWind", d));
+  assert.equal(s.skills.pips, skills.PIP_CAP);
+  assert.equal(s.skills.swBank, 0);
+}
+
+// Ban Wave: the skill book is character canon — ranks and pips survive
+{
+  const s = newState();
+  s.copper = 1e9;
+  skills.buy(s, "powerStrike");
+  skills.buy(s, "rage");
+  s.skills.pips = 3;
+  s.bots.bars.atk.fills[0] = 100;
+  rebirth.banWave(s);
+  assert.equal(skills.rank(s, "powerStrike"), 1);
+  assert.equal(s.skills.pips, 3);
+  assert.equal(s.copper, 0); // the wallet resets, the book does not
+}
+
+// Saves: ranks round-trip; a retired skill id is dropped on load
+{
+  const s = newState();
+  s.unlocked = true;
+  s.copper = 100;
+  s.skills.ranks.powerStrike = 2;
+  s.skills.ranks.ghostOfARetiredSkill = 5;
+  saves.save(s);
+  const s2 = newState();
+  saves.load(s2);
+  assert.equal(skills.rank(s2, "powerStrike"), 2);
+  assert.equal(skills.rank(s2, "ghostOfARetiredSkill"), 0);
+  localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
+}
+
+// Skill bursts share drain's break transition (smite)
+{
+  const s = newState();
+  s.boss.hp = 50;
+  const r = pull.smite(s, 100);
+  assert.equal(r.dealt, 50);
+  assert.equal(r.broke, true);
+  assert.equal(s.boss.broken, true);
+  assert.equal(pull.smite(s, 100).dealt, 0); // broken Wardens take nothing
+}
+
 console.log("all checks passed");

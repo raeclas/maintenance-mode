@@ -482,7 +482,8 @@ section.game h2 {
   letter-spacing: .1em;
   color: var(--gold);
 }
-section.game h3 {
+section.game h3,
+#skillsBlock h3 {
   margin: 10px 0 6px;
   font-size: var(--fs-small);
   font-variant: small-caps;
@@ -491,7 +492,8 @@ section.game h3 {
   border-top: 1px solid var(--line);
   padding-top: 8px;
 }
-section.game button {
+section.game button,
+#skillsBlock button {
   background: var(--field);
   color: var(--bone);
   border: 1px solid var(--line);
@@ -500,8 +502,14 @@ section.game button {
   padding: 4px 10px;
   cursor: pointer;
 }
-section.game button:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
-section.game button:disabled { color: var(--faint); cursor: default; }
+section.game button:hover:not(:disabled),
+#skillsBlock button:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+section.game button:disabled,
+#skillsBlock button:disabled { color: var(--faint); cursor: default; }
+
+/* the skill book (Boss tab) — hotbar is the learned actives, MMO-style */
+#hotbar { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+#pipRow { font-family: var(--font-data); margin: 4px 0 6px; }
 
 .rig { display: flex; gap: 8px; flex-wrap: wrap; }
 .assignLine { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: var(--fs-small); font-family: var(--font-data); margin-bottom: 6px; }
@@ -953,7 +961,8 @@ details.trophySet:not([open]) > .pips { display: none; }
 #tabs button.locked:hover { color: #45454d; border-color: var(--line-soft); }
 
 /* --- state-in-form: affordable purchases read live; capped training reads done --- */
-section.game button.affordable { border-color: var(--gold); color: var(--gold); }
+section.game button.affordable,
+#skillsBlock button.affordable { border-color: var(--gold); color: var(--gold); }
 .rowlist .row.maxed .rowStat { color: var(--gold); }
 .rowlist .row.maxed .rowFill { background: var(--gold); }
 

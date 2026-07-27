@@ -7,7 +7,7 @@ export const bosses = [
     wall: 1,
     name: "Vess",
     title: "Warden of the First Door",
-    hp: 300_000_000_000, // v11 drain model: an HP pool whittled at Combat Power. ~12h to break on the sim CP-curve; arrival TTK reads "overwhelming" (~400d at start CP) then cascades down as you scale (REWORK-IDLE-BATTLER.md)
+    hp: 25_000_000_000_000, // v11 drain model: an HP pool whittled at Combat Power. ~12h to break on the sim CP-curve; arrival TTK reads "overwhelming" then cascades down as you scale. ×83'd 2026-07-27 when the skill book shipped (W2–W10 rescaled by the same factor) — skills are a real CP faucet and W1 had collapsed to 2.7h; HP is the sanctioned compensating lever (ROADMAP hard-won rules)
     windowS: 30,    // vestigial (drain uses hits/s, not a window) — kept for now
     speedKnee: 5.0, // hits/s where speed's returns start diminishing (= old cap; harder walls raise this to re-value speed)
     set: { name: "The First Door", mult: 1.0 }, // 7-piece set, farmed from Vess
@@ -31,7 +31,7 @@ export const bosses = [
     wall: 2,
     name: "Maren",
     title: "Warden of the Second Door",
-    hp: 75_000_000_000_000, // v11 drain — deeper wardens stretch far longer; playtest-tune
+    hp: 6_000_000_000_000_000, // v11 drain — deeper wardens stretch far longer; playtest-tune
     windowS: 30,
     speedKnee: 9.0, // re-steepens speed: past 5 hits/s pays full value again on this wall
     set: { name: "The Second Door", mult: 1.6 }, // deeper Warden → stronger set
@@ -56,7 +56,7 @@ export const bosses = [
   // outlived its players; behind the last is the end itself.
   {
     id: "w3", wall: 3, name: "Korrin", title: "Warden of the Third Door",
-    hp: 700_000_000_000_000, windowS: 30, speedKnee: 13.0,
+    hp: 60_000_000_000_000_000, windowS: 30, speedKnee: 13.0,
     set: { name: "The Third Door", mult: 2.4 },
     dialogue: {
       greet: ["You didn't earn this door — you scripted it. The old rule was fight fair. But there's no one left to enforce it. Come, then."],
@@ -67,7 +67,7 @@ export const bosses = [
   },
   {
     id: "w4", wall: 4, name: "Osei", title: "Warden of the Fourth Door",
-    hp: 6_000_000_000_000_000, windowS: 30, speedKnee: 18.0,
+    hp: 500_000_000_000_000_000, windowS: 30, speedKnee: 18.0,
     set: { name: "The Fourth Door", mult: 3.4 },
     // Osei is the OLDEST Warden — posted before the others, and the only one who
     // remembers the server ALIVE rather than dying. Everyone else mourns a thing
@@ -83,7 +83,7 @@ export const bosses = [
   },
   {
     id: "w5", wall: 5, name: "Thale", title: "Warden of the Fifth Door",
-    hp: 55_000_000_000_000_000, windowS: 30, speedKnee: 24.0,
+    hp: 4_500_000_000_000_000_000, windowS: 30, speedKnee: 24.0,
     set: { name: "The Fifth Door", mult: 4.6 },
     dialogue: {
       greet: ["They put the server in maintenance mode and walked away. No patches. No wipes. Just us, guarding doors to rooms no one enters."],
@@ -94,7 +94,7 @@ export const bosses = [
   },
   {
     id: "w6", wall: 6, name: "Ilva", title: "Warden of the Sixth Door",
-    hp: 500_000_000_000_000_000, windowS: 30, speedKnee: 31.0,
+    hp: 40_000_000_000_000_000_000, windowS: 30, speedKnee: 31.0,
     set: { name: "The Sixth Door", mult: 6.0 },
     dialogue: {
       greet: ["The doors weren't to keep you out. They were to keep the ending in."],
@@ -105,7 +105,7 @@ export const bosses = [
   },
   {
     id: "w7", wall: 7, name: "Domar", title: "Warden of the Seventh Door",
-    hp: 4_500_000_000_000_000_000, windowS: 30, speedKnee: 39.0,
+    hp: 380_000_000_000_000_000_000, windowS: 30, speedKnee: 39.0,
     set: { name: "The Seventh Door", mult: 7.6 },
     dialogue: {
       greet: ["Six years I have stood here. You are the first thing to move in all that time. I don't know whether to thank you or fear you."],
@@ -116,7 +116,7 @@ export const bosses = [
   },
   {
     id: "w8", wall: 8, name: "Sef", title: "Warden of the Eighth Door",
-    hp: 40_000_000_000_000_000_000, windowS: 30, speedKnee: 48.0,
+    hp: 3_300_000_000_000_000_000_000, windowS: 30, speedKnee: 48.0,
     set: { name: "The Eighth Door", mult: 9.4 },
     // Sef is the betrayer, and his grievance is with the DEVELOPERS, not with
     // the server. He was written as a tier-four raid encounter and shipped as a
@@ -133,7 +133,7 @@ export const bosses = [
   },
   {
     id: "w9", wall: 9, name: "Yara", title: "Warden of the Ninth Door",
-    hp: 350_000_000_000_000_000_000, windowS: 30, speedKnee: 58.0,
+    hp: 30_000_000_000_000_000_000_000, windowS: 30, speedKnee: 58.0,
     set: { name: "The Ninth Door", mult: 11.4 },
     dialogue: {
       greet: ["One door after me. Behind it is what all of us were guarding. It was never loot. Are you certain you want to see?"],
@@ -144,7 +144,7 @@ export const bosses = [
   },
   {
     id: "w10", wall: 10, name: "The Last Warden", title: "Warden of the Tenth Door",
-    hp: 3_000_000_000_000_000_000_000, windowS: 30, speedKnee: 70.0,
+    hp: 250_000_000_000_000_000_000_000, windowS: 30, speedKnee: 70.0,
     set: { name: "The Tenth Door", mult: 13.6 },
     dialogue: {
       greet: ["You reached the end of the queue. There's no one behind you. There never was."],

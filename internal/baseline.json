@@ -1,7 +1,7 @@
 [
   {
     "t": 30,
-    "desc": "arrival TTK 149664.8d (intro beat — overwhelming)"
+    "desc": "arrival TTK 12472062.6d (intro beat — overwhelming)"
   },
   {
     "t": 35,
@@ -12,16 +12,16 @@
     "desc": "power ×10"
   },
   {
-    "t": 3600,
-    "desc": "z2 held (Webbed Ravine)"
-  },
-  {
-    "t": 4200,
+    "t": 3000,
     "desc": "power ×100"
   },
   {
-    "t": 4200,
+    "t": 3600,
     "desc": "power ×1000"
+  },
+  {
+    "t": 3600,
+    "desc": "z2 held (Webbed Ravine)"
   },
   {
     "t": 4200,
@@ -40,7 +40,7 @@
     "desc": "z4 held (Cinder Steppe)"
   },
   {
-    "t": 19200,
+    "t": 20400,
     "desc": "W1 10% gone"
   },
   {

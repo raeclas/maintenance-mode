@@ -5,6 +5,7 @@ import { newState } from "./state.js";
 import { getBoss } from "./bosses.js";
 import { SLOTS } from "./gear.js";
 import { AFFIXES } from "./affixes.js";
+import { SKILL_BY_ID } from "./skills.js";
 
 const KEY = "mm_save";
 
@@ -156,6 +157,13 @@ export function load(state) {
     state.bots.alloc.speed[0] = Math.round((s.bots.alloc.spd ?? 0) / 100 * state.bots.pop);
     state.bots.alloc.zones[0] = Math.round((s.bots.alloc.farm ?? 0) / 100 * state.bots.pop);
   }
+  // v14: the skill book. Ranks with no registry row are dropped (a retired
+  // skill reads as never learned); pip/energy/timer fields backfill from
+  // defaults so pre-skill saves start with an empty, valid book.
+  state.skills = { ...d.skills, ...(s.skills || {}) };
+  state.skills.ranks = (s.skills?.ranks && typeof s.skills.ranks === "object")
+    ? Object.fromEntries(Object.entries(s.skills.ranks).filter(([id]) => SKILL_BY_ID[id]))
+    : {};
   state.gear = { ...d.gear, ...(s.gear || {}) };
   if (!Array.isArray(state.gear.stash)) state.gear.stash = [];
   // Drop affixes whose row no longer exists (v12 retired Ban Counter with the

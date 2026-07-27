@@ -1,9 +1,10 @@
 // state.js — single source of truth for the save shape.
 // saveSystem normalizes over these defaults; the sim imports it too.
 import { getBoss } from "./bosses.js";
+import { skillState } from "./skills.js";
 export function newState() {
   return {
-    v: 13,
+    v: 14,
     lastSeen: 0,
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     // progressive feature unlocks (NGU/ITRTG-style ??? tabs). Boss is always
@@ -52,6 +53,9 @@ export function newState() {
         speed: { fills: [0, 0, 0, 0, 0, 0], prog: [0, 0, 0, 0, 0, 0], unlocked: 1 },
       },
     },
+    // v14: the skill book — character canon, survives Ban Wave like rig ranks.
+    // Pip timers/counters live inside and tick the same path live + offline.
+    skills: skillState(),
     // v9: gear = rarity + rolled affixes. Salvage → tiered Scrap (reforge fuel).
     scrap: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, origin: 0 },
     // Delve — idle depth engine + Cache upgrade tree (feeds every system)

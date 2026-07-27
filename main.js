@@ -3,8 +3,9 @@ import { newState } from "./state.js";
 import { load, save, wipe, exportSave } from "./saveSystem.js";
 import { startGameLoop } from "./gameLoop.js";
 import { bosses, getBoss } from "./bosses.js";
-import { drain, farmTick, timeToKill } from "./pull.js";
-import { initBattle, renderBattle, notifyBreak, notifyEnhance, refreshTheme } from "./battle.js";
+import { drain, smite, farmTick, timeToKill } from "./pull.js";
+import { initBattle, renderBattle, notifyBreak, notifyEnhance, notifySkill, refreshTheme } from "./battle.js";
+import * as skills from "./skills.js";
 import { derive } from "./stats.js";
 import { critFactor } from "./crits.js";
 import * as bots from "./bots.js";
@@ -217,6 +218,16 @@ if (loaded && state.unlocked && state.lastSeen) {
     // enh feedback stays silent offline (slot rows aren't built yet)
     bots.tick(state, dt, (kind, item) => { if (kind === "drop") { drops++; onDrop(item); } });
     log(`offline ${fmt(dt / 3600)}h: +${fmt(state.copper - c0)}c · ${drops} drops`);
+    { // skills: pips/Energy bank toward their caps, burst timers run out —
+      // same tick as live, silent emitter (no floaters for an absent player).
+      // A windup or Blade Dance that was running lands its damage here.
+      const sk = skills.tick(state, dt, derive(state));
+      if (sk.dmg > 0 && state.wall === state.maxWall && !state.boss.broken
+          && smite(state, sk.dmg).broke) {
+        log(`★ W${state.wall} BREACHED while you were away`);
+        handleBreak();
+      }
+    }
     { // the Delve mines Cache idle — same rate as live, clamped by dt
       const gained = dungeon.cachePerSec(state, charDps()) * dt;
       state.dungeon.cache += gained;
@@ -304,6 +315,17 @@ const HELP_ROOMS = [
     ["Farming a cleared door", `Once a door is open, farming it rolls for the rest of
       that Warden's trophy set every 30 seconds — each roll a 25% chance to drop the
       next piece.`],
+    ["Skills", `Skills are bought and levelled with copper — the same copper the rig
+      wants, so every purchase is a choice between your character and your swarm.
+      Passive skills fire on their own as you attack; everything they add is folded
+      into the one "skills ×" number next to the Skills header. The list shows what
+      you know plus the next two you could learn.`],
+    ["Casting", `Active skills spend a pip. Pips recharge one every 5 minutes, whether
+      the game is open or not, and store up to 5 — nothing is ever lost by being away
+      unless the bank is already full. Casting is a bonus for being here, never a
+      penalty for leaving. Energy Burst is the exception: it charges from your own
+      hits instead of time, and Second Wind refills the whole pip bank on its own
+      slower clock.`],
   ]],
   ["T", "Training", "botSec", [
     ["Bot pool", `The population bar is every bot you own, filled or not. The counter at
@@ -460,6 +482,132 @@ for (const u of bots.RIG) {
   rigBtns[u.id] = row.querySelector("button");
   rigBtns[u.id].addEventListener("click", () => bots.buy(state, u.id));
 }
+
+// ---- the skill book (Boss tab) ----
+// Rows are the rig's row grammar; the ladder reveals progressively (NGU-style):
+// every learned skill plus the next TWO unlearned by cost, nothing else — the
+// book grows as you buy instead of dumping 18 rows on minute one.
+let skillsSig = "";       // visible-set signature; rebuild rows when it moves
+const skillBtns = {};     // id → level-up button
+const castBtns = {};      // id → hotbar cast button
+const skillsByCost = [...skills.SKILLS].sort((a, b) => a.base - b.base);
+
+function visibleSkills() {
+  const out = [];
+  let unlearned = 0;
+  for (const s of skillsByCost) {
+    if (skills.rank(state, s.id) > 0) out.push(s);
+    else if (unlearned < 2) { out.push(s); unlearned++; }
+  }
+  return out;
+}
+
+function castSkill(id) {
+  const d = derive(state);
+  const r = skills.cast(state, id, d);
+  if (!r) return;
+  if (r.dmg !== undefined && state.wall === state.maxWall
+      && !state.boss.broken && smite(state, r.dmg).broke) handleBreak();
+  if (id === "wildSwing") {
+    if (r.mult === 0) notifySkill("WHIFF", "--bone", 20);
+    else notifySkill(`${r.label ? r.label + " " : ""}${fmt(r.dmg)}`,
+      r.mult >= 100 ? "--super-crit" : "--crit-gold", r.mult >= 100 ? 34 : 24, r.mult >= 100);
+  } else if (id === "energyBurst") {
+    notifySkill(`${fmt(r.dmg)} BURST`, "--gold-bright", 26, true);
+  } else if (id === "powerSmash") {
+    notifySkill("winding up…", "--bone", 14);
+  } else {
+    notifySkill(skills.SKILL_BY_ID[id].name.toUpperCase(), "--crit-gold", 16);
+  }
+}
+
+// Tick events → arena feedback. Judgment/finisher damage is EV-folded into
+// CP, so the floater prints the beat's worth without double-dealing it.
+function onSkillEvent(ev) {
+  if (ev.type === "smash") notifySkill(`${fmt(ev.dmg)} SMASH`, "--super-crit", 30, true);
+  else if (ev.type === "finisher") notifySkill(`COMBO ×${ev.mult}`, "--crit-gold", 20);
+  else if (ev.type === "judgment") notifySkill(`⚖ ×${ev.mult}`, "--gold-bright", 18);
+}
+
+function buildSkillRows() {
+  const vis = visibleSkills();
+  skillsSig = vis.map(s => s.id + skills.rank(state, s.id)).join();
+  $("skillRows").innerHTML = "";
+  $("hotbar").innerHTML = "";
+  for (const s of vis) {
+    const r = skills.rank(state, s.id);
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML =
+      `<span class="rowName">${s.name}<div class="sub" id="skDesc_${s.id}"></div></span>` +
+      `<span class="rowGain" id="skStep_${s.id}"></span>` +
+      `<span class="rowStat" id="skRank_${s.id}"></span>` +
+      `<button id="skBuy_${s.id}"></button>`;
+    $("skillRows").appendChild(row);
+    skillBtns[s.id] = row.querySelector("button");
+    skillBtns[s.id].addEventListener("click", () => {
+      if (skills.buy(state, s.id)) buildSkillRows(); // a buy can reveal the next rung
+    });
+    if (s.kind === "active" && r > 0) {
+      const b = document.createElement("button");
+      b.id = `cast_${s.id}`;
+      b.textContent = s.name;
+      b.addEventListener("click", () => castSkill(s.id));
+      $("hotbar").appendChild(b);
+      castBtns[s.id] = b;
+    } else delete castBtns[s.id];
+  }
+  for (const id of Object.keys(castBtns)) if (!skills.rank(state, id)) delete castBtns[id];
+  $("hotbar").style.display = $("hotbar").children.length ? "" : "none";
+}
+
+function fmtClock(sec) {
+  const m = Math.floor(sec / 60), ss = Math.ceil(sec % 60);
+  return `${m}:${String(ss === 60 ? 0 : ss).padStart(2, "0")}`;
+}
+
+function renderSkills(d) {
+  const k = state.skills;
+  $("skillsMultEl").textContent = d.skills?.mult > 1 ? `skills ×${d.skills.mult.toFixed(2)}` : "";
+  for (const s of visibleSkills()) {
+    if (!skillBtns[s.id]) { buildSkillRows(); break; }
+  }
+  for (const s of skillsByCost) {
+    const btn = skillBtns[s.id];
+    if (!btn || !btn.isConnected) continue;
+    const r = skills.rank(state, s.id);
+    const c = skills.cost(state, s.id);
+    $(`skDesc_${s.id}`).textContent = s.desc(Math.max(1, r));
+    $(`skStep_${s.id}`).textContent = c === Infinity ? "" : `${s.step(Math.max(1, r))}/rank`;
+    $(`skRank_${s.id}`).textContent = r ? `rank ${r}` : s.kind === "active" ? "active · 1 pip" : "";
+    btn.textContent = c === Infinity ? "MAX" : r ? `${fmt(c)}c` : `learn ${fmt(c)}c`;
+    buyState(btn, c !== Infinity && state.copper >= c);
+  }
+  // hotbar states mirror cast()'s own guards — a disabled button is the truth
+  for (const [id, b] of Object.entries(castBtns)) {
+    let ok = true, note = "";
+    if (id === "energyBurst") { ok = k.energy >= 1; note = ` ${Math.floor(k.energy)}⚡`; }
+    else if (id === "secondWind") { ok = k.swBank >= 1 && k.pips < skills.PIP_CAP; note = k.swBank ? " ready" : ` ${fmtClock(skills.fxValues.swClock(skills.rank(state, id)) - k.swT)}`; }
+    else {
+      ok = k.pips >= 1;
+      if (id === "powerSmash" && k.windup > 0) { ok = false; note = ` ${k.windup.toFixed(1)}s`; }
+      else if (id === "bladeDance" && k.bladeHits > 0) { ok = false; note = ` ${Math.ceil(k.bladeHits)} hits`; }
+      else if (k[id] > 0) { ok = false; note = ` ${Math.ceil(k[id])}s`; }
+    }
+    b.textContent = skills.SKILL_BY_ID[id].name + note;
+    buyState(b, ok);
+  }
+  const anyActive = Object.keys(castBtns).length > 0;
+  $("pipRow").style.display = anyActive ? "" : "none";
+  if (anyActive) {
+    const pips = "◆".repeat(k.pips) + "◇".repeat(skills.PIP_CAP - k.pips);
+    const next = k.pips >= skills.PIP_CAP ? "bank full" : `next ${fmtClock(skills.PIP_RECHARGE - k.pipT)}`;
+    const combo = skills.rank(state, "comboAttack") ? ` · combo ${Math.floor(k.comboT)}/${skills.COMBO_HITS}` : "";
+    const energy = skills.rank(state, "energyBurst") ? ` · Energy ${Math.floor(k.energy)}/${skills.ENERGY_CAP}` : "";
+    $("pipRow").textContent = `pips ${pips} · ${next}${combo}${energy}`;
+  }
+}
+buildSkillRows();
 $("enhPlus").addEventListener("change", () => {
   state.bots.enhTarget.plus = Math.max(0, Math.min(enh.MAX_PLUS, Math.floor(Number($("enhPlus").value)) || 0));
 });
@@ -836,6 +984,12 @@ function tick() {
   if (state.unlocked) {
     bots.tick(state, dt, (kind, item) => kind === "drop" ? onDrop(item) : enhMilestones(item, kind));
   }
+  { // the skill book: pips recharge, combo/Energy accrue, burst timers run,
+    // real burst damage (windup, Blade Dance riders) lands via smite()
+    const sk = skills.tick(state, dt, derive(state), onSkillEvent);
+    if (sk.dmg > 0 && state.wall === state.maxWall && !state.boss.broken
+        && smite(state, sk.dmg).broke) handleBreak();
+  }
   // Siege: the frontier Warden whittles at Combat Power; broken walls farm set
   // pieces on a timer (Farm status). No pulls, no cooldown — the fight is live.
   if (!state.boss.broken && state.wall === state.maxWall) {
@@ -883,6 +1037,7 @@ function render() {
     cpRate = (dps - cpSample) / ((now - cpSampleT) / 1000);
     cpSample = dps; cpSampleT = now;
   }
+  renderSkills(d);
   $("cpRate").textContent = cpRate > 0 ? `+${fmt(cpRate)}/s` : "—";
   $("cpElP").textContent = fmt(dps); // Player-tab breakdown: total + its factors (law 5)
   $("atkEl").textContent = fmt(d.atk);
