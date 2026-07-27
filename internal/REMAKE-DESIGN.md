@@ -210,7 +210,11 @@ Test plans: sim time-to-+15 vs W5–6 pacing; time-to-+18 vs W8. Playtest
 metric: a +18 attempt must produce visible hesitation before the click — if
 players click instantly, raise the material ante, not fail severity.
 
-## 6. System inventory (the whole v1 game — nine systems)
+## 6. System inventory (what v1 shipped with)
+
+> The count here is a RECORD, not a cap. The nine-system budget was removed
+> 2026-07-27 — see §9 rule 7.
+
 
 | System | Job | One-line rule |
 |---|---|---|
@@ -435,8 +439,15 @@ Deterministic EV bot + baseline.json drift tracker from DAY ONE of the build.
 5. One readable resolution — no multiplier soup; per-boss math displayed.
 6. Stat lanes need identities — utility never competes with boss-drop raw
    power; twists re-value lanes, they don't merge them.
-7. Depth = meaningful overlap of few systems, not more systems. Nine systems
-   is the v1 budget; adding a tenth requires deleting one.
+7. Depth = meaningful OVERLAP between systems. A new system should touch the
+   ones already there rather than sit beside them.
+   **[AMENDED 2026-07-27 — the nine-system budget is REMOVED.]** It read as
+   "adding a tenth requires deleting one", and in practice that turned every
+   new idea into a negotiation about what dies instead of a question about
+   whether it is fun. User's call: *"remove the system budget law, free to add
+   systems for fun."* The surviving half is the useful half — a system that
+   overlaps earns its place; a system that sits in its own corner is the thing
+   to be suspicious of, and that is a design judgement, not a quota.
 
 Per-system abuse tests are written IN THIS DOC at design time (see §3 scars
 cap, §5 stack cap + checkpoint camping, §7 finite XP, §8 offline clamps).

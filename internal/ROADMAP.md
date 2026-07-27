@@ -63,9 +63,36 @@ Not designed yet. Three things settled before anyone starts:
   deletion was about XP as a pacing stat and per-level treadmill costs
   (REMAKE-DESIGN §7). A copper spend is a decision, not a treadmill. This is
   compatible with the post-mortem — do not reject it by reflex.
-- **Nine-system budget (guideline 7).** Skills are the tenth. Either something
-  gets deleted or skills attach to an existing system. USER'S CALL — do not
-  spend the budget silently.
+- **The nine-system budget is GONE (2026-07-27).** *"remove the system budget
+  law, free to add systems for fun."* Skills do not have to justify their
+  existence against a quota and nothing has to be deleted for them. What
+  survives from guideline 7 is the useful half: a new system should OVERLAP the
+  ones already there. Skills do — they ride `crits.js` `rollHit()` and the
+  copper wallet the rig already spends from.
+- **Taxonomy, from the user 2026-07-27** — three kinds, and they are not equal:
+  1. **Trigger/proc (passive)** — on attack, a chance to fire an effect. THE
+     STRONG ONE. `rollHit()` is already a per-hit roll returning a tier, and
+     `battle.js` already renders tiers as sized, coloured, shaking numbers, so
+     a proc has machinery AND a display home. Gives the idle loop texture with
+     zero input, which is the direct answer to "waiting game, not the good
+     kind".
+  2. **Active (input)** — legal ONLY in the Delve's shape: player-initiated,
+     carries a cost, no penalty for never touching it. An active you must press
+     on cooldown to stay optimal is an obligation mechanic and hits the hard
+     veto. Test: if skipping it forever is a valid playstyle, it is legal.
+  3. **Direct buff (passive)** — the trap. The rig already IS this (`script
+     version` +0.25 power/rank, `overclock` +0.20 speed/rank, bought with
+     copper). A copper-bought +X% is a stat dribble, which is what feature-pass
+     gate 1 exists to kill. Useful only as a CHEAP ENTRY TIER that leads to
+     the procs.
+- **Skill copper competes with the RIG — same wallet.** Settled, stop asking.
+  Every purchase forks between more swarm and more character; that fork is the
+  management layer being asked for, and it costs no new currency.
+- **Skills may BE the P1 fix.** The opening is dead because the first purchase
+  is 200c at 0.77 c/s. An entry tier around ~20c puts a real decision inside
+  the first 30 seconds. One change fixes the dead opening and adds the managed
+  content — scope procs + entry tier first, actives as a second slice once
+  procs have been felt.
 - **OPEN QUESTION, unanswered, and it decides the whole shape:** what does
   skill copper COMPETE with? A fourth thing to buy alongside the rig is another
   menu. Skills drawing on the SAME copper the rig wants makes every purchase a

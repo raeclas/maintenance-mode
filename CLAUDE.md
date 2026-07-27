@@ -31,8 +31,9 @@ taste, so keep them unless the user says otherwise.
    many buckets (crit tiers, boss-dmg%, etc. are welcome); it's HIDDEN terms
    the player can't see or trace. Show the whole product.
 6. Stat lanes keep identities; twists re-value lanes, never merge them.
-7. Depth = meaningful overlap of few systems. **Nine-system budget: adding a
-   tenth requires deleting one.** (2026-07-21: Levels deleted, Bot Farm in.)
+7. Depth = meaningful overlap between systems. A new system should TOUCH the
+   ones already there, not sit beside them. (Budget REMOVED 2026-07-27 — see
+   below. Systems are free to add when they're fun.)
 8. Attachment is the spine: never reset, demote, or destroy the character,
    gear, or story canon. (Narrow amendment 2026-07-21: the bot stratum is
    born-disposable — Ban Wave rebirth resets bots/bars/copper ONLY.)
