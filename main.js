@@ -355,9 +355,10 @@ const HELP_ROOMS = [
       the top of the screen is only the ones not assigned to any job.`],
     ["Scripts", `Put bots on a script to run it. Every fill it completes adds its stat —
       ATK or hits per second — permanently. Any one script tops out at 50 fills per
-      second; the next script down unlocks once the one above it has enough fills.
-      Speed has one more rule: past a threshold that rises with each deeper Warden,
-      extra hits per second still count, just less.`],
+      second, but bots stacked past that point aren't wasted: each doubling of the
+      overstack adds 20% to what every fill pays, up to double. Speed has one more
+      rule: past a threshold that rises with each deeper Warden, extra hits per
+      second still count, just less.`],
     ["Enhance squad", `Bots that keep pressing enhance on one item for you. Same odds
       and the same copper cost as doing it yourself — they just never stop. The odds
       and the fallout are on the Player tab.`],
@@ -1076,7 +1077,10 @@ function render() {
       if (locked) {
         stat.textContent = `locked · ${fmt(B.fills[i - 1] || 0)}/${fmt(bots.unlockFills(i - 1))} fills of ${tiers[i - 1].name}`;
       } else if (squad > 0) {
-        stat.textContent = `${fmt(B.fills[i] || 0)} fills · ${maxed ? "RATE MAX" : rate.toFixed(2) + " fills/s"}`;
+        // overstack shows as its own SAT term (same grammar as the zones)
+        const sat = bots.trainSat(b, bar, i, squad);
+        const satTerm = sat > 1.01 ? ` · <span class="sat">SAT ×${sat.toFixed(1)} → +${Math.round((bots.trainSatMult(sat) - 1) * 100)}% gain</span>` : "";
+        stat.innerHTML = `${fmt(B.fills[i] || 0)} fills · ${maxed ? "RATE MAX" : rate.toFixed(2) + " fills/s"}${satTerm}`;
       } else {
         stat.textContent = `${fmt(B.fills[i] || 0)} fills`;
       }

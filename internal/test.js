@@ -213,6 +213,27 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.ok(bots.botZoneRates(s.bots, 0, 1e6, p).kps === 50);
 }
 
+// Training Saturation: rate stays hard-capped at 50/s; overstack multiplies
+// GAIN, log-scaled and band-capped at ×2 (law 1)
+{
+  const s = newState();
+  assert.equal(bots.trainSatMult(1), 1);            // at or under cap: nothing
+  assert.equal(bots.trainSatMult(0.1), 1);
+  assert.ok(Math.abs(bots.trainSatMult(2) - 1.2) < 1e-9);   // one doubling → +20%
+  assert.ok(Math.abs(bots.trainSatMult(32) - 2.0) < 1e-9);  // band cap
+  assert.ok(Math.abs(bots.trainSatMult(1e9) - 2.0) < 1e-9); // never past it
+  // an overstacked bar trains MORE per fill but never fills FASTER
+  const mk = n => { const x = newState(); x.bots.pop = n;
+    x.bots.capRank = 15; // capacity above the stacked count, or pop clamps back down
+    x.bots.alloc.atk = [n, 0, 0, 0, 0, 0, 0]; x.bots.alloc.speed = [0, 0, 0, 0, 0, 0];
+    x.bots.alloc.zones.fill(0); return x; };
+  const capN = bots.capNeeded(s.bots, "atk.0", derive(s));
+  const atCap = mk(capN), over = mk(capN * 8);
+  bots.tick(atCap, 600); bots.tick(over, 600);
+  assert.ok(Math.abs(over.bots.bars.atk.fills[0] - atCap.bots.bars.atk.fills[0]) <= 1); // rate capped
+  assert.ok(over.bots.trained.atk > atCap.bots.trained.atk * 1.5);                       // gain saturated
+}
+
 // Bots: offline batch ≡ live ticks (pure training, pop at cap → exact)
 {
   const a = newState(), b2 = newState();

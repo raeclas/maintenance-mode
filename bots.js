@@ -201,6 +201,23 @@ export function effScale(b) {
   return want > b.pop ? b.pop / want : 1;
 }
 
+/* Training Saturation (2026-07-27 QoL, user-requested): a bar's RATE stays
+   hard-capped at 50 fills/s — the engine ceiling is the lane's identity —
+   but bots stacked PAST the cap now multiply each fill's GAIN instead of
+   idling. Same shape as zone Overkill Saturation: log-scaled per doubling,
+   band-capped (law 1), displayed as its own term. Post-Dungeon-cut the
+   surplus swarm had nothing to do; this is its home on the training side. */
+export const TRAIN_SAT_PER_DBL = 0.20; // +20% gain per doubling past the cap
+export const TRAIN_SAT_CAP = 5;        // ≤ +100% (×2) at 32× overstack
+
+export function trainSat(b, bar, i, squad) {
+  const t = TRAININGS[bar][i];
+  return (squad * botPower(b) * botSpeed(b)) / (t.cost * MAX_FILLS_PER_S);
+}
+export function trainSatMult(sat) {
+  return 1 + TRAIN_SAT_PER_DBL * Math.min(TRAIN_SAT_CAP, Math.max(0, Math.log2(Math.max(1, sat))));
+}
+
 // Bots needed to hit a bar's rate ceiling (the NGU "cap" button).
 export function capNeeded(b, key, player) {
   const q = botPower(b) * botSpeed(b);
@@ -285,12 +302,14 @@ function tickChunk(state, dtS, onEvent, rng) {
       if (squad <= 0) continue;
       const t = TRAININGS[bar][i];
       const units = Math.min(squad * quality * dtS, t.cost * MAX_FILLS_PER_S * dtS);
+      // overstack: rate stays capped, surplus multiplies the GAIN (displayed)
+      const satMult = trainSatMult(trainSat(b, bar, i, squad));
       B.prog[i] = (B.prog[i] || 0) + units;
       while (B.prog[i] >= t.cost) {
         B.prog[i] -= t.cost;
         B.fills[i] = (B.fills[i] || 0) + 1;
-        if (bar === "atk") b.trained.atk += t.gain * drill;
-        else b.trained.hits += t.gain * drill; // no hard cap — speed's returns soft-cap in stats.js
+        if (bar === "atk") b.trained.atk += t.gain * drill * satMult;
+        else b.trained.hits += t.gain * drill * satMult; // no hard cap — speed soft-caps in stats.js
         if (i === B.unlocked - 1 && B.unlocked < TRAININGS[bar].length && B.fills[i] >= unlockFills(i)) {
           B.unlocked++;
         }
