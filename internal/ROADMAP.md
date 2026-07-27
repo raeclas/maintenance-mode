@@ -135,6 +135,26 @@ actives on ONE shared pip pool) is in the game and on staging. Key facts:
 - NOT DONE: mock generator (build.mjs) has no skills section yet — design
   contract debt. Rakshasa prompt-minigame parked pending user confirmation.
 
+### CUT 2026-07-27 — the Dungeon (instance.js), by user verdict
+
+*"iffy on the dungeon … obstructive and just there for the sake of being
+there."* The POC never earned a better verdict, and cutting was always the
+sanctioned outcome ("playtest, then iterate or cut"). Removed whole:
+module, tab, party board, journal, proxy consumable, momentum affix (dead
+since the Delve rework — always +0%). Saves with a run mid-flight hand the
+staffed bots back on load, then the block drops.
+
+Consequences now open:
+- **The swarm has no sink again.** Bots exist for training + zones only;
+  Ban Wave is the only pressure. Fine for now — reopen only if the farm
+  feels aimless in play.
+- **Gear queue items 3/4/5 (named boss loot · 6 slots · grind demotion)
+  are MOOT in their dungeon-shaped form.** Superseded by the gear-collapse
+  direction (below), pending the user's sign-off on flood + enhance
+  balance.
+- Dungeon 2a/2b/2c, offline instance progress (queue 6), and the
+  DUNGEON-MECHANICS.md doc are historical.
+
 ### Fixed during the playtest
 
 - Locked Armory zones z6–z15 are no longer rendered at all (`2028ff8`). They

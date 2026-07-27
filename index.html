@@ -50,7 +50,6 @@
     <button data-tab="farmSec" class="t-grind">Grind</button>
     <button data-tab="gearSec" class="t-player">Player</button>
     <button data-tab="dungeonSec" class="t-delve">Delve</button>
-    <button data-tab="instanceSec" class="t-dungeon">Dungeon</button>
     <button data-tab="helpSec" class="t-help">Help</button>
   </nav>
 
@@ -185,36 +184,7 @@
     <div class="rowlist" id="delveTree"></div>
   </section>
 
-  <section id="instanceSec" class="game hidden tabpane" style="display:none">
-    <h3>Dungeon</h3>
-    <!-- The "How it works" block moved to Help whole: floors, attrition, the
-         wipe rule and the 40%-kept rule were all general teaching, and its
-         own register row noted nothing else mentions them. -->
-    <div id="instState"></div>
-    <div id="instProject" class="caption"></div>
-
-    <h3>Assign bots</h3>
-    <div class="rowlist" id="instDuties"></div>
-
-    <div class="arena">
-      <div class="controls">
-        <span>Difficulty</span><input type="number" id="instKey" min="1" max="20" step="1" style="width:4em">
-        <span>Pull out at floor</span><input type="number" id="instBank" min="1" max="50" step="1" style="width:4em">
-      </div>
-      <label class="toggleLine"><input type="checkbox" id="instProxy"> Buy proxies <span class="sub">— 250c per run, 25% fewer bots banned</span></label>
-      <div class="controls">
-        <button id="instStart">Send bots in</button>
-        <button id="instBankNow" style="display:none">Pull out now (keep loot)</button>
-      </div>
-    </div>
-
-    <h3>Boss abilities</h3>
-    <!-- Flavor opener stays; the teaching clause after it ("you find out what
-         an ability does by running into it, and what you learn is permanent")
-         is Help's Boss-abilities-journal topic now. -->
-    <p class="sub">There's no wiki and nobody to ask.</p>
-    <div class="rowlist" id="instJournal"></div>
-  </section>
+  <!-- (Dungeon/instance tab CUT 2026-07-27 — see ROADMAP.) -->
 
   <!-- Help — reference only, no action resolves here, so no primary action and
        no control that changes state. Built by renderHelp() from HELP_ROOMS so

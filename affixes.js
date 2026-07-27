@@ -36,8 +36,9 @@ export const AFFIXES = {
     unit: s => completedSetCount(s),            src: s => `${completedSetCount(s)} sets`,   label: v => `+${v}% ATK` },
   bleed:    { lane: "atk",   kind: "pct", dyn: true, base: 1.2, per: 0.4,  round: false, cap: 25,
     unit: s => s.failstacks || 0,               src: s => `${s.failstacks || 0} stacks`,    label: v => `+${v}% ATK` },
-  momentum: { lane: "speed", kind: "pct", dyn: true, base: 8,   per: 2.5,  round: false, cap: 20,
-    unit: s => (s.dungeon?.active ? 1 : 0),     src: s => s.dungeon?.active ? "delving" : "idle", label: v => `+${v}% haste` },
+  // (momentum RETIRED 2026-07-27 with the Dungeon cut — it read a field the
+  // Delve rework had already deleted, so it always rolled +0% and burned a
+  // slot. saveSystem strips unknown affix ids from old gear on load.)
 };
 
 // A live affix's current contribution: rolled rate × the state quantity, capped.

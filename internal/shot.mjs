@@ -31,7 +31,7 @@ const WIDTH = 375, HEIGHT = 812, DSF = 2; // the width the design plan specs aga
 
 const TABS = [
   ["boss", "battleSec"], ["training", "botSec"], ["grind", "farmSec"],
-  ["player", "gearSec"], ["delve", "dungeonSec"], ["dungeon", "instanceSec"], ["help", "helpSec"],
+  ["player", "gearSec"], ["delve", "dungeonSec"], ["help", "helpSec"],
 ];
 
 // Seed enough state that every tab renders populated rather than as an empty
@@ -44,7 +44,6 @@ const SEED = `(() => {
   s.copper = 50000; s.scrap.common = 120; s.scrap.rare = 30;
   s.bots.alloc.zones[0] = 6; s.bots.alloc.atk[0] = 4; s.bots.alloc.speed[0] = 3;
   s.dungeon.cache = 900;
-  s.instance.key = 3; s.instance.party = {interrupt:4, dispel:4, adds:4}; s.instance.bankAt = 8;
   // Gear and stash, because DNA v4's rarity lane is only visible on items and
   // an empty Player tab audits nothing. One item per slot plus a spread across
   // the ramp, so every plate colour renders in one shot.
@@ -167,13 +166,6 @@ async function main() {
     await shoot(`${name}-375`);
     await widthReport(name);
   }
-
-  // The Dungeon mid-run is a structurally different screen; the plan specs it
-  // separately, so it gets its own capture.
-  await evaluate(`document.querySelector('[data-tab="instanceSec"]').click()`);
-  await evaluate(`document.getElementById('instStart').click()`);
-  await sleep(1200);
-  await shoot("dungeon-running-375");
 
   ws.close();
   proc.kill();

@@ -69,7 +69,7 @@ export function load(state) {
   // progressive unlocks. Old saves (no features) that were already unlocked
   // keep everything open — don't re-hide tabs a player already had.
   if (s.features && typeof s.features === "object") {
-    const { gm, ...feats } = s.features;   // v13: the GM tab is retired
+    const { gm, dungeon, ...feats } = s.features; // v13 retired GM; v14 cut the Dungeon
     state.features = { ...d.features, ...feats };
   } else if (state.unlocked) {
     state.features = { training: true, grind: true, player: true,
@@ -179,16 +179,13 @@ export function load(state) {
   const ranks = { ...d.dungeon.ranks };
   for (const k of Object.keys(ranks)) if (savedRanks[k] != null) ranks[k] = savedRanks[k];
   state.dungeon = { cache: s.dungeon?.cache || 0, depthBest: s.dungeon?.depthBest || 0, ranks };
-  // v12 Dungeons. The journal is permanent knowledge and must survive anything
-  // (attachment law). A run in progress does NOT survive a reload — POC has no
-  // offline instance model, so hand the staffed bots back rather than eat them.
-  state.instance = { ...d.instance, ...(s.instance || {}) };
-  state.instance.party = { ...d.instance.party, ...(s.instance?.party || {}) };
-  state.instance.journal = (s.instance?.journal && typeof s.instance.journal === "object") ? s.instance.journal : {};
-  if (state.instance.running) {
-    for (const k of Object.keys(d.instance.party)) state.bots.pop += state.instance.staffed?.[k] || 0;
-    Object.assign(state.instance, { running: false, staffed: null, floor: 0, haul: 0, mult: 1, carry: 0 });
+  // v14: the Dungeon/instance POC is cut. A save with a run mid-flight gets
+  // its staffed bots handed back (nothing a player owns is eaten by a cut),
+  // then the whole block is dropped.
+  if (s.instance?.running && s.instance.staffed) {
+    for (const n of Object.values(s.instance.staffed)) state.bots.pop += n || 0;
   }
+  delete state.instance;
   delete state.farm; // v8: zones are bot-only, player parking is gone
   return s;
 }

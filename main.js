@@ -17,7 +17,6 @@ import { affixLabel } from "./affixes.js";
 import { banWave, pendingScripts, scriptMult, totalFills, depthMult } from "./rebirth.js";
 import { grantBreakPiece, rollFarmDrop, bossHasSet, PARTS, pieceOf, ownedIdxs, ownsPiece, setComplete, setCount, SET_BONUS } from "./trophies.js";
 import * as dungeon from "./dungeon.js";
-import * as inst from "./instance.js";
 import * as enh from "./enhance.js";
 import { fmt, fmtDepth } from "./format.js";
 
@@ -249,8 +248,8 @@ if (loaded && state.unlocked && state.lastSeen) {
 }
 
 // ---- tabs + progressive feature unlocks ----
-const TAB_FEATURE = { botSec: "training", farmSec: "grind", gearSec: "player", dungeonSec: "delve", instanceSec: "dungeon" };
-const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", instanceSec: "Dungeon", helpSec: "Help" };
+const TAB_FEATURE = { botSec: "training", farmSec: "grind", gearSec: "player", dungeonSec: "delve" };
+const TAB_NAME = { battleSec: "Boss", botSec: "Training", farmSec: "Grind", gearSec: "Player", dungeonSec: "Delve", helpSec: "Help" };
 // Section id -> DNA v4 room name. Same keys as TAB_FEATURE plus battleSec,
 // which has no feature gate because Boss is always open.
 const TAB_ROOM = { battleSec: "boss", ...TAB_FEATURE, helpSec: "help" };
@@ -263,14 +262,12 @@ const TAB_LOCK = {
   farmSec: "Unlocks with Training.",
   gearSec: "Unlocks when your bots find their first piece of gear.",
   dungeonSec: "Unlocks at 100 Combat Power.",
-  instanceSec: "Unlocks once you have 10 bots.",
 };
 const UNLOCK_MSG = {
   training: "TRAINING — the old bot farms. Run scripts, build a swarm.",
   grind: "GRIND — deploy the swarm on the leveling zones for copper + gear.",
   player: "PLAYER — your character. Manage gear, enhance, reforge, trophies.",
   delve: "DELVE — the character's own run. Descend for copper; bank before you wipe.",
-  dungeon: "DUNGEON — send bots in to fight down through floors. They don't all come back.",
   rebirth: "BAN WAVE — the anti-cheat notices the farm. Reset it for permanent Scripts.",
 };
 let tabsDirty = true;
@@ -389,22 +386,6 @@ const HELP_ROOMS = [
     ["Cache tree", `Each row buys one rank. Every rank you buy raises that row's next
       price.`],
   ]],
-  ["D", "Dungeon", "instanceSec", [
-    ["How a run works", `Your bots fight down through the floors on their own, and each
-      floor takes longer than the last. Some of them get banned on every floor, faster
-      the deeper they go. When too many abilities go unblocked, the party dies. If they
-      die you keep 40% of what they found. Pull out early and you keep all of it.`],
-    ["Assigning bots", `Each ability needs a set number of bots on it to be blocked. An
-      ability you leave unblocked cuts your damage every floor it fires, and when your
-      damage falls below 25% of normal the party dies. Bots you send are spent — you
-      get back whoever survives.`],
-    ["Difficulty", `Higher difficulty means more abilities to block, more bots on each,
-      better loot — and bots banned faster. You set it; it never drops on its own.`],
-    ["Pull-out floor", `Your bots come home with everything the moment they clear the
-      floor you set here. You can change it mid-run.`],
-    ["Boss abilities journal", `You find out what an ability does by running into it.
-      What you learn here is permanent: it survives a Ban Wave.`],
-  ]],
 ];
 
 function renderHelp() {
@@ -428,7 +409,6 @@ function checkUnlocks() {
     grind: f.training, // the bot-farm layer (train + deploy) opens together
     player: f.grind && s.everDropped,
     delve: f.player && dps >= 100,
-    dungeon: f.delve && s.bots.pop >= 10, // needs a swarm you can afford to burn
     rebirth: s.cleared.length >= 1 || s.rebirths >= 1,
   };
   for (const feat of Object.keys(cond)) {
@@ -807,60 +787,9 @@ for (const key of Object.keys(dungeon.UPGRADES)) {
   row.querySelector("button").addEventListener("click", () => { dungeon.buy(state, key); });
 }
 
-// ---- Dungeon: party board + journal (built once) ----
-const dutyInputs = {}; // mech id → input element, synced in render
-// Duty rows mirror the training/zone row grammar so the board reads as the
-// same instrument, not a new one. Commit is ±/max, not a bar — these bots die.
-for (const m of inst.MECHANICS) {
-  const row = document.createElement("div");
-  row.className = "row";
-  row.innerHTML = `<span class="rowName">${m.label}<div class="sub">Blocked by ${m.duty} bots. Not blocked = −${Math.round(m.pen * 100)}% damage.</div></span>` +
-    `<span class="rowGain" id="idg_${m.id}"></span>` +
-    `<span class="rowAlloc"><button data-d="-1">−</button><input type="number" min="0" step="1" style="width:4em"><button data-d="1">+</button><button data-m>max</button><button data-z>0</button></span>` +
-    `<span class="rowStat" id="ids_${m.id}"></span>`;
-  const input = row.querySelector("input");
-  const setParty = n => {
-    if (state.instance.running) return; // the party is locked once they're inside
-    // Same defect as the zone rows had: the duty's <input> disables itself
-    // when the duty is locked, but the ± / max / 0 buttons stayed clickable
-    // and wrote through. Gate the setter, not each control.
-    if (!inst.dutyUnlocked(state, m)) return;
-    const others = inst.DUTIES.reduce((s, d) => s + (d === m.duty ? 0 : state.instance.party[d] || 0), 0);
-    state.instance.party[m.duty] = Math.max(0, Math.min(Math.floor(n) || 0, Math.floor(state.bots.pop) - others));
-  };
-  row.querySelector(".rowAlloc").addEventListener("click", e => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    if (b.dataset.d) setParty((state.instance.party[m.duty] || 0) + Number(b.dataset.d));
-    else if (b.dataset.m !== undefined) setParty(Infinity);
-    else setParty(0);
-  });
-  input.addEventListener("change", () => setParty(Number(input.value)));
-  dutyInputs[m.id] = input;
-  $("instDuties").appendChild(row);
-
-  const jrow = document.createElement("div");
-  jrow.className = "row";
-  jrow.id = `ij_${m.id}`;
-  jrow.innerHTML = `<span class="rowName" id="ijn_${m.id}"></span><span class="rowStat" id="ijs_${m.id}"></span>`;
-  $("instJournal").appendChild(jrow);
-}
-$("instKey").addEventListener("change", () => {
-  state.instance.key = Math.max(1, Math.min(20, Math.floor(Number($("instKey").value)) || 1));
-});
-$("instBank").addEventListener("change", () => {
-  state.instance.bankAt = Math.max(1, Math.min(50, Math.floor(Number($("instBank").value)) || 1));
-});
-$("instProxy").addEventListener("change", () => { state.instance.proxy = $("instProxy").checked; });
-$("instStart").addEventListener("click", () => {
-  if (!inst.start(state)) return;
-  log(`sent ${inst.partyCost(state.instance)} bots into the dungeon at difficulty ${state.instance.key}`);
-});
-$("instBankNow").addEventListener("click", () => {
-  if (!state.instance.running) return;
-  const f = state.instance.floor, items = inst.finish(state, 1);
-  log(`pulled out at floor ${f} — kept ${items.length} item(s)`);
-});
+// (Dungeon/instance party board CUT 2026-07-27 — the POC never earned a
+// playtest verdict better than "there for the sake of being there". The
+// swarm's sink question reopens; see ROADMAP.)
 
 $("stashToggle").addEventListener("click", () => {
   const l = $("stashList");
@@ -1007,13 +936,6 @@ function tick() {
     const g = charDps();
     state.dungeon.cache += dungeon.cachePerSec(state, g) * dt;
     state.dungeon.depthBest = Math.max(state.dungeon.depthBest, dungeon.reachDepth(state, g));
-  }
-  if (state.instance.running) { // Dungeon: floors resolve, bots burn, journal writes itself
-    const ev = inst.tick(state, charDps(), dt);
-    for (const m of ev?.unanswered || []) log(`${m.label} wasn't blocked — you're dealing ${Math.round(m.pen * 100)}% less damage`);
-    if (ev?.banned >= 1) log(`${Math.floor(ev.banned)} bot(s) got banned in the dungeon`);
-    if (ev?.wiped) { log(`the party died on floor ${state.instance.floor} — dropped ${ev.lost} item(s), salvaged ${ev.items.length}`); save(state); }
-    else if (ev?.banked) { log(`pulled out at floor ${state.instance.floor} — kept ${ev.items.length} item(s)`); save(state); }
   }
   if (state.unlocked) checkUnlocks();
   if (now - lastSave > 5000) { lastSave = now; save(state); }
@@ -1361,64 +1283,8 @@ function render() {
     }
   }
 
-  renderInstance();
   if (stashDirty) renderStash();
   if (armoryDirty) renderArmory();
-}
-
-// The party board. Every term the run resolves against is on screen BEFORE the
-// commit — projected depth, coverage need, ban rate. Sacrifice must never be a
-// bet on hidden numbers.
-function renderInstance() {
-  const i = state.instance, need = inst.needPerMechanic(i.key), live = inst.liveMechanics(i.key);
-  const committed = i.running ? i.staffed : i.party;
-  if (document.activeElement !== $("instKey")) $("instKey").value = i.key;
-  if (document.activeElement !== $("instBank")) $("instBank").value = i.bankAt;
-  $("instProxy").checked = i.proxy;
-
-  if (i.running) {
-    $("instState").innerHTML = `On floor <b>${i.floor}</b> · <b>${i.haul}</b> item(s) collected so far · ` +
-      `dealing <span class="${i.mult < 0.6 ? "warn" : "sat"}">${Math.round(i.mult * 100)}% damage</span> · pulling out at floor ${i.bankAt}`;
-    $("instProject").textContent = `${Math.floor(inst.partyCost({ party: committed }))} bots still alive · ` +
-      `losing about ${(inst.banRate(i.key, i.floor + 1, i.proxy) * 100).toFixed(0)}% of them per floor`;
-  } else {
-    const proj = inst.projectDepth(state), cost = inst.partyCost(i);
-    $("instState").innerHTML = `Difficulty <b>${i.key}</b> — <b>${live.length}</b> ${live.length === 1 ? "ability" : "abilities"} to block, ` +
-      `<b>${need}</b> ${need === 1 ? "bot" : "bots"} each. Deepest floor so far: <b>${i.best || 0}</b>`;
-    $("instProject").textContent = cost
-      ? `Sending ${cost} bots. They should reach about floor ${proj} before too many are banned.`
-      : `Assign some bots below to see how deep they'd get.`;
-  }
-  // The difficulty helper moved to Help whole — a general rule about the
-  // setting, true regardless of what it is set to. The live consequences of
-  // the current value (abilities to block, bots needed, deepest floor) stay,
-  // and they are #instState above.
-  const startBtn = $("instStart");
-  startBtn.style.display = i.running ? "none" : "";
-  $("instBankNow").style.display = i.running ? "" : "none";
-  if (!i.running) buyState(startBtn, inst.canStart(state));
-
-  for (const m of inst.MECHANICS) {
-    const n = Math.floor(committed?.[m.duty] || 0); // whole bodies only — same rule the run uses
-    const isLive = live.includes(m), open = inst.dutyUnlocked(state, m);
-    const el = dutyInputs[m.id];
-    if (document.activeElement !== el) el.value = i.party[m.duty] || 0;
-    el.disabled = i.running || !open;
-    $(`idg_${m.id}`).innerHTML = open
-      ? (isLive ? `needs <b>${need}</b> bots` : `<span class="muted">doesn't appear at difficulty ${i.key}</span>`)
-      : `<span class="muted">needs script version ${m.gate}+</span>`;
-    $(`ids_${m.id}`).innerHTML = isLive && open
-      ? `<span class="${n >= need ? "sat" : "warn"}">${n} ${i.running ? "still alive" : "assigned"}, ${need} needed — ${n >= need ? "blocked" : "NOT BLOCKED"}</span>`
-      : `${n} assigned`;
-
-    const j = i.journal[m.id];
-    $(`ijn_${m.id}`).innerHTML = j
-      ? `${m.label}<div class="sub">Assign ${m.duty} bots to block it. Unblocked it costs you ${Math.round(m.pen * 100)}% damage.</div>`
-      : `<span class="muted">Unknown — you haven't run into this one yet</span>`;
-    $(`ijs_${m.id}`).innerHTML = !j ? "" : j.solved
-      ? `<span class="sat">you've blocked this</span>`
-      : `<span class="warn">seen, never blocked</span>`;
-  }
 }
 
 if (DEV) {

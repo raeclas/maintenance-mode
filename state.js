@@ -9,7 +9,7 @@ export function newState() {
     unlocked: false, // flips on first pull resolve — the intro beat reveal
     // progressive feature unlocks (NGU/ITRTG-style ??? tabs). Boss is always
     // open; the rest light up on milestones — the game's visible ladder.
-    features: { training: false, grind: false, player: false, delve: false, dungeon: false, rebirth: false },
+    features: { training: false, grind: false, player: false, delve: false, rebirth: false },
     everDropped: false, // a gear drop has happened (gates the Player tab)
     copper: 0,
     // v13: tickets + the GM tab are RETIRED pending a meta-currency redesign.
@@ -60,20 +60,8 @@ export function newState() {
     scrap: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0, mythic: 0, origin: 0 },
     // Delve — idle depth engine + Cache upgrade tree (feeds every system)
     dungeon: { cache: 0, depthBest: 0, ranks: { reach: 0, yield: 0, overclock: 0, loot: 0, drill: 0 } },
-    // v12: Dungeons (POC) — bots are SPENT to answer boss mechanics; the run
-    // ends when attrition leaves a mechanic unanswered. journal is permanent
-    // knowledge (survives Ban Wave — attachment law).
-    instance: {
-      key: 1,
-      party: { interrupt: 0, dispel: 0, adds: 0 }, // bots you commit per duty
-      proxy: false,      // proxy rotation consumable, bought per run
-      bankAt: 5,         // auto-bank floor — set before you commit
-      running: false,
-      floor: 0, haul: 0, mult: 1, carry: 0,
-      staffed: null,     // live party during a run (survivors rejoin pop)
-      best: 0,
-      journal: {},       // { [mechId]: {seen, solved} } — permanent
-    },
+    // (v14: the Dungeon/instance POC is CUT — it never earned its playtest.
+    // saveSystem hands any staffed bots back and drops the block on load.)
     // v8: zones are bot-only — the player's verb is the Boss. No farm{}.
     gear: {
       weapon: null, armor: null, charm: null,
