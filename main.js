@@ -647,7 +647,14 @@ for (const key of Object.keys(dungeon.UPGRADES)) {
   const u = dungeon.UPGRADES[key];
   const row = document.createElement("div");
   row.className = "row";
-  row.innerHTML = `<span class="rowName">${u.label}</span><span class="rowGain">${u.gain}/rank</span><span class="rowStat" id="dur_${key}"></span><button id="dub_${key}"></button>`;
+  // G5: the buy button goes in .rowAlloc, like every other row's control. As a
+  // bare 4th grid child it landed in the 1fr track and stretched to ~470px for a
+  // two-word label, so the PRICE outshouted what you were buying. The mocks have
+  // specified `allocHtml: <button class="affordable">` for a Cache-tree row
+  // since the design pass — buyState() already sets that class.
+  row.innerHTML = `<span class="rowName">${u.label}</span><span class="rowGain">${u.gain}/rank</span>` +
+    `<span class="rowAlloc"><button id="dub_${key}"></button></span>` +
+    `<span class="rowStat" id="dur_${key}"></span>`;
   $("delveTree").appendChild(row);
   row.querySelector("button").addEventListener("click", () => { dungeon.buy(state, key); });
 }
