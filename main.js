@@ -166,6 +166,19 @@ let armoryDirty = true;
 let lastWallSel = ""; // wall-selector rebuild cache
 let lastRenderNow = Date.now();  // for per-frame dt (kill-cycle bar integrator)
 let cpSample = null, cpSampleT = 0, cpRate = 0;  // Combat Power rate sampler (~1s window)
+// Measured damage window → the Boss tab's "avg DPS" readout. CP is the smooth
+// EV rate; this is what actually LANDED (drain + skill bursts) over the last
+// 30s, so casts visibly move the number. Falls back to EV CP while empty.
+const DPS_WINDOW_MS = 30_000;
+let dmgLog = []; // [tMs, dealt]
+function recordDmg(dealt) { if (dealt > 0) dmgLog.push([Date.now(), dealt]); }
+function measuredDps() {
+  const now = Date.now();
+  while (dmgLog.length && now - dmgLog[0][0] > DPS_WINDOW_MS) dmgLog.shift();
+  if (!dmgLog.length) return 0;
+  const spanS = Math.max(1, (now - dmgLog[0][0]) / 1000);
+  return dmgLog.reduce((s, e) => s + e[1], 0) / spanS;
+}
 const zonePhase = [];            // per-zone accumulated kill phase (0..1 shown)
 
 function onDrop(item) {
@@ -357,7 +370,9 @@ const HELP_ROOMS = [
   ["P", "Player", "gearSec", [
     ["Combat Power", `Your damage per second against the door: ATK multiplied by hits
       per second. "Haste" anywhere on the Player tab is a percentage added to hits per
-      second.`],
+      second. The Boss tab's "avg DPS" is what actually landed over the last 30
+      seconds — crits, skills and casts included — so a burst you press shows up in
+      it.`],
     ["Enhance", `Three slots. Enhancing raises an item's plus, and every plus multiplies
       its base power by 1.12. A failed attempt anywhere banks a failstack worth +1
       percentage point on your next attempt, up to +15; a success spends the whole
@@ -486,8 +501,11 @@ function castSkill(id) {
   const d = derive(state);
   const r = skills.cast(state, id, d);
   if (!r) return;
-  if (r.dmg !== undefined && state.wall === state.maxWall
-      && !state.boss.broken && smite(state, r.dmg).broke) handleBreak();
+  if (r.dmg !== undefined && state.wall === state.maxWall && !state.boss.broken) {
+    const hit = smite(state, r.dmg);
+    recordDmg(hit.dealt);
+    if (hit.broke) handleBreak();
+  }
   if (id === "wildSwing") {
     if (r.mult === 0) notifySkill("WHIFF", "--bone", 20);
     else notifySkill(`${r.label ? r.label + " " : ""}${fmt(r.dmg)}`,
@@ -916,13 +934,18 @@ function tick() {
   { // the skill book: pips recharge, combo/Energy accrue, burst timers run,
     // real burst damage (windup, Blade Dance riders) lands via smite()
     const sk = skills.tick(state, dt, derive(state), onSkillEvent);
-    if (sk.dmg > 0 && state.wall === state.maxWall && !state.boss.broken
-        && smite(state, sk.dmg).broke) handleBreak();
+    if (sk.dmg > 0 && state.wall === state.maxWall && !state.boss.broken) {
+      const hit = smite(state, sk.dmg);
+      recordDmg(hit.dealt);
+      if (hit.broke) handleBreak();
+    }
   }
   // Siege: the frontier Warden whittles at Combat Power; broken walls farm set
   // pieces on a timer (Farm status). No pulls, no cooldown — the fight is live.
   if (!state.boss.broken && state.wall === state.maxWall) {
-    if (drain(state, dt).broke) handleBreak();
+    const dr = drain(state, dt);
+    recordDmg(dr.dealt);
+    if (dr.broke) handleBreak();
   } else if (state.boss.broken) {
     const f = farmTick(state, dt);
     for (const piece of f.pieces) {
@@ -1019,7 +1042,10 @@ function render() {
       const remain = boss.hp ? (state.boss.hp || 0) / boss.hp : 1;
       $("depth").textContent = `${(remain * 100).toFixed(1)}%`;
       $("cooldown").textContent = `time to breach: ${ttkText(timeToKill(state))}`;
-      $("record").textContent = `health ${fmt(state.boss.hp)} / ${fmt(boss.hp)} · CP ${fmt(dps)}/s`;
+      // measured avg (crits, skills AND casts folded in — it's what landed);
+      // EV CP stands in until the 30s window has data (boot, tab return)
+      const md = measuredDps();
+      $("record").textContent = `health ${fmt(state.boss.hp)} / ${fmt(boss.hp)} · avg DPS ${fmt(md || dps)}`;
     }
   }
   { // wall progression + wall selector (switch to a cleared wall to farm it)
