@@ -1,4 +1,86 @@
-# ROADMAP / session handoff — updated 2026-07-26 (integration shipped)
+# ROADMAP / session handoff — updated 2026-07-27 (FIRST REAL PLAYTEST)
+
+## ⚠ START HERE — playtest verdict 2026-07-27
+
+The user played the build on a phone. **This is the first hands-on verdict on
+any of it**, and it outranks everything in the queue below. Their words:
+
+> "Honest lack of actively managed content, just feels like waiting game but
+> not the good kind."
+
+That is the headline. Everything else is a contributing cause or a side note.
+
+### P1. The opening is dead for ~40 minutes — FIX FIRST
+
+Measured against the real modules, not guessed:
+
+| | |
+|---|---|
+| starting bots | 8, at `botDps` **0.232** each |
+| squad DPS on z1 | **1.86** against a 12 HP mob |
+| observed rate | **0.155 kills/s — one kill every 6.5 seconds** |
+| copper income | 0.77 c/s |
+| first rig upgrade | 200c (`power`) — ~4.3 min of watching |
+| the WHOLE rig | 200 + 300 + 500 + 800 = **1,800c ≈ 40 min** |
+
+The zone row literally renders `0.15 kills/s`, which reads as broken rather
+than as slow. The opening is one shopping list with no decisions in it.
+
+**The sim cannot see this, and that is a durable lesson (see Hard-won rules).**
+Its arithmetic is correct — `bots.js:224` and `internal/sim.js:93` use the same
+formula — but every milestone it prints is a DESTINATION ("power ×10 at 40m",
+"z2 held at 1.0h"). It has no readout for the observable rate at minute zero.
+A previous session cited the sim as evidence for this exact defect; the sim
+structurally could not have measured it.
+
+### P2. Gear — normal mobs should stop dropping equippables
+
+User: *"i said previously i didn't want normal mobs to drop gear anymore."*
+Correct, and it is already logged as queue item 5 (**Dungeon 2c: grind-loot
+demotion**) — grind drops become Armory/scrap fuel only, the Dungeon becomes
+the equippable source. The live faucet is `DROP_CHANCE = 1/400` per kill in
+`farm.js:5`.
+
+It was sequenced LAST on purpose: *"it guts the stash grid and removes the only
+gear source until dungeons tune"*, and the Dungeon is still an unplaytested POC.
+**So do not pull the grind faucet alone.** Either tune dungeons first or ship
+both in one slice — a gap where nothing drops is worse than either end state.
+
+Note the rest of the gear overhaul HAS shipped and the user may not have
+noticed: affixes roll on every drop (`gear.js:43`), rarity sets affix count, ip
+sets tier, salvage→scrap and reforge are live (slices 1 and 2). What makes it
+still read as "the old system" is scale — **3 slots, not 6** (queue item 4) and
+no named boss loot (queue item 3).
+
+### P3. Skills — the user's own suggestion for the headline problem
+
+> "Add player skills, levelled with copper. Passive and active."
+> "Possible to add non combat skills for additional management as well"
+
+Not designed yet. Three things settled before anyone starts:
+
+- **Copper-levelled dodges the trap that deleted Levels.** The 2026-07-21
+  deletion was about XP as a pacing stat and per-level treadmill costs
+  (REMAKE-DESIGN §7). A copper spend is a decision, not a treadmill. This is
+  compatible with the post-mortem — do not reject it by reflex.
+- **Nine-system budget (guideline 7).** Skills are the tenth. Either something
+  gets deleted or skills attach to an existing system. USER'S CALL — do not
+  spend the budget silently.
+- **OPEN QUESTION, unanswered, and it decides the whole shape:** what does
+  skill copper COMPETE with? A fourth thing to buy alongside the rig is another
+  menu. Skills drawing on the SAME copper the rig wants makes every purchase a
+  fork — which is the "actively managed" feeling being asked for.
+- Hard veto still applies: no obligation mechanics. An active skill must not
+  punish you for not clicking.
+
+### Fixed during the playtest
+
+- Locked Armory zones z6–z15 are no longer rendered at all (`2028ff8`). They
+  had been collapsed to one line each earlier the same session; the user's
+  verdict was that even that clutters. Grind already shows the zone ladder.
+
+---
+
 
 ## SESSION HANDOFF 2026-07-26 — the design work is now IN THE GAME
 
@@ -163,6 +245,14 @@ are open work, not defects.
 
 ### Hard-won rules from these sessions — do not re-derive
 
+- **The sim measures DESTINATIONS, not the observable rate. It cannot judge
+  feel, and citing it as if it could is a real failure mode.** Every milestone
+  it prints is an arrival ("power ×10 at 40m", "W1 broken at 11.8h"). Nothing
+  in it reports what the player is watching at minute zero — which on
+  2026-07-27 was 0.155 kills/s, a mob dying every 6.5 seconds. The arithmetic
+  agreed with the game exactly and the conclusion was still unreachable. If a
+  question is "does this feel bad", the sim is not evidence; the phone is. See
+  also `bot-lane-no-sim`: the user is the sim for anything bot-driven.
 - **Surface separation is an L\* question; only text is a ratio question.**
   WCAG's `+0.05` flare term crushes dark-on-dark ratios toward 1.0, so an
   invisible surface pair reads as an acceptable 1.04:1. Use
@@ -328,8 +418,21 @@ comes from absence, not decay. No glitch, corruption, or broken frames.
 
 ## Next-session queue (in rough priority; each runs feature-pass first)
 
-0. **UI de-dup plan, Phase 1** (see above). Audit is DONE; the plan is
-   reconciled and ready to execute.
+**REORDERED 2026-07-27 by playtest. P1/P2/P3 at the top of this file come
+first — the items below were written before anyone had played the build.**
+
+P1. **The dead opening** (see top). Cheapest fix, biggest felt change, and it
+    blocks judging anything else.
+P3. **Skills**, combat + non-combat, copper-levelled. Answer the "what does it
+    compete with" question before designing.
+P2. **Grind-loot demotion + dungeon tuning, as ONE slice.** Not separately.
+
+0. **UI de-dup plan, Phase 1** — G1 was already fixed by the design-system
+   pass; **G2/G3 shipped `748bf2a`, G4/G5 shipped `8fb3982`**. Only **G6**
+   remains (Combat Power renders in both the resource bar and the Player chip
+   group). JOURNEY.md:269 already rules the Player tab the owner and the
+   resbar a POINTER, so this is a code fix to match a settled decision, not a
+   design question.
 0b. **Meta-currency redesign** — GM and tickets are retired and nothing replaces
    them yet. Boss breaks currently pay no meta reward at all, so this is a real
    hole in the reward loop, not just a missing tab. Carry forward from the dead
