@@ -8,7 +8,6 @@
 import { zones, DROP_CHANCE, zoneUnlocked, saturation, lootBias } from "./farm.js";
 import { delveBonus } from "./dungeon.js";
 import { rollDrop } from "./gear.js";
-import { attempt as enhAttempt } from "./enhance.js";
 import { derive } from "./stats.js";
 
 export const CREATE_PER_H = 60;       // base bots/hour (~1/min) — no dead-wait at the start
@@ -150,18 +149,18 @@ export function buy(state, what) {
   return true;
 }
 
-// NGU model: alloc is a VECTOR — every bar (training tier, zone, enhance
-// squad) takes its own bot count and all bars run in parallel. Bars are
-// addressed as "atk.0", "speed.2", "zones.3", "enh".
+// NGU model: alloc is a VECTOR — every bar (training tier, zone) takes its
+// own bot count and all bars run in parallel. Bars are addressed as
+// "atk.0", "speed.2", "zones.3".
 function allocRef(b, key) {
   const [group, idx] = key.split(".");
-  return idx === undefined ? { arr: b.alloc, k: group } : { arr: b.alloc[group], k: Number(idx) };
+  return { arr: b.alloc[group], k: Number(idx) };
 }
 
 export function allocTotal(b) {
   const a = b.alloc;
   return a.atk.reduce((s, n) => s + n, 0) + a.speed.reduce((s, n) => s + n, 0)
-    + a.zones.reduce((s, n) => s + n, 0) + a.enh;
+    + a.zones.reduce((s, n) => s + n, 0);
 }
 
 export function freeBots(b) {
@@ -171,10 +170,9 @@ export function freeBots(b) {
 // Hard-clamped to the bots actually available. Bans can still drag pop
 // below committed numbers afterwards — effScale covers that case.
 // Is this allocation target open yet? Zones gate on door progress, the script
-// ladders on their own unlocked count, the enhance squad not at all.
+// ladders on their own unlocked count.
 export function allocUnlocked(state, key) {
   const [group, idx] = key.split(".");
-  if (idx === undefined) return true;              // enh — no ladder
   if (group === "zones") return zoneUnlocked(state.cleared?.length, Number(idx));
   // The script ladders live at bots.bars.atk / bots.bars.speed. Reading them
   // from bots.atk instead returned undefined, so this gate rejected EVERY
@@ -259,24 +257,11 @@ export function gateNeeded(b, zi, player) {
   return Math.ceil(zones[zi].gate / botDps(b, player));
 }
 
-// Bot enhancing: time per attempt grows exponentially with the plus being
-// pushed; squad quality shrinks it. Same copper cost, same RNG as manual —
-// bots automate the ladder, they never beat the odds.
-export const ENH_T0 = 30;      // seconds per attempt at +0, one bot, quality 1
-export const ENH_GROWTH = 1.3; // per plus level
-
-export function enhInterval(b, plus) {
-  const squad = b.alloc.enh * effScale(b) * botPower(b) * botSpeed(b);
-  if (squad <= 0) return Infinity;
-  return (ENH_T0 * Math.pow(ENH_GROWTH, plus)) / squad;
-}
-
 // Advance the swarm by dtS seconds: creation, training, farming, bans,
-// drops, enhancing. Same path live and offline (caller clamps dt). Long
+// drops. Same path live and offline (caller clamps dt). Long
 // dts are sub-stepped internally so a 12h batch integrates the shrinking
 // population the same way live play does (clamp law).
-// onEvent(kind, item) fires per bot event: kind = "drop" for zone gear
-// rolls, or an enhance result ("success"/"fail"/"poor") for the squad.
+// onEvent(kind, item) fires per bot event: kind = "drop" for zone gear rolls.
 export function tick(state, dtS, onEvent = () => {}, rng = Math.random) {
   while (dtS > 60) { tickChunk(state, 60, onEvent, rng); dtS -= 60; }
   tickChunk(state, dtS, onEvent, rng);
@@ -331,22 +316,5 @@ function tickChunk(state, dtS, onEvent, rng) {
     let drops = Math.floor(np) + (rng() < np - Math.floor(np) ? 1 : 0);
     const bias = lootBias(saturation(r.squadDps, zones[zi].mobHp)); // over-farm → richer loot
     while (drops-- > 0) onEvent("drop", rollDrop(zi, rng, bias)); // events, not objects (v15)
-  }
-
-  // enhancing (real odds, real copper — stops at the target plus)
-  if (b.alloc.enh * scale > 0 && b.enhTarget) {
-    const item = state.gear[b.enhTarget.slot];
-    if (item && item.plus < b.enhTarget.plus) {
-      b.enhCarry += dtS;
-      let interval = enhInterval(b, item.plus);
-      let guard = 200; // ponytail: bound attempts per chunk; interval recomputes as plus moves
-      while (b.enhCarry >= interval && guard-- > 0) {
-        b.enhCarry -= interval;
-        const res = enhAttempt(state, item, rng);
-        onEvent(res, item);
-        if (res === "poor" || item.plus >= b.enhTarget.plus) { b.enhCarry = 0; break; }
-        interval = enhInterval(b, item.plus);
-      }
-    }
   }
 }

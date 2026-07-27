@@ -392,7 +392,7 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   s.copper = 5000;
   s.bots.powerRank = 7;                         // rig rank persists
   s.bots.pop = 40; s.bots.trained.atk = 500; s.bots.trained.hits = 2;
-  s.bots.alloc.atk = [10, 5, 0, 0]; s.bots.alloc.zones = [3, 2, 0, 0, 0]; s.bots.alloc.enh = 4;
+  s.bots.alloc.atk = [10, 5, 0, 0]; s.bots.alloc.zones = [3, 2, 0, 0, 0];
   s.gear.weapon = { ...gear.newSignature("weapon"), plus: 7 }; // must survive
 
   const gained = rebirth.banWave(s);
@@ -669,7 +669,9 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.deepEqual(s6.bots.alloc.atk, [3, 0, 0, 0, 0, 0, 0]);
   assert.deepEqual(s6.bots.alloc.speed, [2, 0, 0, 0, 0, 0]);
   assert.deepEqual(s6.bots.alloc.zones, [0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); // farm squad landed on its old zone
-  assert.equal(s6.bots.alloc.enh, 1);
+  assert.equal(s6.bots.alloc.enh, undefined);   // v16: bot enhance squad retired
+  assert.equal(s6.bots.enhTarget, undefined);
+  assert.equal(s6.bots.enhCarry, undefined);
   assert.deepEqual(s6.bots.bars.atk.fills, [9, 1, 0, 0, 0, 0, 0]); // history kept
   assert.equal(s6.bots.bars.atk.unlocked, 2);
   assert.equal(s6.bots.trained.atk, 12);
@@ -711,30 +713,6 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
       for (const line of b.dialogue[key]) assert.ok(line.trim().length > 0, `${b.id} ${key} empty line`);
     }
   }
-}
-
-// Bot enhance: real odds/copper, exponential time per plus, stops at target
-{
-  const s = newState();
-  s.bots.pop = 8;
-  s.bots.alloc.atk = [0, 0, 0, 0];
-  s.bots.alloc.speed = [0, 0, 0];
-  s.bots.alloc.enh = 8;
-  s.bots.enhTarget = { slot: "weapon", plus: 5 };
-  s.gear.weapon = { slot: "weapon", ip: 100, plus: 0, zone: 1, name: "t" };
-  s.copper = 1e9;
-  // interval at +0: 30 × 1.3^0 / 8 = 3.75s; Σ to +5 ≈ 33.9s with always-success rng
-  bots.tick(s, 40, () => {}, () => 0);
-  assert.equal(s.gear.weapon.plus, 5);
-  const c = s.copper;
-  bots.tick(s, 600, () => {}, () => 0); // at target → no further attempts, no spend
-  assert.equal(s.gear.weapon.plus, 5);
-  assert.equal(s.copper, c);
-  // broke: attempts stop cleanly instead of looping
-  s.bots.enhTarget.plus = 12;
-  s.copper = 0;
-  bots.tick(s, 600, () => {}, () => 0);
-  assert.equal(s.gear.weapon.plus, 5);
 }
 
 // Armory: merge accrues points; a common ranks up on the 3rd copy (rank1 = 3pts)

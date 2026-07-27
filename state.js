@@ -43,10 +43,7 @@ export function newState() {
         atk: [1, 0, 0, 0, 0, 0, 0],   // per ATK training tier (7)
         speed: [1, 0, 0, 0, 0, 0],    // per SPEED training tier (6)
         zones: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // bots per zone (3 regions × 5)
-        enh: 0,
       },
-      enhTarget: { slot: "weapon", plus: 10 }, // bots enhance this item toward this plus
-      enhCarry: 0, // fractional attempt progress
       trained: { atk: 0, hits: 0 }, // permanent stat gains from fills
       bars: {
         atk: { fills: [0, 0, 0, 0, 0, 0, 0], prog: [0, 0, 0, 0, 0, 0, 0], unlocked: 1 },

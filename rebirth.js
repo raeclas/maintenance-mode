@@ -77,8 +77,7 @@ export function banWave(state) {
   b.bars = f.bars;           // training tiers re-lock, fills/prog zeroed
   b.trained = f.trained;     // trained ATK/hits back to base
   b.alloc = f.alloc;         // all bots freed — fresh allocation
-  b.enhCarry = 0;
-  // rig ranks, tPriv, enhTarget persist as-is (bought upgrades, not the swarm)
+  // rig ranks, tPriv persist as-is (bought upgrades, not the swarm)
   state.copper = 0;
   return gained;
 }

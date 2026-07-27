@@ -359,9 +359,6 @@ const HELP_ROOMS = [
       overstack adds 20% to what every fill pays, up to double. Speed has one more
       rule: past a threshold that rises with each deeper Warden, extra hits per
       second still count, just less.`],
-    ["Enhance squad", `Bots that keep pressing enhance on one item for you. Same odds
-      and the same copper cost as doing it yourself — they just never stop. The odds
-      and the fallout are on the Player tab.`],
     ["Ban Wave", `Banking a Ban Wave resets your bots, your training and your copper to
       the start. Everything your character owns stays: gear, plusses, scrap, trophies,
       Armory ranks, titles and door progress. In exchange you bank √(training fills) as
@@ -648,16 +645,13 @@ function renderSkills(d) {
   }
 }
 buildSkillRows();
-$("enhPlus").addEventListener("change", () => {
-  state.bots.enhTarget.plus = Math.max(0, Math.min(enh.MAX_PLUS, Math.floor(Number($("enhPlus").value)) || 0));
-});
 
 // ---- allocMini: THE allocation control. −/input/+ · cap (exact bots to
 // hit the bar's 50/s ceiling) · max (all free) · 0. One component, every bar.
 const allocInputs = {}; // key → input element, synced in render
 function getAlloc(key) {
   const [g, i] = key.split(".");
-  return i === undefined ? state.bots.alloc[g] : state.bots.alloc[g][Number(i)];
+  return state.bots.alloc[g][Number(i)];
 }
 function allocMini(key, withCap = true) {
   const span = document.createElement("span");
@@ -682,7 +676,6 @@ function allocMini(key, withCap = true) {
   allocInputs[key] = input;
   return span;
 }
-$("enhLine").prepend(allocMini("enh", false));
 // ---- training: every tier is its own bar with its own squad (NGU) ----
 const tierRows = { atk: [], speed: [] };
 for (const lane of ["atk", "speed"]) {
@@ -700,15 +693,6 @@ for (const lane of ["atk", "speed"]) {
     wrap.appendChild(row);
     tierRows[lane].push(row);
   });
-}
-
-// ---- enhance squad: segmented slot picker (no dropdowns) ----
-for (const slot of SLOTS) {
-  const btn = document.createElement("button");
-  btn.textContent = slot;
-  btn.dataset.slot = slot;
-  btn.addEventListener("click", () => { state.bots.enhTarget.slot = slot; });
-  $("enhSeg").appendChild(btn);
 }
 
 // ---- farming: dense zone table, built once, cells updated in render ----
@@ -885,7 +869,7 @@ function tick() {
   // intro beat: the first login flips systems on + drops the bot-farm hint
   if (!state.unlocked) { state.unlocked = true; reveal(); say("fail_hopeless"); }
   if (state.unlocked) {
-    bots.tick(state, dt, (kind, item) => kind === "drop" ? onDrop(item) : enhMilestones(item, kind));
+    bots.tick(state, dt, (kind, item) => { if (kind === "drop") onDrop(item); });
   }
   { // the fight: skills.tick is THE damage path now — every swing, crit and
     // proc rolled for real (plus pips/Energy/combo/timers). smite() lands it.
@@ -1101,16 +1085,6 @@ function render() {
     ? owned.map(r => `<span class="scrapPill r-${r.id}">${fmt(state.scrap[r.id])} ${r.name.toLowerCase()}</span>`).join("")
     : `<span class="muted">no scrap yet — your bots' drops break down into it</span>`)
     + (state.relics > 0 ? ` <span class="scrapPill r-epic">${fmt(state.relics)} Relic${state.relics === 1 ? "" : "s"}</span>` : "");
-
-  // bot enhance squad
-  for (const btn of $("enhSeg").children) btn.classList.toggle("active", btn.dataset.slot === b.enhTarget.slot);
-  if (document.activeElement !== $("enhPlus")) $("enhPlus").value = b.enhTarget.plus;
-  const tItem = state.gear[b.enhTarget.slot];
-  const iv = tItem ? bots.enhInterval(b, tItem.plus) : Infinity;
-  $("botEnhInfo").textContent = b.alloc.enh <= 0 ? "idle"
-    : !tItem ? "no item in slot"
-    : tItem.plus >= b.enhTarget.plus ? `done: +${tItem.plus}`
-    : `try every ${iv === Infinity ? "—" : fmt(iv)}s · ${fmt(enh.cost(tItem))}c/try`;
 
   // zones — unlocked by boss progress; stat shows the squad's ACTUAL kill rate
   farm.zones.forEach((z, i) => {

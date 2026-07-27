@@ -109,7 +109,9 @@ export function load(state) {
   state.boss = state.wall === state.maxWall
     ? state.frontierBoss
     : { hp: 0, broken: true, nearSaid: true, farmCarry: 0 }; // farm a cleared wall
-  const { assign, count, farmZone, ...sBots } = s.bots || {}; // pre-v7 fields handled below
+  // pre-v7 fields (assign/count/farmZone) handled below; enhTarget/enhCarry
+  // are v16-retired (bot enhance squad cut) and must not spread back in.
+  const { assign, count, farmZone, enhTarget, enhCarry, ...sBots } = s.bots || {};
   const oldBars = s.bots?.bars; // v≤4 bars were {lvl, prog}
   const v4Bars = oldBars?.atk?.lvl !== undefined;
   const v6Bars = !v4Bars && oldBars?.atk?.tier !== undefined; // v5/v6 single-active-tier bars
@@ -120,7 +122,6 @@ export function load(state) {
       atk: [...d.bots.alloc.atk].map((_, i) => s.bots.alloc.atk[i] ?? 0),
       speed: [...d.bots.alloc.speed].map((_, i) => s.bots.alloc.speed?.[i] ?? 0),
       zones: [...d.bots.alloc.zones].map((_, i) => s.bots.alloc.zones?.[i] ?? 0),
-      enh: s.bots.alloc.enh ?? 0,
     },
     trained: { ...d.bots.trained, ...(s.bots?.trained || {}) },
     bars: (v4Bars || v6Bars) ? structuredClone(d.bots.bars) : {
@@ -148,7 +149,6 @@ export function load(state) {
     state.bots.alloc.speed[0] = s.bots.alloc.spd ?? 0;
     const fz = Math.min(farmZone ?? 0, state.bots.alloc.zones.length - 1);
     state.bots.alloc.zones[fz] = s.bots.alloc.farm ?? 0;
-    state.bots.alloc.enh = s.bots.alloc.enh ?? 0;
   }
   if (count !== undefined && s.bots?.pop === undefined) state.bots.pop = count; // v2 → v3
   if ((s.v ?? 0) <= 3 && s.bots?.alloc && v6Alloc) { // v3 alloc was % of pop → counts

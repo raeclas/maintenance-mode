@@ -109,7 +109,6 @@ while (t < MAX_S && !broken) {
       }
       if (spdBudget > 0) B.alloc.speed[B.bars.speed.unlocked - 1] += spdBudget;
     }
-    B.alloc.enh = 0;
   }
   // deterministic EV in the sim: bot ticks use midpoint rng so chance
   // drops land at expected count and rolls are ignored (gear is EV'd below)

@@ -167,6 +167,20 @@ skill-MOD layer. Slice 1 in game:
   crit chase returns as crit mod lines) · slice 3 = Relic spending +
   helm/gloves/boots behind W1/W3/W5. All real-roll law compliant.
 
+### CUT 2026-07-27 — the bot enhance squad, by user playtest verdict
+
+*"i dont think the bot enhance assignment is the way to go either."* Removed
+whole: alloc.enh / enhTarget / enhCarry / enhInterval / ENH_T0/GROWTH, the
+Training-tab UI block, the Help topic. Old saves strip the fields on load
+(no version bump needed — pure removal, normalize handles it). Enhance is
+the player's gamble again; bots farm and train only.
+
+Same playtest named the deeper problem — delve lacklustre (no verb) and
+enhance dead at +15 (no incentive, no mood). Full-arc fix designed and
+user-approved at concept level (bore run + scrolls + mod lines/cube), but
+the implementation plan was NOT approved — user pulled scope back to this
+cut only. Re-pitch the arc piece by piece.
+
 ### CUT 2026-07-27 — the Dungeon (instance.js), by user verdict
 
 *"iffy on the dungeon … obstructive and just there for the sake of being
@@ -484,7 +498,8 @@ comes from absence, not decay. No glitch, corruption, or broken frames.
   playtest-gated not sim-gated. This is the "gear is never useless" answer.
 - **Enhance:** full §5 heartbeat — safe/risk/nightmare (+20), checkpoints
   +10/+15, failstacks (cap +15pts), safeguard ≤+15, compounding 1.12^plus,
-  row-flash feedback, titles +18+, bot enhance squad.
+  row-flash feedback, titles +18+. (Bot enhance squad CUT 2026-07-27 —
+  playtest verdict: enhance is the player's gamble, not a background rate.)
 - **Bot swarm:** population flow (generator → capacity), NGU per-bar
   allocation (−/+/cap/max/0), training tiers with constant cost/fill + 50/s
   ceilings + RATE MAX, bot-only Grind zones (squad-DPS gates, chance drops
