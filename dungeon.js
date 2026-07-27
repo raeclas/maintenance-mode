@@ -5,6 +5,7 @@
 // nodes feed EVERY system, so the delve is the flywheel's connective tissue:
 // every gain elsewhere pushes depth → more Cache → upgrades that lift the
 // whole game. DPS-native (no new power stat — law 9 via existing power).
+import { gearFx } from "./gear.js";
 const DIFF_BASE = 10, DIFF_GROWTH = 1.7;
 const CACHE_BASE = 0.5, CACHE_GROWTH = 1.35;
 
@@ -41,8 +42,9 @@ export function delveBonus(state, key) { return 1 + UPGRADES[key].per * rank(sta
 
 // How deep the delve sits: build DPS clears + Reach upgrades.
 export function reachDepth(state, dps) { return safeDepth(dps) + rank(state, "reach"); }
-// Cache mined per second — exponential in depth, scaled by the Yield node.
+// Cache mined per second — exponential in depth, scaled by the Yield node
+// and the charm's deep milestone (gearFx.cacheX).
 export function cachePerSec(state, dps) {
   const d = reachDepth(state, dps);
-  return CACHE_BASE * Math.pow(CACHE_GROWTH, d) * (1 + UPGRADES.yield.per * rank(state, "yield"));
+  return CACHE_BASE * Math.pow(CACHE_GROWTH, d) * (1 + UPGRADES.yield.per * rank(state, "yield")) * gearFx(state).cacheX;
 }

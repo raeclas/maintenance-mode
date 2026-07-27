@@ -167,6 +167,31 @@ skill-MOD layer. Slice 1 in game:
   crit chase returns as crit mod lines) · slice 3 = Relic spending +
   helm/gloves/boots behind W1/W3/W5. All real-roll law compliant.
 
+### SHIPPED 2026-07-27 — ENDLESS ENHANCE (eras + landmark bundles), user-designed
+
+Playtest verdict: "stuck at +15 with no real incentive or mood … i don't
+feel the oomph". Design converged in-session (MapleStory starforce as
+reference, then "we don't have to confine ourself to 20 — go to 100 or
+1000", then "not limited to one effect per milestone — sky's the limit"):
+- **No MAX_PLUS.** Odds cycle per era (plus % 20); cost 1.6^plus forever.
+- **Landmarks {5,10,15,17,20} per era = floors + paydays**: lane pattern
+  ×1.5/×3/×10/×50/×250 (×250 per era gate), never fall below one.
+- **Milestone bundle registry** (gear.js MILESTONES): weapon=offense rules,
+  armor=tempo rules, charm=economy rules — auto-crits, Judgment echo, pip
+  cap/recharge, offline ×, drop rerolls, enhance discounts, failstack
+  economy, bot capacity… one aggregator `gearFx()` feeds every consumer.
+  Meta gates ("all % ×2") scale their track's % rows.
+- **Set tiers** on total plus (30/45/51/60, ×10 per era) — cumulative.
+- **Stakes card**: exact lane delta + next-landmark bundle BEFORE the
+  click; success floater pays the same number. Landmark = burst + shake +
+  rename (Rusty → Honed → Gleaming …) + server line. NO SOUND — user
+  clarified the ceremony veto = sound only; UI effects wanted.
+- EV lockstep: fx curves read gearFx (roller + passiveMult + desc share
+  formulas); auto-crit folds (superMult−cf)/N both sides; tested.
+- Boss HP ×11.2 all walls (W1 280e12 → 13.2h, in-gate), baseline
+  restamped. Earlier same-day designs REJECTED: bore run + scrolls +
+  mod lines/cube (plan preserved in git history only).
+
 ### CUT 2026-07-27 — the bot enhance squad, by user playtest verdict
 
 *"i dont think the bot enhance assignment is the way to go either."* Removed

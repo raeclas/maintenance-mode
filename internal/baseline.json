@@ -1,7 +1,7 @@
 [
   {
     "t": 30,
-    "desc": "arrival TTK 12472062.6d (intro beat — overwhelming)"
+    "desc": "arrival TTK 139687100.9d (intro beat — overwhelming)"
   },
   {
     "t": 35,
@@ -17,42 +17,42 @@
   },
   {
     "t": 4200,
-    "desc": "z2 held (Webbed Ravine)"
-  },
-  {
-    "t": 4800,
     "desc": "z4 held (Cinder Steppe)"
   },
   {
-    "t": 5400,
+    "t": 4800,
     "desc": "power ×1000"
   },
   {
-    "t": 5400,
+    "t": 4800,
     "desc": "z5 held (The Doorstep)"
   },
   {
-    "t": 6000,
+    "t": 5400,
+    "desc": "z2 held (Webbed Ravine)"
+  },
+  {
+    "t": 5400,
     "desc": "z3 held (Salt Flats)"
   },
   {
-    "t": 6600,
+    "t": 6000,
     "desc": "power ×10000"
   },
   {
-    "t": 25800,
+    "t": 27000,
     "desc": "W1 10% gone"
   },
   {
-    "t": 38400,
+    "t": 39600,
     "desc": "W1 50% gone"
   },
   {
-    "t": 45000,
+    "t": 46200,
     "desc": "W1 90% gone"
   },
   {
-    "t": 46800,
+    "t": 47400,
     "desc": "W1 broken (EV)"
   }
 ]

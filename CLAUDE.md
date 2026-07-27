@@ -16,7 +16,8 @@ constitution. The **hard vetoes** below are the exception: they're the user's
 taste, so keep them unless the user says otherwise.
 
 **Hard vetoes (user taste — don't re-propose unprompted):**
-- NO sound. NO enhance ceremony / slow ritual animations.
+- NO sound. (Clarified 2026-07-27: the "ceremony" veto means sound and slow
+  ritual gates that delay results — snappy meaningful UI effects are WANTED.)
 - NO AI-generated skill icons (gold letter glyphs or hand-made only).
 - NO obligation mechanics: dailies, streaks, FOMO, calendar events, lockouts.
 

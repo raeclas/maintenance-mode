@@ -11,6 +11,7 @@
 //   resets — absence banks bursts, it never costs them (no-obligation veto).
 //
 import { rollHit } from "./crits.js";
+import { gearFx } from "./gear.js";
 
 // Design contract (2026-07-27, "imba two-curve rule"): EV per copper starts
 // ~0.25%/c and gently falls down the ladder; spike MAGNITUDE grows ~×4 per
@@ -25,28 +26,44 @@ export const COMBO_HITS = 30;   // hits per Combo Attack finisher
 export const JUDG_PERIOD = 15;  // Judgment metronome, seconds
 export const EMPOWER_RANKS = 3; // Empower: procs act this many ranks higher
 
+// Gear milestone mods (gear.gearFx) — refreshed by derive() every frame.
+// Module-level so the fx curves below stay (r)-shaped for every caller
+// (tick, passiveMult, cast, desc): the same modded formula feeds the real
+// roller, the EV mirror AND the skill-row text — lockstep by construction.
+// ponytail: every shipped path calls derive() first; a derive-less consumer
+// would read one frame stale.
+let GF = gearFx({});
+export function setGearFx(g) { GF = g; }
+// Gear-adjusted banks/caps (base consts above stay the tuning dials).
+export const pipCap = () => PIP_CAP + GF.pipCap;
+export const pipRecharge = () => Math.max(60, PIP_RECHARGE + GF.pipRechargeAdd);
+export const energyCap = () => ENERGY_CAP * GF.energyCapX;
+export const comboHits = () => Math.max(5, COMBO_HITS + GF.comboHitsAdd);
+
 // Per-rank effect values. r is the EFFECTIVE rank (Empower can lift it).
+// Gear milestone terms (GF) fold in HERE so every consumer sees them.
 const fx = {
   powerStrike: r => 0.05 * r,                          // +atk fraction
   doubleChance: r => Math.min(0.30, 0.08 + 0.02 * (r - 1)), // band cap 30%
-  judgMult: r => 6 + 5 * (r - 1),                      // × atk per beat
-  frenzyWin: r => Math.min(10, 4 + (r - 1)),           // seconds, band cap
-  frenzyHaste: () => 0.5,                              // +50% hits in window
+  judgMult: r => (6 + 5 * (r - 1)) * (1 + GF.judgEcho), // × atk per beat (weapon +40: beats twice)
+  frenzyWin: r => (Math.min(10, 4 + (r - 1)) + GF.frenzyAddS) * GF.buffDurX,
+  frenzyHaste: () => 0.5 * GF.frenzyHasteX,            // +hits in window
   finBonus: r => 5 + 0.5 * (r - 1),                    // × atk on super crit
   comboFin: r => 10 + (r - 1),                         // finisher × atk
   comboShave: r => 5 * Math.min(3, r),                 // pip-recharge seconds per finisher, cap 15
-  tranceWin: r => 8 + (r - 1),                         // seconds lit
+  tranceWin: r => (8 + (r - 1) + GF.tranceAddS) * GF.buffDurX,
   meteorMult: r => 15 + 3 * (r - 1),                   // × atk; RATE fixed 1%
   chaosChance: r => Math.min(0.06, 0.02 + 0.005 * (r - 1)),
-  rageDur: r => 30 + 3 * (r - 1),
+  rageDur: r => (30 + 3 * (r - 1)) * GF.rageX * GF.buffDurX,
   mightMult: r => 2 + 0.1 * (r - 1),
+  mightDur: () => 30 * GF.buffDurX,
   smashMult: r => 80 + 10 * (r - 1),
-  focusDur: r => 15 + (r - 1),
+  focusDur: r => (15 + (r - 1)) * GF.buffDurX,
   bladeBonus: r => 3 + 0.5 * (r - 1),                  // × atk rider per hit (30 hits)
-  empowerDur: r => 20 + 2 * (r - 1),
-  jackpot: r => 150 + 10 * (r - 1),                    // odds FIXED (guarantee heuristic)
+  empowerDur: r => (20 + 2 * (r - 1)) * GF.buffDurX,
+  jackpot: r => (150 + 10 * (r - 1)) * GF.wildJackX,   // odds FIXED (guarantee heuristic)
   burstRate: r => 0.25 + 0.1 * (r - 1),                // × atk per Energy
-  swClock: r => Math.max(900, 1800 - 60 * (r - 1)),    // Second Wind, banks exactly 1
+  swClock: r => Math.max(900, 1800 - 60 * (r - 1)) * GF.swClockX, // Second Wind, banks exactly 1
 };
 
 // Wild Swing's lottery wheel (Geniewiz). Odds never improve; only the jackpot
@@ -78,7 +95,7 @@ export const SKILLS = [
     desc: r => `every super crit triggers a bonus hit for ×${fx.finBonus(r).toFixed(1)} ATK`,
     step: () => "+0.5× bonus" },
   { id: "comboAttack", name: "Combo Attack", kind: "passive", base: 350, growth: 1.7,
-    desc: r => `every ${COMBO_HITS} hits, a finisher for ×${fx.comboFin(r)} ATK; each finisher speeds the pip recharging by ${fx.comboShave(r)}s`,
+    desc: r => `every ${comboHits()} hits, a finisher for ×${fx.comboFin(r)} ATK; each finisher speeds the pip recharging by ${fx.comboShave(r)}s`,
     step: () => "+1× finisher" },
   { id: "battleTrance", name: "Battle Trance", kind: "passive", base: 450, growth: 1.7,
     desc: r => `1% chance a hit lights an ${fx.tranceWin(r)}s trance — every hit in it echoes for ×1 ATK`,
@@ -99,7 +116,7 @@ export const SKILLS = [
   { id: "focus", name: "Focus", kind: "active", base: 800, growth: 1.8,
     desc: r => `every hit crits for ${fx.focusDur(r)}s`, step: () => "+1s" },
   { id: "bladeDance", name: "Blade Dance", kind: "active", base: 1000, growth: 1.8,
-    desc: r => `your next ${COMBO_HITS} hits each carry a bonus slash of ×${fx.bladeBonus(r).toFixed(1)} ATK`,
+    desc: r => `your next ${comboHits()} hits each carry a bonus slash of ×${fx.bladeBonus(r).toFixed(1)} ATK`,
     step: () => "+0.5× slash" },
   { id: "empower", name: "Empower", kind: "active", base: 1200, growth: 1.8,
     desc: r => `your passive skills act ${EMPOWER_RANKS} ranks higher for ${fx.empowerDur(r)}s`,
@@ -108,7 +125,7 @@ export const SKILLS = [
     desc: r => `one huge swing: 10% jackpot ×${fx.jackpot(r)} · 50% ×40 · 30% ×10 · 10% whiff`,
     step: () => "+10× jackpot" },
   { id: "energyBurst", name: "Energy Burst", kind: "active", base: 2500, growth: 1.8,
-    desc: r => `costs no pip — every hit banks 1 Energy (max ${ENERGY_CAP}); release it all for ×${fx.burstRate(r).toFixed(2)} ATK per Energy`,
+    desc: r => `costs no pip — every hit banks 1 Energy (max ${energyCap()}); release it all for ×${fx.burstRate(r).toFixed(2)} ATK per Energy`,
     step: () => "+0.1× per Energy" },
   { id: "secondWind", name: "Second Wind", kind: "active", base: 3000, growth: 1.8,
     desc: r => `refills every pip. Recharges on its own ${Math.round(fx.swClock(r) / 60)}min clock and stores one use`,
@@ -127,6 +144,8 @@ export function skillState() {
     judgT: 0,           // Judgment metronome accumulator
     swT: 0, swBank: 0,  // Second Wind clock + stored use (max 1)
     hitCarry: 0,        // fractional swings carried between ticks (the roller)
+    autoCt: 0,          // swing counter for the weapon gate's auto-crit
+    castCt: 0,          // cast counter for the armor gate's pip refund
     frenzyT: 0,         // Frenzy window remaining (s) — fight-local, real
     tranceT: 0,         // Battle Trance window remaining (s)
     // live burst timers, in REMAINING SECONDS — decremented by the same tick
@@ -191,7 +210,7 @@ export function passiveMult(state, hits, cs, cf) {
   const rFB = effRank(state, "finishingBlow");
   if (rFB) add("finishingBlow", "Finishing Blow", 1 + (cs.rate * cs.superRate * fx.finBonus(rFB)) / cf);
   const rC = effRank(state, "comboAttack");
-  if (rC) add("comboAttack", "Combo Attack", 1 + fx.comboFin(rC) / (COMBO_HITS * cf));
+  if (rC) add("comboAttack", "Combo Attack", 1 + fx.comboFin(rC) / (comboHits() * cf));
   const rT = effRank(state, "battleTrance");
   if (rT) {
     const x = 0.01 * h * fx.tranceWin(rT);
@@ -251,10 +270,10 @@ export function tick(state, dt, d, emit = () => {}, rng = Math.random) {
 
   // pip recharge — stalls only at a full bank (the one designed loss)
   if (SKILLS.some(s => s.kind === "active" && PIP_SPENDERS.has(s.id) && rank(state, s.id) > 0)) {
-    if (k.pips < PIP_CAP) {
+    if (k.pips < pipCap()) {
       k.pipT += dt;
-      while (k.pipT >= PIP_RECHARGE && k.pips < PIP_CAP) { k.pipT -= PIP_RECHARGE; k.pips++; }
-      if (k.pips >= PIP_CAP) k.pipT = 0;
+      while (k.pipT >= pipRecharge() && k.pips < pipCap()) { k.pipT -= pipRecharge(); k.pips++; }
+      if (k.pips >= pipCap()) k.pipT = 0;
     }
   }
   if (rank(state, "secondWind") && k.swBank < 1) {
@@ -284,8 +303,8 @@ export function tick(state, dt, d, emit = () => {}, rng = Math.random) {
   if (swings > ROLL_CAP) { // batch overflow resolves at per-swing EV
     dmg += (swings - ROLL_CAP) * d.atk;
     // banked resources still accrue for the un-rolled swings
-    if (rank(state, "energyBurst")) k.energy = Math.min(ENERGY_CAP, k.energy + (swings - ROLL_CAP));
-    if (rank(state, "comboAttack")) k.comboT = (k.comboT + (swings - ROLL_CAP)) % COMBO_HITS;
+    if (rank(state, "energyBurst")) k.energy = Math.min(energyCap(), k.energy + (swings - ROLL_CAP));
+    if (rank(state, "comboAttack")) k.comboT = (k.comboT + (swings - ROLL_CAP)) % comboHits();
     swings = ROLL_CAP;
   }
   const rDS = effRank(state, "doubleStrike");
@@ -295,12 +314,21 @@ export function tick(state, dt, d, emit = () => {}, rng = Math.random) {
   const rM = effRank(state, "meteor");
   const rCh = effRank(state, "chaosStrike");
   const rC = rank(state, "comboAttack");
+  const autoN = GF.autoCritNth; // weapon gate: every Nth swing auto-crits max tier
   const swing = () => { // one rolled hit + its riders; returns damage, emits spectacle
     let out = 0;
-    const h = rollHit(atk, cs, rng);
+    let h;
+    if (autoN && ++k.autoCt >= autoN) {
+      // scripted crit: max tier, same ±15% breath. Does NOT trigger
+      // Finishing Blow (keeps the EV fold in derive() exact).
+      k.autoCt = 0;
+      h = { dmg: atk * cs.superMult * (0.85 + 0.3 * rng()), tier: 2, scripted: true };
+    } else {
+      h = rollHit(atk, cs, rng);
+    }
     out += h.dmg;
     emit({ type: "hit", dmg: h.dmg, tier: h.tier });
-    if (h.tier === 2 && rFB) {
+    if (h.tier === 2 && !h.scripted && rFB) {
       const bonus = fx.finBonus(rFB) * atk;
       out += bonus;
       emit({ type: "finishing", dmg: bonus });
@@ -335,18 +363,18 @@ export function tick(state, dt, d, emit = () => {}, rng = Math.random) {
         emit({ type: "chaos", dmg: hit });
       }
     }
-    if (rank(state, "energyBurst")) k.energy = Math.min(ENERGY_CAP, k.energy + 1);
+    if (rank(state, "energyBurst")) k.energy = Math.min(energyCap(), k.energy + 1);
     if (k.bladeHits > 0) {
       k.bladeHits--;
       dmg += fx.bladeBonus(rank(state, "bladeDance")) * atk;
     }
     if (rC) {
       k.comboT++;
-      if (k.comboT >= COMBO_HITS) {
+      if (k.comboT >= comboHits()) {
         k.comboT = 0;
         const hit = fx.comboFin(effRank(state, "comboAttack")) * atk;
         dmg += hit;
-        if (k.pips < PIP_CAP) k.pipT += fx.comboShave(rC); // the pip shave
+        if (k.pips < pipCap()) k.pipT += fx.comboShave(rC); // the pip shave
         emit({ type: "combo", dmg: hit });
       }
     }
@@ -370,29 +398,37 @@ export function tick(state, dt, d, emit = () => {}, rng = Math.random) {
 export function cast(state, id, d, rng = Math.random) {
   const k = state.skills, r = rank(state, id);
   if (!k || !r) return null;
+  // armor gate: every Nth pip cast hands the pip back (deterministic counter)
+  const spendPip = () => {
+    k.pips--;
+    if (GF.castRefundNth && ++k.castCt >= GF.castRefundNth) {
+      k.castCt = 0;
+      k.pips = Math.min(pipCap(), k.pips + 1);
+    }
+  };
   if (PIP_SPENDERS.has(id)) {
     if (k.pips < 1) return null;
-    const dur = { rage: fx.rageDur, might: () => 30, focus: fx.focusDur, empower: fx.empowerDur };
+    const dur = { rage: fx.rageDur, might: fx.mightDur, focus: fx.focusDur, empower: fx.empowerDur };
     if (dur[id]) {
       if (k[id] > 0) return null;
-      k.pips--;
+      spendPip();
       k[id] = dur[id](r);
       return { spent: "pip" };
     }
     if (id === "bladeDance") {
       if (k.bladeHits > 0) return null;
-      k.pips--;
-      k.bladeHits = COMBO_HITS;
+      spendPip();
+      k.bladeHits = comboHits();
       return { spent: "pip" };
     }
     if (id === "powerSmash") {
       if (k.windup > 0) return null;
-      k.pips--;
+      spendPip();
       k.windup = 6;
       return { spent: "pip", windup: 6 };
     }
     if (id === "wildSwing") {
-      k.pips--;
+      spendPip();
       let roll = rng(), out = WILD_TABLE[WILD_TABLE.length - 1];
       for (const o of WILD_TABLE) { if (roll < o.p) { out = o; break; } roll -= o.p; }
       return { spent: "pip", dmg: out.mult(r) * d.atkCore, label: out.label, mult: out.mult(r) };
@@ -406,9 +442,9 @@ export function cast(state, id, d, rng = Math.random) {
     return { spent: "energy", energy: spent, dmg: hit };
   }
   if (id === "secondWind") {
-    if (k.swBank < 1 || k.pips >= PIP_CAP) return null;
+    if (k.swBank < 1 || k.pips >= pipCap()) return null;
     k.swBank = 0;
-    k.pips = PIP_CAP;
+    k.pips = pipCap();
     k.pipT = 0;
     return { spent: "bank" };
   }

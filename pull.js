@@ -8,13 +8,21 @@
 // earned power over time now, not lucky pulls. REWORK-IDLE-BATTLER.md.)
 import { getBoss } from "./bosses.js";
 import { derive } from "./stats.js";
-import { delveBonus } from "./dungeon.js";
+import { gearFx } from "./gear.js";
 import { rollFarmDrop } from "./trophies.js";
+
+// Weapon milestone boss-damage terms (smitePct add + smiteX gates) — one
+// multiplier on every boss-facing damage path, mirrored here in CP so
+// time-to-breach and the sim stay honest.
+export function bossMult(state) {
+  const G = gearFx(state);
+  return (1 + G.smitePct / 100) * G.smiteX;
+}
 
 // The one number that damages Wardens: character DPS with crits folded in.
 export function combatPower(state) {
   const d = derive(state);
-  return d.atk * d.hitsPerSec;
+  return d.atk * d.hitsPerSec * bossMult(state);
 }
 
 // Live drain: chip the frontier Warden's HP by CP over dtS seconds. No-op on a
@@ -34,6 +42,7 @@ export function drain(state, dtS) {
 // instead of CP×dt, so every damage path shares ONE break transition.
 export function smite(state, dmg) {
   if (state.boss.broken || dmg <= 0) return { dealt: 0, broke: false };
+  dmg *= bossMult(state); // weapon milestone boss-damage terms (see combatPower)
   const dealt = Math.min(state.boss.hp, dmg);
   state.boss.hp = Math.max(0, state.boss.hp - dealt);
   const broke = state.boss.hp <= 0;

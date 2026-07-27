@@ -2,14 +2,14 @@
 // DPS = (10 + trainedATK + Σ gear) × GMdmg × hits/s × GMhaste
 // GM terms are a separate, DISPLAYED lane (era-priced flags); the trained
 // speed cap stays a training-lane identity — haste multiplies past it.
-import { laneValue, SIG, SLOTS } from "./gear.js";
+import { laneValue, SIG, SLOTS, gearFx } from "./gear.js";
 import { scriptMult } from "./rebirth.js";
 import { trophyMods } from "./trophies.js";
 import { armoryMods } from "./armory.js";
 import { critStats, critFactor } from "./crits.js";
 import { delveBonus } from "./dungeon.js";
 import { getBoss } from "./bosses.js";
-import { passiveMult, activeMods, coreMult } from "./skills.js";
+import { passiveMult, activeMods, coreMult, setGearFx } from "./skills.js";
 
 export const BASE_ATK = 10;
 export const BASE_HPS = 2.0;
@@ -44,6 +44,11 @@ export function derive(state) {
   const tm = trophyMods(state); // boss Trophy set: per-piece boosts + set bonus
   const am = armoryMods(state);  // the Armory: gear-collection rank passives (displayed lane terms)
   atkPct += am.atkPct; hastePct += am.hastePct; copperPct += am.copperPct;
+  // Gear milestone bundles (endless enhance) — ONE aggregate, pushed into
+  // skills.js so the fx curves and the roller see the same numbers.
+  const G = gearFx(state);
+  setGearFx(G);
+  atkPct += G.atkPct; hastePct += G.hitsPct; copperPct += G.copperPct;
   const cs = critStats(state);   // two-tier crit → per-hit roll stats + CP factor
   // Skill lane (skills.js). Focus forces every hit to crit; Rage doubles the
   // hit rate. Two ATK figures leave here:
@@ -55,11 +60,18 @@ export function derive(state) {
   //             the sim. E[roller] == atk × hits by construction.
   const act = activeMods(state);
   if (act.allCrit) cs.rate = 1;
-  const knee = getBoss(state.wall)?.speedKnee ?? SPEED_KNEE;
+  const knee = (getBoss(state.wall)?.speedKnee ?? SPEED_KNEE) * G.kneeX;
   const hitsPerSec = softHits(BASE_HPS + state.bots.trained.hits + hitsFlat, knee) * (1 + hastePct / 100) * (1 + tm.hastePct / 100) * act.hitsMult;
-  const cf = critFactor(cs);
+  let cf = critFactor(cs);
+  // weapon gate: every Nth swing is a scripted max-tier crit — same fold in
+  // the EV as the roller's counter (lockstep; scripted crits skip Finishing
+  // Blow on both sides by construction).
+  if (G.autoCritNth) cf += (cs.superMult - cf) / G.autoCritNth;
   const sk = passiveMult(state, hitsPerSec, cs, cf);
-  const atkCore = (BASE_ATK + state.bots.trained.atk + gearAtk) * (1 + atkPct / 100) * (1 + tm.atkPct / 100) * scriptMult(state) * tm.dmgMult * delveBonus(state, "overclock") * coreMult(state) * act.atkMult;
+  // Gear milestone ATK terms: set/bundle multipliers, the swing echo, and
+  // the failstack bank turned power (weapon +15) — each its own displayed term.
+  const gearAtkMult = G.atkX * G.echoX * (1 + G.failstackAtkPct * (state.failstacks || 0) / 100);
+  const atkCore = (BASE_ATK + state.bots.trained.atk + gearAtk) * (1 + atkPct / 100) * (1 + tm.atkPct / 100) * scriptMult(state) * tm.dmgMult * delveBonus(state, "overclock") * coreMult(state) * act.atkMult * gearAtkMult;
   const atk = atkCore * cf * sk.mult;
-  return { atk, atkCore, hitsPerSec, copperMult: 1 + (copperPct + tm.copperPct) / 100, crit: cs, skills: sk };
+  return { atk, atkCore, hitsPerSec, copperMult: (1 + (copperPct + tm.copperPct) / 100) * G.copperX, crit: cs, skills: sk, gearFx: G };
 }

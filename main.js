@@ -10,7 +10,8 @@ import { derive } from "./stats.js";
 import { critFactor } from "./crits.js";
 import * as bots from "./bots.js";
 import * as farm from "./farm.js";
-import { resolveDrop, laneValue, contribution, SIG, newSignature, SLOTS, NAMES } from "./gear.js";
+import { resolveDrop, laneValue, contribution, SIG, newSignature, SLOTS, NAMES,
+  tierMult, tierName, nextMilestone, isLandmark, gearFx, setTotal, SET_TIERS, MILESTONES } from "./gear.js";
 import * as armory from "./armory.js";
 import { RARITIES, RARITY_BY_ID } from "./rarity.js";
 import { banWave, pendingScripts, scriptMult, totalFills, depthMult } from "./rebirth.js";
@@ -211,37 +212,64 @@ function onDrop(drop) {
   }
 }
 
-// enhance feedback is visual: the slot row glows on success, flickers on fail
-function flashSlot(slot, ok) {
+// enhance feedback is visual: burst on success, landmark burst on paydays,
+// crack flash on fail. Instant, never gates the next click (no ceremony).
+function flashSlot(slot, ok, landmark = false) {
   const el = slotEls[slot];
   if (!el) return;
-  el.classList.remove("flash-ok", "flash-fail");
+  el.classList.remove("flash-ok", "flash-fail", "flash-landmark");
   void el.offsetWidth; // restart the animation
-  el.classList.add(ok ? "flash-ok" : "flash-fail");
+  el.classList.add(landmark ? "flash-landmark" : ok ? "flash-ok" : "flash-fail");
 }
 
-// shared milestone handling for manual clicks and bot attempts
-function enhMilestones(item, r) {
-  flashSlot(item.slot, r === "success");
+// enhance feedback: the promise on the button is the payoff on the card.
+// delta = the lane gain this success just paid (same number the stakes card
+// showed). Landmarks get the big treatment: burst, shake, rename, server line.
+function enhMilestones(item, r, delta = 0) {
+  const landmark = r === "success" && isLandmark(item.plus);
+  flashSlot(item.slot, r === "success", landmark);
   if (r !== "success") return;
   notifyEnhance(item.plus, true);
-  if (item.plus >= 16) log(`[Server] a player has reached +${item.plus}. Players online: 1.`);
-  const title = `+${item.plus}`;
-  if (item.plus >= 18 && !state.titles.includes(title)) {
-    state.titles.push(title);
-    log(`★ title: ${title}`);
+  if (delta > 0) floatDelta(item.slot, delta);
+  if (landmark) {
+    log(`[Server] a player has reached +${item.plus}. Players online: 1.`);
+    const named = tierName(item);
+    if (named !== tierName({ ...item, plus: item.plus - 1 })) {
+      log(`★ ${item.name} is now ${named}`);
+    }
+    const title = `+${item.plus}`;
+    if (item.plus >= 17 && !state.titles.includes(title)) {
+      state.titles.push(title);
+      log(`★ title: ${title}`);
+    }
   }
+}
+
+// the gold delta floater on the slot card — the paid prize, verbatim
+function floatDelta(slot, delta) {
+  const el = slotEls[slot];
+  if (!el) return;
+  const f = document.createElement("span");
+  f.className = "deltaFloat";
+  const lane = SIG[slot].lane;
+  f.textContent = lane === "atk" ? `+${fmt(delta)} ATK`
+    : lane === "hits" ? `+${delta.toFixed(2)} hits/s` : `+${delta.toFixed(1)}% copper`;
+  el.appendChild(f);
+  setTimeout(() => f.remove(), 900);
 }
 
 // ---- offline batch: same tick functions, dt clamped exactly like live ----
 if (loaded && state.unlocked && state.lastSeen) {
-  const dt = Math.min((Date.now() - state.lastSeen) / 1000, farm.offlineCapS(state));
+  // armor gates stretch offline time (gearFx.offlineX) — applied AFTER the
+  // clamp, and printed so the term is visible (law 5).
+  const offX = gearFx(state).offlineX;
+  const dt = Math.min((Date.now() - state.lastSeen) / 1000, farm.offlineCapS(state)) * offX;
   if (dt > 60) {
     const c0 = state.copper;
     let drops = 0;
     // enh feedback stays silent offline (slot rows aren't built yet)
     bots.tick(state, dt, (kind, item) => { if (kind === "drop") { drops++; onDrop(item); } });
-    log(`offline ${fmt(dt / 3600)}h: +${fmt(state.copper - c0)}c · ${drops} drops`);
+    log(`offline ${fmt(dt / 3600)}h${offX > 1 ? ` (×${offX} armor bonus)` : ""}: +${fmt(state.copper - c0)}c · ${drops} drops`);
     { // skills + the whittle: the roller IS the character's damage now.
       // A 12h batch blows past ROLL_CAP, so almost all of it resolves at
       // EV inside skills.tick — the offline clamp, same function as live.
@@ -387,11 +415,19 @@ const HELP_ROOMS = [
       in it.`],
     ["Your gear", `Three items, and they're yours for life — quest rewards the dead
       server has been holding. They are never replaced and never destroyed; they only
-      grow. The weapon adds ATK, the armor adds hits per second, the charm adds
-      copper income. Two more rewards wait behind milestones you haven't hit yet.`],
-    ["Enhance", `Enhancing raises an item's plus, and every plus multiplies its power
-      by 1.12. A failed attempt anywhere banks a failstack worth +1 percentage point
-      on your next attempt, up to +15; a success spends the whole bank.`],
+      grow. The weapon rules your offense, the armor rules your tempo, the charm rules
+      your economy — each one's milestones change those rules as it climbs.`],
+    ["Enhance", `Enhancing raises an item's plus, forever — there is no cap. Landmarks
+      at +5, +10, +15, +17 and +20 of every 20 multiply the item's power and grant a
+      bundle of new effects, listed under each item. Once you reach a landmark you can
+      never fall below it. Every 20 plusses starts a fresh era: the odds reset to easy
+      and the costs keep climbing.`,
+      `A failed attempt banks failstacks (percentage points on your next attempt, up
+      to +15); a success spends the bank. The card shows exactly what the next plus
+      pays before you click.`],
+    ["The set", `Your three signatures are a set. Their combined plus total unlocks
+      set bonuses — the thresholds and effects are listed in the set panel. Which item
+      to push next is the whole game down here.`],
     ["Materials", `Every bot drop breaks down into scrap of its rarity, automatically.
       Scrap has no use yet — a workbench for it is coming. Epic or better drops also
       crystallize into Relics, which will feed that same bench.`],
@@ -624,7 +660,7 @@ function renderSkills(d) {
   for (const [id, b] of Object.entries(castBtns)) {
     let ok = true, note = "";
     if (id === "energyBurst") { ok = k.energy >= 1; note = ` ${Math.floor(k.energy)}⚡`; }
-    else if (id === "secondWind") { ok = k.swBank >= 1 && k.pips < skills.PIP_CAP; note = k.swBank ? " ready" : ` ${fmtClock(skills.fxValues.swClock(skills.rank(state, id)) - k.swT)}`; }
+    else if (id === "secondWind") { ok = k.swBank >= 1 && k.pips < skills.pipCap(); note = k.swBank ? " ready" : ` ${fmtClock(skills.fxValues.swClock(skills.rank(state, id)) - k.swT)}`; }
     else {
       ok = k.pips >= 1;
       if (id === "powerSmash" && k.windup > 0) { ok = false; note = ` ${k.windup.toFixed(1)}s`; }
@@ -637,10 +673,10 @@ function renderSkills(d) {
   const anyActive = Object.keys(castBtns).length > 0;
   $("pipRow").style.display = anyActive ? "" : "none";
   if (anyActive) {
-    const pips = "◆".repeat(k.pips) + "◇".repeat(skills.PIP_CAP - k.pips);
-    const next = k.pips >= skills.PIP_CAP ? "bank full" : `next ${fmtClock(skills.PIP_RECHARGE - k.pipT)}`;
-    const combo = skills.rank(state, "comboAttack") ? ` · combo ${Math.floor(k.comboT)}/${skills.COMBO_HITS}` : "";
-    const energy = skills.rank(state, "energyBurst") ? ` · Energy ${Math.floor(k.energy)}/${skills.ENERGY_CAP}` : "";
+    const pips = "◆".repeat(k.pips) + "◇".repeat(Math.max(0, skills.pipCap() - k.pips));
+    const next = k.pips >= skills.pipCap() ? "bank full" : `next ${fmtClock(skills.pipRecharge() - k.pipT)}`;
+    const combo = skills.rank(state, "comboAttack") ? ` · combo ${Math.floor(k.comboT)}/${skills.comboHits()}` : "";
+    const energy = skills.rank(state, "energyBurst") ? ` · Energy ${Math.floor(k.energy)}/${skills.energyCap()}` : "";
     $("pipRow").textContent = `pips ${pips} · ${next}${combo}${energy}`;
   }
 }
@@ -734,17 +770,20 @@ for (const slot of SLOTS) {
   div.className = "slot";
   div.innerHTML = `<div class="slotName">${slot}</div>
     <div class="slotItem" id="si_${slot}">—</div>
+    <div class="stakes" id="stk_${slot}"></div>
     <div class="slotControls">
       <span class="ctlGroup"><button id="se_${slot}">enhance</button><span class="enhInfo" id="sei_${slot}"></span></span>
-    </div>`;
+    </div>
+    <details class="mileTrack"><summary>milestones</summary><div id="mt_${slot}"></div></details>`;
   $("slots").appendChild(div);
   slotEls[slot] = div;
   $(`se_${slot}`).addEventListener("click", () => {
     const item = state.gear[slot];
     if (!item) return;
+    const before = laneValue(item);
     const r = enh.attempt(state, item, Math.random, $("safeguard").checked);
-    if (r === "poor" || r === "max") return; // button state explains itself
-    enhMilestones(item, r); // feedback is the row flash, not log spam
+    if (r === "poor") return; // button state explains itself
+    enhMilestones(item, r, r === "success" ? laneValue(item) - before : 0);
   });
 }
 
@@ -941,7 +980,7 @@ function render() {
     $("copperRate").textContent = cps > 0 ? `+${fmt(cps)}/s` : "—";
   }
   { // NGU-style ticker: FREE bots (unallocated) vs capacity — allocation drains it
-    $("resBots").textContent = `${bots.freeBots(state.bots).toFixed(1)} / ${bots.capacity(state.bots)}`;
+    $("resBots").textContent = `${bots.freeBots(state.bots).toFixed(1)} / ${bots.capacity(state.bots, state)}`;
     $("resRate").textContent = `+${bots.createRate(state.bots).toFixed(1)}`;
   }
   $("banWaveSection").style.display = state.features.rebirth ? "" : "none";
@@ -1035,7 +1074,7 @@ function render() {
   const scale = bots.effScale(b);
   const scaled = scale < 0.995 ? ` · short ${((1 - scale) * 100).toFixed(0)}%` : "";
   $("rigStats").textContent = `lost to bans ${Math.floor(b.banned)}${scaled}`;
-  $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b)) * 100)}%`;
+  $("popFill").style.width = `${Math.min(100, (b.pop / bots.capacity(b, state)) * 100)}%`;
   const quality = bots.botPower(b) * bots.botSpeed(b);
 
   // allocation inputs: sync every bar's number unless being edited
@@ -1124,22 +1163,22 @@ function render() {
     } else { zonePhase[i] = 0; zfEl.style.width = "0"; }
   });
 
-  // gear
+  // gear — the stakes card: the prize BEFORE the click (delta, next landmark),
+  // then odds + fallout. The success floater pays the same number (honesty).
   const sg = $("safeguard").checked;
   $("stacksHud").textContent = state.failstacks
     ? `· failstacks ${state.failstacks} (+${Math.min(state.failstacks, enh.STACK_CAP_PTS)}% next success)`
     : "";
+  const laneFmt = (slot, v) => SIG[slot].lane === "atk" ? `+${fmt(v)} ATK`
+    : SIG[slot].lane === "hits" ? `+${v.toFixed(2)} hits/s` : `+${v.toFixed(1)}% copper`;
   for (const slot of SLOTS) {
     const item = state.gear[slot];
     const si = $(`si_${slot}`);
     if (item) {
-      const laneTxt = SIG[slot].lane === "atk" ? `+${fmt(laneValue(item))} ATK`
-        : SIG[slot].lane === "hits" ? `+${laneValue(item).toFixed(2)} hits/s`
-        : `+${laneValue(item).toFixed(1)}% copper`;
       si.innerHTML =
         `<div class="itemHeader">` +
-          `<span class="itemName rar-rare">${item.name}</span>` +
-          `<span class="itemMeta">+${item.plus} · ${laneTxt}</span>` +
+          `<span class="itemName rar-rare">${tierName(item)}</span>` +
+          `<span class="itemMeta">+${item.plus} · ${laneFmt(slot, laneValue(item))}</span>` +
         `</div>`;
       setSlotRarity(slotEls[slot], "rare");
     } else {
@@ -1147,18 +1186,39 @@ function render() {
       setSlotRarity(slotEls[slot], null);
     }
     si.className = "slotItem" + (item ? ` tier-${enh.zone(item.plus)}` : "");
-    const btn = $(`se_${slot}`);
-    btn.disabled = !item || item.plus >= enh.MAX_PLUS;
-    if (item && item.plus < enh.MAX_PLUS) {
+    $(`se_${slot}`).disabled = !item;
+    if (item) {
       const useSg = sg && enh.canSafeguard(item.plus);
+      const delta = laneValue({ ...item, plus: item.plus + 1 }) - laneValue(item);
+      const next = nextMilestone(item);
+      const away = next.at - item.plus;
+      $(`stk_${slot}`).innerHTML =
+        `<div class="stakePrize">+${item.plus} → +${item.plus + 1} · <b>${laneFmt(slot, delta)}</b></div>` +
+        (away <= 3 ? `<div class="stakeNext">${away === 1 ? "NEXT" : `${away} from`} +${next.at}: lane ×${fmt(next.laneJump)}${next.labels.length ? ` · ${next.labels.join(" · ")}` : ""}</div>` : "");
       const fall = useSg ? "no drop (safeguard)"
-        : enh.isNightmare(item.plus) ? `fail → +${enh.checkpointOf(item.plus)}`
-        : enh.isRisk(item.plus) ? "fail −1" : "fail safe";
+        : enh.failsTo(item.plus) === item.plus ? "fail safe"
+        : `fail → +${enh.failsTo(item.plus)}`;
       $(`sei_${slot}`).textContent =
-        `+${item.plus}→+${item.plus + 1} · ${fmt(enh.cost(item, useSg))}c · ${(enh.chance(item.plus, state.failstacks) * 100).toFixed(1)}% · ${fall}`;
+        `${fmt(enh.cost(item, useSg, state))}c · ${(enh.chance(item.plus, state.failstacks) * 100).toFixed(1)}% · ${fall}`;
+      // milestone track: every bundle, reached ✓ / next ▸ / future
+      $(`mt_${slot}`).innerHTML = (MILESTONES[slot] || []).map(m => {
+        const cls = item.plus >= m.at ? "reached" : m.at === next.at ? "next" : "future";
+        return `<div class="mile ${cls}">+${m.at}: lane ×${fmt(tierMult(m.at) / tierMult(Math.max(0, m.at - 1)))} · ${m.fx.map(f => f[2]).join(" · ")}</div>`;
+      }).join("");
     } else {
+      $(`stk_${slot}`).innerHTML = "";
       $(`sei_${slot}`).textContent = "";
+      $(`mt_${slot}`).innerHTML = "";
     }
+  }
+  { // the set panel: total plus across the three signatures → cumulative tiers
+    const total = setTotal(state);
+    const nextTier = SET_TIERS.find(t => total < t.total);
+    $("setPanel").innerHTML =
+      `<div class="setHead">Signature set · total <b>+${total}</b>${nextTier ? ` · next at +${nextTier.total}` : ""}</div>` +
+      SET_TIERS.map(t =>
+        `<div class="mile ${total >= t.total ? "reached" : t === nextTier ? "next" : "future"}">+${t.total}: ${t.fx.map(f => f[2]).join(" · ")}</div>`
+      ).join("");
   }
   $("titles").style.display = state.titles.length ? "" : "none";
   $("titles").textContent = state.titles.length ? `Titles: ${state.titles.join(" · ")}` : "";

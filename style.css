@@ -647,7 +647,42 @@ section.game button:disabled,
 .flash-ok { animation: flashOk .7s ease-out; }
 .flash-fail { animation: flashFail .45s linear; }
 
+/* landmark payday: bigger burst + a scale pop — instant, never gates input */
+@keyframes flashLandmark {
+  0% { background: rgba(201, 169, 75, .7); box-shadow: 0 0 26px rgba(201, 169, 75, .9); transform: scale(1.02); }
+  60% { transform: scale(1); }
+  100% { background: transparent; box-shadow: none; }
+}
+.flash-landmark { animation: flashLandmark .9s ease-out; }
+
+/* the paid prize floating off the card — same number the stakes card promised */
+@keyframes deltaUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-22px); } }
+.deltaFloat {
+  position: absolute;
+  right: 8px;
+  top: 4px;
+  color: var(--gold, #c9a94b);
+  font-family: var(--font-data);
+  font-weight: 700;
+  pointer-events: none;
+  animation: deltaUp .9s ease-out forwards;
+}
+
+/* the stakes card: the prize line reads first, big */
+.stakes .stakePrize { font-family: var(--font-data); }
+.stakes .stakePrize b { color: var(--gold, #c9a94b); font-size: 1.05em; }
+.stakes .stakeNext { font-size: .85em; color: var(--gold, #c9a94b); opacity: .85; }
+
+/* milestone track + set panel: reached ✓ / next ▸ / future rows */
+.mileTrack summary { cursor: pointer; font-size: .8em; color: var(--muted, #888); }
+.mile { font-size: .8em; padding: 1px 0 1px 8px; border-left: 2px solid var(--line); color: var(--muted, #888); }
+.mile.reached { color: inherit; border-left-color: var(--gold, #c9a94b); }
+.mile.next { color: var(--gold, #c9a94b); border-left-color: var(--gold, #c9a94b); }
+.setPanel { margin-top: 6px; border-left: 3px solid var(--line); padding: 4px 8px; }
+.setPanel .setHead { font-size: .9em; }
+
 .slot {
+  position: relative; /* anchors the .deltaFloat prize */
   display: flex;
   flex-direction: column;
   gap: 4px;

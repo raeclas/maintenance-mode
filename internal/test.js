@@ -26,6 +26,7 @@ const dungeon = await import("../dungeon.js");
 const enh = await import("../enhance.js");
 const armory = await import("../armory.js");
 const crits = await import("../crits.js");
+const skills = await import("../skills.js");
 const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripted rng
 
 // Stats: formula lock — base CP folds in the ×1.16 crit factor
@@ -43,11 +44,12 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   const s = newState();
   s.bots.trained.atk = 80;
   s.bots.trained.hits = 99; // raw 101 hits — soft cap, NOT clamped to 5.0
-  s.gear.weapon = { ...gear.newSignature("weapon"), plus: 10 }; // ip 30 × 1.12^10 × scale 0.5
+  s.gear.weapon = { ...gear.newSignature("weapon"), plus: 10 }; // ip 30 × 1.12^10 × scale 0.5 × landmark ×3
   const d = derive(s);
   const watk = gear.laneValue(s.gear.weapon);
-  assert.ok(Math.abs(watk - 30 * Math.pow(1.12, 10) * 0.5) < 1e-9);
-  assert.ok(Math.abs(d.atk - (10 + 80 + watk) * crits.critFactor(crits.critStats(s))) < 1e-6);
+  assert.ok(Math.abs(watk - 30 * Math.pow(1.12, 10) * 0.5 * gear.tierMult(10)) < 1e-9);
+  // milestone bundles ride along: +5/+10 grant +35% ATK (and crit rows via critStats)
+  assert.ok(Math.abs(d.atk - (10 + 80 + watk) * 1.35 * crits.critFactor(crits.critStats(s))) < 1e-6);
   // above the knee (5.0), diminishing but well past the old 5.0 wall
   assert.ok(Math.abs(d.hitsPerSec - softHits(2.0 + 99)) < 1e-9);
   assert.ok(d.hitsPerSec > 5.0); // the point: never hard-capped
@@ -336,10 +338,10 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.ok(s.scrap.epic >= gear.fuelYield('epic').n);
   assert.ok(gear.fuelYield('legendary').n > gear.fuelYield('common').n);
 
-  // signatures: fixed identity, lane value = ip × 1.12^plus × scale
+  // signatures: fixed identity, lane value = ip × 1.12^plus × scale × landmark
   const w = gear.newSignature('weapon');
   assert.equal(w.name, 'Rusty Shortsword');
-  assert.ok(Math.abs(gear.contribution({ ip: 100, plus: 12 }) - 100 * Math.pow(1.12, 12)) < 1e-9);
+  assert.ok(Math.abs(gear.contribution({ ip: 100, plus: 12 }) - 100 * Math.pow(1.12, 12) * gear.tierMult(12)) < 1e-9);
   assert.ok(Math.abs(gear.laneValue({ ...w, plus: 0 }) - 30 * 0.5) < 1e-9);
 
   // enhance brake: an attempt is never free — ~15c at +0, ×1.6 per plus
@@ -525,7 +527,7 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.equal(dungeon.buy(newState(), "reach"), false);     // no Cache → can't buy
 }
 
-// Enhance: zones, checkpoint falls, failstacks, safeguard, cost gating
+// Enhance (endless eras): zones cycle, landmark floors, failstacks, safeguard
 {
   const s = newState();
   const it = { slot: "weapon", ip: 100, plus: 0, zone: 1, name: "t" };
@@ -537,23 +539,31 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
 {
   const s = newState();
   const it = { slot: "weapon", ip: 100, plus: 2, zone: 1, name: "t" };
-  s.copper = 1e9;
+  s.copper = 1e15; // deep-era costs fit, and 1e15 keeps integer float precision
   enh.attempt(s, it, () => 0.999); // safe fail (80% at +2)
   assert.equal(it.plus, 2);        // safe zone: plus holds…
   assert.equal(s.failstacks, 1);   // …but the stack banks
   it.plus = 6;
   enh.attempt(s, it, () => 0.999); // risk fail
-  assert.equal(it.plus, 5);        // −1
+  assert.equal(it.plus, 5);        // −1 (and +5 is a landmark floor anyway)
   assert.equal(s.failstacks, 2);
 
-  // nightmare falls land on the checkpoint
+  // landmark floors: you never fall below a landmark you've reached
   it.plus = 14;
   enh.attempt(s, it, () => 0.999);
-  assert.equal(it.plus, 10);       // +14 fail → +10
+  assert.equal(it.plus, 10);       // +14 fail → +10 landmark
+  it.plus = 16;
+  enh.attempt(s, it, () => 0.999);
+  assert.equal(it.plus, 15);       // +16 fail → +15 landmark
+  it.plus = 18;
+  enh.attempt(s, it, () => 0.999);
+  assert.equal(it.plus, 17);       // +18 fail → +17 landmark
   it.plus = 17;
   enh.attempt(s, it, () => 0.999);
-  assert.equal(it.plus, 15);       // +17 fail → +15
-  assert.equal(s.failstacks, 4);
+  assert.equal(it.plus, 17);       // standing ON a landmark: nothing lost
+  it.plus = 5;
+  enh.attempt(s, it, () => 0.999); // risk fail clamped at the +5 landmark
+  assert.equal(it.plus, 5);
 
   // stacks boost chance (capped) and success consumes the whole bank
   s.failstacks = 40;
@@ -561,27 +571,142 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   it.plus = 12;
   assert.equal(enh.attempt(s, it, () => 0.29), "success"); // 30% with capped stacks
   assert.equal(it.plus, 13);
-  assert.equal(s.failstacks, 0); // bank spent
+  assert.equal(s.failstacks, 0); // bank spent (no gear → floor 0)
 
-  // safeguard: 3× cost, fail keeps the plus; locked above +15
+  // safeguard: 3× cost, fail keeps the plus; locked in nightmare of any era
   it.plus = 8;
   const c8 = enh.cost(it), before = s.copper;
   enh.attempt(s, it, () => 0.999, true);
   assert.equal(it.plus, 8);                    // no drop
   assert.equal(before - s.copper, c8 * 3);     // 3× price
   assert.ok(enh.canSafeguard(14) && !enh.canSafeguard(15)); // +16 target = nightmare proper
+  assert.ok(enh.canSafeguard(28) && !enh.canSafeguard(35)); // era 2: same bands
   it.plus = 16;
   enh.attempt(s, it, () => 0.999, true);       // safeguard ignored above the lock
-  assert.equal(it.plus, 15);                   // fell to checkpoint anyway
+  assert.equal(it.plus, 15);                   // fell to the landmark anyway
 
-  it.plus = enh.MAX_PLUS;
-  assert.equal(enh.attempt(s, it), "max");
+  // ENDLESS: +20 opens era 2's safe band (no "max" result exists)
+  it.plus = 20;
+  assert.equal(enh.attempt(s, it, () => 0.99), "success"); // fresh safe band, 100%
+  assert.equal(it.plus, 21);
+  assert.equal(enh.zone(21), "safe");
+  assert.equal(enh.zone(33), "nightmare");
+  it.plus = 38;
+  enh.attempt(s, it, () => 0.999);
+  assert.equal(it.plus, 37);       // era-2 floor: +38 fail → +37 landmark
+
   const poor = newState();
   assert.equal(enh.attempt(poor, { ip: 1e6, plus: 11 }, () => 0), "poor");
   assert.ok(enh.cost({ ip: 100, plus: 0 }) === 50); // 0.5 × ip
   assert.ok(enh.evCostPerIpFrom(9) > enh.evCostPerIpFrom(5));   // hitting cost climbs
-  assert.ok(enh.evCostPerIpFrom(17) > enh.evCostPerIpFrom(12)); // deep nightmare explodes (falls re-climb from +15)
-  // note: evCost(15) is CHEAP — +15 is a checkpoint, pushing +16 risks only copper
+  assert.ok(enh.evCostPerIpFrom(16) > enh.evCostPerIpFrom(12)); // falls re-climb from +15
+}
+
+// Gear milestones: tierMult pattern, bundles aggregate, set tiers, tier names
+{
+  assert.equal(gear.tierMult(4), 1);
+  assert.equal(gear.tierMult(5), 1.5);
+  assert.equal(gear.tierMult(10), 3);
+  assert.equal(gear.tierMult(15), 10);
+  assert.equal(gear.tierMult(17), 50);
+  assert.equal(gear.tierMult(20), 250);
+  assert.equal(gear.tierMult(25), 250 * 1.5);   // era 2 repeats the pattern
+  assert.equal(gear.tierMult(40), 250 * 250);
+  assert.equal(gear.landmarkBelow(16), 15);
+  assert.equal(gear.landmarkBelow(19), 17);
+  assert.equal(gear.landmarkBelow(4), 0);
+  assert.equal(gear.nextLandmark(15), 17);
+  assert.equal(gear.nextLandmark(17), 20);
+
+  const s = newState();
+  s.gear.weapon = { ...gear.newSignature("weapon"), plus: 15 };
+  s.gear.armor = { ...gear.newSignature("armor"), plus: 15 };
+  s.gear.charm = { ...gear.newSignature("charm"), plus: 15 };
+  const G = gear.gearFx(s);
+  // weapon +5/+10/+15 bundles: crit 5+10, atk 10+25+100
+  assert.equal(G.critRate, 15);
+  assert.equal(G.atkPct, 10 + 25 + 100);    // the weapon's three % ATK rows
+  assert.equal(G.failstackAtkPct, 2);
+  // set total 45: tiers 30 AND 45 both active (cumulative)
+  assert.equal(gear.setTotal(s), 45);
+  assert.equal(G.atkX, 2 * 5);              // set 30 ×2 · set 45 ×5
+  assert.equal(G.pipCap, 1);                // set 45
+  assert.equal(G.failstackPerFail, 1 + 2);  // charm +10 (+1) + set 45 (+2)
+  assert.equal(G.scrapX, 2);                // charm +15
+  assert.ok(Math.abs(G.hitsPct - (10 + 25 + 50 + 25)) < 1e-9); // armor rows + set 30
+  // tier names evolve, saved name never mutates
+  assert.equal(gear.tierName({ slot: "weapon", name: "Rusty Shortsword", plus: 9 }), "Rusty Shortsword");
+  assert.equal(gear.tierName({ slot: "weapon", name: "Rusty Shortsword", plus: 10 }), "Honed Shortsword");
+  assert.equal(gear.tierName({ slot: "weapon", name: "Rusty Shortsword", plus: 20 }), "Gleaming Shortsword");
+}
+
+// Milestone effects in combat — the EV mirror stays lockstep with the roller
+{
+  // Judgment echo (weapon +40): the beat and the EV term both double
+  const mkJ = plus => {
+    const s = newState();
+    s.gear.weapon = { ...gear.newSignature("weapon"), plus };
+    s.skills.ranks.judgment = 1;
+    return s;
+  };
+  const beat = s => {
+    const d = derive(s);
+    const evs = [];
+    skills.tick(s, skills.JUDG_PERIOD, d, e => evs.push(e), () => 0.999);
+    const j = evs.find(e => e.type === "judgment");
+    const term = d.skills.terms.find(t => t.id === "judgment");
+    return { roll: j.dmg / d.atkCore, ev: term.x - 1, d };
+  };
+  const plain = beat(mkJ(39));
+  const echo = beat(mkJ(40));
+  assert.ok(Math.abs(echo.roll / plain.roll - 2) < 1e-9); // roller: beat doubled
+  // EV term: judgMult/(period·h·cf) — normalize the h·cf difference out
+  const evPlain = plain.ev * plain.d.hitsPerSec * (plain.d.atk / (plain.d.atkCore * plain.d.skills.mult));
+  const evEcho = echo.ev * echo.d.hitsPerSec * (echo.d.atk / (echo.d.atkCore * echo.d.skills.mult));
+  assert.ok(Math.abs(evEcho / evPlain - 2) < 1e-9);       // EV mirror doubled too
+
+  // Auto-crit (weapon +20): every 10th swing scripted max tier; cf folds 1/N
+  const s = newState();
+  s.gear.weapon = { ...gear.newSignature("weapon"), plus: 20 };
+  const d = derive(s);
+  const G = d.gearFx;
+  assert.equal(G.autoCritNth, 10);
+  s.skills.hitCarry = 10;                    // exactly 10 swings, dt 0
+  const r = skills.tick(s, 0, d, () => {}, () => 0.5); // rng .5: no natural crit, variance ×1.0
+  const superM = d.crit.superMult;           // (5 + 3.5 critDmg) × 3 superX
+  assert.ok(Math.abs(superM - (5 + 3.5) * 3) < 1e-9);
+  assert.ok(Math.abs(r.dmg - (9 + superM) * d.atkCore) < 1e-6); // 9 normal + 1 scripted super
+
+  // Failstack power (weapon +15) — banked stacks are ATK, displayed
+  const f = newState();
+  f.gear.weapon = { ...gear.newSignature("weapon"), plus: 15 };
+  const a0 = derive(f).atkCore;
+  f.failstacks = 10;
+  assert.ok(Math.abs(derive(f).atkCore / a0 - 1.2) < 1e-9); // +2%/stack × 10
+
+  // Charm hooks in enhance: fails bank extra, success keeps the floor
+  const c = newState();
+  c.copper = 1e15;
+  c.gear.charm = { ...gear.newSignature("charm"), plus: 40 };
+  const itc = { slot: "weapon", ip: 100, plus: 2, zone: 1, name: "t" };
+  enh.attempt(c, itc, () => 0.999);          // fail
+  assert.equal(c.failstacks, 2);             // 1 + charm's +1
+  enh.attempt(c, itc, () => 0.001);          // success
+  assert.equal(c.failstacks, 5);             // resets to the charm's floor, not 0
+  // and the cost discount is real (charm +17 −25%, +40 −50% → ×0.375)
+  const base = enh.cost(itc);
+  assert.equal(enh.cost(itc, false, c), Math.round(base * 0.375));
+
+  // Armor pip economy: +20 armor → 6-pip bank on the same recharge path
+  const p = newState();
+  p.gear.armor = { ...gear.newSignature("armor"), plus: 20 };
+  p.skills.ranks.rage = 1;
+  const dp = derive(p);
+  assert.equal(skills.pipCap(), 6);          // 5 + armor gate
+  assert.equal(skills.pipRecharge(), 180);   // 300 − 60 (+15) − 60 (+20)
+  skills.tick(p, 180 * 6 + 1, dp);
+  assert.equal(p.skills.pips, 6);
+  derive(newState());                        // reset module GF for later tests
 }
 
 // Progressive unlocks: fresh state hides all tabs; a genuinely OLD save (no
@@ -819,8 +944,6 @@ const seq = (...v) => { let i = 0; return () => v[i++ % v.length]; }; // scripte
   assert.equal(s.instance, undefined);   // the block is gone
   localStorage.removeItem("mm_save"); localStorage.removeItem("mm_save_bak");
 }
-
-const skills = await import("../skills.js");
 
 // Skills: cost curve, band caps, buy gating
 {

@@ -2,27 +2,22 @@
 // of those Super Crit (×5). The EXPECTED multiplier rides in derive() as one
 // displayed factor (guideline 5); the actual per-hit roll drives the damage
 // stream (`rollHit`), so you SEE the `*` / `**` spikes while the whittle uses
-// the smooth average. Crit is a chase: base ×1.16, grown via gear affixes.
-import { SLOTS } from "./gear.js";
+// the smooth average. Crit is a chase: base ×1.16, grown by the weapon's
+// milestone bundles (gearFx — the endless-enhance track).
+import { gearFx } from "./gear.js";
 
 // Base values (starting numbers — playtest-tunable). rate/superRate are
 // probabilities; critMult/superMult are the damage multipliers per tier.
 export const BASE = { rate: 0.10, superRate: 0.20, critMult: 2, superMult: 5 };
 
-// Resolve the player's live crit stats: base + equipped gear affixes.
-// critRate affix adds probability points; critDmg adds to BOTH tier mults.
+// Resolve the player's live crit stats: base + gear milestone bundles.
+// critRate adds probability points; critDmg adds to BOTH tier mults;
+// superX multiplies the max tier (weapon +17 bundle).
 export function critStats(state) {
-  let rate = BASE.rate, dmgBonus = 0;
-  for (const slot of SLOTS) {
-    const it = state.gear?.[slot];
-    if (!it) continue;
-    for (const af of it.affixes || []) {
-      if (af.id === "critRate") rate += af.value / 100;
-      else if (af.id === "critDmg") dmgBonus += af.value / 100;
-    }
-  }
-  return { rate: Math.min(1, rate), superRate: BASE.superRate,
-    critMult: BASE.critMult + dmgBonus, superMult: BASE.superMult + dmgBonus };
+  const G = gearFx(state);
+  const dmgBonus = G.critDmg / 100;
+  return { rate: Math.min(1, BASE.rate + G.critRate / 100), superRate: BASE.superRate,
+    critMult: BASE.critMult + dmgBonus, superMult: (BASE.superMult + dmgBonus) * G.superX };
 }
 
 // Expected damage multiplier from the two-tier cascade — the CP factor.

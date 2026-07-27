@@ -166,49 +166,61 @@ Design rules the matrix produced (binding):
    depth), never permission. Overgear + scars can bulldoze any wall (except
    W2's honest armor floor). Build skill = speed, not access.
 
-## 5. Enhance — the heartbeat
+## 5. Enhance — the heartbeat [REWRITTEN 2026-07-27: ENDLESS ERAS]
 
-Per-item pluses +0→+20. **[AMENDED 2026-07-21]** Contribution compounds:
-item ATK = IP × **1.12^plus** (starting value; +12 ≈ ×3.9, +20 ≈ ×9.6) — every
-plus is felt, high plusses are events (playtest verdict: linear +10% read as
-a vending machine). W1 HP rebased 15M→30M in the same commit so the break
-lands in nightmare pushes (+13/+14). Instant resolution — no ceremony, ever
-(hard veto). All of §5 below is BUILT as of Slice 1.5 (nightmare, checkpoints,
-failstacks, safeguard); noted quirk that emerged from checkpoint math: pushing
-+15→+16 risks only copper (falls land back on +15), so the true EV cliffs are
-+16→+18 — checkpoint camping is the intended rhythm, not an exploit (bounded
-by copper costs 0.5×ip×1.6^plus).
+**No plus cap.** The +0→+20 emotional arc repeats forever in ERAS: odds key
+on `plus % 20`, so +21 opens a fresh safe band while cost (0.5×ip×1.6^plus)
+compounds forever — each era is era-priced by construction. User direction
+(MapleStory starforce reference): concrete MILESTONES with visible stat
+jumps and legible stakes on the button, "sky's the limit" bundle effects,
+numbers tweaked by playtest.
 
-| Zone | Range | Success (starting) | Fail consequence |
+| Zone (per era) | k%20 | Success (starting) | Fail consequence |
 |---|---|---|---|
-| Safe | +0→+5 | 100%→60% | nothing (copper spent) |
-| Risk | +6→+12 | 45%→20% | −1 plus |
-| Nightmare | +13→+20 | 15%→1.5% | drop to checkpoint |
+| Safe | 0→4 | 100%→60% | nothing (copper spent) |
+| Risk | 5→11 | 45%→20% | −1 plus, never below a landmark |
+| Nightmare | 12→19 | 15%→1.5% | drop to the landmark below |
 
-- **Checkpoints** at +10 and +15. A +17 fail lands on +15. Stakes real,
-  grief bounded. **Nothing is ever destroyed** (attachment law; Starforce's
-  boom is the genre's most-hated moment — we take tension, refuse trauma).
-- **Failstacks:** every fail anywhere = +1 stack = +1% success. Success
-  consumes the whole bank. Decision: burn the 22-stack on +14 or bank it for
-  +18. Stack management = prep-skill inside the heartbeat. Visible HUD stat
-  (this is Luck's mechanical body). **Cap: stacks add max +15 absolute
-  percentage points** — Nightmare can never approach guarantee.
-- **Safeguard:** +6→+15 only, 3× copper, fail costs no plus. Locked above
-  +15: no purchasable mercy in Nightmare. (Lesson 1: anything bypassing RNG
-  is band-capped by design law.)
-- **Costs:** copper scales per plus; Nightmare adds boss materials from
-  farm-status kills — bossing funds the gamble, the gamble breaks the next
-  boss.
-- **Odometer weld:** enhance panel shows wall projection live
-  ("+15→+16: projection 84–97% → 89–103%"). Every gamble is denominated in
-  wall depth.
-- Feel: success floater + shake scaled to band (+18 lands like a boss kill);
-  fail = terse feed line + stack counter visibly ticks (consolation on
-  screen). Ghost lobby reacts to +16 and above. Titles at +18/+19/+20.
+- **Landmarks** at era×20 + {5, 10, 15, 17, 20} are FLOORS and PAYDAYS.
+  You never fall below a landmark you've reached — every reached bundle is
+  permanent (attachment law; Starforce's boom refused, as ever). Each
+  landmark multiplies the item's lane (pattern ×1.5/×3/×10/×50/×250 per
+  era, ×250 per era gate — laneValue = ip × 1.12^plus × scale × tierMult)
+  AND grants a bundle of effects from the gear.js MILESTONES registry:
+  weapon = offense rules (crit, auto-crit, Judgment echo, boss damage,
+  swing echo), armor = tempo rules (hits/s, pip cap/recharge, buff
+  durations, cast refunds, offline time), charm = economy rules (copper,
+  drops, scrap, relics, enhance discounts, failstack banking, bot
+  capacity). Era gates rename the item (Rusty → Honed → Gleaming → …,
+  display-only) and grant titles. Meta milestones ("all % values ×N")
+  scale that track's percentage rows only.
+- **The set:** total plus across the three signatures unlocks cumulative
+  set tiers (30/45/51/60, then +60 per era at ×10 values) — big ATK
+  multipliers plus cross-system hooks (failstack rate, pip cap, enhance
+  discount). "Which item do I push next" is the decision layer.
+- **Failstacks:** every fail banks stacks (+1 base; charm/set milestones
+  raise the rate); success spends the bank down to the gear's floor.
+  **Cap: stacks add max +15 absolute percentage points** — Nightmare
+  never approaches guarantee. Weapon +15 makes banked stacks +2% ATK
+  each: failure literally feeds power.
+- **Safeguard:** risk band through +15 of each era, 3× copper, fail costs
+  no plus. Locked in nightmare: no purchasable mercy.
+- **The stakes card** (MapleStory's "WEAPON ATTACK: +17" line, ours):
+  every slot shows the exact lane delta the next plus pays BEFORE the
+  click, the next landmark's bundle when ≤3 away, live odds, and the fail
+  destination. The success floater pays the same number (promise ==
+  payoff, tested).
+- Feel: success burst + gold delta floater; landmark success = bigger
+  burst + arena shake + rename + server log line; fail = crack flash.
+  **No sound** (the ceremony veto = SOUND, clarified 2026-07-27 — snappy
+  meaningful UI effects are welcome; no slow ritual gates). Titles at
+  +17/+20 of each era.
 
-Test plans: sim time-to-+15 vs W5–6 pacing; time-to-+18 vs W8. Playtest
-metric: a +18 attempt must produce visible hesitation before the click — if
-players click instantly, raise the material ante, not fail severity.
+Sim note: milestone power collapsed W1 to 7.3h; boss HP ×11.2 across all
+walls same commit (W1 = 280e12, 13.2h — in the 12h–2d gate), baseline
+restamped. The sim's EV enhance model uses the era floors
+(evCostPerIpFrom); gear discounts/failstack rates deliberately not
+modeled (conservative).
 
 ## 6. System inventory (what v1 shipped with)
 
@@ -407,7 +419,9 @@ lesson); per-wall titles.
 ## 11. Cut list & hard vetoes
 
 **Hard vetoes (user-stated; never re-propose):**
-- NO sound. NO enhance ceremony / slow ritual animations.
+- NO sound. **[CLARIFIED 2026-07-27: the "ceremony" veto means SOUND and
+  slow ritual gates that delay the result — snappy, meaningful UI effects
+  (bursts, shakes, floaters) are welcome and wanted.]**
 - NO AI-generated skill icons (gold letter glyphs or hand-made only).
 - NO obligation mechanics: dailies, streaks, FOMO, calendar events, weekly
   lockouts.
@@ -516,7 +530,8 @@ mobs, gear, boss fight, enhance verbs, titles.
 | boss verbs/nouns | Attempt · enrage · depth · scars · break · title · safeguard |
 | gear rarities (2026-07-22) | Common · Uncommon · Rare · Epic · Legendary · Mythic · Origin |
 | live affixes (2026-07-24) | value reads account state, shown as "value — source": Botnet Sync (per 100 bots) · Warden's Echo (per set) · Failstack Bleed (per stack) · Ban Counter (per 1k bans, never resets) · Delver's Momentum (while delving). Each hard-capped |
-| gear verbs/nouns (REWORKED 2026-07-27, v15 SIGNATURE gear) | three permanent quest-reward items (zone-1 names: Rusty Shortsword · Padded Vest · Cracked Bead), never replaced, grown by enhance. Arrivals: first copper · first Armory rank · 100 CP; doors W1/W3/W5 add helm/gloves/boots (slice 3). Drops are EVENTS: Scrap (tiered, by rarity) + Armory points; Epic+ banks a **Relic**. Retired nouns: affix · Reforge(bench, returns slice 2 as mod-line reroll) · Salvage · Loot filter · stash · IP |
+| gear verbs/nouns (REWORKED 2026-07-27, v15 SIGNATURE gear) | three permanent quest-reward items (zone-1 names: Rusty Shortsword · Padded Vest · Cracked Bead), never replaced, grown by enhance. Arrivals: first copper · first Armory rank · 100 CP; doors W1/W3/W5 add helm/gloves/boots (slice 3). Drops are EVENTS: Scrap (tiered, by rarity) + Armory points; Epic+ banks a **Relic**. Retired nouns: affix · Reforge(bench) · Salvage · Loot filter · stash · IP · mod lines/cube (designed 2026-07-27, rejected same day for landmarks) |
+| endless enhance (2026-07-27, §5) | era (every 20 plusses) · landmark (+5/+10/+15/+17/+20 of each era — floor AND payday) · era gate (+20/+40/… — rule-changing bundle + rename + title) · milestone bundle (the effect package) · the set / set tier (total-plus thresholds 30/45/51/60…) · stakes card (the bench's prize-before-the-click panel) · tier names: Rusty → Honed → Gleaming → Ascendant → Radiant → Mythic → Eternal → Transcendent |
 | boss Trophy sets (2026-07-22) | one 7-piece set per Warden (door parts: Hinge · Bolt · Latch · Keyward · Lintel · Threshold · Frame) · set names "The First/Second Door" · Farm status (re-Attempt a broken boss for pieces) |
 | dungeon / Delve (REWORKED 2026-07-24) | idle DEPTH ENGINE + synergy hub. Depth follows build DPS; deeper = more Cache (buried server data). Cache tree feeds EVERY system: deeper bore (depth) · cache sifter (yield) · recovered overclock (ATK) · salvage beacon (drops) · buried scripts (train) · support backlog (tickets). No more descend/extract/gamble (was −EV) |
 | Dungeon / instances (POC 2026-07-25, **CUT 2026-07-27**) | retired whole by user verdict — nouns freed: instance · floor · duty · mechanic · key · haul · wipe · journal · proxy rotation. Do not reuse without a new feature-pass |

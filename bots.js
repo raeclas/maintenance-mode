@@ -7,7 +7,7 @@
 // Starting values throughout — sim-gated; test plans in REMAKE-DESIGN §7.
 import { zones, DROP_CHANCE, zoneUnlocked, saturation, lootBias } from "./farm.js";
 import { delveBonus } from "./dungeon.js";
-import { rollDrop } from "./gear.js";
+import { rollDrop, gearFx } from "./gear.js";
 import { derive } from "./stats.js";
 
 export const CREATE_PER_H = 60;       // base bots/hour (~1/min) — no dead-wait at the start
@@ -59,10 +59,11 @@ export const TRAININGS = {
 
 export function botPower(b) { return 1 + POWER_PER_RANK * b.powerRank; }
 export function botSpeed(b) { return 1 + SPEED_PER_RANK * b.speedRank; }
-// Multiplicative: each capRank multiplies the swarm ceiling.
+// Multiplicative: each capRank multiplies the swarm ceiling. The charm's
+// deep milestone doubles it (gearFx.botCapX) when state is passed.
 // rank 28 → ~13k slots instead of 348.
-export function capacity(b) {
-  return Math.round(CAP_BASE * Math.pow(CAP_GROWTH, b.capRank));
+export function capacity(b, state = null) {
+  return Math.round(CAP_BASE * Math.pow(CAP_GROWTH, b.capRank) * (state ? gearFx(state).botCapX : 1));
 }
 export function createRate(b) { return CREATE_PER_H * (1 + CREATE_PER_RANK * b.createRank); } // per hour
 // One bot's zone DPS. player = derived stats {atk, hitsPerSec}. Squad DPS is
@@ -271,14 +272,15 @@ function tickChunk(state, dtS, onEvent, rng) {
   const b = state.bots;
   const dtH = dtS / 3600;
   const player = derive(state); // zone squad DPS borrows player power
+  const G = gearFx(state);      // charm milestone economy terms
 
   // creation toward capacity
-  b.pop = Math.min(capacity(b), b.pop + createRate(b) * dtH);
+  b.pop = Math.min(capacity(b, state), b.pop + createRate(b) * dtH);
 
   // training (private lobbies — safe): every unlocked tier runs in
   // parallel with its own squad; each bar caps at 50 fills/s
   const quality = botPower(b) * botSpeed(b);
-  const drill = delveBonus(state, "drill"); // Delve "buried scripts" → +train output
+  const drill = delveBonus(state, "drill") * G.trainX; // Delve "buried scripts" + charm gate → +train output
   const scale = effScale(b);
   for (const bar of ["atk", "speed"]) {
     const B = b.bars[bar];
@@ -312,9 +314,10 @@ function tickChunk(state, dtS, onEvent, rng) {
     const r = botZoneRates(b, zi, n, player);
     if (!r.held) continue;
     state.copper += r.copperPerSec * dtS; // copperMult already folded into the rate
-    const np = r.kps * dtS * DROP_CHANCE * delveBonus(state, "loot"); // Delve "salvage beacon" → +drops
+    const np = r.kps * dtS * DROP_CHANCE * delveBonus(state, "loot") * (1 + G.dropRatePct / 100); // Delve beacon + charm milestones
     let drops = Math.floor(np) + (rng() < np - Math.floor(np) ? 1 : 0);
-    const bias = lootBias(saturation(r.squadDps, zones[zi].mobHp)); // over-farm → richer loot
+    // over-farm → richer loot; the charm's gate adds keep-best rarity rerolls
+    const bias = lootBias(saturation(r.squadDps, zones[zi].mobHp)) + G.rarityReroll;
     while (drops-- > 0) onEvent("drop", rollDrop(zi, rng, bias)); // events, not objects (v15)
   }
 }
