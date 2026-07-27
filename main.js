@@ -166,11 +166,15 @@ let armoryDirty = true;
 let lastWallSel = ""; // wall-selector rebuild cache
 let lastRenderNow = Date.now();  // for per-frame dt (kill-cycle bar integrator)
 let cpSample = null, cpSampleT = 0, cpRate = 0;  // Combat Power rate sampler (~1s window)
-// Measured damage window → the Boss tab's "avg DPS" readout. CP is the smooth
+// Measured damage window → the Boss tab's "avg DPM" readout. CP is the smooth
 // EV rate; this is what actually LANDED (drain + skill bursts) over the last
-// 30s, so casts visibly move the number. Falls back to EV CP while empty.
-const DPS_WINDOW_MS = 30_000;
+// 60s, so casts visibly move the number. Per-minute over a minute-long window,
+// and the DISPLAYED value refreshes on a 2s hold — a live per-frame readout
+// fluttered enough to be distracting (playtest 2026-07-27).
+const DPS_WINDOW_MS = 60_000;
+const DPM_HOLD_MS = 2_000;
 let dmgLog = []; // [tMs, dealt]
+let dpmShown = 0, dpmShownT = 0;
 function recordDmg(dealt) { if (dealt > 0) dmgLog.push([Date.now(), dealt]); }
 function measuredDps() {
   const now = Date.now();
@@ -178,6 +182,14 @@ function measuredDps() {
   if (!dmgLog.length) return 0;
   const spanS = Math.max(1, (now - dmgLog[0][0]) / 1000);
   return dmgLog.reduce((s, e) => s + e[1], 0) / spanS;
+}
+function shownDpm(fallbackDps) {
+  const now = Date.now();
+  if (now - dpmShownT >= DPM_HOLD_MS) {
+    dpmShownT = now;
+    dpmShown = (measuredDps() || fallbackDps) * 60;
+  }
+  return dpmShown;
 }
 const zonePhase = [];            // per-zone accumulated kill phase (0..1 shown)
 
@@ -370,9 +382,9 @@ const HELP_ROOMS = [
   ["P", "Player", "gearSec", [
     ["Combat Power", `Your damage per second against the door: ATK multiplied by hits
       per second. "Haste" anywhere on the Player tab is a percentage added to hits per
-      second. The Boss tab's "avg DPS" is what actually landed over the last 30
-      seconds — crits, skills and casts included — so a burst you press shows up in
-      it.`],
+      second. The Boss tab's "avg DPM" is the damage that actually landed over the
+      last minute — crits, skills and casts included — so a burst you press shows up
+      in it.`],
     ["Enhance", `Three slots. Enhancing raises an item's plus, and every plus multiplies
       its base power by 1.12. A failed attempt anywhere banks a failstack worth +1
       percentage point on your next attempt, up to +15; a success spends the whole
@@ -1043,9 +1055,8 @@ function render() {
       $("depth").textContent = `${(remain * 100).toFixed(1)}%`;
       $("cooldown").textContent = `time to breach: ${ttkText(timeToKill(state))}`;
       // measured avg (crits, skills AND casts folded in — it's what landed);
-      // EV CP stands in until the 30s window has data (boot, tab return)
-      const md = measuredDps();
-      $("record").textContent = `health ${fmt(state.boss.hp)} / ${fmt(boss.hp)} · avg DPS ${fmt(md || dps)}`;
+      // EV CP stands in until the 60s window has data (boot, tab return)
+      $("record").textContent = `health ${fmt(state.boss.hp)} / ${fmt(boss.hp)} · avg DPM ${fmt(shownDpm(dps))}`;
     }
   }
   { // wall progression + wall selector (switch to a cleared wall to farm it)
