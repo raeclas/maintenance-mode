@@ -800,12 +800,12 @@ function renderArmory() {
   const clears = (state.cleared || []).length;
   let html = "";
   for (let z = 1; z <= farm.zones.length; z++) {
-    if (!farm.zoneUnlocked(clears, z - 1)) {
-      const need = farm.zoneUnlockClears(z - 1);
-      html += `<div class="amRow locked"><span class="amZone">z${z}</span>` +
-        `<span class="amLock">locked · clear ${need} door${need > 1 ? "s" : ""}</span></div>`;
-      continue;
-    }
+    // Playtest 2026-07-27: a locked zone is not rendered AT ALL. Collapsing it
+    // to a one-line condition was still ten lines of "you can't have this",
+    // and the user's verdict was that it clutters. The Grind tab already shows
+    // the zone ladder and its unlock condition — the Armory does not need to
+    // repeat it, it only needs to list what you can actually rank.
+    if (!farm.zoneUnlocked(clears, z - 1)) continue;
     let cells = "";
     for (const slot of SLOTS) {
       const pts = state.armory[`${slot}:${z}`] || 0;
